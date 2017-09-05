@@ -2,27 +2,25 @@
 
 const should = require('should')
 const path = require('path')
-const fs = require('fs')
+const { readFileSync } = require('fs')
 
 const frowser = require('..')
 
-const htmlFixture = fs.readFileSync(path.resolve(__dirname, 'html.txt'), 'utf8')
-
 describe('frowser', () => {
-  describe('.getHTML', () => {
+  describe('.html', () => {
     it('get full HTML from a link', () =>
-      frowser.getHTML('http://example.com').then(html => {
-        // fs.writeFileSync(path.resolve(__dirname, 'html.txt'), html, 'utf8')
-        should(html).be.eql(htmlFixture)
+      frowser.html('https://www.instagram.com/p/BWUDBntl3_Z/').then(html => {
+        // writeFileSync(path.resolve(__dirname, 'example.html'), html, 'utf8')
+        should(html).be.eql(readFileSync('test/example.html', 'utf8'))
       }))
   })
 
-  describe('.takeScreenshot', () => {
+  describe('.screenshot', () => {
     describe('format', () => {
       it('png', () =>
-        frowser.takeScreenshot('http://example.com').then(tmpStream => {
-          should(fs.readFileSync(tmpStream.path)).be.eql(
-            fs.readFileSync('test/example.png')
+        frowser.screenshot('http://example.com').then(tmpStream => {
+          should(readFileSync(tmpStream.path)).be.eql(
+            readFileSync('test/example.png')
           )
           should(path.extname(tmpStream.path)).be.equal('.png')
           tmpStream.cleanupSync()
@@ -30,10 +28,10 @@ describe('frowser', () => {
 
       it('jpeg', () =>
         frowser
-          .takeScreenshot('http://example.com', { type: 'jpeg' })
+          .screenshot('http://example.com', { type: 'jpeg' })
           .then(tmpStream => {
-            should(fs.readFileSync(tmpStream.path)).be.eql(
-              fs.readFileSync('test/example.jpeg')
+            should(readFileSync(tmpStream.path)).be.eql(
+              readFileSync('test/example.jpeg')
             )
             should(path.extname(tmpStream.path)).be.equal('.jpeg')
             tmpStream.cleanupSync()
@@ -43,13 +41,21 @@ describe('frowser', () => {
     describe('devices', () => {
       it('iPhone 6', () =>
         frowser
-          .takeScreenshot('http://example.com', { device: 'iPhone 6' })
+          .screenshot('http://example.com', { device: 'iPhone 6' })
           .then(tmpStream => {
-            should(fs.readFileSync(tmpStream.path)).be.eql(
-              fs.readFileSync('test/example-iphone.png')
+            should(readFileSync(tmpStream.path)).be.eql(
+              readFileSync('test/example-iphone.png')
             )
             tmpStream.cleanupSync()
           }))
     })
+  })
+
+  describe('.pdf', () => {
+    it('get full PDF from an url', () =>
+      frowser.pdf('http://example.com').then(tmpStream => {
+        should(path.extname(tmpStream.path)).be.equal('.pdf')
+        tmpStream.cleanupSync()
+      }))
   })
 })
