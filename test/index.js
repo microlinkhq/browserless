@@ -2,7 +2,7 @@
 
 const should = require('should')
 const path = require('path')
-const { readFileSync } = require('fs')
+const { readFileSync, writeFileSync } = require('fs')
 
 const frowser = require('..')
 
@@ -10,7 +10,7 @@ describe('frowser', () => {
   describe('.html', () => {
     it('get full HTML from a link', () =>
       frowser.html('https://www.instagram.com/p/BWUDBntl3_Z/').then(html => {
-        // writeFileSync(path.resolve(__dirname, 'example.html'), html, 'utf8')
+        writeFileSync(path.resolve('test/example.html'), html, 'utf8')
         should(html).be.eql(readFileSync('test/example.html', 'utf8'))
       }))
   })

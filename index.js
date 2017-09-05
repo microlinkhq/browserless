@@ -17,9 +17,9 @@ async function html (url, opts = {}) {
   const browser = await puppeteer.launch()
   const page = await browser.newPage()
   await page.goto(url, opts)
-  const bodyHTML = await page.content()
+  const content = await page.content()
   browser.close()
-  return bodyHTML
+  return content
 }
 
 async function screenshot (url, opts = {}) {
