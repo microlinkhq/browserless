@@ -18,24 +18,38 @@ describe('frowser', () => {
   })
 
   describe('.takeScreenshot', () => {
-    it('png', () =>
-      frowser.takeScreenshot('http://example.com').then(tmpStream => {
-        should(fs.readFileSync(tmpStream.path)).be.eql(
-          fs.readFileSync('test/example.png')
-        )
-        should(path.extname(tmpStream.path)).be.equal('.png')
-        tmpStream.cleanupSync()
-      }))
-
-    it('jpeg', () =>
-      frowser
-        .takeScreenshot('http://example.com', { type: 'jpeg' })
-        .then(tmpStream => {
+    describe('format', () => {
+      it('png', () =>
+        frowser.takeScreenshot('http://example.com').then(tmpStream => {
           should(fs.readFileSync(tmpStream.path)).be.eql(
-            fs.readFileSync('test/example.jpeg')
+            fs.readFileSync('test/example.png')
           )
-          should(path.extname(tmpStream.path)).be.equal('.jpeg')
+          should(path.extname(tmpStream.path)).be.equal('.png')
           tmpStream.cleanupSync()
         }))
+
+      it('jpeg', () =>
+        frowser
+          .takeScreenshot('http://example.com', { type: 'jpeg' })
+          .then(tmpStream => {
+            should(fs.readFileSync(tmpStream.path)).be.eql(
+              fs.readFileSync('test/example.jpeg')
+            )
+            should(path.extname(tmpStream.path)).be.equal('.jpeg')
+            tmpStream.cleanupSync()
+          }))
+    })
+
+    describe('devices', () => {
+      it('iPhone 6', () =>
+        frowser
+          .takeScreenshot('http://example.com', { device: 'iPhone 6' })
+          .then(tmpStream => {
+            should(fs.readFileSync(tmpStream.path)).be.eql(
+              fs.readFileSync('test/example-iphone.png')
+            )
+            tmpStream.cleanupSync()
+          }))
+    })
   })
 })
