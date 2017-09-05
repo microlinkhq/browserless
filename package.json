@@ -1,0 +1,61 @@
+{
+  "name": "frowser",
+  "description": "Accessing to browser from the Upside Down",
+  "homepage": "https://documentup.com/Kikobeats/frowser",
+  "version": "0.0.0",
+  "main": "index.js",
+  "author": {
+    "email": "josefrancisco.verdu@gmail.com",
+    "name": "Kiko Beats",
+    "url": "https://kikobeats.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kikobeats/frowser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kikobeats/frowser/issues"
+  },
+  "keywords": [],
+  "dependencies": {
+    "create-temp-file2": "~2.0.0",
+    "puppeteer": "~0.10.2"
+  },
+  "devDependencies": {
+    "coveralls": "latest",
+    "git-dirty": "latest",
+    "husky": "latest",
+    "lint-staged": "latest",
+    "mocha": "latest",
+    "nyc": "latest",
+    "prettier-standard": "latest",
+    "should": "latest",
+    "standard": "latest",
+    "standard-markdown": "latest"
+  },
+  "engines": {
+    "node": ">= 6"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "lint": "standard-markdown && standard",
+    "precommit": "lint-staged",
+    "prelint": "npm run pretty",
+    "pretest": "npm run lint",
+    "pretty": "prettier-standard --single-quote {core,test,bin}/**/*.js",
+    "test": "nyc mocha"
+  },
+  "license": "MIT",
+  "lint-staged": {
+    "*.js": [
+      "prettier-standard",
+      "git add"
+    ]
+  },
+  "standard": {
+    "env": [
+      "mocha"
+    ]
+  }
+}
