@@ -55,7 +55,6 @@
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "lint": "standard-markdown && standard",
     "precommit": "lint-staged",
-    "prelint": "npm run pretty",
     "pretest": "npm run lint",
     "pretty": "prettier-standard index.js test/**/*.js --single-quote",
     "test": "nyc mocha"
