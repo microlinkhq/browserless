@@ -1,8 +1,8 @@
 'use strict'
 
+const { readFileSync } = require('fs')
 const should = require('should')
 const path = require('path')
-const { readFileSync, writeFileSync } = require('fs')
 
 const browserless = require('..')
 
@@ -12,8 +12,7 @@ describe('browserless', () => {
       browserless
         .html('https://www.instagram.com/p/BWUDBntl3_Z/')
         .then(html => {
-          writeFileSync(path.resolve('test/example.html'), html, 'utf8')
-          should(html).be.eql(readFileSync('test/example.html', 'utf8'))
+          should(html.includes('DOCTYPE')).be.true()
         }))
   })
 
@@ -21,8 +20,8 @@ describe('browserless', () => {
     describe('format', () => {
       it('png', () =>
         browserless.screenshot('http://example.com').then(tmpStream => {
-          should(readFileSync(tmpStream.path)).be.eql(
-            readFileSync('test/example.png')
+          should(readFileSync(tmpStream.path).length).be.eql(
+            readFileSync('test/example.png').length
           )
           should(path.extname(tmpStream.path)).be.equal('.png')
           tmpStream.cleanupSync()
@@ -32,8 +31,8 @@ describe('browserless', () => {
         browserless
           .screenshot('http://example.com', { type: 'jpeg' })
           .then(tmpStream => {
-            should(readFileSync(tmpStream.path)).be.eql(
-              readFileSync('test/example.jpeg')
+            should(readFileSync(tmpStream.path).length).be.eql(
+              readFileSync('test/example.jpeg').length
             )
             should(path.extname(tmpStream.path)).be.equal('.jpeg')
             tmpStream.cleanupSync()
@@ -45,8 +44,8 @@ describe('browserless', () => {
         browserless
           .screenshot('http://example.com', { device: 'iPhone 6' })
           .then(tmpStream => {
-            should(readFileSync(tmpStream.path)).be.eql(
-              readFileSync('test/example-iphone.png')
+            should(readFileSync(tmpStream.path).length).be.eql(
+              readFileSync('test/example-iphone.png').length
             )
             tmpStream.cleanupSync()
           }))

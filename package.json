@@ -62,8 +62,8 @@
   "license": "MIT",
   "lint-staged": {
     "*.js": [
-      "git add",
-      "prettier-standard"
+      "prettier-standard",
+      "git add"
     ]
   },
   "standard": {
