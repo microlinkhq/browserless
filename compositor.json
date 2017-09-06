@@ -1,0 +1,143 @@
+{
+  "name": "Kikobeats/browserless",
+  "version": "0.1.4",
+  "libraries": {
+    "xv": "^1.1.25"
+  },
+  "title": "",
+  "branch": "",
+  "style": {
+    "name": "Default",
+    "componentSet": {
+      "nav": "nav/BasicNav",
+      "header": "header/BannerHeader",
+      "article": "article/BasicArticle",
+      "footer": "footer/BasicFooter"
+    },
+    "fontFamily": "-apple-system, BlinkMacSystemFont, sans-serif",
+    "fontWeight": 400,
+    "bold": 600,
+    "lineHeight": 1.5,
+    "typeScale": [
+      72,
+      48,
+      24,
+      20,
+      16,
+      14,
+      12
+    ],
+    "monospace": "Menlo, monospace",
+    "heading": {
+      "fontFamily": null,
+      "fontStyle": null,
+      "fontWeight": 600,
+      "lineHeight": 1.25,
+      "textTransform": null,
+      "letterSpacing": null
+    },
+    "h0": {},
+    "h1": {},
+    "h2": {},
+    "h3": {},
+    "h4": {},
+    "h5": {},
+    "h6": {},
+    "alternativeText": {},
+    "space": [
+      0,
+      8,
+      16,
+      32,
+      48,
+      64,
+      96
+    ],
+    "layout": {
+      "maxWidth": 1024,
+      "centered": false
+    },
+    "colors": {
+      "text": "#111",
+      "background": "#fff",
+      "primary": "#08e",
+      "secondary": "#059",
+      "highlight": "#e08",
+      "border": "#ddd",
+      "muted": "#eee"
+    },
+    "border": {
+      "width": 1,
+      "radius": 2
+    },
+    "link": {},
+    "button": {
+      "hover": {
+        "boxShadow": "inset 0 0 0 999px rgba(0, 0, 0, .125)"
+      }
+    },
+    "input": {},
+    "body": {
+      "margin": 0
+    },
+    "breakpoints": {
+      "xs": "@media screen and (max-width:40em)",
+      "sm": "@media screen and (min-width:40em)",
+      "md": "@media screen and (min-width:52em)",
+      "lg": "@media screen and (min-width:64em)"
+    }
+  },
+  "content": [
+    {
+      "component": "nav",
+      "links": [
+        {
+          "href": "https://github.com/Kikobeats/browserless",
+          "text": "GitHub"
+        },
+        {
+          "href": "https://npmjs.com/package/browserless",
+          "text": "npm"
+        }
+      ]
+    },
+    {
+      "component": "header",
+      "heading": "browserless",
+      "subhead": "Simple & Functional Browser API.",
+      "children": [
+        {
+          "component": "ui/TweetButton",
+          "text": "browserless: Simple & Functional Browser API.",
+          "url": null
+        },
+        {
+          "component": "ui/GithubButton",
+          "user": "Kikobeats",
+          "repo": "browserless"
+        }
+      ],
+      "text": "v1.0.0"
+    },
+    {
+      "component": "article",
+      "metadata": {
+        "source": "github.readme"
+      },
+      "html": "\n<p><img src=\"https://img.shields.io/github/tag/Kikobeats/browserless.svg?style=flat-square\">\n<a href=\"https://travis-ci.org/Kikobeats/browserless\"><img src=\"https://img.shields.io/travis/Kikobeats/browserless/master.svg?style=flat-square\"></a>\n<a href=\"https://coveralls.io/github/Kikobeats/browserless\"><img src=\"https://img.shields.io/coveralls/Kikobeats/browserless.svg?style=flat-square\"></a>\n<a href=\"https://david-dm.org/Kikobeats/browserless\"><img src=\"https://img.shields.io/david/Kikobeats/browserless.svg?style=flat-square\"></a>\n<a href=\"https://david-dm.org/Kikobeats/browserless#info=devDependencies\"><img src=\"https://img.shields.io/david/dev/Kikobeats/browserless.svg?style=flat-square\"></a>\n<a href=\"https://www.npmjs.org/package/browserless\"><img src=\"https://img.shields.io/npm/dm/browserless.svg?style=flat-square\"></a>\n<a href=\"https://paypal.me/Kikobeats\"><img src=\"https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square\"></a></p>\n<blockquote>\n<p>Simple &amp; Functional Browser API.</p>\n</blockquote>\n<p>This module is an API simplification over <a href=\"https://github.com/GoogleChrome/puppeteer\">Chrome Headless API</a> for do common actions, like take an screenshot.</p>\n<h2>Install</h2>\n<pre>$ npm install browserless --save</pre><h2>Usage</h2>\n<pre><span class=\"hljs-keyword\">const</span> browserless = <span class=\"hljs-built_in\">require</span>(<span class=\"hljs-string\">&apos;browserless&apos;</span>)\n\nbrowserless\n  .screenshot(<span class=\"hljs-string\">&apos;http://example.com&apos;</span>, { <span class=\"hljs-attr\">device</span>: <span class=\"hljs-string\">&apos;iPhone 6&apos;</span> })\n  .then(<span class=\"hljs-function\"><span class=\"hljs-params\">tmpStream</span> =&gt;</span> {\n    <span class=\"hljs-built_in\">console</span>.log(<span class=\"hljs-string\">`your screenshot at <span class=\"hljs-subst\">${tmpStream.path}</span>`</span>)\n    tmpStream.cleanupSync()\n  })</pre><h2>API</h2>\n<p>All methods needs a  valid <code>url</code> as required first argument. The second argument will be <code>opts</code> for configure specific method settings.</p>\n<p>All methods expose an universal <code>promise</code>/<code>callback</code> interface: If you provide a function as last argument, then the output of the method will be following <code>callback</code> style. Otherwise, it returns an <code>promise</code>.</p>\n<h3>.html(url, [options], [cb])</h3>\n<p>It returns the full HTML extracted from the URL.</p>\n<p><code>opts</code> provided are passed to <a href=\"https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options\">page.goto</a>.</p>\n<h3>.pdf(url, [options], [cb])</h3>\n<p><code>opts</code> provided are passed to <a href=\"https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options\">page.goto</a>.</p>\n<p>Additionally you can setup the CSS media providing <code>opts.media</code> (by default it will be <code>&apos;screen&apos;</code>). This value will be passed to <a href=\"https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype\">page.emulateMedia</a>.</p>\n<h3>.screenshot(url, [options], [cb])</h3>\n<p>It takes an screenshot of the URL.</p>\n<p><code>opts</code> provided are passed to <a href=\"https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagescreenshotoptions\">page.screenshot</a>.</p>\n<p>Additionally, you can setup the <code>device</code> providing <code>opts.device</code> and a valid <a href=\"https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js\">deviceDescriptor</a>.</p>\n<p>It returns an <a href=\"https://github.com/Kikobeats/create-temp-file2#create-temp-file2\">tmpStream</a>, with <code>path</code> where the temporal file live and <code>cleanup</code>/<code>cleanupSync</code> methods for clean the temporal file.</p>\n<p>If you want to customize where tmpStream live, pass <a href=\"https://github.com/Kikobeats/create-temp-file2#createtempfileoptions\">opts.tmpOptions</a>.</p>\n<h3>.text(url, [options], [cb])</h3>\n<p>It returns the text extracted from the URL.</p>\n<p><code>opts</code> provided are passed to <a href=\"https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options\">page.goto</a>.</p>\n<h2>License</h2>\n<p><strong>browserless</strong> &#xA9; <a href=\"https://kikobeats.com\">Kiko Beats</a>, Released under the <a href=\"https://github.com/Kikobeats/browserless/blob/master/LICENSE.md\">MIT</a> License.<br>\nAuthored and maintained by Kiko Beats with help from <a href=\"https://github.com/Kikobeats/browserless/contributors\">contributors</a>.</p>\n<blockquote>\n<p><a href=\"https://kikobeats.com\">kikobeats.com</a> &#xB7; GitHub <a href=\"https://github.com/kikobeats\">Kiko Beats</a> &#xB7; Twitter <a href=\"https://twitter.com/kikobeats\">@kikobeats</a></p>\n</blockquote>\n"
+    },
+    {
+      "component": "footer",
+      "links": [
+        {
+          "href": "https://github.com/Kikobeats/browserless",
+          "text": "GitHub"
+        },
+        {
+          "href": "https://github.com/Kikobeats",
+          "text": "Kikobeats"
+        }
+      ]
+    }
+  ]
+}
