@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "Simple & Functional Browser API.",
   "homepage": "https://documentup.com/Kikobeats/browserless",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -64,8 +64,8 @@
   "license": "MIT",
   "lint-staged": {
     "*.js": [
-      "prettier-standard",
-      "git add"
+      "git add",
+      "prettier-standard"
     ]
   },
   "standard": {
