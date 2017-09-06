@@ -1,7 +1,7 @@
 {
-  "name": "frowser",
+  "name": "browserless",
   "description": "Simple & Functional Browser API.",
-  "homepage": "https://documentup.com/Kikobeats/frowser",
+  "homepage": "https://documentup.com/Kikobeats/browserless",
   "version": "0.0.0",
   "main": "index.js",
   "author": {
@@ -11,10 +11,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kikobeats/frowser.git"
+    "url": "git+https://github.com/kikobeats/browserless.git"
   },
   "bugs": {
-    "url": "https://github.com/Kikobeats/frowser/issues"
+    "url": "https://github.com/Kikobeats/browserless/issues"
   },
   "keywords": [
     "browser",

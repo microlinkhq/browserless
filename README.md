@@ -1,11 +1,11 @@
-# frowser
+# browserless
 
-![Last version](https://img.shields.io/github/tag/Kikobeats/frowser.svg?style=flat-square)
-[![Build Status](https://img.shields.io/travis/Kikobeats/frowser/master.svg?style=flat-square)](https://travis-ci.org/Kikobeats/frowser)
-[![Coverage Status](https://img.shields.io/coveralls/Kikobeats/frowser.svg?style=flat-square)](https://coveralls.io/github/Kikobeats/frowser)
-[![Dependency status](https://img.shields.io/david/Kikobeats/frowser.svg?style=flat-square)](https://david-dm.org/Kikobeats/frowser)
-[![Dev Dependencies Status](https://img.shields.io/david/dev/Kikobeats/frowser.svg?style=flat-square)](https://david-dm.org/Kikobeats/frowser#info=devDependencies)
-[![NPM Status](https://img.shields.io/npm/dm/frowser.svg?style=flat-square)](https://www.npmjs.org/package/frowser)
+![Last version](https://img.shields.io/github/tag/Kikobeats/browserless.svg?style=flat-square)
+[![Build Status](https://img.shields.io/travis/Kikobeats/browserless/master.svg?style=flat-square)](https://travis-ci.org/Kikobeats/browserless)
+[![Coverage Status](https://img.shields.io/coveralls/Kikobeats/browserless.svg?style=flat-square)](https://coveralls.io/github/Kikobeats/browserless)
+[![Dependency status](https://img.shields.io/david/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless)
+[![Dev Dependencies Status](https://img.shields.io/david/dev/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless#info=devDependencies)
+[![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square)](https://paypal.me/Kikobeats)
 
 > Simple & Functional Browser API.
@@ -15,15 +15,15 @@ This module is an API simplification over [Chrome Headless API](https://github.c
 ## Install
 
 ```bash
-$ npm install frowser --save
+$ npm install browserless --save
 ```
 
 ## Usage
 
 ```js
-const frowser = require('frowser')
+const browserless = require('browserless')
 
-frowser('do something')
+browserless('do something')
 //=> return something
 ```
 
@@ -65,7 +65,7 @@ It returns the text extracted from the URL.
 
 ## License
 
-**frowser** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/Kikobeats/frowser/blob/master/LICENSE.md) License.<br>
-Authored and maintained by Kiko Beats with help from [contributors](https://github.com/Kikobeats/frowser/contributors).
+**browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/Kikobeats/browserless/blob/master/LICENSE.md) License.<br>
+Authored and maintained by Kiko Beats with help from [contributors](https://github.com/Kikobeats/browserless/contributors).
 
 > [kikobeats.com](https://kikobeats.com) · GitHub [Kiko Beats](https://github.com/kikobeats) · Twitter [@kikobeats](https://twitter.com/kikobeats)
