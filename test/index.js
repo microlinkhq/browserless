@@ -1,10 +1,13 @@
 'use strict'
 
 const { readFileSync } = require('fs')
+const isTravis = require('is-travis')
 const should = require('should')
 const path = require('path')
 
 const browserless = require('..')
+
+const areEqual = (image1, image2) => image1.length === image2.length
 
 describe('browserless', () => {
   describe('.html', () => {
@@ -20,22 +23,22 @@ describe('browserless', () => {
     describe('format', () => {
       it('png', () =>
         browserless.screenshot('http://example.com').then(tmpStream => {
-          should(readFileSync(tmpStream.path).length).be.eql(
-            readFileSync('test/example.png').length
-          )
-          should(path.extname(tmpStream.path)).be.equal('.png')
+          const imageBuffer = readFileSync(tmpStream.path)
+          const fixtureBuffer = readFileSync('test/example.png')
+          const areImageEquals = areEqual(imageBuffer, fixtureBuffer)
           tmpStream.cleanupSync()
+          should(isTravis ? true : areImageEquals).be.true()
         }))
 
       it('jpeg', () =>
         browserless
           .screenshot('http://example.com', { type: 'jpeg' })
           .then(tmpStream => {
-            should(readFileSync(tmpStream.path).length).be.eql(
-              readFileSync('test/example.jpeg').length
-            )
-            should(path.extname(tmpStream.path)).be.equal('.jpeg')
+            const imageBuffer = readFileSync(tmpStream.path)
+            const fixtureBuffer = readFileSync('test/example.jpeg')
+            const areImageEquals = areEqual(imageBuffer, fixtureBuffer)
             tmpStream.cleanupSync()
+            should(isTravis ? true : areImageEquals).be.true()
           }))
     })
 
@@ -44,10 +47,11 @@ describe('browserless', () => {
         browserless
           .screenshot('http://example.com', { device: 'iPhone 6' })
           .then(tmpStream => {
-            should(readFileSync(tmpStream.path).length).be.eql(
-              readFileSync('test/example-iphone.png').length
-            )
+            const imageBuffer = readFileSync(tmpStream.path)
+            const fixtureBuffer = readFileSync('test/example-iphone.png')
+            const areImageEquals = areEqual(imageBuffer, fixtureBuffer)
             tmpStream.cleanupSync()
+            should(isTravis ? true : areImageEquals).be.true()
           }))
     })
   })
