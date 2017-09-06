@@ -7,84 +7,31 @@
   "title": "",
   "branch": "",
   "style": {
-    "name": "Default",
+    "name": "Material",
     "componentSet": {
-      "nav": "nav/BasicNav",
-      "header": "header/BannerHeader",
+      "nav": "nav/DarkAbsoluteNav",
+      "header": "header/GradientHeader",
       "article": "article/BasicArticle",
       "footer": "footer/BasicFooter"
     },
-    "fontFamily": "-apple-system, BlinkMacSystemFont, sans-serif",
-    "fontWeight": 400,
-    "bold": 600,
-    "lineHeight": 1.5,
-    "typeScale": [
-      72,
-      48,
-      24,
-      20,
-      16,
-      14,
-      12
-    ],
-    "monospace": "Menlo, monospace",
+    "fontFamily": "Roboto, sans-serif",
     "heading": {
-      "fontFamily": null,
-      "fontStyle": null,
-      "fontWeight": 600,
-      "lineHeight": 1.25,
-      "textTransform": null,
-      "letterSpacing": null
-    },
-    "h0": {},
-    "h1": {},
-    "h2": {},
-    "h3": {},
-    "h4": {},
-    "h5": {},
-    "h6": {},
-    "alternativeText": {},
-    "space": [
-      0,
-      8,
-      16,
-      32,
-      48,
-      64,
-      96
-    ],
-    "layout": {
-      "maxWidth": 1024,
-      "centered": false
+      "fontWeight": 500,
+      "letterSpacing": "-0.01em"
     },
     "colors": {
-      "text": "#111",
+      "text": "#212121",
       "background": "#fff",
-      "primary": "#08e",
-      "secondary": "#059",
-      "highlight": "#e08",
-      "border": "#ddd",
-      "muted": "#eee"
+      "primary": "#2196f3",
+      "secondary": "#1565c0",
+      "highlight": "#ff4081",
+      "border": "#e0e0e0",
+      "muted": "#f5f5f5"
     },
-    "border": {
-      "width": 1,
-      "radius": 2
-    },
-    "link": {},
-    "button": {
-      "hover": {
-        "boxShadow": "inset 0 0 0 999px rgba(0, 0, 0, .125)"
-      }
-    },
-    "input": {},
-    "body": {
-      "margin": 0
-    },
-    "breakpoints": {
-      "xs": "@media screen and (max-width:40em)",
-      "sm": "@media screen and (min-width:40em)",
-      "md": "@media screen and (min-width:52em)",
-      "lg": "@media screen and (min-width:64em)"
+    "layout": {
+      "centered": true,
+      "bannerHeight": "80vh",
+      "maxWidth": 896
     }
   },
   "content": [
