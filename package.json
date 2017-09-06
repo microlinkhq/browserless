@@ -1,6 +1,6 @@
 {
   "name": "frowser",
-  "description": "Accessing to browser from the Upside Down",
+  "description": "Simple & Functional Browser API.",
   "homepage": "https://documentup.com/Kikobeats/frowser",
   "version": "0.0.0",
   "main": "index.js",
@@ -16,7 +16,18 @@
   "bugs": {
     "url": "https://github.com/Kikobeats/frowser/issues"
   },
-  "keywords": [],
+  "keywords": [
+    "browser",
+    "browserless",
+    "chrome",
+    "chromeless",
+    "headless",
+    "html",
+    "pdf",
+    "puppeteer",
+    "screenshot",
+    "text"
+  ],
   "dependencies": {
     "create-temp-file2": "~2.0.0",
     "puppeteer": "~0.10.2"
@@ -36,6 +47,9 @@
   "engines": {
     "node": ">= 6"
   },
+  "files": [
+    "index.js"
+  ],
   "scripts": {
     "clean": "rm -rf node_modules",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
@@ -49,8 +63,8 @@
   "license": "MIT",
   "lint-staged": {
     "*.js": [
-      "prettier-standard",
-      "git add"
+      "git add",
+      "prettier-standard"
     ]
   },
   "standard": {

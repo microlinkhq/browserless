@@ -1,11 +1,5 @@
 # frowser
 
-<p align="center">
-  <br>
-  <img src="https://i.imgur.com/Mh13XWB.gif" alt="frowser">
-  <br>
-</p>
-
 ![Last version](https://img.shields.io/github/tag/Kikobeats/frowser.svg?style=flat-square)
 [![Build Status](https://img.shields.io/travis/Kikobeats/frowser/master.svg?style=flat-square)](https://travis-ci.org/Kikobeats/frowser)
 [![Coverage Status](https://img.shields.io/coveralls/Kikobeats/frowser.svg?style=flat-square)](https://coveralls.io/github/Kikobeats/frowser)
@@ -14,9 +8,9 @@
 [![NPM Status](https://img.shields.io/npm/dm/frowser.svg?style=flat-square)](https://www.npmjs.org/package/frowser)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square)](https://paypal.me/Kikobeats)
 
-**NOTE:** more badges availables in [shields.io](https://shields.io/)
+> Simple & Functional Browser API.
 
-> Accessing to browser from the Upside Down
+This module is an API simplification over [Chrome Headless API](https://github.com/GoogleChrome/puppeteer) for do common actions, like take an screenshot.
 
 ## Install
 
@@ -35,23 +29,40 @@ frowser('do something')
 
 ## API
 
-### frowser(input, [options])
+All methods needs a  valid `url` as required first argument. The second argument will be `opts` for configure specific method settings.
 
-#### input
+All methods expose an universal `promise`/`callback` interface: If you provide a function as last argument, then the output of the method will be following `callback` style. Otherwise, it returns an `promise`.
 
-*Required*<br>
-Type: `string`
+### .html(url, [options], [cb])
 
-Lorem ipsum.
+It returns the full HTML extracted from the URL.
 
-#### options
+`opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
-##### foo
+### .pdf(url, [options], [cb])
 
-Type: `boolean`<br>
-Default: `false`
+`opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
-Lorem ipsum.
+Additionally you can setup the CSS media providing `opts.media` (by default it will be `'screen'`). This value will be passed to [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
+
+### .screenshot(url, [options], [cb])
+
+It takes an screenshot of the URL.
+
+`opts` provided are passed to [page.screenshot](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagescreenshotoptions).
+
+Additionally, you can setup the `device` providing `opts.device` and a valid [deviceDescriptor](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js).
+
+It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
+
+If you want to customize where tmpStream live, pass [opts.tmpOptions](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
+
+### .text(url, [options], [cb])
+
+It returns the text extracted from the URL.
+
+`opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
+
 ## License
 
 **frowser** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/Kikobeats/frowser/blob/master/LICENSE.md) License.<br>
