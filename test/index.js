@@ -9,10 +9,12 @@ const browserless = require('..')
 describe('browserless', () => {
   describe('.html', () => {
     it('get full HTML from a link', () =>
-      browserless.html('https://www.instagram.com/p/BWUDBntl3_Z/').then(html => {
-        writeFileSync(path.resolve('test/example.html'), html, 'utf8')
-        should(html).be.eql(readFileSync('test/example.html', 'utf8'))
-      }))
+      browserless
+        .html('https://www.instagram.com/p/BWUDBntl3_Z/')
+        .then(html => {
+          writeFileSync(path.resolve('test/example.html'), html, 'utf8')
+          should(html).be.eql(readFileSync('test/example.html', 'utf8'))
+        }))
   })
 
   describe('.screenshot', () => {
