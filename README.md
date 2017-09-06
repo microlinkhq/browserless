@@ -23,8 +23,12 @@ $ npm install browserless --save
 ```js
 const browserless = require('browserless')
 
-browserless('do something')
-//=> return something
+browserless
+  .screenshot('http://example.com', { device: 'iPhone 6' })
+  .then(tmpStream => {
+    console.log(`your screenshot at ${tmpStream.path}`)
+    tmpStream.cleanupSync()
+  })
 ```
 
 ## API
