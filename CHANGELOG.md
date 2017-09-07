@@ -1,3 +1,12 @@
+<a name="1.0.1"></a>
+## 1.0.1 (2017-09-07)
+
+* Add missing browser.close ([198fecc](https://github.com/kikobeats/browserless/commit/198fecc))
+* Update compositor.json ([169c6ad](https://github.com/kikobeats/browserless/commit/169c6ad))
+* Update compositor.json ([26feca6](https://github.com/kikobeats/browserless/commit/26feca6))
+
+
+
 <a name="1.0.0"></a>
 # 1.0.0 (2017-09-06)
 
