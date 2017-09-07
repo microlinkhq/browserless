@@ -10,6 +10,7 @@ async function text (url, opts = {}) {
   await page.goto(url, opts)
   const text = page.plainText()
   browser.close()
+
   return text
 }
 
@@ -19,6 +20,7 @@ async function html (url, opts = {}) {
   await page.goto(url, opts)
   const content = await page.content()
   browser.close()
+
   return content
 }
 
@@ -53,6 +55,7 @@ async function pdf (url, opts = {}) {
   await page.goto(url, { waitUntil: 'networkidle' })
   await page.emulateMedia(media)
   await page.pdf(Object.assign({ path }, opts))
+  browser.close()
 
   return Promise.resolve(tempFile)
 }
