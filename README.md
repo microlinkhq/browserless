@@ -10,15 +10,7 @@
 
 > Simple & Functional Browser API.
 
-This module is an API simplification over [Chrome Headless API](https://github.com/GoogleChrome/puppeteer) for do common actions, like take an screenshot.
-
-## Install
-
-```bash
-$ npm install browserless --save
-```
-
-## Usage
+This module is an API simplification over [Chrome Headless API](https://github.com/GoogleChrome/puppeteer) for do common actions, like take an screenshot:
 
 ```js
 const browserless = require('browserless')
@@ -29,6 +21,12 @@ browserless
     console.log(`your screenshot at ${tmpStream.path}`)
     tmpStream.cleanupSync()
   })
+```
+
+## Install
+
+```bash
+$ npm install browserless --save
 ```
 
 ## API
