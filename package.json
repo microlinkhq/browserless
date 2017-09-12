@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "Simple & Functional Browser API.",
   "homepage": "https://documentup.com/Kikobeats/browserless",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
