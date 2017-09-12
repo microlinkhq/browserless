@@ -26,12 +26,14 @@ module.exports = launchOpts => {
   }
 
   async function screenshot (url, opts = {}) {
-    const { tmpOpts, type = 'png', device: deviceDescriptor } = opts
+    const { tmpOpts, type = 'png', device: deviceDescriptor, viewport } = opts
     const tempFile = createTempFile(Object.assign({ ext: `.${type}` }, tmpOpts))
     const { path } = tempFile
 
     const browser = await puppeteer.launch(launchOpts)
     const page = await browser.newPage()
+
+    if (viewport) page.setViewport(viewport)
 
     if (deviceDescriptor) {
       const device = devices[deviceDescriptor]

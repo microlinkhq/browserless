@@ -49,7 +49,11 @@ It returns the full HTML extracted from the URL.
 
 `opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
-Additionally you can setup the CSS media providing `opts.media` (by default it will be `'screen'`). This value will be passed to [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
+Additionally, you can setup:
+
+### media
+
+Providing a valid [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype) value. Default is `'screen'`.
 
 ### .screenshot(url, [opts], [cb])
 
@@ -57,7 +61,15 @@ It takes an screenshot of the URL.
 
 `opts` provided are passed to [page.screenshot](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagescreenshotoptions).
 
-Additionally, you can setup the `device` providing `opts.device` and a valid [deviceDescriptor](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js).
+Additionally, you can setup:
+
+#### device
+
+Providing a valid [deviceDescriptor](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js) object.
+
+#### viewport
+
+Providing a valid [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) object.
 
 It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
 
