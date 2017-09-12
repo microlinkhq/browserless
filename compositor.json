@@ -51,11 +51,11 @@
     {
       "component": "header",
       "heading": "browserless",
-      "subhead": "Simple & Functional Browser API.",
+      "subhead": "Chrome Headless API made easy",
       "children": [
         {
           "component": "ui/TweetButton",
-          "text": "browserless: Simple & Functional Browser API.",
+          "text": "browserless: Chrome Headless API made easy",
           "url": null
         },
         {

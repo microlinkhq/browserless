@@ -1,6 +1,6 @@
 {
   "name": "browserless",
-  "description": "Simple & Functional Browser API.",
+  "description": "Chrome Headless API made easy",
   "homepage": "https://documentup.com/Kikobeats/browserless",
   "version": "2.1.0",
   "main": "index.js",
