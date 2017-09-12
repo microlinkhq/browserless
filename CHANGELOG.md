@@ -1,3 +1,13 @@
+<a name="2.0.0"></a>
+# 2.0.0 (2017-09-12)
+
+* Add launch params support ([7880c88](https://github.com/kikobeats/browserless/commit/7880c88))
+* Update compositor.json via compositor.io ([353a2f9](https://github.com/kikobeats/browserless/commit/353a2f9))
+* Update compositor.json via compositor.io ([f432d26](https://github.com/kikobeats/browserless/commit/f432d26))
+* Update README.md ([0c667ce](https://github.com/kikobeats/browserless/commit/0c667ce))
+
+
+
 <a name="1.0.1"></a>
 ## 1.0.1 (2017-09-07)
 
