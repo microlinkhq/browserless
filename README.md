@@ -13,7 +13,7 @@
 This module is an API simplification over [Chrome Headless API](https://github.com/GoogleChrome/puppeteer) for do common actions, like take an screenshot:
 
 ```js
-const browserless = require('browserless')
+const browserless = require('browserless')()
 
 browserless
   .screenshot('http://example.com', { device: 'iPhone 6' })
@@ -35,19 +35,23 @@ All methods needs a  valid `url` as required first argument. The second argument
 
 All methods expose an universal `promise`/`callback` interface: If you provide a function as last argument, then the output of the method will be following `callback` style. Otherwise, it returns an `promise`.
 
-### .html(url, [options], [cb])
+### .constructor([opts])
+
+Setup [puppeter.launch](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions) instance.
+
+### .html(url, [opts], [cb])
 
 It returns the full HTML extracted from the URL.
 
 `opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
-### .pdf(url, [options], [cb])
+### .pdf(url, [opts], [cb])
 
 `opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
 Additionally you can setup the CSS media providing `opts.media` (by default it will be `'screen'`). This value will be passed to [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
 
-### .screenshot(url, [options], [cb])
+### .screenshot(url, [opts], [cb])
 
 It takes an screenshot of the URL.
 

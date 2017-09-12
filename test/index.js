@@ -5,7 +5,7 @@ const isTravis = require('is-travis')
 const should = require('should')
 const path = require('path')
 
-const browserless = require('..')
+const browserless = require('..')()
 
 const areEqual = (image1, image2) => image1.length === image2.length
 
