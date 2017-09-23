@@ -1,3 +1,15 @@
+<a name="2.1.1"></a>
+## 2.1.1 (2017-09-23)
+
+* Update compositor.json ([c336da7](https://github.com/kikobeats/browserless/commit/c336da7))
+* Update compositor.json ([4d25cab](https://github.com/kikobeats/browserless/commit/4d25cab))
+* Update compositor.json via compositor.io ([07657c7](https://github.com/kikobeats/browserless/commit/07657c7))
+* Update copy ([cbd38cf](https://github.com/kikobeats/browserless/commit/cbd38cf))
+* Update deps ([2f9c08d](https://github.com/kikobeats/browserless/commit/2f9c08d))
+* Update package.json ([f6f1dd6](https://github.com/kikobeats/browserless/commit/f6f1dd6))
+
+
+
 <a name="2.1.0"></a>
 # 2.1.0 (2017-09-12)
 
