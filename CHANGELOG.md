@@ -1,3 +1,10 @@
+<a name="2.1.2"></a>
+## 2.1.2 (2017-09-24)
+
+* Reuse browser instance ([386e82c](https://github.com/kikobeats/browserless/commit/386e82c))
+
+
+
 <a name="2.1.1"></a>
 ## 2.1.1 (2017-09-23)
 
