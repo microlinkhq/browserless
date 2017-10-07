@@ -60,13 +60,42 @@ module.exports = launchOpts => {
 
   const pdf = async (url, opts = {}) => {
     const tempFile = createTempFile({ ext: `.pdf` })
-    const { media = 'screen' } = opts
     const { path } = tempFile
 
+    const {
+      media = 'screen',
+      format = 'A4',
+      printBackground = true,
+      waitUntil = 'networkidle',
+      viewport = {
+        width: 2560,
+        height: 1440
+      },
+      margin = {
+        top: '0.25cm',
+        right: '0.25cm',
+        bottom: '0.25cm',
+        left: '0.25cm'
+      }
+    } = opts
+
     const page = await newPage()
-    await page.goto(url, { waitUntil: 'networkidle' })
+    await page.setViewport(viewport)
+    await page.goto(url, { waitUntil })
     await page.emulateMedia(media)
-    await page.pdf(Object.assign({ path }, opts))
+
+    await page.pdf(
+      Object.assign(
+        {
+          margin,
+          path,
+          format,
+          printBackground
+        },
+        opts
+      )
+    )
+
     page.close()
 
     return Promise.resolve(tempFile)
