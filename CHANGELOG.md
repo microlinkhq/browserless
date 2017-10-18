@@ -1,3 +1,12 @@
+<a name="2.1.3"></a>
+## 2.1.3 (2017-10-18)
+
+* Fix test ([86cfafc](https://github.com/kikobeats/browserless/commit/86cfafc))
+* Improve device emulation ([a967aa8](https://github.com/kikobeats/browserless/commit/a967aa8))
+* Improve PDF ([92aeb07](https://github.com/kikobeats/browserless/commit/92aeb07))
+
+
+
 <a name="2.1.2"></a>
 ## 2.1.2 (2017-09-24)
 
