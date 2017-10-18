@@ -1,8 +1,12 @@
 'use strict'
 
-const devices = require('puppeteer/DeviceDescriptors')
 const createTempFile = require('create-temp-file2')
 const puppeteer = require('puppeteer')
+
+const devices = require('puppeteer/DeviceDescriptors').map(item => {
+  item.name = item.name.toLowerCase()
+  return item
+})
 
 module.exports = launchOpts => {
   let browser
@@ -38,7 +42,7 @@ module.exports = launchOpts => {
   }
 
   const screenshot = async (url, opts = {}) => {
-    const { tmpOpts, type = 'png', device: deviceDescriptor, viewport } = opts
+    const { tmpOpts, type = 'png', device: deviceName, viewport } = opts
     const tempFile = createTempFile(Object.assign({ ext: `.${type}` }, tmpOpts))
     const { path } = tempFile
 
@@ -46,8 +50,10 @@ module.exports = launchOpts => {
 
     if (viewport) page.setViewport(viewport)
 
-    if (deviceDescriptor) {
-      const device = devices[deviceDescriptor]
+    if (deviceName) {
+      const device = devices.find(
+        device => device.name === deviceName.toLowerCase()
+      )
       if (device) await page.emulate(device)
     }
 
