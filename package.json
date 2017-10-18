@@ -58,7 +58,7 @@
     "precommit": "lint-staged",
     "pretest": "npm run lint",
     "pretty": "prettier-standard index.js test/**/*.js --single-quote",
-    "test": "nyc mocha"
+    "test": "nyc mocha --exit"
   },
   "license": "MIT",
   "lint-staged": {

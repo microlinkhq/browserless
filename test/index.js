@@ -12,9 +12,7 @@ const areEqual = (image1, image2) => image1.length === image2.length
 describe('browserless', () => {
   describe('.html', () => {
     it('get full HTML from a link', async () => {
-      const html = await browserless.html(
-        'https://www.instagram.com/p/BWUDBntl3_Z/'
-      )
+      const html = await browserless.html('https://google.com')
       should(html.includes('DOCTYPE')).be.true()
     })
   })
