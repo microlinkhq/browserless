@@ -9,19 +9,10 @@ const devices = require('puppeteer/DeviceDescriptors').map(item => {
 })
 
 module.exports = launchOpts => {
-  let browser
+  let browser = puppeteer.launch(launchOpts)
 
-  const getBrowser = async () => {
-    if (browser) return browser
-    browser = await puppeteer.launch(launchOpts)
-    return browser
-  }
-
-  const newPage = async (url, opts) => {
-    const browser = await getBrowser()
-    const page = await browser.newPage()
-    return page
-  }
+  const newPage = () =>
+    Promise.resolve(browser).then(browser => browser.newPage())
 
   const text = async (url, opts = {}) => {
     const page = await newPage()
