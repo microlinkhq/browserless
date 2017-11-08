@@ -7,7 +7,7 @@ const path = require('path')
 
 const browserless = require('..')()
 
-const areEqual = (image1, image2) => image1.length === image2.length
+const isBufferEqual = (buff1, buff2) => buff1.length === buff2.length
 
 describe('browserless', () => {
   describe('.html', () => {
@@ -21,22 +21,24 @@ describe('browserless', () => {
     describe('format', () => {
       it('png', async () => {
         const tmpStream = await browserless.screenshot('http://example.com')
-        const imageBuffer = readFileSync(tmpStream.path)
-        const fixtureBuffer = readFileSync('test/example.png')
-        const areImageEquals = areEqual(imageBuffer, fixtureBuffer)
+
+        const image = readFileSync(tmpStream.path)
+        const fixture = readFileSync('test/example.png')
+
         tmpStream.cleanupSync()
-        should(isTravis ? true : areImageEquals).be.true()
+        if (!isTravis) should(isBufferEqual(image, fixture)).be.true()
       })
 
       it('jpeg', async () => {
         const tmpStream = await browserless.screenshot('http://example.com', {
           type: 'jpeg'
         })
-        const imageBuffer = readFileSync(tmpStream.path)
-        const fixtureBuffer = readFileSync('test/example.jpeg')
-        const areImageEquals = areEqual(imageBuffer, fixtureBuffer)
+
+        const image = readFileSync(tmpStream.path)
+        const fixture = readFileSync('test/example.jpeg')
+
         tmpStream.cleanupSync()
-        should(isTravis ? true : areImageEquals).be.true()
+        if (!isTravis) should(isBufferEqual(image, fixture)).be.true()
       })
     })
 
@@ -45,20 +47,26 @@ describe('browserless', () => {
         const tmpStream = await browserless.screenshot('http://example.com', {
           device: 'iPhone 6'
         })
-        const imageBuffer = readFileSync(tmpStream.path)
-        const fixtureBuffer = readFileSync('test/example-iphone.png')
-        const areImageEquals = areEqual(imageBuffer, fixtureBuffer)
+
+        const image = readFileSync(tmpStream.path)
+        const fixture = readFileSync('test/example-iphone.png')
+
         tmpStream.cleanupSync()
-        should(isTravis ? true : areImageEquals).be.true()
+        if (!isTravis) should(isBufferEqual(image, fixture)).be.true()
       })
     })
 
     describe('.pdf', () => {
       it('get full PDF from an url', async () => {
         const tmpStream = await browserless.pdf('http://example.com')
-        const filepath = tmpStream.path
+
+        const pdf = readFileSync(tmpStream.path)
+        const fixture = readFileSync('test/example.pdf')
+
         tmpStream.cleanupSync()
-        should(path.extname(filepath)).be.equal('.pdf')
+
+        should(path.extname(tmpStream.path)).be.equal('.pdf')
+        if (!isTravis) should(isBufferEqual(pdf, fixture)).be.true()
       })
     })
   })
