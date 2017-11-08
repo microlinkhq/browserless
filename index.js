@@ -8,6 +8,9 @@ const devices = require('puppeteer/DeviceDescriptors').map(item => {
   return item
 })
 
+const getDevice = deviceName =>
+  devices.find(device => device.name === deviceName.toLowerCase())
+
 module.exports = launchOpts => {
   let browser = puppeteer.launch(launchOpts)
 
@@ -42,9 +45,7 @@ module.exports = launchOpts => {
     if (viewport) page.setViewport(viewport)
 
     if (deviceName) {
-      const device = devices.find(
-        device => device.name === deviceName.toLowerCase()
-      )
+      const device = getDevice(deviceName)
       if (device) await page.emulate(device)
     }
 
@@ -56,17 +57,15 @@ module.exports = launchOpts => {
   }
 
   const pdf = async (url, opts = {}) => {
-    const tempFile = createTempFile({ ext: `.pdf` })
-    const { path } = tempFile
-
     const {
+      tmpOpts,
       media = 'screen',
       format = 'A4',
       printBackground = true,
       waitUntil = 'networkidle',
       viewport = {
-        width: 2560,
-        height: 1440
+        width: 1024,
+        height: 768
       },
       margin = {
         top: '0.25cm',
@@ -75,6 +74,9 @@ module.exports = launchOpts => {
         left: '0.25cm'
       }
     } = opts
+
+    const tempFile = createTempFile(Object.assign({ ext: `.pdf` }, tmpOpts))
+    const { path } = tempFile
 
     const page = await newPage()
     await page.setViewport(viewport)
