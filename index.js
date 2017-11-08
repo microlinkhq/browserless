@@ -63,6 +63,9 @@ module.exports = launchOpts => {
       format = 'A4',
       printBackground = true,
       waitUntil = 'networkidle',
+      scale = 0.65,
+      device: deviceName = 'apple macbook pro 13',
+      viewport,
       margin = {
         top: '0.25cm',
         right: '0.25cm',
@@ -75,7 +78,16 @@ module.exports = launchOpts => {
     const { path } = tempFile
 
     const page = await newPage()
+
     await page.emulateMedia(media)
+
+    if (viewport) page.setViewport(viewport)
+
+    if (deviceName) {
+      const device = getDevice(deviceName)
+      if (device) await page.emulate(device)
+    }
+
     await page.goto(url, { waitUntil })
 
     await page.pdf(
@@ -84,7 +96,8 @@ module.exports = launchOpts => {
           margin,
           path,
           format,
-          printBackground
+          printBackground,
+          scale
         },
         opts
       )
