@@ -1,3 +1,18 @@
+<a name="2.2.0"></a>
+# 2.2.0 (2017-11-08)
+
+* Add examples ([572375e](https://github.com/kikobeats/browserless/commit/572375e))
+* Add tmpOpts to pdf export ([b9fd67a](https://github.com/kikobeats/browserless/commit/b9fd67a))
+* Improve devices ([77b55ea](https://github.com/kikobeats/browserless/commit/77b55ea))
+* Improve PDF export ([f37cbfe](https://github.com/kikobeats/browserless/commit/f37cbfe))
+* Remove redundant code ([2e865f6](https://github.com/kikobeats/browserless/commit/2e865f6))
+* Update badge url ([3c9c970](https://github.com/kikobeats/browserless/commit/3c9c970))
+* Update deps ([979313c](https://github.com/kikobeats/browserless/commit/979313c))
+* Update tests ([2936a33](https://github.com/kikobeats/browserless/commit/2936a33))
+* Update tests ([4bab02a](https://github.com/kikobeats/browserless/commit/4bab02a))
+
+
+
 <a name="2.1.3"></a>
 ## 2.1.3 (2017-10-18)
 
