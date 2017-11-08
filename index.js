@@ -3,13 +3,7 @@
 const createTempFile = require('create-temp-file2')
 const puppeteer = require('puppeteer')
 
-const devices = require('puppeteer/DeviceDescriptors').map(item => {
-  item.name = item.name.toLowerCase()
-  return item
-})
-
-const getDevice = deviceName =>
-  devices.find(device => device.name === deviceName.toLowerCase())
+const { devices, getDevice } = require('./devices')
 
 module.exports = launchOpts => {
   let browser = puppeteer.launch(launchOpts)
@@ -36,7 +30,13 @@ module.exports = launchOpts => {
   }
 
   const screenshot = async (url, opts = {}) => {
-    const { tmpOpts, type = 'png', device: deviceName, viewport } = opts
+    const {
+      tmpOpts,
+      type = 'png',
+      device: deviceName = 'apple macbook pro 13',
+      viewport
+    } = opts
+
     const tempFile = createTempFile(Object.assign({ ext: `.${type}` }, tmpOpts))
     const { path } = tempFile
 
@@ -63,10 +63,6 @@ module.exports = launchOpts => {
       format = 'A4',
       printBackground = true,
       waitUntil = 'networkidle',
-      viewport = {
-        width: 1024,
-        height: 768
-      },
       margin = {
         top: '0.25cm',
         right: '0.25cm',
@@ -79,9 +75,8 @@ module.exports = launchOpts => {
     const { path } = tempFile
 
     const page = await newPage()
-    await page.setViewport(viewport)
-    await page.goto(url, { waitUntil })
     await page.emulateMedia(media)
+    await page.goto(url, { waitUntil })
 
     await page.pdf(
       Object.assign(
@@ -107,3 +102,5 @@ module.exports = launchOpts => {
     screenshot
   }
 }
+
+module.exports.devices = devices
