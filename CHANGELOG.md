@@ -1,3 +1,12 @@
+<a name="2.3.0"></a>
+# 2.3.0 (2017-11-09)
+
+* Add example note on docs ([fd0b608](https://github.com/kikobeats/browserless/commit/fd0b608))
+* Add user agent support ([2336684](https://github.com/kikobeats/browserless/commit/2336684))
+* Add userAgent support for screenshot ([9a19387](https://github.com/kikobeats/browserless/commit/9a19387))
+
+
+
 <a name="2.2.2"></a>
 ## 2.2.2 (2017-11-09)
 
