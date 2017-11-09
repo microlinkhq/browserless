@@ -61,19 +61,25 @@ It takes an screenshot of the URL.
 
 `opts` provided are passed to [page.screenshot](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagescreenshotoptions).
 
+It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
+
+If you want to customize where tmpStream live, pass [opts.tmpOptions](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
+
 Additionally, you can setup:
 
 #### device
 
 Providing a valid [deviceDescriptor](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js) object.
 
+#### userAgent
+
+It will setup an user Agent using 
+
+Providing a valid [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
+
 #### viewport
 
 Providing a valid [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) object.
-
-It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
-
-If you want to customize where tmpStream live, pass [opts.tmpOptions](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
 
 ### .text(url, [options], [cb])
 

@@ -1,6 +1,7 @@
 'use strict'
 
 const createTempFile = require('create-temp-file2')
+const isEmpty = require('lodash.isempty')
 const puppeteer = require('puppeteer')
 
 const { devices, getDevice } = require('./devices')
@@ -47,8 +48,11 @@ module.exports = launchOpts => {
       deviceName
     )
 
-    await page.setUserAgent(userAgent || deviceUserAgent)
-    await page.setViewport(Object.assign({}, deviceViewport, viewport))
+    const pageUserAgent = isEmpty(userAgent) ? deviceUserAgent : userAgent
+    await page.setUserAgent(pageUserAgent)
+
+    const pageViewport = Object.assign({}, deviceViewport, viewport)
+    await page.setViewport(pageViewport)
 
     await page.goto(url)
     await page.screenshot(Object.assign({ path, type }, opts))
