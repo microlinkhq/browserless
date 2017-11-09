@@ -34,6 +34,7 @@ module.exports = launchOpts => {
       tmpOpts,
       type = 'png',
       device: deviceName = 'macbook pro 13',
+      userAgent,
       viewport
     } = opts
 
@@ -42,8 +43,12 @@ module.exports = launchOpts => {
 
     const page = await newPage()
 
-    if (viewport) page.setViewport(viewport)
-    else await page.emulate(getDevice(deviceName))
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
+      deviceName
+    )
+
+    await page.setUserAgent(userAgent || deviceUserAgent)
+    await page.setViewport(Object.assign({}, deviceViewport, viewport))
 
     await page.goto(url)
     await page.screenshot(Object.assign({ path, type }, opts))
