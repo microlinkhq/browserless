@@ -38,6 +38,7 @@
     "husky": "latest",
     "is-travis": "latest",
     "lint-staged": "latest",
+    "lodash": "latest",
     "mocha": "latest",
     "nyc": "latest",
     "prettier-standard": "latest",
