@@ -33,7 +33,7 @@ module.exports = launchOpts => {
     const {
       tmpOpts,
       type = 'png',
-      device: deviceName = 'apple macbook pro 13',
+      device: deviceName = 'macbook pro 13',
       viewport
     } = opts
 

@@ -60,7 +60,7 @@
     "precommit": "lint-staged",
     "pretest": "npm run lint",
     "pretty": "prettier-standard index.js test/**/*.js --single-quote",
-    "test": "nyc mocha --exit"
+    "test": "nyc mocha"
   },
   "license": "MIT",
   "lint-staged": {

@@ -1,6 +1,6 @@
 [
   {
-    "name": "Apple Macbook Pro 13",
+    "name": "Macbook Pro 13",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1280,
@@ -12,7 +12,7 @@
     }
   },
   {
-    "name": "Apple Macbook Pro 15",
+    "name": "Macbook Pro 15",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1440,
@@ -24,7 +24,7 @@
     }
   },
   {
-    "name": "Apple iMac 21.5",
+    "name": "iMac 21.5",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1980,
@@ -36,7 +36,7 @@
     }
   },
   {
-    "name": "Apple iMac 27",
+    "name": "iMac 27",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 2560,
