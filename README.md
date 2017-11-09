@@ -23,6 +23,8 @@ browserless
   })
 ```
 
+See more at [examples](/examples/).
+
 ## Install
 
 ```bash
