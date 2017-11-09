@@ -1,3 +1,11 @@
+<a name="2.2.1"></a>
+## 2.2.1 (2017-11-09)
+
+* Add devices example ([9f3d455](https://github.com/kikobeats/browserless/commit/9f3d455))
+* Remove Apple for device name ([693b5f1](https://github.com/kikobeats/browserless/commit/693b5f1))
+
+
+
 <a name="2.2.0"></a>
 # 2.2.0 (2017-11-08)
 
