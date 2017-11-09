@@ -1,3 +1,10 @@
+<a name="2.2.2"></a>
+## 2.2.2 (2017-11-09)
+
+* Only emulate if viewport is not provided ([8333ea5](https://github.com/kikobeats/browserless/commit/8333ea5))
+
+
+
 <a name="2.2.1"></a>
 ## 2.2.1 (2017-11-09)
 
