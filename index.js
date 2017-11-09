@@ -14,19 +14,21 @@ module.exports = launchOpts => {
 
   const text = async (url, opts = {}) => {
     const page = await newPage()
+
     await page.goto(url, opts)
     const text = page.plainText()
-    page.close()
 
+    page.close()
     return text
   }
 
   const html = async (url, opts = {}) => {
     const page = await newPage()
+
     await page.goto(url, opts)
     const content = await page.content()
-    page.close()
 
+    page.close()
     return content
   }
 
@@ -41,23 +43,18 @@ module.exports = launchOpts => {
 
     const tempFile = createTempFile(Object.assign({ ext: `.${type}` }, tmpOpts))
     const { path } = tempFile
-
-    const page = await newPage()
-
     const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
       deviceName
     )
 
-    const pageUserAgent = isEmpty(userAgent) ? deviceUserAgent : userAgent
-    await page.setUserAgent(pageUserAgent)
+    const page = await newPage()
 
-    const pageViewport = Object.assign({}, deviceViewport, viewport)
-    await page.setViewport(pageViewport)
-
+    await page.setUserAgent(isEmpty(userAgent) ? deviceUserAgent : userAgent)
+    await page.setViewport(Object.assign({}, deviceViewport, viewport))
     await page.goto(url)
     await page.screenshot(Object.assign({ path, type }, opts))
-    page.close()
 
+    page.close()
     return Promise.resolve(tempFile)
   }
 
@@ -71,6 +68,7 @@ module.exports = launchOpts => {
       scale = 0.65,
       device: deviceName = 'apple macbook pro 13',
       viewport,
+      userAgent,
       margin = {
         top: '0.25cm',
         right: '0.25cm',
@@ -81,20 +79,16 @@ module.exports = launchOpts => {
 
     const tempFile = createTempFile(Object.assign({ ext: `.pdf` }, tmpOpts))
     const { path } = tempFile
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
+      deviceName
+    )
 
     const page = await newPage()
 
     await page.emulateMedia(media)
-
-    if (viewport) page.setViewport(viewport)
-
-    if (deviceName) {
-      const device = getDevice(deviceName)
-      if (device) await page.emulate(device)
-    }
-
+    await page.setUserAgent(isEmpty(userAgent) ? deviceUserAgent : userAgent)
+    await page.setViewport(Object.assign({}, deviceViewport, viewport))
     await page.goto(url, { waitUntil })
-
     await page.pdf(
       Object.assign(
         {
@@ -109,7 +103,6 @@ module.exports = launchOpts => {
     )
 
     page.close()
-
     return Promise.resolve(tempFile)
   }
 
