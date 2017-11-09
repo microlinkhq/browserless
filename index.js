@@ -43,11 +43,7 @@ module.exports = launchOpts => {
     const page = await newPage()
 
     if (viewport) page.setViewport(viewport)
-
-    if (deviceName) {
-      const device = getDevice(deviceName)
-      if (device) await page.emulate(device)
-    }
+    else await page.emulate(getDevice(deviceName))
 
     await page.goto(url)
     await page.screenshot(Object.assign({ path, type }, opts))
