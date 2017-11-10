@@ -1,3 +1,11 @@
+<a name="2.3.1"></a>
+## 2.3.1 (2017-11-10)
+
+* Refactor ([80b7a8f](https://github.com/kikobeats/browserless/commit/80b7a8f))
+* Update device name for pdf ([0efc612](https://github.com/kikobeats/browserless/commit/0efc612))
+
+
+
 <a name="2.3.0"></a>
 # 2.3.0 (2017-11-09)
 
