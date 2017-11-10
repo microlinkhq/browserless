@@ -49,13 +49,33 @@ It returns the full HTML extracted from the URL.
 
 ### .pdf(url, [opts], [cb])
 
-`opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
+It generates the PDF version of a website behing an URL.
+
+`opts` provided are passed to [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
+
+It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
+
+If you want to customize where tmpStream live, pass [opts.tmpOptions](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
 
 Additionally, you can setup:
 
-### media
+#### media
 
-Providing a valid [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype) value. Default is `'screen'`.
+Changes the CSS media type of the page using [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
+
+#### device
+
+Providing a valid [deviceDescriptor](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js) object.
+
+The device will be used to recover and setup `userAgent` and `viewport`.
+
+#### userAgent
+
+It will setup User Agent using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
+
+#### viewport
+
+Providing a valid [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) object.
 
 ### .screenshot(url, [opts], [cb])
 
@@ -73,11 +93,11 @@ Additionally, you can setup:
 
 Providing a valid [deviceDescriptor](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js) object.
 
+The device will be used to recover and setup `userAgent` and `viewport`.
+
 #### userAgent
 
-It will setup an user Agent using 
-
-Providing a valid [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
+It will setup User Agent using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
 
 #### viewport
 
