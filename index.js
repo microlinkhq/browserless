@@ -66,7 +66,7 @@ module.exports = launchOpts => {
       printBackground = true,
       waitUntil = 'networkidle',
       scale = 0.65,
-      device: deviceName = 'apple macbook pro 13',
+      device: deviceName = 'macbook pro 13',
       viewport,
       userAgent,
       margin = {
