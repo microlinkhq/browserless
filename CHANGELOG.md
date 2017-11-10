@@ -1,3 +1,10 @@
+<a name="2.3.2"></a>
+## 2.3.2 (2017-11-10)
+
+* Update doc ([e4632bc](https://github.com/kikobeats/browserless/commit/e4632bc))
+
+
+
 <a name="2.3.1"></a>
 ## 2.3.1 (2017-11-10)
 
