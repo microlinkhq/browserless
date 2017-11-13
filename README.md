@@ -1,7 +1,5 @@
 # browserless
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/microlinkhq/browserless.svg)](https://greenkeeper.io/)
-
 ![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
 [![Build Status](https://img.shields.io/travis/microlinkhq/browserless/master.svg?style=flat-square)](https://travis-ci.org/microlinkhq/browserless)
 [![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
