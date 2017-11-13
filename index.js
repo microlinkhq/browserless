@@ -64,7 +64,7 @@ module.exports = launchOpts => {
       media = 'screen',
       format = 'A4',
       printBackground = true,
-      waitUntil = 'networkidle',
+      waitUntil = 'networkidle2',
       scale = 0.65,
       device: deviceName = 'macbook pro 13',
       viewport,
