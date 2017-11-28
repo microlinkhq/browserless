@@ -3,7 +3,7 @@
   "description": "Chrome Headless API made easy",
   "homepage": "https://documentup.com/Kikobeats/browserless",
   "version": "2.3.2",
-  "main": "index.js",
+  "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
     "name": "Kiko Beats",
@@ -30,6 +30,7 @@
   ],
   "dependencies": {
     "create-temp-file2": "~2.0.0",
+    "generic-pool": "~3.2.0",
     "lodash.isempty": "~4.4.0",
     "puppeteer": "~0.13.0"
   },
@@ -54,8 +55,7 @@
     "node": ">= 6"
   },
   "files": [
-    "devices",
-    "index.js"
+    "src"
   ],
   "scripts": {
     "clean": "rm -rf node_modules",
