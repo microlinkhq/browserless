@@ -39,7 +39,7 @@
     "husky": "latest",
     "is-travis": "latest",
     "lint-staged": "latest",
-    "lodash": "latest",
+    "lodash": "~4.17.4",
     "mocha": "latest",
     "nyc": "latest",
     "percentile": "latest",
@@ -47,7 +47,8 @@
     "pretty-ms": "latest",
     "should": "latest",
     "standard": "latest",
-    "standard-markdown": "latest"
+    "standard-markdown": "latest",
+    "time-span": "latest"
   },
   "engines": {
     "node": ">= 6"
