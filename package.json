@@ -43,7 +43,9 @@
     "lodash": "latest",
     "mocha": "latest",
     "nyc": "latest",
+    "percentile": "latest",
     "prettier-standard": "latest",
+    "pretty-ms": "latest",
     "should": "latest",
     "standard": "latest",
     "standard-markdown": "latest"

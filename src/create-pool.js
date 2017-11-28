@@ -14,11 +14,8 @@ module.exports = ({ launchOpts, poolOpts }) => {
   const config = Object.assign({}, DEFAULTS, poolOpts)
 
   const factory = {
-    create: async () => {
-      const browser = await puppeteer.launch(launchOpts)
-      browser.useCount = 0
-      return browser
-    },
+    create: async () =>
+      Object.assign(await puppeteer.launch(launchOpts), { useCount: 0 }),
     destroy: browser => browser.close(),
     validate: browser => browser.useCount < config.maxUses
   }
