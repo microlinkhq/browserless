@@ -12,7 +12,7 @@ module.exports = launchOpts => {
   const newPage = () =>
     Promise.resolve(browser).then(browser => browser.newPage())
 
-  const text = async (url, opts = {}) => {
+  const text = async (url, opts = { waitUntil: 'networkidle0' }) => {
     const page = await newPage()
 
     await page.goto(url, opts)
@@ -22,7 +22,7 @@ module.exports = launchOpts => {
     return text
   }
 
-  const html = async (url, opts = {}) => {
+  const html = async (url, opts = { waitUntil: 'networkidle0' }) => {
     const page = await newPage()
 
     await page.goto(url, opts)
@@ -32,7 +32,7 @@ module.exports = launchOpts => {
     return content
   }
 
-  const screenshot = async (url, opts = {}) => {
+  const screenshot = async (url, opts = { waitUntil: 'networkidle0' }) => {
     const {
       tmpOpts,
       type = 'png',
@@ -58,7 +58,7 @@ module.exports = launchOpts => {
     return Promise.resolve(tempFile)
   }
 
-  const pdf = async (url, opts = {}) => {
+  const pdf = async (url, opts = { waitUntil: 'networkidle0' }) => {
     const {
       tmpOpts,
       media = 'screen',
