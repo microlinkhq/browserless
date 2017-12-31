@@ -1,3 +1,17 @@
+<a name="2.3.3"></a>
+## 2.3.3 (2017-12-31)
+
+* Add benchmark ([2025ffe](https://github.com/kikobeats/browserless/commit/2025ffe))
+* Add html example ([35cfa7e](https://github.com/kikobeats/browserless/commit/35cfa7e))
+* Add timings benchmark ([fe399fc](https://github.com/kikobeats/browserless/commit/fe399fc))
+* Update network event ([350cb05](https://github.com/kikobeats/browserless/commit/350cb05))
+* Update README.md ([bc19839](https://github.com/kikobeats/browserless/commit/bc19839))
+* Wait networkidle0 event by default ([dbfee6f](https://github.com/kikobeats/browserless/commit/dbfee6f))
+* docs(readme): add Greenkeeper badge ([062f507](https://github.com/kikobeats/browserless/commit/062f507))
+* chore(package): update dependencies ([0a20a6a](https://github.com/kikobeats/browserless/commit/0a20a6a))
+
+
+
 <a name="2.3.2"></a>
 ## 2.3.2 (2017-11-10)
 
