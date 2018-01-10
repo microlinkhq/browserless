@@ -1,3 +1,11 @@
+<a name="2.3.4"></a>
+## 2.3.4 (2018-01-10)
+
+* Add travis flags ([db98353](https://github.com/kikobeats/browserless/commit/db98353))
+* Use networkidle2 instead of networkidle0 ([68541b2](https://github.com/kikobeats/browserless/commit/68541b2))
+
+
+
 <a name="2.3.3"></a>
 ## 2.3.3 (2017-12-31)
 
