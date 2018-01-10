@@ -5,7 +5,9 @@ const isTravis = require('is-travis')
 const should = require('should')
 const path = require('path')
 
-const browserless = require('..')()
+const browserless = require('..')({
+  args: ['--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox']
+})
 
 const isBufferEqual = (buff1, buff2) => buff1.length === buff2.length
 
