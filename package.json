@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "Chrome Headless API made easy",
   "homepage": "https://documentup.com/Kikobeats/browserless",
-  "version": "2.3.4",
+  "version": "2.4.0",
   "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",

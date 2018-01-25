@@ -1,3 +1,11 @@
+<a name="2.4.0"></a>
+# 2.4.0 (2018-01-25)
+
+* Add jsx output format ([ee20b13](https://github.com/kikobeats/browserless/commit/ee20b13))
+* Update deps ([555da7e](https://github.com/kikobeats/browserless/commit/555da7e))
+
+
+
 <a name="2.3.4"></a>
 ## 2.3.4 (2018-01-10)
 
