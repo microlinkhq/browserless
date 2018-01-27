@@ -1,3 +1,11 @@
+<a name="2.5.0"></a>
+# 2.5.0 (2018-01-27)
+
+* Add .page method ([d53bf44](https://github.com/kikobeats/browserless/commit/d53bf44))
+* Add status-code example ([c6d5c5f](https://github.com/kikobeats/browserless/commit/c6d5c5f))
+
+
+
 <a name="2.4.0"></a>
 # 2.4.0 (2018-01-25)
 
