@@ -109,6 +109,10 @@ It returns the text extracted from the URL.
 
 `opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
+### .page()
+
+Get an standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
+
 ## License
 
 **browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>

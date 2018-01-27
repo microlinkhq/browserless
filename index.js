@@ -110,7 +110,8 @@ module.exports = launchOpts => {
     html,
     text,
     pdf,
-    screenshot
+    screenshot,
+    page: newPage
   }
 }
 
