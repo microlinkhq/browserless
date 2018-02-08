@@ -1,3 +1,11 @@
+<a name="2.6.0"></a>
+# 2.6.0 (2018-02-08)
+
+* Avoid unnecessary request ([6a690d2](https://github.com/kikobeats/browserless/commit/6a690d2))
+* Update .text method ([3ec3bb9](https://github.com/kikobeats/browserless/commit/3ec3bb9))
+
+
+
 <a name="2.5.0"></a>
 # 2.5.0 (2018-01-27)
 
