@@ -20,7 +20,7 @@ module.exports = launchOpts => {
     const page = await newPage()
 
     await page.goto(url, opts)
-    const text = page.plainText()
+    const text = await page.evaluate(() => document.body.innerText)
 
     page.close()
     return text
