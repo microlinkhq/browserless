@@ -4,7 +4,11 @@ const createTempFile = require('create-temp-file2')
 const isEmpty = require('lodash.isempty')
 const puppeteer = require('puppeteer')
 
+const debugHtml = require('debug')('browserless:html')
+
 const { devices, getDevice } = require('./devices')
+
+const ABORT_TYPES = ['image', 'media', 'stylesheet', 'font', 'xhr', 'script']
 
 module.exports = launchOpts => {
   let browser = puppeteer.launch(launchOpts)
@@ -16,18 +20,36 @@ module.exports = launchOpts => {
     const page = await newPage()
 
     await page.goto(url, opts)
-    const text = page.plainText()
+    const text = await page.evaluate(() => document.body.innerText)
 
     page.close()
     return text
   }
 
-  const html = async (url, opts = { waitUntil: 'networkidle2' }) => {
+  const html = async (
+    url,
+    opts = {
+      waitUntil: 'networkidle2',
+      abortTypes: ABORT_TYPES
+    }
+  ) => {
+    const { abortTypes } = opts
+
     const page = await newPage()
+    await page.setRequestInterception(true)
+
+    page.on('request', req => {
+      if (abortTypes.includes(req.resourceType())) {
+        debugHtml('abort', req.resourceType(), req.url())
+        return req.abort()
+      }
+
+      debugHtml('continue', req.resourceType(), req.url())
+      return req.continue()
+    })
 
     await page.goto(url, opts)
     const content = await page.content()
-
     page.close()
     return content
   }

@@ -30,6 +30,7 @@
   ],
   "dependencies": {
     "create-temp-file2": "~2.0.0",
+    "debug": "~3.1.0",
     "lodash.isempty": "~4.4.0",
     "puppeteer": "~1.0.0"
   },
