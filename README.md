@@ -1,10 +1,10 @@
 # browserless
 
-![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
-[![Build Status](https://img.shields.io/travis/microlinkhq/browserless/master.svg?style=flat-square)](https://travis-ci.org/microlinkhq/browserless)
-[![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
-[![Dependency status](https://img.shields.io/david/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless)
-[![Dev Dependencies Status](https://img.shields.io/david/dev/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless#info=devDependencies)
+![Last version](https://img.shields.io/github/tag/kikobeats/browserless.svg?style=flat-square)
+[![Build Status](https://img.shields.io/travis/kikobeats/browserless/master.svg?style=flat-square)](https://travis-ci.org/kikobeats/browserless)
+[![Coverage Status](https://img.shields.io/coveralls/kikobeats/browserless.svg?style=flat-square)](https://coveralls.io/github/kikobeats/browserless)
+[![Dependency status](https://img.shields.io/david/kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/kikobeats/browserless)
+[![Dev Dependencies Status](https://img.shields.io/david/dev/kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/kikobeats/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square)](https://paypal.me/Kikobeats)
 
@@ -113,9 +113,13 @@ It returns the text extracted from the URL.
 
 Get an standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
 
+## Related
+
+- [aws-lambda-chrome](https://github.com/Kikobeats/aws-lambda-chrome) – Chrome binary compatible with AWS Lambda.
+
 ## License
 
-**browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
-Authored and maintained by Kiko Beats with help from [contributors](https://github.com/microlinkhq/browserless/contributors).
+**browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/kikobeats/browserless/blob/master/LICENSE.md) License.<br>
+Authored and maintained by Kiko Beats with help from [contributors](https://github.com/kikobeats/browserless/contributors).
 
 > [kikobeats.com](https://kikobeats.com) · GitHub [Kiko Beats](https://github.com/kikobeats) · Twitter [@kikobeats](https://twitter.com/kikobeats)
