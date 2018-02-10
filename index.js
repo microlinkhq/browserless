@@ -10,6 +10,8 @@ const { devices, getDevice } = require('./devices')
 
 const ABORT_TYPES = ['image', 'media', 'stylesheet', 'font', 'xhr']
 
+const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
+
 module.exports = launchOpts => {
   let browser = puppeteer.launch(launchOpts)
 
@@ -26,15 +28,8 @@ module.exports = launchOpts => {
     return text
   }
 
-  const html = async (
-    url,
-    opts = {
-      waitFor: 0,
-      waitUntil: ['networkidle2'],
-      abortTypes: ABORT_TYPES
-    }
-  ) => {
-    const { abortTypes, waitFor } = opts
+  const html = async (url, opts = {}) => {
+    const { abortTypes = ABORT_TYPES, waitFor = 0, ...gotoOpts } = opts
 
     const page = await newPage()
     await page.setRequestInterception(true)
@@ -47,7 +42,7 @@ module.exports = launchOpts => {
       return req[action]()
     })
 
-    await page.goto(url, opts)
+    await page.goto(url, Object.assign({ waitUntil: WAIT_UNTIL }), gotoOpts)
     if (waitFor) await page.waitFor(waitFor)
     const content = await page.content()
 
