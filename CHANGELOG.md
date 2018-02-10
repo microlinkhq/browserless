@@ -1,3 +1,11 @@
+<a name="3.2.0"></a>
+# 3.2.0 (2018-02-10)
+
+* Extract default network events ([dcba194](https://github.com/kikobeats/browserless/commit/dcba194))
+* Unify goto interface ([e7b4af0](https://github.com/kikobeats/browserless/commit/e7b4af0))
+
+
+
 <a name="3.1.0"></a>
 # 3.1.0 (2018-02-10)
 
