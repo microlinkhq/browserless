@@ -4,7 +4,7 @@ const createTempFile = require('create-temp-file2')
 const isEmpty = require('lodash.isempty')
 const puppeteer = require('puppeteer')
 
-const debugHtml = require('debug')('browserless:html')
+const debug = require('debug')('browserless')
 
 const { devices, getDevice } = require('./devices')
 
@@ -23,7 +23,7 @@ module.exports = launchOpts => {
       const resourceType = req.resourceType()
       const action = abortTypes.includes(resourceType) ? 'abort' : 'continue'
 
-      debugHtml(action, resourceType, req.url())
+      debug(action, resourceType, req.url())
       return req[action]()
     })
 
@@ -33,7 +33,7 @@ module.exports = launchOpts => {
 
   const text = async (url, opts = {}) => {
     const {
-      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
+      abortTypes = ['image', 'media', 'stylesheet', 'font'],
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
       ...args
@@ -49,7 +49,7 @@ module.exports = launchOpts => {
 
   const html = async (url, opts = {}) => {
     const {
-      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
+      abortTypes = ['image', 'media', 'stylesheet', 'font'],
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
       ...args
