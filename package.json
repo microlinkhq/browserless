@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "Chrome Headless API made easy",
   "homepage": "https://documentup.com/Kikobeats/browserless",
-  "version": "2.6.0",
+  "version": "3.0.0",
   "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -33,15 +33,11 @@
     "debug": "~3.1.0",
     "lodash.isempty": "~4.4.0"
   },
-  "peerDependencies": {
-    "puppeteer": "1.x"
-  },
   "devDependencies": {
     "coveralls": "latest",
     "git-dirty": "latest",
     "husky": "latest",
     "is-travis": "latest",
-    "puppeteer": "latest",
     "lint-staged": "latest",
     "lodash": "latest",
     "mocha": "latest",
@@ -49,6 +45,7 @@
     "percentile": "latest",
     "prettier-standard": "latest",
     "pretty-ms": "latest",
+    "puppeteer": "latest",
     "should": "latest",
     "standard": "latest",
     "standard-markdown": "latest",
@@ -76,6 +73,9 @@
       "prettier-standard",
       "git add"
     ]
+  },
+  "peerDependencies": {
+    "puppeteer": "1.x"
   },
   "standard": {
     "env": [

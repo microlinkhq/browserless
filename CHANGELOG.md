@@ -1,3 +1,11 @@
+<a name="3.0.0"></a>
+# 3.0.0 (2018-02-10)
+
+* Move puppeteer as peer dependency ([8bc6ca2](https://github.com/kikobeats/browserless/commit/8bc6ca2))
+* Update copy ([f8fa451](https://github.com/kikobeats/browserless/commit/f8fa451))
+
+
+
 <a name="2.6.0"></a>
 # 2.6.0 (2018-02-08)
 
