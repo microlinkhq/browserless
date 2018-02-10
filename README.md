@@ -1,10 +1,10 @@
 # browserless
 
-![Last version](https://img.shields.io/github/tag/kikobeats/browserless.svg?style=flat-square)
-[![Build Status](https://img.shields.io/travis/kikobeats/browserless/master.svg?style=flat-square)](https://travis-ci.org/kikobeats/browserless)
-[![Coverage Status](https://img.shields.io/coveralls/kikobeats/browserless.svg?style=flat-square)](https://coveralls.io/github/kikobeats/browserless)
-[![Dependency status](https://img.shields.io/david/kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/kikobeats/browserless)
-[![Dev Dependencies Status](https://img.shields.io/david/dev/kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/kikobeats/browserless#info=devDependencies)
+![Last version](https://img.shields.io/github/tag/Kikobeats/browserless.svg?style=flat-square)
+[![Build Status](https://img.shields.io/travis/Kikobeats/browserless/master.svg?style=flat-square)](https://travis-ci.org/Kikobeats/browserless)
+[![Coverage Status](https://img.shields.io/coveralls/Kikobeats/browserless.svg?style=flat-square)](https://coveralls.io/github/Kikobeats/browserless)
+[![Dependency status](https://img.shields.io/david/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless)
+[![Dev Dependencies Status](https://img.shields.io/david/dev/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square)](https://paypal.me/Kikobeats)
 
