@@ -8,8 +8,6 @@ const debugHtml = require('debug')('browserless:html')
 
 const { devices, getDevice } = require('./devices')
 
-const ABORT_TYPES = ['image', 'media', 'stylesheet', 'font', 'xhr']
-
 const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
 
 module.exports = launchOpts => {
@@ -18,20 +16,7 @@ module.exports = launchOpts => {
   const newPage = () =>
     Promise.resolve(browser).then(browser => browser.newPage())
 
-  const text = async (url, opts = { waitUntil: 'networkidle2' }) => {
-    const page = await newPage()
-
-    await page.goto(url, opts)
-    const text = await page.evaluate(() => document.body.innerText)
-
-    page.close()
-    return text
-  }
-
-  const html = async (url, opts = {}) => {
-    const { abortTypes = ABORT_TYPES, waitFor = 0, ...gotoOpts } = opts
-
-    const page = await newPage()
+  const goto = async (page, { url, abortTypes, waitFor, waitUntil, args }) => {
     await page.setRequestInterception(true)
 
     page.on('request', req => {
@@ -42,25 +27,58 @@ module.exports = launchOpts => {
       return req[action]()
     })
 
-    await page.goto(url, Object.assign({ waitUntil: WAIT_UNTIL }), gotoOpts)
+    await page.goto(url, Object.assign({ waitUntil }, args))
     if (waitFor) await page.waitFor(waitFor)
+  }
+
+  const text = async (url, opts = {}) => {
+    const {
+      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
+      waitFor = 0,
+      waitUntil = WAIT_UNTIL,
+      ...args
+    } = opts
+
+    const page = await newPage()
+    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
+    const text = await page.evaluate(() => document.body.innerText)
+
+    await page.close()
+    return text
+  }
+
+  const html = async (url, opts = {}) => {
+    const {
+      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
+      waitFor = 0,
+      waitUntil = WAIT_UNTIL,
+      ...args
+    } = opts
+
+    const page = await newPage()
+    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
     const content = await page.content()
 
-    page.close()
+    await page.close()
     return content
   }
 
-  const screenshot = async (url, opts = { waitUntil: 'networkidle2' }) => {
+  const screenshot = async (url, opts = {}) => {
     const {
+      abortTypes = [],
+      device: deviceName = 'macbook pro 13',
       tmpOpts,
       type = 'png',
-      device: deviceName = 'macbook pro 13',
       userAgent,
-      viewport
+      viewport,
+      waitFor = 0,
+      waitUntil = WAIT_UNTIL,
+      ...args
     } = opts
 
     const tempFile = createTempFile(Object.assign({ ext: `.${type}` }, tmpOpts))
     const { path } = tempFile
+
     const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
       deviceName
     )
@@ -69,30 +87,33 @@ module.exports = launchOpts => {
 
     await page.setUserAgent(isEmpty(userAgent) ? deviceUserAgent : userAgent)
     await page.setViewport(Object.assign({}, deviceViewport, viewport))
-    await page.goto(url)
-    await page.screenshot(Object.assign({ path, type }, opts))
+    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
+    await page.screenshot(Object.assign({ path, type }, args))
 
-    page.close()
+    await page.close()
     return Promise.resolve(tempFile)
   }
 
-  const pdf = async (url, opts = { waitUntil: 'networkidle2' }) => {
+  const pdf = async (url, opts = {}) => {
     const {
-      tmpOpts,
-      media = 'screen',
-      format = 'A4',
-      printBackground = true,
-      waitUntil = 'networkidle2',
-      scale = 0.65,
+      abortTypes = [],
       device: deviceName = 'macbook pro 13',
-      viewport,
-      userAgent,
+      format = 'A4',
       margin = {
         top: '0.25cm',
         right: '0.25cm',
         bottom: '0.25cm',
         left: '0.25cm'
-      }
+      },
+      media = 'screen',
+      printBackground = true,
+      scale = 0.65,
+      tmpOpts,
+      userAgent,
+      viewport,
+      waitFor = 0,
+      waitUntil = WAIT_UNTIL,
+      ...args
     } = opts
 
     const tempFile = createTempFile(Object.assign({ ext: `.pdf` }, tmpOpts))
@@ -106,7 +127,7 @@ module.exports = launchOpts => {
     await page.emulateMedia(media)
     await page.setUserAgent(isEmpty(userAgent) ? deviceUserAgent : userAgent)
     await page.setViewport(Object.assign({}, deviceViewport, viewport))
-    await page.goto(url, { waitUntil })
+    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
     await page.pdf(
       Object.assign(
         {
@@ -116,11 +137,11 @@ module.exports = launchOpts => {
           printBackground,
           scale
         },
-        opts
+        args
       )
     )
 
-    page.close()
+    await page.close()
     return Promise.resolve(tempFile)
   }
 
@@ -129,7 +150,8 @@ module.exports = launchOpts => {
     text,
     pdf,
     screenshot,
-    page: newPage
+    page: newPage,
+    goto
   }
 }
 
