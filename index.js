@@ -8,7 +8,7 @@ const debugHtml = require('debug')('browserless:html')
 
 const { devices, getDevice } = require('./devices')
 
-const ABORT_TYPES = ['image', 'media', 'stylesheet', 'font', 'xhr', 'script']
+const ABORT_TYPES = ['image', 'media', 'stylesheet', 'font', 'xhr']
 
 module.exports = launchOpts => {
   let browser = puppeteer.launch(launchOpts)
@@ -29,27 +29,28 @@ module.exports = launchOpts => {
   const html = async (
     url,
     opts = {
-      waitUntil: 'networkidle2',
+      waitFor: 0,
+      waitUntil: ['networkidle2'],
       abortTypes: ABORT_TYPES
     }
   ) => {
-    const { abortTypes } = opts
+    const { abortTypes, waitFor } = opts
 
     const page = await newPage()
     await page.setRequestInterception(true)
 
     page.on('request', req => {
-      if (abortTypes.includes(req.resourceType())) {
-        debugHtml('abort', req.resourceType(), req.url())
-        return req.abort()
-      }
+      const resourceType = req.resourceType()
+      const action = abortTypes.includes(resourceType) ? 'abort' : 'continue'
 
-      debugHtml('continue', req.resourceType(), req.url())
-      return req.continue()
+      debugHtml(action, resourceType, req.url())
+      return req[action]()
     })
 
     await page.goto(url, opts)
+    if (waitFor) await page.waitFor(waitFor)
     const content = await page.content()
+
     page.close()
     return content
   }

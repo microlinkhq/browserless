@@ -47,6 +47,21 @@ It returns the full HTML extracted from the URL.
 
 `opts` provided are passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
+Additionally, you can setup:
+
+#### waitFor
+
+default: `0`
+
+Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
+
+#### abortTypes
+
+type: `array` </br>
+default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
+
+A list of `resourceType` to be the process faster.
+
 ### .pdf(url, [opts], [cb])
 
 It generates the PDF version of a website behing an URL.
