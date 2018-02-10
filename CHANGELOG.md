@@ -1,3 +1,10 @@
+<a name="3.1.0"></a>
+# 3.1.0 (2018-02-10)
+
+* waitFor support ([f5af277](https://github.com/kikobeats/browserless/commit/f5af277))
+
+
+
 <a name="3.0.0"></a>
 # 3.0.0 (2018-02-10)
 
