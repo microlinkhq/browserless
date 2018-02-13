@@ -1,3 +1,10 @@
+<a name="3.2.2"></a>
+## 3.2.2 (2018-02-13)
+
+* Block xhr by default ([f44f195](https://github.com/kikobeats/browserless/commit/f44f195))
+
+
+
 <a name="3.2.1"></a>
 ## 3.2.1 (2018-02-10)
 
