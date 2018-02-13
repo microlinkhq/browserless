@@ -33,7 +33,7 @@ module.exports = launchOpts => {
 
   const text = async (url, opts = {}) => {
     const {
-      abortTypes = ['image', 'media', 'stylesheet', 'font'],
+      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
       ...args
@@ -49,7 +49,7 @@ module.exports = launchOpts => {
 
   const html = async (url, opts = {}) => {
     const {
-      abortTypes = ['image', 'media', 'stylesheet', 'font'],
+      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
       ...args
