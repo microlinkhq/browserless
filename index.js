@@ -1,6 +1,7 @@
 'use strict'
 
 const createTempFile = require('create-temp-file2')
+const extractDomain = require('extract-domain')
 const isEmpty = require('lodash.isempty')
 const puppeteer = require('puppeteer')
 
@@ -10,6 +11,9 @@ const { devices, getDevice } = require('./devices')
 
 const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
 
+const isExternalUrl = (urlOne, urlTwo) =>
+  extractDomain(urlOne) !== extractDomain(urlTwo)
+
 module.exports = launchOpts => {
   let browser = puppeteer.launch(launchOpts)
 
@@ -18,17 +22,31 @@ module.exports = launchOpts => {
 
   const goto = async (page, { url, abortTypes, waitFor, waitUntil, args }) => {
     await page.setRequestInterception(true)
+    let reqCount = { abort: 0, continue: 0 }
 
     page.on('request', req => {
-      const resourceType = req.resourceType()
-      const action = abortTypes.includes(resourceType) ? 'abort' : 'continue'
+      const resourceUrl = req.url()
+      const isExternal = isExternalUrl(url, resourceUrl)
 
-      debug(action, resourceType, req.url())
-      return req[action]()
+      const resourceType = req.resourceType()
+
+      if (abortTypes.includes(resourceType)) {
+        debug(`abort:${resourceType}:${++reqCount.abort}`, resourceUrl)
+        return req.abort()
+      }
+
+      if (isExternal) {
+        debug(`abort:external:${++reqCount.abort}`, resourceUrl)
+        return req.abort()
+      }
+
+      debug(`continue:${resourceType}:${++reqCount.continue}`, resourceUrl)
+      return req.continue()
     })
 
     await page.goto(url, Object.assign({ waitUntil }, args))
     if (waitFor) await page.waitFor(waitFor)
+    debug(reqCount)
   }
 
   const text = async (url, opts = {}) => {
