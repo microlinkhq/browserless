@@ -32,7 +32,7 @@
     "create-temp-file2": "~2.0.0",
     "debug": "~3.1.0",
     "extract-domain": "~2.0.0",
-    "lodash.isempty": "~4.4.0"
+    "is-tracking-domain": "~1.0.0"
   },
   "devDependencies": {
     "coveralls": "latest",

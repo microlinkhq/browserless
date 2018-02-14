@@ -1,18 +1,18 @@
 'use strict'
 
+const isTrackingDomain = require('is-tracking-domain')
 const createTempFile = require('create-temp-file2')
 const extractDomain = require('extract-domain')
-const isEmpty = require('lodash.isempty')
 const puppeteer = require('puppeteer')
-
 const debug = require('debug')('browserless')
 
 const { devices, getDevice } = require('./devices')
 
 const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
 
-const isExternalUrl = (urlOne, urlTwo) =>
-  extractDomain(urlOne) !== extractDomain(urlTwo)
+const isEmpty = val => val == null || !(Object.keys(val) || val).length
+
+const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 
 module.exports = launchOpts => {
   let browser = puppeteer.launch(launchOpts)
@@ -26,7 +26,6 @@ module.exports = launchOpts => {
 
     page.on('request', req => {
       const resourceUrl = req.url()
-      const isExternal = isExternalUrl(url, resourceUrl)
 
       const resourceType = req.resourceType()
 
@@ -35,8 +34,12 @@ module.exports = launchOpts => {
         return req.abort()
       }
 
-      if (isExternal) {
-        debug(`abort:external:${++reqCount.abort}`, resourceUrl)
+      const urlDomain = extractDomain(url)
+      const resourceDomain = extractDomain(resourceUrl)
+      const isExternal = isExternalUrl(urlDomain, resourceDomain)
+
+      if (isExternal && isTrackingDomain(resourceDomain)) {
+        debug(`abort:tracker:${++reqCount.abort}`, resourceUrl)
         return req.abort()
       }
 
