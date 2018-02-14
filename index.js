@@ -3,14 +3,14 @@
 const isTrackingDomain = require('is-tracking-domain')
 const createTempFile = require('create-temp-file2')
 const extractDomain = require('extract-domain')
-const isEmpty = require('lodash.isempty')
 const puppeteer = require('puppeteer')
-
 const debug = require('debug')('browserless')
 
 const { devices, getDevice } = require('./devices')
 
 const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
+
+const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 
