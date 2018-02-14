@@ -14,7 +14,7 @@ const isBufferEqual = (buff1, buff2) => buff1.length === buff2.length
 describe('browserless', () => {
   describe('.html', () => {
     it('get full HTML from a link', async () => {
-      const html = await browserless.html('https://google.com')
+      const html = await browserless.html('https://example.com')
       should(html.includes('DOCTYPE')).be.true()
     })
   })
