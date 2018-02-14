@@ -1,3 +1,14 @@
+<a name="3.3.0"></a>
+# 3.3.0 (2018-02-14)
+
+* Abort third party resources ([6e9e118](https://github.com/kikobeats/browserless/commit/6e9e118))
+* Avoid lodash.isempty dependency ([87a8b26](https://github.com/kikobeats/browserless/commit/87a8b26))
+* Block external scripts support ([3305f8f](https://github.com/kikobeats/browserless/commit/3305f8f))
+* Update examples ([2cabc11](https://github.com/kikobeats/browserless/commit/2cabc11))
+* Update test ([cf8d609](https://github.com/kikobeats/browserless/commit/cf8d609))
+
+
+
 <a name="3.2.2"></a>
 ## 3.2.2 (2018-02-13)
 
