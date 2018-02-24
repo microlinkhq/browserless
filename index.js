@@ -10,6 +10,10 @@ const { devices, getDevice } = require('./devices')
 
 const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
 
+const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
+
+const EVALUATE_HTML = page => page.content()
+
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
@@ -52,7 +56,7 @@ module.exports = launchOpts => {
     debug(reqCount)
   }
 
-  const text = async (url, opts = {}) => {
+  const createGetContent = evaluate => async (url, opts = {}) => {
     const {
       abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
       waitFor = 0,
@@ -62,23 +66,7 @@ module.exports = launchOpts => {
 
     const page = await newPage()
     await goto(page, { url, abortTypes, waitFor, waitUntil, args })
-    const text = await page.evaluate(() => document.body.innerText)
-
-    await page.close()
-    return text
-  }
-
-  const html = async (url, opts = {}) => {
-    const {
-      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
-      waitFor = 0,
-      waitUntil = WAIT_UNTIL,
-      ...args
-    } = opts
-
-    const page = await newPage()
-    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
-    const content = await page.content()
+    const content = await evaluate(page)
 
     await page.close()
     return content
@@ -167,8 +155,8 @@ module.exports = launchOpts => {
   }
 
   return {
-    html,
-    text,
+    html: createGetContent(EVALUATE_HTML),
+    text: createGetContent(EVALUATE_TEXT),
     pdf,
     screenshot,
     page: newPage,
