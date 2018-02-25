@@ -1,3 +1,17 @@
+<a name="3.3.1"></a>
+## 3.3.1 (2018-02-25)
+
+* Add CNAME ([01d5247](https://github.com/kikobeats/browserless/commit/01d5247))
+* Add documentation site ([adb5145](https://github.com/kikobeats/browserless/commit/adb5145))
+* Add logo copy ([cf2c245](https://github.com/kikobeats/browserless/commit/cf2c245))
+* Improve docs ([f8084d8](https://github.com/kikobeats/browserless/commit/f8084d8))
+* Tweaks ([666ad8b](https://github.com/kikobeats/browserless/commit/666ad8b))
+* Unify html and text implementations ([bbe78b6](https://github.com/kikobeats/browserless/commit/bbe78b6))
+* Update html.js ([a41a88b](https://github.com/kikobeats/browserless/commit/a41a88b))
+* Update README.md ([6227fd1](https://github.com/kikobeats/browserless/commit/6227fd1))
+
+
+
 <a name="3.3.0"></a>
 # 3.3.0 (2018-02-14)
 

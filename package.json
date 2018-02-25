@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "Chrome Headless API made easy",
   "homepage": "https://browserless.js.org",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -35,16 +35,16 @@
     "is-tracking-domain": "~1.0.0"
   },
   "devDependencies": {
-    "gulp": "latest",
-    "concurrently": "latest",
     "browser-sync": "latest",
+    "concurrently": "latest",
+    "coveralls": "latest",
+    "git-dirty": "latest",
+    "gulp": "latest",
     "gulp-autoprefixer": "latest",
     "gulp-concat": "latest",
     "gulp-cssnano": "latest",
     "gulp-strip-css-comments": "latest",
     "gulp-uglify": "latest",
-    "coveralls": "latest",
-    "git-dirty": "latest",
     "husky": "latest",
     "is-travis": "latest",
     "lint-staged": "latest",
@@ -69,14 +69,14 @@
     "index.js"
   ],
   "scripts": {
-    "dev:docs": "concurrently \"gulp\" \"npm run server\"",
-    "server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "clean": "rm -rf node_modules",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "dev:docs": "concurrently \"gulp\" \"npm run server\"",
     "lint": "standard-markdown && standard",
     "precommit": "lint-staged",
     "pretest": "npm run lint",
     "pretty": "prettier-standard index.js test/**/*.js --single-quote",
+    "server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "test": "nyc mocha"
   },
   "license": "MIT",
