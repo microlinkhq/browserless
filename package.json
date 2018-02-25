@@ -1,7 +1,7 @@
 {
   "name": "browserless",
   "description": "Chrome Headless API made easy",
-  "homepage": "https://documentup.com/Kikobeats/browserless",
+  "homepage": "https://browserless.js.org",
   "version": "3.3.0",
   "main": "index.js",
   "author": {
