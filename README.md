@@ -299,6 +299,8 @@ Yes, check [aws-lambda-chrome](https://github.com/Kikobeats/aws-lambda-chrome) t
 ## License
 
 **browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/kikobeats/browserless/blob/master/LICENSE.md) License.<br>
-Authored and maintained by Kiko Beats with help from [contributors](https://github.com/kikobeats/browserless/contributors).
+Authored and maintained by Kiko Beats with help from [contributors](https://github.com/kikobeats/browserless/contributors).  
+  
+[logo](https://thenounproject.com/term/browser/288309/) designed by [xinh studio](https://xinh.studio/).
 
 > [kikobeats.com](https://kikobeats.com) · GitHub [Kiko Beats](https://github.com/kikobeats) · Twitter [@kikobeats](https://twitter.com/kikobeats)
