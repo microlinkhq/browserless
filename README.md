@@ -1,4 +1,7 @@
-# browserless
+<h1 align="center">
+  <img style="width: 85%;" src="/static/logo-banner.png" alt="browserless">
+        <br>
+</h1>
 
 ![Last version](https://img.shields.io/github/tag/Kikobeats/browserless.svg?style=flat-square)
 [![Build Status](https://img.shields.io/travis/Kikobeats/browserless/master.svg?style=flat-square)](https://travis-ci.org/Kikobeats/browserless)
@@ -75,7 +78,7 @@ const browserless = require('browserless')({
 })
 ```
 
-### .html(\<url\>, [options], [cb])
+### .html(&lt;url&gt;, [options], [cb])
 
 It returns the full HTML content from the target `url`.
 
@@ -114,7 +117,7 @@ default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
 
 A list of `resourceType` requests that can be aborted in order to make the process faster.
 
-### .text(\<url\>, [options], [cb])
+### .text(&lt;url&gt;, [options], [cb])
 
 It returns the full text content from the target `url`.
 
@@ -130,7 +133,7 @@ const browserless = require('browserless')
 
 All `options` that you can pass are the same than [`.html`](#html) method.
 
-### .pdf(url, [options], [cb])
+### .pdf(&lt;url&gt;, [options], [cb])
 
 It generates the PDF version of a website behind an `url`.
 

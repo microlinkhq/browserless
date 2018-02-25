@@ -35,6 +35,14 @@
     "is-tracking-domain": "~1.0.0"
   },
   "devDependencies": {
+    "gulp": "latest",
+    "concurrently": "latest",
+    "browser-sync": "latest",
+    "gulp-autoprefixer": "latest",
+    "gulp-concat": "latest",
+    "gulp-cssnano": "latest",
+    "gulp-strip-css-comments": "latest",
+    "gulp-uglify": "latest",
     "coveralls": "latest",
     "git-dirty": "latest",
     "husky": "latest",
@@ -61,6 +69,8 @@
     "index.js"
   ],
   "scripts": {
+    "dev:docs": "concurrently \"gulp\" \"npm run server\"",
+    "server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "clean": "rm -rf node_modules",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "lint": "standard-markdown && standard",
