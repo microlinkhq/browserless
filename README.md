@@ -57,7 +57,11 @@ It creates the `browser` instance, using [puppeter.launch](https://github.com/Go
 ```js
 // Creating a simple instance
 const browserless = require('browserless')()
+```
 
+or passing specific launchers options:
+
+```
 // Creating an instance for running it at AWS Lambda
 const browserless = require('browserless')({
   ignoreHTTPSErrors: true,
