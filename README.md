@@ -1,6 +1,6 @@
 <h1 align="center">
-  <img style="width: 85%;" src="/static/logo-banner.png" alt="browserless">
-        <br>
+  <img style="width: 500px; margin:3rem 0 1.5rem;" src="/static/logo-banner.png" alt="browserless">
+  <br>
 </h1>
 
 ![Last version](https://img.shields.io/github/tag/Kikobeats/browserless.svg?style=flat-square)
