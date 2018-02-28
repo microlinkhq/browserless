@@ -11,11 +11,9 @@
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square)](https://paypal.me/Kikobeats)
 
-> A syntactic sugar API over Chrome Headless.
-
 ## Features
 
-- High level API over [Chrome Headless API](https://github.com/GoogleChrome/puppeteer).
+- High level automation API for working with [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
 - Blocking [ads trackers](https://npm.im/is-tracking-domain) by default.
 - It aborts unnecessary requests.
 - Callback & Promise support.
@@ -268,7 +266,7 @@ The settings to be passed to [page.goto](https://github.com/GoogleChrome/puppete
 
 **Q: Why use browserless over Puppeteer?**
 
-**browserless** not replace puppeteer, it complements. It's just a syntactic sugar layer over official Chrome Headless API.
+**browserless** not replace puppeteer, it complements. It's just a syntactic sugar layer over official Headless Chrome.
 
 **Q: Why do you block ads scripts by default?**
 
