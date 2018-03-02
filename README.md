@@ -21,7 +21,7 @@
 ## Install
 
 ```bash
-$ npm install browserless --save
+$ npm install puppeteer browserless --save
 ```
 
 ## Usage
