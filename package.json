@@ -66,8 +66,7 @@
     "node": ">= 6"
   },
   "files": [
-    "devices",
-    "index.js"
+    "src"
   ],
   "scripts": {
     "clean": "rm -rf node_modules",
