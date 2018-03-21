@@ -1,3 +1,10 @@
+<a name="3.3.4"></a>
+## 3.3.4 (2018-03-21)
+
+* Fix files field ([ef58182](https://github.com/kikobeats/browserless/commit/ef58182))
+
+
+
 <a name="3.3.3"></a>
 ## 3.3.3 (2018-03-21)
 
