@@ -59,6 +59,7 @@
     "standard": "latest",
     "standard-markdown": "latest",
     "string-to-stream": "latest",
+    "term-img": "latest",
     "time-span": "latest"
   },
   "engines": {
