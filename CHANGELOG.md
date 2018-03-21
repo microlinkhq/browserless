@@ -1,3 +1,10 @@
+<a name="3.3.3"></a>
+## 3.3.3 (2018-03-21)
+
+* Fix require ([9c35920](https://github.com/kikobeats/browserless/commit/9c35920))
+
+
+
 <a name="3.3.2"></a>
 ## 3.3.2 (2018-03-21)
 
