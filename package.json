@@ -3,7 +3,7 @@
   "description": "Chrome Headless API made easy",
   "homepage": "https://browserless.js.org",
   "version": "3.3.2",
-  "main": "index.js",
+  "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
     "name": "Kiko Beats",
