@@ -22,19 +22,18 @@ describe('browserless', () => {
     describe('format', () => {
       it('png', async () => {
         const tmpStream = await browserless.screenshot('http://example.com')
-        const isEqual = looksSame('test/example.png', tmpStream.path)
+        const isEqual = await looksSame('test/example.png', tmpStream.path)
         tmpStream.cleanupSync()
-        await isEqual
+        should(path.extname(tmpStream.path)).be.equal('.png')
+        return isEqual
       })
 
       it('jpeg', async () => {
         const tmpStream = await browserless.screenshot('http://example.com', {
           type: 'jpeg'
         })
-
-        const isEqual = looksSame('test/example.jpeg', tmpStream.path)
         tmpStream.cleanupSync()
-        await isEqual
+        should(path.extname(tmpStream.path)).be.equal('.jpeg')
       })
     })
 
@@ -44,9 +43,12 @@ describe('browserless', () => {
           device: 'iPhone 6'
         })
 
-        const isEqual = looksSame('test/example-iphone.png', tmpStream.path)
+        const isEqual = await looksSame(
+          'test/example-iphone.png',
+          tmpStream.path
+        )
         tmpStream.cleanupSync()
-        await isEqual
+        return isEqual
       })
     })
 
