@@ -1,3 +1,15 @@
+<a name="3.3.2"></a>
+## 3.3.2 (2018-03-21)
+
+* Add meta ([844fdd5](https://github.com/kikobeats/browserless/commit/844fdd5))
+* Add Twitter image as whitelist domain ([afcb994](https://github.com/kikobeats/browserless/commit/afcb994))
+* Improve puppeteer copy ([d8a098a](https://github.com/kikobeats/browserless/commit/d8a098a))
+* Print screenshot on terminal when is possible ([9b22e99](https://github.com/kikobeats/browserless/commit/9b22e99))
+* Update README.md ([09a82b5](https://github.com/kikobeats/browserless/commit/09a82b5))
+* Update tests ([18bd9f8](https://github.com/kikobeats/browserless/commit/18bd9f8))
+
+
+
 <a name="3.3.1"></a>
 ## 3.3.1 (2018-02-25)
 
