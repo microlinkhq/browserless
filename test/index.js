@@ -1,15 +1,14 @@
 'use strict'
 
-const { readFileSync } = require('fs')
-const isTravis = require('is-travis')
+const { promisify } = require('util')
 const should = require('should')
 const path = require('path')
 
-const browserless = require('..')({
+const looksSame = promisify(require('looks-same'))
+
+const browserless = require('../src')({
   args: ['--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox']
 })
-
-const isBufferEqual = (buff1, buff2) => buff1.length === buff2.length
 
 describe('browserless', () => {
   describe('.html', () => {
@@ -23,12 +22,9 @@ describe('browserless', () => {
     describe('format', () => {
       it('png', async () => {
         const tmpStream = await browserless.screenshot('http://example.com')
-
-        const image = readFileSync(tmpStream.path)
-        const fixture = readFileSync('test/example.png')
-
+        const isEqual = looksSame('test/example.png', tmpStream.path)
         tmpStream.cleanupSync()
-        if (!isTravis) should(isBufferEqual(image, fixture)).be.true()
+        await isEqual
       })
 
       it('jpeg', async () => {
@@ -36,11 +32,9 @@ describe('browserless', () => {
           type: 'jpeg'
         })
 
-        const image = readFileSync(tmpStream.path)
-        const fixture = readFileSync('test/example.jpeg')
-
+        const isEqual = looksSame('test/example.jpeg', tmpStream.path)
         tmpStream.cleanupSync()
-        if (!isTravis) should(isBufferEqual(image, fixture)).be.true()
+        await isEqual
       })
     })
 
@@ -50,25 +44,16 @@ describe('browserless', () => {
           device: 'iPhone 6'
         })
 
-        const image = readFileSync(tmpStream.path)
-        const fixture = readFileSync('test/example-iphone.png')
-
+        const isEqual = looksSame('test/example-iphone.png', tmpStream.path)
         tmpStream.cleanupSync()
-        if (!isTravis) should(isBufferEqual(image, fixture)).be.true()
+        await isEqual
       })
     })
 
     describe('.pdf', () => {
       it('get full PDF from an url', async () => {
         const tmpStream = await browserless.pdf('http://example.com')
-
-        const pdf = readFileSync(tmpStream.path)
-        const fixture = readFileSync('test/example.pdf')
-
-        tmpStream.cleanupSync()
-
         should(path.extname(tmpStream.path)).be.equal('.pdf')
-        if (!isTravis) should(isBufferEqual(pdf, fixture)).be.true()
       })
     })
   })

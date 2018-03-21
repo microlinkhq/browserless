@@ -1,12 +1,12 @@
 'use strict'
 
-const isTrackingDomain = require('is-tracking-domain')
 const createTempFile = require('create-temp-file2')
 const extractDomain = require('extract-domain')
 const puppeteer = require('puppeteer')
 const debug = require('debug')('browserless')
 
 const { devices, getDevice } = require('./devices')
+const isTracker = require('./is-tracker')
 
 const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
 
@@ -42,7 +42,7 @@ module.exports = launchOpts => {
       const resourceDomain = extractDomain(resourceUrl)
       const isExternal = isExternalUrl(urlDomain, resourceDomain)
 
-      if (isExternal && isTrackingDomain(resourceDomain)) {
+      if (isExternal && isTracker(resourceDomain)) {
         debug(`abort:tracker:${++reqCount.abort}`, resourceUrl)
         return req.abort()
       }

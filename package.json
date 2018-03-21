@@ -31,8 +31,8 @@
   "dependencies": {
     "create-temp-file2": "~2.0.0",
     "debug": "~3.1.0",
-    "extract-domain": "~2.0.0",
-    "is-tracking-domain": "~1.0.0"
+    "extract-domain": "~2.0.3",
+    "is-tracking-domain": "~1.1.0"
   },
   "devDependencies": {
     "browser-sync": "latest",
@@ -46,9 +46,9 @@
     "gulp-strip-css-comments": "latest",
     "gulp-uglify": "latest",
     "husky": "latest",
-    "is-travis": "latest",
     "lint-staged": "latest",
     "lodash": "latest",
+    "looks-same": "latest",
     "mocha": "latest",
     "nyc": "latest",
     "percentile": "latest",
