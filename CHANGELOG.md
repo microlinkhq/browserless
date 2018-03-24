@@ -1,3 +1,11 @@
+<a name="3.4.0"></a>
+# 3.4.0 (2018-03-24)
+
+* Add userAgent and viewport support ([8337019](https://github.com/kikobeats/browserless/commit/8337019))
+* Update deps ([5ae2f0e](https://github.com/kikobeats/browserless/commit/5ae2f0e))
+
+
+
 <a name="3.3.4"></a>
 ## 3.3.4 (2018-03-21)
 
