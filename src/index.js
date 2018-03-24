@@ -24,7 +24,10 @@ module.exports = launchOpts => {
   const newPage = () =>
     Promise.resolve(browser).then(browser => browser.newPage())
 
-  const goto = async (page, { url, abortTypes, waitFor, waitUntil, args }) => {
+  const goto = async (
+    page,
+    { url, abortTypes, waitFor, waitUntil, userAgent, viewport, args }
+  ) => {
     await page.setRequestInterception(true)
     let reqCount = { abort: 0, continue: 0 }
 
@@ -51,6 +54,8 @@ module.exports = launchOpts => {
       return req.continue()
     })
 
+    if (userAgent) await page.setUserAgent(userAgent)
+    if (viewport) await page.setViewport(viewport)
     await page.goto(url, Object.assign({ waitUntil }, args))
     if (waitFor) await page.waitFor(waitFor)
     debug(reqCount)
@@ -61,11 +66,21 @@ module.exports = launchOpts => {
       abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
+      userAgent,
+      viewport,
       ...args
     } = opts
 
     const page = await newPage()
-    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
+    await goto(page, {
+      url,
+      abortTypes,
+      waitFor,
+      waitUntil,
+      userAgent,
+      viewport,
+      args
+    })
     const content = await evaluate(page)
 
     await page.close()
@@ -94,9 +109,16 @@ module.exports = launchOpts => {
 
     const page = await newPage()
 
-    await page.setUserAgent(isEmpty(userAgent) ? deviceUserAgent : userAgent)
-    await page.setViewport(Object.assign({}, deviceViewport, viewport))
-    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
+    await goto(page, {
+      userAgent: isEmpty(userAgent) ? deviceUserAgent : userAgent,
+      viewport: Object.assign({}, deviceViewport, viewport),
+      url,
+      abortTypes,
+      waitFor,
+      waitUntil,
+      args
+    })
+
     await page.screenshot(Object.assign({ path, type }, args))
 
     await page.close()
@@ -127,6 +149,7 @@ module.exports = launchOpts => {
 
     const tempFile = createTempFile(Object.assign({ ext: `.pdf` }, tmpOpts))
     const { path } = tempFile
+
     const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
       deviceName
     )
@@ -134,9 +157,17 @@ module.exports = launchOpts => {
     const page = await newPage()
 
     await page.emulateMedia(media)
-    await page.setUserAgent(isEmpty(userAgent) ? deviceUserAgent : userAgent)
-    await page.setViewport(Object.assign({}, deviceViewport, viewport))
-    await goto(page, { url, abortTypes, waitFor, waitUntil, args })
+
+    await goto(page, {
+      userAgent: isEmpty(userAgent) ? deviceUserAgent : userAgent,
+      viewport: Object.assign({}, deviceViewport, viewport),
+      url,
+      abortTypes,
+      waitFor,
+      waitUntil,
+      args
+    })
+
     await page.pdf(
       Object.assign(
         {

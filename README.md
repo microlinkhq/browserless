@@ -108,6 +108,14 @@ default: `['networkidle2', 'load', 'domcontentloaded']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
 
+#### userAgent
+
+It will setup a custom user agent, using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
+
+#### viewport
+
+It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
+
 #### abortTypes
 
 type: `array` </br>
@@ -254,6 +262,14 @@ type:`array`</br>
 default: `['networkidle2', 'load', 'domcontentloaded']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
+
+#### userAgent
+
+It will setup a custom user agent, using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
+
+#### viewport
+
+It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
 #### args
 
