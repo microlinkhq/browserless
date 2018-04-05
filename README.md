@@ -237,7 +237,7 @@ It returns the internal [browser](https://github.com/GoogleChrome/puppeteer/blob
 const browserless = require('browserless')
 
 ;(async () => {
-	const browserInstance = await browserless.browser
+  const browserInstance = await browserless.browser
 })()
 ```
 
@@ -249,7 +249,7 @@ It returns a standalone [browser new page](https://github.com/GoogleChrome/puppe
 const browserless = require('browserless')
 
 ;(async () => {
-	const page = await browserless.page()
+  const page = await browserless.page()
 })()
 ```
 
@@ -261,9 +261,8 @@ It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/m
 const browserless = require('browserless')
 
 ;(async () => {
-	const page = await browserless.page()
-
-	await browserless.goto(page, {
+  const page = await browserless.page()
+  await browserless.goto(page, {
     url: 'http://savevideo.me',
     abortTypes: ['image', 'media', 'stylesheet', 'font']
   })
