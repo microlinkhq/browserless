@@ -50,8 +50,8 @@ All methods follow the same interface:
 - `url`: The target URL (*required*).
 - `options`: Specific settings for the method (*optional*).
 - `callback`: Node.js callback. If you don't provide one, the method will be return a `promise`.
-  
-### .constructor([options])
+
+### .constructor(options)
 
 It creates the `browser` instance, using [puppeter.launch](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions) method.
 
@@ -76,7 +76,7 @@ const browserless = require('browserless')({
 })
 ```
 
-### .html(&lt;url&gt;, [options], [cb])
+### .html(url, options)
 
 It returns the full HTML content from the target `url`.
 
@@ -123,7 +123,7 @@ default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
 
 A list of `resourceType` requests that can be aborted in order to make the process faster.
 
-### .text(&lt;url&gt;, [options], [cb])
+### .text(url, options)
 
 It returns the full text content from the target `url`.
 
@@ -139,7 +139,7 @@ const browserless = require('browserless')
 
 All `options` that you can pass are the same than [`.html`](#html) method.
 
-### .pdf(&lt;url&gt;, [options], [cb])
+### .pdf(url, options)
 
 It generates the PDF version of a website behind an `url`.
 
@@ -184,7 +184,7 @@ It will setup a custom user agent, using [page.setUserAgent](https://github.com/
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
-### .screenshot(url, [opts], [cb])
+### .screenshot(url, options)
 
 It takes a screenshot from the target `url`
 
@@ -229,49 +229,85 @@ It will setup a custom viewport, using [page.setViewport](https://github.com/Goo
 
 The following methods are exposed to be used in scenarios where you need more granuality control and less magic.
 
-### .page
+### .browser
+
+It returns the internal [browser](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#class-browser) instance used as singleton.
+
+```js
+const browserless = require('browserless')
+
+;(async () => {
+	const browserInstance = await browserless.browser
+})()
+```
+
+### .page()
 
 It returns a standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
 
-### .goto(page, opts)
+```js
+const browserless = require('browserless')
 
-It performs a smar [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), blocking [ads trackers](https://npm.im/is-tracking-domain)) requests and other requests based on `resourceType`
+;(async () => {
+	const page = await browserless.page()
+})()
+```
 
-#### url
+### .goto(page, options)
+
+It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), blocking [ads trackers](https://npm.im/is-tracking-domain)) requests and other requests based on `resourceType`.
+
+```js
+const browserless = require('browserless')
+
+;(async () => {
+	const page = await browserless.page()
+
+	await browserless.goto(page, {
+    url: 'http://savevideo.me',
+    abortTypes: ['image', 'media', 'stylesheet', 'font']
+  })
+})()
+```
+
+#### options
+
+##### url
 
 type: `string`
 
 The target URL
 
-#### abortTypes
+##### abortTypes
 
-type: `string`
-  
-A list of `req.resourceType()` to be blocked
+type: `string`</br>
+default: `[]`
 
-#### waitFor
+A list of `req.resourceType()` to be blocked.
+
+##### waitFor
 
 type:`string|function|number`</br>
 default: `0`
 
 Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
 
-#### waitUntil
+##### waitUntil
 
 type:`array`</br>
 default: `['networkidle2', 'load', 'domcontentloaded']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
 
-#### userAgent
+##### userAgent
 
 It will setup a custom user agent, using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
 
-#### viewport
+##### viewport
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
-#### args
+##### args
 
 type: `object`
 
@@ -286,7 +322,7 @@ The settings to be passed to [page.goto](https://github.com/GoogleChrome/puppete
 
 **Q: Why do you block ads scripts by default?**
 
-Headless navigation is expensive compared with just fetch the content from a website. 
+Headless navigation is expensive compared with just fetch the content from a website.
 
 In order to speed up the process, we block ads scripts by default because they are so bloat.
 
@@ -314,7 +350,7 @@ Yes, check [aws-lambda-chrome](https://github.com/Kikobeats/aws-lambda-chrome) t
 
 **browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/kikobeats/browserless/blob/master/LICENSE.md) License.<br>
 Authored and maintained by Kiko Beats with help from [contributors](https://github.com/kikobeats/browserless/contributors).  
-  
+
 [logo](https://thenounproject.com/term/browser/288309/) designed by [xinh studio](https://xinh.studio/).
 
 > [kikobeats.com](https://kikobeats.com) · GitHub [Kiko Beats](https://github.com/kikobeats) · Twitter [@kikobeats](https://twitter.com/kikobeats)

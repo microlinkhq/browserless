@@ -186,6 +186,7 @@ module.exports = launchOpts => {
   }
 
   return {
+    browser,
     html: createGetContent(EVALUATE_HTML),
     text: createGetContent(EVALUATE_TEXT),
     pdf,
