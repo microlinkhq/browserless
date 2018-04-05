@@ -1,3 +1,12 @@
+<a name="3.5.0"></a>
+# 3.5.0 (2018-04-05)
+
+* Add codecopy ([ef5ede8](https://github.com/kikobeats/browserless/commit/ef5ede8))
+* Expose browser internal instance ([aa49477](https://github.com/kikobeats/browserless/commit/aa49477))
+* Fix linter ([78a72c7](https://github.com/kikobeats/browserless/commit/78a72c7))
+
+
+
 <a name="3.4.0"></a>
 # 3.4.0 (2018-03-24)
 
