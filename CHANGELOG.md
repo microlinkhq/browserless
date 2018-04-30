@@ -1,3 +1,15 @@
+<a name="3.6.0"></a>
+# 3.6.0 (2018-04-30)
+
+* Add abortTrackers support ([cf36e28](https://github.com/kikobeats/browserless/commit/cf36e28))
+* Update index.html ([a00b3ee](https://github.com/kikobeats/browserless/commit/a00b3ee))
+* Update index.html ([c9a32d4](https://github.com/kikobeats/browserless/commit/c9a32d4))
+* Update index.html ([e625f75](https://github.com/kikobeats/browserless/commit/e625f75))
+* Update index.html ([446c348](https://github.com/kikobeats/browserless/commit/446c348))
+* Update README.md ([8377c5b](https://github.com/kikobeats/browserless/commit/8377c5b))
+
+
+
 <a name="3.5.0"></a>
 # 3.5.0 (2018-04-05)
 
