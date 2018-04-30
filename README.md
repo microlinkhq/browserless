@@ -15,8 +15,7 @@
 
 - High level automation API for working with [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
 - Blocking [ads trackers](https://npm.im/is-tracking-domain) by default.
-- It aborts unnecessary requests.
-- Callback & Promise support.
+- It aborts unnecessary requests based on MIME types.
 
 ## Install
 
