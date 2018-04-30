@@ -26,7 +26,16 @@ module.exports = launchOpts => {
 
   const goto = async (
     page,
-    { url, abortTypes, waitFor, waitUntil, userAgent, viewport, args }
+    {
+      url,
+      abortTrackers,
+      abortTypes,
+      waitFor,
+      waitUntil,
+      userAgent,
+      viewport,
+      args
+    }
   ) => {
     await page.setRequestInterception(true)
     let reqCount = { abort: 0, continue: 0 }
@@ -45,7 +54,7 @@ module.exports = launchOpts => {
       const resourceDomain = extractDomain(resourceUrl)
       const isExternal = isExternalUrl(urlDomain, resourceDomain)
 
-      if (isExternal && isTracker(resourceDomain)) {
+      if (abortTrackers && isExternal && isTracker(resourceDomain)) {
         debug(`abort:tracker:${++reqCount.abort}`, resourceUrl)
         return req.abort()
       }
@@ -63,6 +72,7 @@ module.exports = launchOpts => {
 
   const createGetContent = evaluate => async (url, opts = {}) => {
     const {
+      abortTrackers = true,
       abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
@@ -74,6 +84,7 @@ module.exports = launchOpts => {
     const page = await newPage()
     await goto(page, {
       url,
+      abortTrackers,
       abortTypes,
       waitFor,
       waitUntil,
@@ -127,6 +138,7 @@ module.exports = launchOpts => {
 
   const pdf = async (url, opts = {}) => {
     const {
+      abortTrackers = false,
       abortTypes = [],
       device: deviceName = 'macbook pro 13',
       format = 'A4',
@@ -162,6 +174,7 @@ module.exports = launchOpts => {
       userAgent: isEmpty(userAgent) ? deviceUserAgent : userAgent,
       viewport: Object.assign({}, deviceViewport, viewport),
       url,
+      abortTrackers,
       abortTypes,
       waitFor,
       waitUntil,

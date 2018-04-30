@@ -123,6 +123,13 @@ default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
 
 A list of `resourceType` requests that can be aborted in order to make the process faster.
 
+##### abortTrackers
+
+type: `boolean`</br>
+default: `true`
+
+It will be abort request coming for [tracking domains](https://npm.im/is-tracking-domain).
+
 ### .text(url, options)
 
 It returns the full text content from the target `url`.
@@ -283,6 +290,20 @@ type: `string`</br>
 default: `[]`
 
 A list of `req.resourceType()` to be blocked.
+
+##### abortTrackers
+
+type: `boolean`</br>
+default: `true`
+
+It will be abort request coming for [tracking domains](https://npm.im/is-tracking-domain).
+
+##### abortTrackers
+
+type: `boolean`</br>
+default: `true`
+
+It will be abort request coming for [tracking domains](https://npm.im/is-tracking-domain).
 
 ##### waitFor
 
