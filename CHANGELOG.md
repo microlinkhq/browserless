@@ -1,3 +1,10 @@
+<a name="3.6.1"></a>
+## 3.6.1 (2018-05-28)
+
+* Don't block xhr requests by default ([370ce50](https://github.com/kikobeats/browserless/commit/370ce50))
+
+
+
 <a name="3.6.0"></a>
 # 3.6.0 (2018-04-30)
 
