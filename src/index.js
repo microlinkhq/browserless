@@ -73,7 +73,7 @@ module.exports = launchOpts => {
   const createGetContent = evaluate => async (url, opts = {}) => {
     const {
       abortTrackers = true,
-      abortTypes = ['image', 'media', 'stylesheet', 'font', 'xhr'],
+      abortTypes = ['image', 'media', 'stylesheet', 'font'],
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
       userAgent,
