@@ -1,3 +1,11 @@
+<a name="3.6.2"></a>
+## 3.6.2 (2018-06-28)
+
+* Expose evaluate method ([262f36c](https://github.com/kikobeats/browserless/commit/262f36c))
+* Pass response to evaluate method ([92051fc](https://github.com/kikobeats/browserless/commit/92051fc))
+
+
+
 <a name="3.6.1"></a>
 ## 3.6.1 (2018-05-28)
 
