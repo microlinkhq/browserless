@@ -70,7 +70,7 @@ module.exports = launchOpts => {
     debug(reqCount)
   }
 
-  const createGetContent = evaluate => async (url, opts = {}) => {
+  const evaluate = fn => async (url, opts = {}) => {
     const {
       abortTrackers = true,
       abortTypes = ['image', 'media', 'stylesheet', 'font'],
@@ -92,7 +92,7 @@ module.exports = launchOpts => {
       viewport,
       args
     })
-    const content = await evaluate(page)
+    const content = await fn(page)
 
     await page.close()
     return content
@@ -200,8 +200,9 @@ module.exports = launchOpts => {
 
   return {
     browser,
-    html: createGetContent(EVALUATE_HTML),
-    text: createGetContent(EVALUATE_TEXT),
+    html: evaluate(EVALUATE_HTML),
+    text: evaluate(EVALUATE_TEXT),
+    evaluate,
     pdf,
     screenshot,
     page: newPage,
