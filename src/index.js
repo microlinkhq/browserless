@@ -65,9 +65,10 @@ module.exports = launchOpts => {
 
     if (userAgent) await page.setUserAgent(userAgent)
     if (viewport) await page.setViewport(viewport)
-    await page.goto(url, Object.assign({ waitUntil }, args))
+    const response = await page.goto(url, Object.assign({ waitUntil }, args))
     if (waitFor) await page.waitFor(waitFor)
     debug(reqCount)
+    return response
   }
 
   const evaluate = fn => async (url, opts = {}) => {
@@ -82,7 +83,7 @@ module.exports = launchOpts => {
     } = opts
 
     const page = await newPage()
-    await goto(page, {
+    const response = await goto(page, {
       url,
       abortTrackers,
       abortTypes,
@@ -92,8 +93,8 @@ module.exports = launchOpts => {
       viewport,
       args
     })
-    const content = await fn(page)
 
+    const content = await fn(page, response)
     await page.close()
     return content
   }
