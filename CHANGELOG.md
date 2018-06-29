@@ -1,3 +1,10 @@
+<a name="3.7.0"></a>
+# 3.7.0 (2018-06-29)
+
+* Expose .create method ([d188bad](https://github.com/kikobeats/browserless/commit/d188bad))
+
+
+
 <a name="3.6.2"></a>
 ## 3.6.2 (2018-06-28)
 
