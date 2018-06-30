@@ -13,9 +13,10 @@
 
 ## Features
 
-- High level automation API for working with [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
+- High level automation API on top [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
+- Oriented for production & performance scenarios.
+- Aborting unnecessary requests based on MIME types.
 - Blocking [ads trackers](https://npm.im/is-tracking-domain) by default.
-- It aborts unnecessary requests based on MIME types.
 
 ## Install
 
@@ -248,6 +249,34 @@ const browserless = require('browserless')
   const browserInstance = await browserless.browser
 })()
 ```
+
+### .evaluate
+
+It exposes an interface for creating your own evaluate function.
+
+```js
+const browserless = require('browserless')()
+
+const getUrlInfo = browserless.evaluate((page, response) => ({
+  statusCode: response.status(),
+  url: response.url(),
+  redirectUrls: response.request().redirectChain()
+}))
+
+;(async () => {
+  const url = 'https://example.com'
+  const info = await getUrlInfo(url)
+
+  console.log(info)
+  // {
+  //   "statusCode": 200,
+  //   "url": "https://example.com/",
+  //   "redirectUrls": []
+  // }
+})()
+```
+
+Internally the method performs a [.goto](#gotopage-options) operation and it will pass you the `page` and `reponse`.
 
 ### .page()
 
