@@ -19,7 +19,7 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 
 module.exports = launchOpts => {
-  let browser = puppeteer.launch(launchOpts)
+  let browser = puppeteer.launch(launchOpts).createIncognitoBrowserContext()
 
   const newPage = () =>
     Promise.resolve(browser).then(browser => browser.newPage())
