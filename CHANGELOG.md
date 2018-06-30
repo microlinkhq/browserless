@@ -1,3 +1,11 @@
+<a name="4.0.0"></a>
+# 4.0.0 (2018-06-30)
+
+* Incognito mode support ([faf063e](https://github.com/kikobeats/browserless/commit/faf063e))
+* Unify .create into constructor ([29e7eb4](https://github.com/kikobeats/browserless/commit/29e7eb4))
+
+
+
 <a name="3.7.0"></a>
 # 3.7.0 (2018-06-29)
 
