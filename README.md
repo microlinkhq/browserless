@@ -42,7 +42,7 @@ browserless
 
 See more at [examples](/examples/).
 
-## API
+## Basic
 
 All methods follow the same interface:
 
@@ -74,6 +74,8 @@ const browserless = require('browserless')({
   ]
 })
 ```
+
+By default the library will be pass a well known list of flags, so probably you don't need any additional setup.
 
 ### .html(url, options)
 

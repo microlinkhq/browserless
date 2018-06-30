@@ -6,13 +6,12 @@ const path = require('path')
 
 const looksSame = promisify(require('looks-same'))
 
-const browserless = require('../src')({
-  args: ['--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox']
-})
+const createBrowserless = require('../src')
 
 describe('browserless', () => {
   describe('.html', () => {
     it('get full HTML from a link', async () => {
+      const browserless = createBrowserless()
       const html = await browserless.html('https://example.com')
       should(html.includes('DOCTYPE')).be.true()
     })
@@ -21,6 +20,7 @@ describe('browserless', () => {
   describe('.screenshot', () => {
     describe('format', () => {
       it('png', async () => {
+        const browserless = createBrowserless()
         const tmpStream = await browserless.screenshot('http://example.com')
         const isEqual = await looksSame('test/example.png', tmpStream.path)
         tmpStream.cleanupSync()
@@ -29,6 +29,7 @@ describe('browserless', () => {
       })
 
       it('jpeg', async () => {
+        const browserless = createBrowserless()
         const tmpStream = await browserless.screenshot('http://example.com', {
           type: 'jpeg'
         })
@@ -39,6 +40,7 @@ describe('browserless', () => {
 
     describe('devices', () => {
       it('iPhone 6', async () => {
+        const browserless = createBrowserless()
         const tmpStream = await browserless.screenshot('http://example.com', {
           device: 'iPhone 6'
         })
@@ -54,6 +56,7 @@ describe('browserless', () => {
 
     describe('.pdf', () => {
       it('get full PDF from an url', async () => {
+        const browserless = createBrowserless()
         const tmpStream = await browserless.pdf('http://example.com')
         should(path.extname(tmpStream.path)).be.equal('.pdf')
       })
