@@ -32,6 +32,7 @@
     "create-temp-file2": "~2.0.0",
     "debug": "~3.1.0",
     "extract-domain": "~2.0.3",
+    "generic-pool": "~3.4.2",
     "is-tracking-domain": "~1.1.2"
   },
   "devDependencies": {
@@ -72,7 +73,7 @@
     "clean": "rm -rf node_modules",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "dev:docs": "concurrently \"gulp\" \"npm run server\"",
-    "lint": "standard-markdown && standard",
+    "lint": "standard-markdown README.md && standard",
     "precommit": "lint-staged",
     "pretest": "npm run lint",
     "pretty": "prettier-standard index.js test/**/*.js --single-quote",
