@@ -6,21 +6,14 @@ const createBrowserless = require('../browserless')
 module.exports = (opts, launchOpts) => {
   const factory = {
     create: async () => ({
-      ...(await createBrowserless(launchOpts)),
-      useCount: 0
+      ...(await createBrowserless(launchOpts))
     }),
-    destroy: browserless => browserless.browser.close(),
-    validate: browserless => browserless.useCount < opts.maxUses
+    destroy: browserless => browserless.browser.close()
   }
 
   const pool = genericPool.createPool(factory, opts)
-  const genericAcquire = pool.acquire.bind(pool)
 
-  pool.acquire = async () => {
-    const browserless = await genericAcquire()
-    ++browserless.useCount
-    return browserless
-  }
+  pool.acquire = pool.acquire.bind(pool)
 
   pool.use = async fn => {
     let browserless
