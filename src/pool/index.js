@@ -3,8 +3,8 @@
 const createPool = require('./create')
 
 const POOL_OPTS = {
-  min: 4,
-  max: 8
+  max: 10,
+  min: 2
 }
 
 module.exports = ({ opts, ...launchOpts } = {}) => {

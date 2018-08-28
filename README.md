@@ -16,6 +16,7 @@
 - High level automation API on top [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
 - Oriented for production & performance scenarios.
 - Aborting unnecessary requests based on MIME types.
+- [Pooling](#pool) support to keep multiple browsers ready.
 - Blocking [ads trackers](https://npm.im/is-tracking-domain) by default.
 
 ## Install
@@ -76,7 +77,32 @@ const browserless = require('browserless')({
 })
 ```
 
+#### options
+
+See [puppeteer.launch#options](
+https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+
 By default the library will be pass a well known list of flags, so probably you don't need any additional setup.
+
+### .pool(options)
+
+Tha main **browserless** constructor expose a singleton browser. This is enough for most scenarios, but in case you need you can intialize a **pool of instances**.
+
+```js
+const createBrowserless = require('browserless')
+const browserless = createBrowserless.pool()
+```
+
+#### options
+
+See [puppeteer.launch#options](
+https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+
+It follows the same API than [constructor](constructoroptions) but accept a configurable parameter called `poolOpts` for setup specific pool options
+
+##### poolOpts
+
+See [generic-pool#options](https://github.com/coopernurse/node-pool#opts).
 
 ### .html(url, options)
 
@@ -92,33 +118,35 @@ const browserless = require('browserless')
 })()
 ```
 
-This method accepts `options` that will be pased to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
+#### options
+
+See [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
 Additionally, you can setup:
 
-#### waitFor
+##### waitFor
 
-type:`string|function|number`</br>
+type:`string`|`function`|`number`</br>
 default: `0`
 
 Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
 
-#### waitUntil
+##### waitUntil
 
 type:`array`</br>
 default: `['networkidle2', 'load', 'domcontentloaded']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
 
-#### userAgent
+##### userAgent
 
 It will setup a custom user agent, using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
 
-#### viewport
+##### viewport
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
-#### abortTypes
+##### abortTypes
 
 type: `array` </br>
 default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
@@ -146,7 +174,9 @@ const browserless = require('browserless')
 })()
 ```
 
-All `options` that you can pass are the same than [`.html`](#html) method.
+#### options
+
+They are the same than [`.html`](#html) method.
 
 ### .pdf(url, options)
 
@@ -171,31 +201,35 @@ const browserless = require('browserless')
 
 It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
 
-The `options` provided are passed to [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
+#### options
 
-If you want to customize tmpStream settings, pass [opts.tmpOptions](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
+See [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
 
 Additionally, you can setup:
 
-#### media
+##### tmpOptions
+
+See [createTempFile#options](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
+
+##### media
 
 Changes the CSS media type of the page using [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
 
-#### device
+##### device
 
-It generate the PDF using the [device](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js) descriptor name settings, like `userAgent` and `viewport`.
+It generate the PDF using the [device](#devices) descriptor name settings, like `userAgent` and `viewport`.
 
-#### userAgent
+##### userAgent
 
 It will setup a custom user agent, using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
 
-#### viewport
+##### viewport
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
 ### .screenshot(url, options)
 
-It takes a screenshot from the target `url`
+It takes a screenshot from the target `url`.
 
 ```js
 const browserless = require('browserless')
@@ -216,23 +250,60 @@ const browserless = require('browserless')
 
 It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
 
-The `options` provided are passed to [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
+#### options
 
-If you want to customize tmpStream settings, pass [opts.tmpOptions](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
+See [page.screenshot](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagescreenshotoptions).
 
 Additionally, you can setup:
 
-#### device
+##### tmpOptions
 
-It generate the PDF using the [device](https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js) descriptor name settings, like `userAgent` and `viewport`.
+See [createTempFile#options](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
 
-#### userAgent
+The `options` provided are passed to [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
+
+Additionally, you can setup:
+
+##### device
+
+It generate the PDF using the [device](#devices) descriptor name settings, like `userAgent` and `viewport`.
+
+##### userAgent
 
 It will setup a custom user agent, using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
 
-#### viewport
+##### viewport
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
+
+### .devices
+
+List of all available devices preconfigured with `deviceName`, `viewport` and `userAgent` settings.
+
+These devices are used for emulation purposes.
+
+#### .getDevice(deviceName)
+
+Get an specific device descriptor settings by descriptor name.
+
+```js
+const browserless = require('browserless')
+
+browserless.getDevice('Macbook Pro 15')
+
+// {
+//   name: 'Macbook Pro 15',
+//   userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X …',
+//   viewport: {
+//     width: 1440,
+//     height: 900,
+//     deviceScaleFactor: 1,
+//     isMobile: false,
+//     hasTouch: false,
+//     isLandscape: false
+//   }
+// }
+```
 
 ## Advanced
 
@@ -250,7 +321,7 @@ const browserless = require('browserless')
 })()
 ```
 
-### .evaluate
+### .evaluate(page, response)
 
 It exposes an interface for creating your own evaluate function.
 
@@ -277,18 +348,6 @@ const getUrlInfo = browserless.evaluate((page, response) => ({
 ```
 
 Internally the method performs a [.goto](#gotopage-options) operation and it will pass you the `page` and `reponse`.
-
-### .page()
-
-It returns a standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
-
-```js
-const browserless = require('browserless')
-
-;(async () => {
-  const page = await browserless.page()
-})()
-```
 
 ### .goto(page, options)
 
@@ -363,6 +422,23 @@ type: `object`
 
 The settings to be passed to [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options).
 
+### .page()
+
+It returns a standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
+
+```js
+const browserless = require('browserless')
+
+;(async () => {
+  const page = await browserless.page()
+})()
+```
+
+## Benchmark
+
+![](/static/bench.png)
+
+We included a tiny [benchmark](https://github.com/Kikobeats/browserless/tree/master/bench) utility for make easier testing multiple configuration settings.
 
 ## FAQ
 
@@ -380,10 +456,10 @@ In order to speed up the process, we block ads scripts by default because they a
 
 Probably **browserless** was too smart and it blocked a request that you need.
 
-You can active debug mode using `DEBUG=browserless` environment variable in order to see what is happening behind the code:
+You can active debug mode using `DEBUG=browserless*` environment variable in order to see what is happening behind the code:
 
 ```
-DEBUG=browserless node index.js
+DEBUG=browserless* node index.js
 ```
 
 Consider open an [issue](https://github.com/Kikobeats/browserless/issues/new) with the debug trace.

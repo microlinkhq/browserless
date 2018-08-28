@@ -36,9 +36,11 @@
     "is-tracking-domain": "~1.1.2"
   },
   "devDependencies": {
+    "asciichart": "latest",
     "browser-sync": "latest",
     "concurrently": "latest",
     "coveralls": "latest",
+    "fmt-obj": "latest",
     "git-dirty": "latest",
     "gulp": "latest",
     "gulp-autoprefixer": "latest",
@@ -50,8 +52,11 @@
     "lint-staged": "latest",
     "lodash": "latest",
     "looks-same": "latest",
+    "measured": "latest",
+    "meow": "latest",
     "mocha": "latest",
     "nyc": "latest",
+    "p-series": "latest",
     "percentile": "latest",
     "prettier-standard": "latest",
     "pretty-ms": "latest",
