@@ -1,3 +1,15 @@
+<a name="4.1.0"></a>
+# 4.1.0 (2018-08-28)
+
+* Add pool support ([f0266ba](https://github.com/kikobeats/browserless/commit/f0266ba))
+* Adjust meta ([b4e0328](https://github.com/kikobeats/browserless/commit/b4e0328))
+* Improve docs ([7eb4a60](https://github.com/kikobeats/browserless/commit/7eb4a60))
+* Improve example ([cd01835](https://github.com/kikobeats/browserless/commit/cd01835))
+* Simplify pool implementation ([8b53f23](https://github.com/kikobeats/browserless/commit/8b53f23))
+* Update docs ([7da6d67](https://github.com/kikobeats/browserless/commit/7da6d67))
+
+
+
 <a name="4.0.0"></a>
 # 4.0.0 (2018-06-30)
 
