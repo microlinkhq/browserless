@@ -16,7 +16,7 @@
 - High level automation API on top [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
 - Oriented for production & performance scenarios.
 - Aborting unnecessary requests based on MIME types.
-- [Pooling](#pool) support to keep multiple browsers ready.
+- [Pooling](#pooloptions) support to keep multiple browsers ready.
 - Blocking [ads trackers](https://npm.im/is-tracking-domain) by default.
 
 ## Install
