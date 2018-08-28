@@ -18,6 +18,9 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 
+// The puppeteer launch causes many events to be emitted.
+process.setMaxListeners(0)
+
 module.exports = launchOpts => {
   let browser = puppeteer.launch({
     ignoreHTTPSErrors: true,
