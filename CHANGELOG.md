@@ -1,3 +1,11 @@
+<a name="4.1.1"></a>
+## 4.1.1 (2018-08-30)
+
+* Add concurrency for bench ([300a486](https://github.com/kikobeats/browserless/commit/300a486))
+* Update ([d334d37](https://github.com/kikobeats/browserless/commit/d334d37))
+
+
+
 <a name="4.1.0"></a>
 # 4.1.0 (2018-08-28)
 
