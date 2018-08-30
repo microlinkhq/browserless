@@ -1,11 +1,14 @@
 'use strict'
 
 const createBrowserless = require('..')
+
+const { includes, reduce } = require('lodash')
+const processStats = require('process-stats')
 const asciichart = require('asciichart')
 const prettyMs = require('pretty-ms')
 const prettyObj = require('fmt-obj')
 const Measured = require('measured')
-const pSeries = require('p-series')
+const pAll = require('p-all')
 const meow = require('meow')
 
 const cli = meow(
@@ -19,6 +22,7 @@ const cli = meow(
       --iterations     Number of iterations.
       --pool-min       Mininum of instances in pool mode.
       --pool-max       Maximum of instances in pool mode.
+      --concurrency    Define number of concurrent request.
 
     Options
       The rest of parameters provided are passed as options.
@@ -33,6 +37,10 @@ const cli = meow(
         type: 'boolean',
         default: false
       },
+      concurrency: {
+        type: 'number',
+        default: 1
+      },
       iterations: {
         type: 'number',
         default: 10
@@ -41,7 +49,14 @@ const cli = meow(
   }
 )
 
-const benchmark = async ({ browserless, method, url, opts, iterations }) => {
+const benchmark = async ({
+  browserless,
+  method,
+  url,
+  opts,
+  iterations,
+  concurrency
+}) => {
   const timer = new Measured.Timer()
   const promises = [...Array(iterations).keys()].map(n => {
     return async () => {
@@ -55,7 +70,7 @@ const benchmark = async ({ browserless, method, url, opts, iterations }) => {
     }
   })
 
-  const times = await pSeries(promises)
+  const times = await pAll(promises, { concurrency })
   const histogram = timer.toJSON().histogram
   return { times, histogram }
 }
@@ -65,6 +80,7 @@ const benchmark = async ({ browserless, method, url, opts, iterations }) => {
 
   const {
     method,
+    concurrency,
     pool: isPool,
     poolMin,
     poolMax,
@@ -79,7 +95,9 @@ const benchmark = async ({ browserless, method, url, opts, iterations }) => {
     : createBrowserless(opts)
 
   console.log(prettyObj(cli.flags))
+
   const { times, histogram } = await benchmark({
+    concurrency,
     browserless,
     iterations,
     method,
@@ -87,16 +105,22 @@ const benchmark = async ({ browserless, method, url, opts, iterations }) => {
     opts
   })
 
-  const stats = Object.keys(histogram).reduce((acc, key) => {
-    const value = histogram[key]
-    return { ...acc, [key]: prettyMs(value) }
-  }, {})
+  const stats = reduce(
+    histogram,
+    (acc, value, key) => {
+      const newValue = !includes(['count'], key) ? prettyMs(value) : value
+
+      return { ...acc, [key]: newValue }
+    },
+    {}
+  )
 
   const graph = asciichart.plot(times, { height: 6 })
+  const { memUsed } = processStats.process()
 
   console.log()
   console.log(graph)
-  console.log(prettyObj(stats))
+  console.log(prettyObj({ memUsed: memUsed.pretty, ...stats }))
 
   process.exit()
 })()

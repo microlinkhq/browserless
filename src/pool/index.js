@@ -3,7 +3,7 @@
 const createPool = require('./create')
 
 const POOL_OPTS = {
-  max: 10,
+  max: 15,
   min: 2
 }
 
