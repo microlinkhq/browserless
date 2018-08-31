@@ -13,19 +13,21 @@ module.exports = (opts, launchOpts) => {
 
   const pool = genericPool.createPool(factory, opts)
 
-  pool.acquire = pool.acquire.bind(pool)
-
   pool.use = async fn => {
+    let error
+    let result
     let browserless
+
     try {
-      const browserless = await pool.acquire()
-      const result = await fn(browserless)
-      pool.release(browserless)
-      return result
+      browserless = await pool.acquire()
+      result = await fn(browserless)
     } catch (err) {
-      pool.release(browserless)
-      throw err
+      error = err
     }
+
+    if (browserless) await pool.release(browserless)
+    if (error) throw error
+    return result
   }
 
   return pool
