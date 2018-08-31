@@ -1,3 +1,11 @@
+<a name="4.1.2"></a>
+## 4.1.2 (2018-08-31)
+
+* Ensure release just once ([33371f7](https://github.com/kikobeats/browserless/commit/33371f7))
+* Update meta ([f11712a](https://github.com/kikobeats/browserless/commit/f11712a))
+
+
+
 <a name="4.1.1"></a>
 ## 4.1.1 (2018-08-30)
 
