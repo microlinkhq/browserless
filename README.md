@@ -50,7 +50,7 @@ All methods follow the same interface:
 
 - `url`: The target URL (*required*).
 - `options`: Specific settings for the method (*optional*).
-- `callback`: Node.js callback. If you don't provide one, the method will be return a `promise`.
+- `callback`: Node.js callback. If you don't provide one, the method will return a `promise`.
 
 ### .constructor(options)
 
@@ -63,7 +63,7 @@ const browserless = require('browserless')()
 
 or passing specific launchers options:
 
-```
+```js
 // Creating an instance for running it at AWS Lambda
 const browserless = require('browserless')({
   ignoreHTTPSErrors: true,
