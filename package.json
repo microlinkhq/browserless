@@ -63,7 +63,7 @@
     "process-stats": "latest",
     "puppeteer": "latest",
     "should": "latest",
-    "standard": "latest",
+    "standard": "11",
     "standard-markdown": "latest",
     "string-to-stream": "latest",
     "term-img": "latest",
