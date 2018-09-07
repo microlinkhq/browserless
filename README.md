@@ -36,9 +36,9 @@ const browserless = require('browserless')()
 
 browserless
   .screenshot('http://example.com', { device: 'iPhone 6' })
-  .then(tmpStream => {
-    console.log(`your screenshot at ${tmpStream.path}`)
-    tmpStream.cleanupSync()
+  .then(tmpFile => {
+    console.log(`your screenshot at ${tmpFile.path}`)
+    tmpFile.cleanupSync()
   })
 ```
 
@@ -187,19 +187,19 @@ const browserless = require('browserless')
 
 ;(async () => {
   const url = 'https://example.com'
-  const tmpStream = await browserless.pdf(url, {
+  const tmpFile = await browserless.pdf(url, {
     tmpOpts: {
       path: './',
       name: `${url.hostname}.${Date.now()}`
     }
   })
 
-  console.log(`PDF generated at '${tmpStream.path}'`)
-  tmpStream.cleanupSync() // It removes the file!
+  console.log(`PDF generated at '${tmpFile.path}'`)
+  tmpFile.cleanupSync() // It removes the file!
 })()
 ```
 
-It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
+It returns an [tmpFile](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
 
 #### options
 
@@ -209,7 +209,7 @@ Additionally, you can setup:
 
 ##### tmpOptions
 
-See [createTempFile#options](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
+See [tempy#api](https://github.com/sindresorhus/tempy#api)..
 
 ##### media
 
@@ -236,19 +236,19 @@ const browserless = require('browserless')
 
 ;(async () => {
   const url = 'https://example.com'
-  const tmpStream = await browserless.screenshot(url, {
+  const tmpFile = await browserless.screenshot(url, {
     tmpOpts: {
       path: './',
       name: `${url.hostname}.${Date.now()}`
     }
   })
 
-  console.log(`Screenshot taken at '${tmpStream.path}'`)
-  tmpStream.cleanupSync() // It removes the file!
+  console.log(`Screenshot taken at '${tmpFile.path}'`)
+  tmpFile.cleanupSync() // It removes the file!
 })()
 ```
 
-It returns an [tmpStream](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
+It returns a temporary file path with `cleanup`/`cleanupSync` methods for easily clean it.
 
 #### options
 
@@ -258,7 +258,7 @@ Additionally, you can setup:
 
 ##### tmpOptions
 
-See [createTempFile#options](https://github.com/Kikobeats/create-temp-file2#createtempfileoptions).
+See [tempy#api](https://github.com/sindresorhus/tempy#api).
 
 The `options` provided are passed to [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
 

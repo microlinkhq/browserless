@@ -1,12 +1,18 @@
 'use strict'
 
-const createTempFile = require('create-temp-file2')
 const extractDomain = require('extract-domain')
-const puppeteer = require('puppeteer')
 const debug = require('debug')('browserless')
+const puppeteer = require('puppeteer')
+const tempy = require('tempy')
 
 const { getDevice } = require('./devices')
 const isTracker = require('./is-tracker')
+
+const { promisify } = require('util')
+const fs = require('fs')
+
+const unlink = promisify(fs.unlink)
+const unlinkSync = promisify(fs.unlinkSync)
 
 const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
 
@@ -17,6 +23,15 @@ const EVALUATE_HTML = page => page.content()
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
+
+const createTempFile = opts => {
+  const tmp = tempy.file(opts)
+  return {
+    path: tmp,
+    cleanup: unlink.bind(unlink, tmp),
+    cleanupSync: unlinkSync.bind(unlinkSync, tmp)
+  }
+}
 
 // The puppeteer launch causes many events to be emitted.
 process.setMaxListeners(0)
@@ -87,7 +102,7 @@ module.exports = launchOpts => {
 
     if (userAgent) await page.setUserAgent(userAgent)
     if (viewport) await page.setViewport(viewport)
-    const response = await page.goto(url, Object.assign({ waitUntil }, args))
+    const response = await page.goto(url, { waitUntil, ...args })
     if (waitFor) await page.waitFor(waitFor)
     debug(reqCount)
     return response
@@ -134,9 +149,7 @@ module.exports = launchOpts => {
       ...args
     } = opts
 
-    const tempFile = createTempFile(Object.assign({ ext: `.${type}` }, tmpOpts))
-    const { path } = tempFile
-
+    const tempFile = createTempFile({ extension: type, ...tmpOpts })
     const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
       deviceName
     )
@@ -145,7 +158,7 @@ module.exports = launchOpts => {
 
     await goto(page, {
       userAgent: isEmpty(userAgent) ? deviceUserAgent : userAgent,
-      viewport: Object.assign({}, deviceViewport, viewport),
+      viewport: { ...deviceViewport, ...viewport },
       url,
       abortTypes,
       waitFor,
@@ -153,10 +166,10 @@ module.exports = launchOpts => {
       args
     })
 
-    await page.screenshot(Object.assign({ path, type }, args))
+    await page.screenshot({ path: tempFile.path, type, ...args })
 
     await page.close()
-    return Promise.resolve(tempFile)
+    return tempFile
   }
 
   const pdf = async (url, opts = {}) => {
@@ -182,8 +195,7 @@ module.exports = launchOpts => {
       ...args
     } = opts
 
-    const tempFile = createTempFile(Object.assign({ ext: `.pdf` }, tmpOpts))
-    const { path } = tempFile
+    const tempFile = createTempFile({ extension: 'pdf', ...tmpOpts })
 
     const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
       deviceName
@@ -195,7 +207,7 @@ module.exports = launchOpts => {
 
     await goto(page, {
       userAgent: isEmpty(userAgent) ? deviceUserAgent : userAgent,
-      viewport: Object.assign({}, deviceViewport, viewport),
+      viewport: { ...deviceViewport, ...viewport },
       url,
       abortTrackers,
       abortTypes,
@@ -204,21 +216,16 @@ module.exports = launchOpts => {
       args
     })
 
-    await page.pdf(
-      Object.assign(
-        {
-          margin,
-          path,
-          format,
-          printBackground,
-          scale
-        },
-        args
-      )
-    )
-
+    await page.pdf({
+      path: tempFile.path,
+      margin,
+      format,
+      printBackground,
+      scale,
+      ...args
+    })
     await page.close()
-    return Promise.resolve(tempFile)
+    return tempFile
   }
 
   return {

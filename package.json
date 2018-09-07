@@ -29,11 +29,11 @@
     "text"
   ],
   "dependencies": {
-    "create-temp-file2": "~2.0.0",
     "debug": "~3.1.0",
     "extract-domain": "~2.0.3",
     "generic-pool": "~3.4.2",
-    "is-tracking-domain": "~1.1.2"
+    "is-tracking-domain": "~1.1.2",
+    "tempy": "~0.2.1"
   },
   "devDependencies": {
     "asciichart": "latest",
