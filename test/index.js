@@ -20,7 +20,7 @@ const looksSame = promisify(require('looks-same'))
 
     describe('.screenshot', () => {
       describe('format', () => {
-        it.only('png', async () => {
+        it('png', async () => {
           const browserless = createBrowserless()
           const tmp = await browserless.screenshot('http://example.com')
           const isEqual = await looksSame('test/example.png', tmp.path)
