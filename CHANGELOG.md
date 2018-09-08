@@ -1,3 +1,13 @@
+<a name="4.1.3"></a>
+## 4.1.3 (2018-09-08)
+
+* Fix typos ([a22196e](https://github.com/kikobeats/browserless/commit/a22196e))
+* Remove only ([e296c75](https://github.com/kikobeats/browserless/commit/e296c75))
+* Update package.json ([4dfa097](https://github.com/kikobeats/browserless/commit/4dfa097))
+* Use lightweight temporal file dependency ([d9cbc99](https://github.com/kikobeats/browserless/commit/d9cbc99))
+
+
+
 <a name="4.1.2"></a>
 ## 4.1.2 (2018-08-31)
 
