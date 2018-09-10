@@ -36,7 +36,11 @@ const createTempFile = opts => {
 // The puppeteer launch causes many events to be emitted.
 process.setMaxListeners(0)
 
-module.exports = launchOpts => {
+module.exports = ({
+  incognito = true,
+  timeout = 30000,
+  ...launchOpts
+} = {}) => {
   let browser = puppeteer.launch({
     ignoreHTTPSErrors: true,
     args: [
@@ -52,14 +56,20 @@ module.exports = launchOpts => {
       '--no-pings',
       '--no-sandbox',
       '--no-zygote',
-      '--prerender-from-omnibox=disabled',
-      '--single-process'
+      '--prerender-from-omnibox=disabled'
     ],
     ...launchOpts
   })
 
   const newPage = () =>
-    Promise.resolve(browser).then(browser => browser.newPage())
+    Promise.resolve(browser).then(async browser => {
+      const context = incognito
+        ? await browser.createIncognitoBrowserContext()
+        : browser
+      const page = await context.newPage()
+      page.setDefaultNavigationTimeout(timeout)
+      return page
+    })
 
   const goto = async (
     page,
