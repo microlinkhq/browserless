@@ -84,6 +84,22 @@ https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunc
 
 By default the library will be pass a well known list of flags, so probably you don't need any additional setup.
 
+##### timeout
+
+type:`number`</br>
+default: `30000`
+
+This setting will change the default maximum navigation time.
+
+##### incognito
+
+type:`boolean`</br>
+default: `true`
+
+Every time a new page is created, it will be an incognito page.
+
+An incognito page will not share cookies/cache with other browser pages.
+
 ### .pool(options)
 
 Tha main **browserless** constructor expose a singleton browser. This is enough for most scenarios, but in case you need you can intialize a **pool of instances**.
