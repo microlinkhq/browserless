@@ -52,14 +52,17 @@ module.exports = launchOpts => {
       '--no-pings',
       '--no-sandbox',
       '--no-zygote',
-      '--prerender-from-omnibox=disabled',
-      '--single-process'
+      '--prerender-from-omnibox=disabled'
     ],
     ...launchOpts
   })
 
   const newPage = () =>
-    Promise.resolve(browser).then(browser => browser.newPage())
+    Promise.resolve(browser).then(async browser => {
+      const context = await browser.createIncognitoBrowserContext()
+      const page = await context.newPage()
+      return page
+    })
 
   const goto = async (
     page,
