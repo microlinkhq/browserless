@@ -102,11 +102,32 @@ An incognito page will not share cookies/cache with other browser pages.
 
 ### .pool(options)
 
-Tha main **browserless** constructor expose a singleton browser. This is enough for most scenarios, but in case you need you can intialize a **pool of instances**.
+**browserless** uses internally a singletion browser instance.
+
+You can use `.pool` constructor for creating a **pool of instances**:
 
 ```js
 const createBrowserless = require('browserless')
-const browserless = createBrowserless.pool()
+const browserlessPool = createBrowserless.pool()
+```
+
+After that, the API is the same. The acquire/release is done automagically.
+
+You can interact with a **browserless** instance directly as well:  
+
+```js
+const createBrowserless = require('browserless')
+const browserlessPool = createBrowserless.pool()
+
+// get a browserless instance from the pool
+browserlessPool(async browserless => {
+  // get a page from the browser instance
+  const page = await browserless.page()
+  await browserless.goto(page, { url: url.toString() })
+  const html = await page.content()
+  console.log(html)
+  process.exit()
+})
 ```
 
 #### options
