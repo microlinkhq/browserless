@@ -10,13 +10,9 @@ const POOL_OPTS = {
 module.exports = ({ opts, ...launchOpts } = {}) => {
   const poolOpts = { ...POOL_OPTS, ...opts }
   const pool = createPool(poolOpts, launchOpts)
-
-  return {
-    pool,
-    html: (url, opts) => pool.use(browserless => browserless.html(url, opts)),
-    text: (url, opts) => pool.use(browserless => browserless.text(url, opts)),
-    pdf: (url, opts) => pool.use(browserless => browserless.pdf(url, opts)),
-    screenshot: (url, opts) =>
-      pool.use(browserless => browserless.screenshot(url, opts))
-  }
+  ;['html', 'text', 'pdf', 'screenshot'].forEach(key => {
+    pool[key] = (url, opts) =>
+      pool.use(browserless => browserless[key](url, opts))
+  })
+  return pool
 }

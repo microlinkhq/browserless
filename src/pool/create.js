@@ -13,7 +13,7 @@ module.exports = (opts, launchOpts) => {
 
   const pool = genericPool.createPool(factory, opts)
 
-  pool.use = async fn => {
+  return async fn => {
     let error
     let result
     let browserless
@@ -29,6 +29,4 @@ module.exports = (opts, launchOpts) => {
     if (error) throw error
     return result
   }
-
-  return pool
 }
