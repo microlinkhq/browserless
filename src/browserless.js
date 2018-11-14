@@ -22,6 +22,8 @@ const EVALUATE_HTML = page => page.content()
 
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 
+const isEmpty = val => val == null || !(Object.keys(val) || val).length
+
 const createTempFile = opts => {
   const tmp = tempy.file(opts)
   return {
@@ -108,14 +110,13 @@ module.exports = ({
       return req.continue()
     })
 
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
-      device
-    )
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } =
+      getDevice(device) || {}
 
     const userAgent = deviceUserAgent || fallbackUserAgent
     if (userAgent) await page.setUserAgent(userAgent)
     const viewport = { ...deviceViewport, ...fallbackViewport }
-    if (viewport) await page.setViewport(viewport)
+    if (!isEmpty(viewport)) await page.setViewport(viewport)
     const response = await page.goto(url, { waitUntil, ...args })
     if (waitFor) await page.waitFor(waitFor)
     debug(reqCount)
