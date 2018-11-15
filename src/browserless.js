@@ -20,9 +20,9 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
 const EVALUATE_HTML = page => page.content()
 
-const isEmpty = val => val == null || !(Object.keys(val) || val).length
-
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
+
+const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const createTempFile = opts => {
   const tmp = tempy.file(opts)
@@ -75,13 +75,14 @@ module.exports = ({
     page,
     {
       url,
+      device,
       abortTrackers,
-      abortTypes,
-      waitFor,
-      waitUntil,
-      userAgent,
-      viewport,
-      args
+      abortTypes = [],
+      waitFor = 0,
+      waitUntil = WAIT_UNTIL,
+      userAgent: fallbackUserAgent,
+      viewport: fallbackViewport,
+      ...args
     }
   ) => {
     await page.setRequestInterception(true)
@@ -105,13 +106,17 @@ module.exports = ({
         debug(`abort:tracker:${++reqCount.abort}`, resourceUrl)
         return req.abort()
       }
-
       debug(`continue:${resourceType}:${++reqCount.continue}`, resourceUrl)
       return req.continue()
     })
 
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } =
+      getDevice(device) || {}
+
+    const userAgent = deviceUserAgent || fallbackUserAgent
     if (userAgent) await page.setUserAgent(userAgent)
-    if (viewport) await page.setViewport(viewport)
+    const viewport = { ...deviceViewport, ...fallbackViewport }
+    if (!isEmpty(viewport)) await page.setViewport(viewport)
     const response = await page.goto(url, { waitUntil, ...args })
     if (waitFor) await page.waitFor(waitFor)
     debug(reqCount)
@@ -122,10 +127,6 @@ module.exports = ({
     const {
       abortTrackers = true,
       abortTypes = ['image', 'media', 'stylesheet', 'font'],
-      waitFor = 0,
-      waitUntil = WAIT_UNTIL,
-      userAgent,
-      viewport,
       ...args
     } = opts
 
@@ -134,13 +135,8 @@ module.exports = ({
       url,
       abortTrackers,
       abortTypes,
-      waitFor,
-      waitUntil,
-      userAgent,
-      viewport,
-      args
+      ...args
     })
-
     const content = await fn(page, response)
     await page.close()
     return content
@@ -148,45 +144,23 @@ module.exports = ({
 
   const screenshot = async (url, opts = {}) => {
     const {
-      abortTypes = [],
-      device: deviceName = 'macbook pro 13',
+      device = 'macbook pro 13',
       tmpOpts,
       type = 'png',
-      userAgent,
       viewport,
-      waitFor = 0,
-      waitUntil = WAIT_UNTIL,
       ...args
     } = opts
 
     const tempFile = createTempFile({ extension: type, ...tmpOpts })
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
-      deviceName
-    )
-
     const page = await newPage()
-
-    await goto(page, {
-      userAgent: isEmpty(userAgent) ? deviceUserAgent : userAgent,
-      viewport: { ...deviceViewport, ...viewport },
-      url,
-      abortTypes,
-      waitFor,
-      waitUntil,
-      args
-    })
-
+    await goto(page, { url, device, ...args })
     await page.screenshot({ path: tempFile.path, type, ...args })
-
     await page.close()
     return tempFile
   }
 
   const pdf = async (url, opts = {}) => {
     const {
-      abortTrackers = false,
-      abortTypes = [],
-      device: deviceName = 'macbook pro 13',
       format = 'A4',
       margin = {
         top: '0.25cm',
@@ -198,34 +172,14 @@ module.exports = ({
       printBackground = true,
       scale = 0.65,
       tmpOpts,
-      userAgent,
       viewport,
-      waitFor = 0,
-      waitUntil = WAIT_UNTIL,
       ...args
     } = opts
 
     const tempFile = createTempFile({ extension: 'pdf', ...tmpOpts })
-
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(
-      deviceName
-    )
-
     const page = await newPage()
-
     await page.emulateMedia(media)
-
-    await goto(page, {
-      userAgent: isEmpty(userAgent) ? deviceUserAgent : userAgent,
-      viewport: { ...deviceViewport, ...viewport },
-      url,
-      abortTrackers,
-      abortTypes,
-      waitFor,
-      waitUntil,
-      args
-    })
-
+    await goto(page, { url, ...args })
     await page.pdf({
       path: tempFile.path,
       margin,
