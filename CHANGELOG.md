@@ -1,3 +1,10 @@
+<a name="4.2.1"></a>
+## 4.2.1 (2018-11-15)
+
+* Update dependencies ([d801f43](https://github.com/kikobeats/browserless/commit/d801f43))
+
+
+
 <a name="4.2.0"></a>
 # 4.2.0 (2018-11-15)
 
