@@ -1,3 +1,15 @@
+<a name="4.2.0"></a>
+# 4.2.0 (2018-11-15)
+
+* Add docs ([07fb497](https://github.com/kikobeats/browserless/commit/07fb497))
+* Add pool documentation ([adaddcd](https://github.com/kikobeats/browserless/commit/adaddcd))
+* Better pool API ([e8753a2](https://github.com/kikobeats/browserless/commit/e8753a2))
+* Create isolate context in each page ([ec8137a](https://github.com/kikobeats/browserless/commit/ec8137a))
+* Unify method params ([7c9f5f7](https://github.com/kikobeats/browserless/commit/7c9f5f7))
+* Use isEmpty check ([9123cde](https://github.com/kikobeats/browserless/commit/9123cde))
+
+
+
 <a name="4.1.3"></a>
 ## 4.1.3 (2018-09-08)
 
