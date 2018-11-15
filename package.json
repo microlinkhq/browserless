@@ -29,10 +29,10 @@
     "text"
   ],
   "dependencies": {
-    "debug": "~3.1.0",
-    "extract-domain": "~2.0.3",
+    "debug": "~4.1.0",
+    "extract-domain": "~2.0.4",
     "generic-pool": "~3.4.2",
-    "is-tracking-domain": "~1.1.2",
+    "is-tracking-domain": "~1.1.6",
     "tempy": "~0.2.1"
   },
   "devDependencies": {
