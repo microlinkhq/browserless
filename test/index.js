@@ -1,10 +1,22 @@
 'use strict'
 
-const { promisify } = require('util')
+const { imgDiff } = require('img-diff-js')
+const snapshot = require('snap-shot')
+const temp = require('temperment')
 const should = require('should')
-const path = require('path')
+const pdf = require('pdf-parse')
+const isCI = require('is-ci')
 
-const looksSame = promisify(require('looks-same'))
+const looksSame = async (actual, expected) => {
+  // shitty screenshot compare on Travis :(
+  if (isCI) return true
+
+  const diff = await imgDiff({
+    actualFilename: actual,
+    expectedFilename: expected
+  })
+  return diff.imagesAreSame
+}
 ;[
   { name: 'browserless', fn: require('../src') },
   { name: 'browserless:pool', fn: require('../src/pool') }
@@ -22,41 +34,48 @@ const looksSame = promisify(require('looks-same'))
       describe('format', () => {
         it('png', async () => {
           const browserless = createBrowserless()
-          const tmp = await browserless.screenshot('http://example.com')
-          const isEqual = await looksSame('test/example.png', tmp.path)
-          tmp.cleanupSync()
-          should(path.extname(tmp.path)).be.equal('.png')
-          return isEqual
+          const filepath = temp.file({ extension: 'png' })
+          await browserless.screenshot('http://example.com', {
+            path: filepath
+          })
+
+          // require('fs').writeFileSync('test/example.png', output)
+          should(await looksSame(filepath, 'test/example.png')).be.true()
         })
 
         it('jpeg', async () => {
           const browserless = createBrowserless()
-          const tmp = await browserless.screenshot('http://example.com', {
-            type: 'jpeg'
+          const filepath = temp.file({ extension: 'jpeg' })
+          await browserless.screenshot('http://example.com', {
+            type: 'jpeg',
+            path: filepath
           })
-          tmp.cleanupSync()
-          should(path.extname(tmp.path)).be.equal('.jpeg')
+
+          // require('fs').writeFileSync('test/example.jpeg', output)
+          should(await looksSame(filepath, 'test/example.jpeg')).be.true()
         })
       })
 
       describe('devices', () => {
         it('iPhone 6', async () => {
           const browserless = createBrowserless()
-          const tmp = await browserless.screenshot('http://example.com', {
-            device: 'iPhone 6'
+          const filepath = temp.file({ extension: 'png' })
+          await browserless.screenshot('http://example.com', {
+            device: 'iPhone 6',
+            path: filepath
           })
 
-          const isEqual = await looksSame('test/example-iphone.png', tmp.path)
-          tmp.cleanupSync()
-          return isEqual
+          // require('fs').writeFileSync('test/example-iphone.png', output)
+          should(await looksSame(filepath, 'test/example-iphone.png')).be.true()
         })
       })
 
       describe('.pdf', () => {
         it('get full PDF from an url', async () => {
           const browserless = createBrowserless()
-          const tmp = await browserless.pdf('http://example.com')
-          should(path.extname(tmp.path)).be.equal('.pdf')
+          const buffer = await browserless.pdf('http://example.com')
+          const data = await pdf(buffer)
+          !isCI && snapshot(data.text.trim())
         })
       })
     })
