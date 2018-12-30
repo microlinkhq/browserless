@@ -1,8 +1,9 @@
 'use strict'
 
-const createBrowserless = require('..')
-const browserless = createBrowserless()
+const createBrowserless = require('browserless')
 const pEvent = require('p-event')
+
+const browserless = createBrowserless()
 
 require('./main')(async url => {
   const page = await browserless.page()

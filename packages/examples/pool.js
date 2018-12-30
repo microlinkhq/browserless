@@ -1,7 +1,7 @@
 'use strict'
 
-const createBrowserless = require('..')
-const browserlessPool = createBrowserless.pool()
+const createBrowserlessPool = require('@browserless/pool')
+const browserlessPool = createBrowserlessPool()
 
 require('./main')(async url => {
   // get a browserless instance from the pool

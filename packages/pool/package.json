@@ -1,0 +1,43 @@
+{
+  "name": "@browserless/pool",
+  "description": "Headless Chrome API made easy",
+  "homepage": "https://browserless.js.org",
+  "version": "4.2.1",
+  "main": "src",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/pool"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless"
+  },
+  "keywords": [
+    "browserless",
+    "pool"
+  ],
+  "dependencies": {
+    "generic-pool": "~3.4.2"
+  },
+  "scripts": {
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "test": "nyc ava"
+  },
+  "devDependencies": {
+    "browserless": "latest",
+    "nyc": "latest",
+    "coveralls": "latest",
+    "ava": "latest",
+    "puppeteer": "latest"
+  },
+  "engines": {
+    "node": ">= 8"
+  },
+  "files": [
+    "index.js"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "browserless": "4",
+    "puppeteer": "1"
+  }
+}

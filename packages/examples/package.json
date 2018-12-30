@@ -1,0 +1,10 @@
+{
+  "name": "@browserless/examples",
+  "private": true,
+  "devDependencies": {
+    "p-event": "latest",
+    "browserless": "latest",
+    "lodash": "latest",
+    "term-img": "latest"
+  }
+}

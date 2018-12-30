@@ -192,3 +192,5 @@ module.exports = ({
     goto
   }
 }
+
+module.exports.devices = require('./devices')

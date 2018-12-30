@@ -1,7 +1,7 @@
 'use strict'
 
 const termImg = require('term-img')
-const createBrowserless = require('..')
+const createBrowserless = require('browserless')
 const browserless = createBrowserless()
 
 require('./main')(async url => {

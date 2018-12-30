@@ -1,9 +1,8 @@
 {
   "name": "browserless",
-  "description": "Chrome Headless API made easy",
+  "description": "Headless Chrome API made easy",
   "homepage": "https://browserless.js.org",
   "version": "4.2.1",
-  "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
     "name": "Kiko Beats",
@@ -28,20 +27,14 @@
     "screenshot",
     "text"
   ],
-  "dependencies": {
-    "debug": "~4.1.0",
-    "extract-domain": "~2.0.4",
-    "generic-pool": "~3.4.2",
-    "is-tracking-domain": "~1.1.6",
-    "tempy": "~0.2.1"
-  },
   "devDependencies": {
-    "asciichart": "latest",
+    "@commitlint/cli": "latest",
+    "@commitlint/config-conventional": "latest",
     "browser-sync": "latest",
     "concurrently": "latest",
-    "coveralls": "latest",
-    "fmt-obj": "latest",
-    "git-dirty": "latest",
+    "conventional-github-releaser": "latest",
+    "finepack": "latest",
+    "git-authors-cli": "latest",
     "gulp": "latest",
     "gulp-autoprefixer": "latest",
     "gulp-concat": "latest",
@@ -49,61 +42,69 @@
     "gulp-strip-css-comments": "latest",
     "gulp-uglify": "latest",
     "husky": "latest",
-    "img-diff-js": "latest",
-    "is-ci": "latest",
+    "lerna": "latest",
+    "lerna-changelog": "latest",
     "lint-staged": "latest",
-    "lodash": "latest",
-    "looks-same": "latest",
-    "measured": "latest",
-    "meow": "latest",
-    "mocha": "latest",
-    "nyc": "latest",
-    "p-all": "latest",
-    "p-event": "latest",
-    "pdf-parse": "latest",
-    "percentile": "latest",
+    "npm-check-updates": "latest",
     "prettier-standard": "latest",
-    "pretty-ms": "latest",
-    "process-stats": "latest",
-    "puppeteer": "latest",
-    "should": "latest",
-    "snap-shot": "latest",
-    "standard": "11",
+    "standard": "latest",
     "standard-markdown": "latest",
-    "temperment": "latest",
-    "term-img": "latest",
-    "time-span": "latest"
+    "standard-version": "latest"
   },
   "engines": {
     "node": ">= 6"
   },
-  "files": [
-    "src"
-  ],
   "scripts": {
-    "clean": "rm -rf node_modules",
-    "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "dev:docs": "concurrently \"gulp\" \"npm run server\"",
+    "build": "gulp build",
+    "changelog": "conventional-changelog --release-count=0 > CHANGELOG.md",
+    "changelog:commit": "npm run changelog && git add CHANGELOG.md && git commit -m 'Update Changelog' && git push origin master",
+    "clean": "rm -rf node_modules && cd packages && eachdir rm -rf node_modules",
+    "dev": "concurrently \"gulp\" \"npm run dev:server\"",
+    "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard-markdown README.md && standard",
-    "precommit": "lint-staged",
+    "postinstall": "lerna bootstrap && lerna link --force-local",
+    "postrelease": "npm run release:tags && npm run release:github",
+    "prerelease": "npm run update:check && git-authors-cli",
     "pretest": "npm run lint",
-    "pretty": "prettier-standard index.js test/**/*.js --single-quote",
-    "server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
-    "test": "nyc mocha"
+    "preversion": "git-authors-cli",
+    "release": "git add package.json && standard-version -a",
+    "release:github": "conventional-github-releaser -p angular",
+    "release:tags": "git push --follow-tags origin HEAD:master",
+    "test": "lerna exec npm run test",
+    "update": "ncu -a",
+    "update:check": "ncu -- --error-level 2"
   },
+  "private": true,
   "license": "MIT",
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-commit": "lint-staged"
+    }
+  },
   "lint-staged": {
-    "*.js": [
-      "prettier-standard",
-      "git add"
+    "linters": {
+      "*.js": [
+        "prettier-standard",
+        "git add"
+      ],
+      "package.json": [
+        "finepack",
+        "git add"
+      ]
+    },
+    "ignore": [
+      "static/*.{js, css}"
     ]
   },
-  "peerDependencies": {
-    "puppeteer": "1.x"
-  },
-  "standard": {
-    "env": [
-      "mocha"
-    ]
+  "standard-version": {
+    "scripts": {
+      "prechangelog": "git-authors-cli"
+    }
   }
 }

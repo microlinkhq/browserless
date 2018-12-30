@@ -1,0 +1,60 @@
+{
+  "name": "@browserless/benchmark",
+  "description": "Headless Chrome API made easy",
+  "private": true,
+  "homepage": "https://browserless.js.org",
+  "version": "4.2.1",
+  "main": "src/index.js",
+  "author": {
+    "email": "josefrancisco.verdu@gmail.com",
+    "name": "Kiko Beats",
+    "url": "https://kikobeats.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kikobeats/browserless.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kikobeats/browserless/issues"
+  },
+  "keywords": [
+    "browser",
+    "browserless",
+    "chrome",
+    "chromeless",
+    "headless",
+    "html",
+    "pdf",
+    "puppeteer",
+    "screenshot",
+    "text"
+  ],
+  "devDependencies": {
+    "asciichart": "latest",
+    "browserless": "latest",
+    "@browserless/pool": "latest",
+    "fmt-obj": "latest",
+    "lodash": "latest",
+    "measured": "latest",
+    "meow": "latest",
+    "p-all": "latest",
+    "pretty-ms": "latest",
+    "process-stats": "latest",
+    "puppeteer": "latest",
+    "time-span": "latest"
+  },
+  "engines": {
+    "node": ">= 6"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "browserless": "4"
+  }
+}

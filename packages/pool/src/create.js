@@ -1,7 +1,7 @@
 'use strict'
 
+const createBrowserless = require('browserless')
 const genericPool = require('generic-pool')
-const createBrowserless = require('../browserless')
 
 module.exports = (opts, launchOpts) => {
   const factory = {

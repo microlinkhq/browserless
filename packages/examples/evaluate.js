@@ -1,6 +1,6 @@
 'use strict'
 
-const createBrowserless = require('..')
+const createBrowserless = require('browserless')
 const browserless = createBrowserless()
 
 const getUrlInfo = browserless.evaluate((page, response) => {

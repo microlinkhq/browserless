@@ -1,6 +1,6 @@
 'use strict'
 
-const { devices } = require('..')
+const { devices } = require('browserless')
 const { chain } = require('lodash')
 
 const HEADER = {

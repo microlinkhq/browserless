@@ -1,6 +1,7 @@
 'use strict'
 
-const createBrowserless = require('..')
+const createBrowserless = require('browserless')
+createBrowserless.pool = require('@browserless/pool')
 
 const { includes, reduce } = require('lodash')
 const processStats = require('process-stats')

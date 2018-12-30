@@ -36,9 +36,8 @@ const browserless = require('browserless')()
 
 browserless
   .screenshot('http://example.com', { device: 'iPhone 6' })
-  .then(tmpFile => {
-    console.log(`your screenshot at ${tmpFile.path}`)
-    tmpFile.cleanupSync()
+  .then(buffer => {
+    console.log(`your screenshot is here!`)
   })
 ```
 
@@ -224,29 +223,16 @@ const browserless = require('browserless')
 
 ;(async () => {
   const url = 'https://example.com'
-  const tmpFile = await browserless.pdf(url, {
-    tmpOpts: {
-      path: './',
-      name: `${url.hostname}.${Date.now()}`
-    }
-  })
-
-  console.log(`PDF generated at '${tmpFile.path}'`)
-  tmpFile.cleanupSync() // It removes the file!
+  const buffer = await browserless.pdf(url)
+  console.log(`PDF generated!`)
 })()
 ```
-
-It returns an [tmpFile](https://github.com/Kikobeats/create-temp-file2#create-temp-file2), with `path` where the temporal file live and `cleanup`/`cleanupSync` methods for clean the temporal file.
 
 #### options
 
 See [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
 
 Additionally, you can setup:
-
-##### tmpOptions
-
-See [tempy#api](https://github.com/sindresorhus/tempy#api)..
 
 ##### media
 
@@ -273,29 +259,16 @@ const browserless = require('browserless')
 
 ;(async () => {
   const url = 'https://example.com'
-  const tmpFile = await browserless.screenshot(url, {
-    tmpOpts: {
-      path: './',
-      name: `${url.hostname}.${Date.now()}`
-    }
-  })
-
-  console.log(`Screenshot taken at '${tmpFile.path}'`)
-  tmpFile.cleanupSync() // It removes the file!
+  const buffer = await browserless.screenshot(url)
+  console.log(`Screenshot taken!`)
 })()
 ```
-
-It returns a temporary file path with `cleanup`/`cleanupSync` methods for easily clean it.
 
 #### options
 
 See [page.screenshot](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagescreenshotoptions).
 
 Additionally, you can setup:
-
-##### tmpOptions
-
-See [tempy#api](https://github.com/sindresorhus/tempy#api).
 
 The `options` provided are passed to [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
 
