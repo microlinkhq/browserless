@@ -3,18 +3,11 @@
 const extractDomain = require('extract-domain')
 const debug = require('debug')('browserless')
 const puppeteer = require('puppeteer')
-const tempy = require('tempy')
 
 const { getDevice } = require('./devices')
 const isTracker = require('./is-tracker')
 
-const { promisify } = require('util')
-const fs = require('fs')
-
-const unlink = promisify(fs.unlink)
-const unlinkSync = promisify(fs.unlinkSync)
-
-const WAIT_UNTIL = ['networkidle2', 'load', 'domcontentloaded']
+const WAIT_UNTIL = ['networkidle0']
 
 const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
@@ -23,15 +16,6 @@ const EVALUATE_HTML = page => page.content()
 const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
-
-const createTempFile = opts => {
-  const tmp = tempy.file(opts)
-  return {
-    path: tmp,
-    cleanup: unlink.bind(unlink, tmp),
-    cleanupSync: unlinkSync.bind(unlinkSync, tmp)
-  }
-}
 
 // The puppeteer launch causes many events to be emitted.
 process.setMaxListeners(0)
@@ -126,7 +110,15 @@ module.exports = ({
   const evaluate = fn => async (url, opts = {}) => {
     const {
       abortTrackers = true,
-      abortTypes = ['image', 'media', 'stylesheet', 'font'],
+      abortTypes = [
+        'image',
+        'imageset',
+        'media',
+        'stylesheet',
+        'font',
+        'object',
+        'sub_frame'
+      ],
       ...args
     } = opts
 
@@ -151,12 +143,11 @@ module.exports = ({
       ...args
     } = opts
 
-    const tempFile = createTempFile({ extension: type, ...tmpOpts })
     const page = await newPage()
     await goto(page, { url, device, ...args })
-    await page.screenshot({ path: tempFile.path, type, ...args })
+    const file = await page.screenshot({ type, ...args })
     await page.close()
-    return tempFile
+    return file
   }
 
   const pdf = async (url, opts = {}) => {
@@ -176,12 +167,10 @@ module.exports = ({
       ...args
     } = opts
 
-    const tempFile = createTempFile({ extension: 'pdf', ...tmpOpts })
     const page = await newPage()
     await page.emulateMedia(media)
     await goto(page, { url, ...args })
-    await page.pdf({
-      path: tempFile.path,
+    const file = await page.pdf({
       margin,
       format,
       printBackground,
@@ -189,7 +178,7 @@ module.exports = ({
       ...args
     })
     await page.close()
-    return tempFile
+    return file
   }
 
   return {
