@@ -57,6 +57,7 @@
     "mocha": "latest",
     "nyc": "latest",
     "p-all": "latest",
+    "p-event": "latest",
     "percentile": "latest",
     "prettier-standard": "latest",
     "pretty-ms": "latest",
@@ -65,7 +66,6 @@
     "should": "latest",
     "standard": "11",
     "standard-markdown": "latest",
-    "string-to-stream": "latest",
     "term-img": "latest",
     "time-span": "latest"
   },

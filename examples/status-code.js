@@ -1,16 +1,12 @@
 'use strict'
 
-const { URL } = require('url')
-
 const createBrowserless = require('..')
 const browserless = createBrowserless()
+const pEvent = require('p-event')
 
-const url = new URL(process.argv[2])
-;(async () => {
+require('./main')(async url => {
   const page = await browserless.page()
-  page.goto(url)
-  page.once('response', res => {
-    console.log(res.status())
-    process.exit()
-  })
-})()
+  await page.goto(url)
+  const res = await pEvent(page, 'response')
+  return res.status()
+})
