@@ -67,7 +67,7 @@
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard-markdown README.md && standard",
     "postinstall": "lerna bootstrap && lerna link --force-local",
-    "prerelease": "npm run update:check && git-authors-cli",
+    "prerelease": "npm run update:check",
     "pretest": "npm run lint",
     "preversion": "git-authors-cli",
     "release": "lerna publish --sort --conventional-commits",
