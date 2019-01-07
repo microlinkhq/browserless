@@ -2,12 +2,18 @@
   "name": "browserless",
   "description": "Headless Chrome API made easy",
   "homepage": "https://browserless.js.org",
-  "version": "4.2.1",
+  "version": "5.0.0",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
     "name": "Kiko Beats",
     "url": "https://kikobeats.com"
   },
+  "contributors": [
+    {
+      "name": "Markus Staab",
+      "email": "maggus.staab@googlemail.com"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kikobeats/browserless.git"
