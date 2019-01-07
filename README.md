@@ -474,21 +474,17 @@ In order to speed up the process, we block ads scripts by default because they a
 
 Probably **browserless** was too smart and it blocked a request that you need.
 
-You can active debug mode using `DEBUG=browserless*` environment variable in order to see what is happening behind the code:
+You can active debug mode using `DEBUG=browserless` environment variable in order to see what is happening behind the code:
 
 ```
-DEBUG=browserless* node index.js
+DEBUG=browserless node index.js
 ```
 
 Consider open an [issue](https://github.com/Kikobeats/browserless/issues/new) with the debug trace.
 
 **Q: Can I use browserless with my AWS Lambda like project?**
 
-Yes, check [aws-lambda-chrome](https://github.com/Kikobeats/aws-lambda-chrome) to setup AWS Lambda with a binary compatible.
-
-## Related
-
-- [aws-lambda-chrome](https://github.com/Kikobeats/aws-lambda-chrome) – Chrome binary compatible with AWS Lambda.
+Yes, check [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) to setup AWS Lambda with a binary compatible.
 
 ## License
 
