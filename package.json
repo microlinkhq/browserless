@@ -38,7 +38,6 @@
     "@commitlint/config-conventional": "latest",
     "browser-sync": "latest",
     "concurrently": "latest",
-    "conventional-github-releaser": "latest",
     "finepack": "latest",
     "git-authors-cli": "latest",
     "gulp": "latest",
@@ -54,8 +53,7 @@
     "npm-check-updates": "latest",
     "prettier-standard": "latest",
     "standard": "latest",
-    "standard-markdown": "latest",
-    "standard-version": "latest"
+    "standard-markdown": "latest"
   },
   "engines": {
     "node": ">= 6"
@@ -69,13 +67,10 @@
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard-markdown README.md && standard",
     "postinstall": "lerna bootstrap && lerna link --force-local",
-    "postrelease": "npm run release:tags && npm run release:github",
     "prerelease": "npm run update:check && git-authors-cli",
     "pretest": "npm run lint",
     "preversion": "git-authors-cli",
-    "release": "git add package.json && standard-version -a",
-    "release:github": "conventional-github-releaser -p angular",
-    "release:tags": "git push --follow-tags origin HEAD:master",
+    "release": "lerna publish --sort --conventional-commits",
     "test": "lerna exec npm run test",
     "update": "ncu -a",
     "update:check": "ncu -- --error-level 2"
@@ -107,10 +102,5 @@
     "ignore": [
       "static/*.{js, css}"
     ]
-  },
-  "standard-version": {
-    "scripts": {
-      "prechangelog": "git-authors-cli"
-    }
   }
 }

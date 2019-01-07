@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "Headless Chrome API made easy",
   "homepage": "https://browserless.js.org",
-  "version": "4.2.1",
+  "version": "5.0.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
