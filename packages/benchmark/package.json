@@ -3,7 +3,7 @@
   "description": "Headless Chrome API made easy",
   "private": true,
   "homepage": "https://browserless.js.org",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -30,9 +30,9 @@
     "text"
   ],
   "devDependencies": {
+    "@browserless/pool": "latest",
     "asciichart": "latest",
     "browserless": "latest",
-    "@browserless/pool": "latest",
     "fmt-obj": "latest",
     "lodash": "latest",
     "measured": "latest",
