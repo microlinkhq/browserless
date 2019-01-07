@@ -12,7 +12,7 @@
 
 ## Highlights
 
-- Built on top [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
+- Built on top [puppeteer](https://github.com/GoogleChrome/puppeteer).
 - Aborting unnecessary requests based on [ResourceType](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType).
 - Support for creating a [pool](#pool-of-instances) of multiple instances.
 - Block [ads trackers](https://npm.im/is-tracking-domain) requests.
