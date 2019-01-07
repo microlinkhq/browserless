@@ -11,13 +11,12 @@
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square)](https://paypal.me/Kikobeats)
 
-## Features
+## Highlights
 
-- High level automation API on top [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
-- Oriented for production & performance scenarios.
+- Built on top [Headless Chrome](https://github.com/GoogleChrome/puppeteer).
 - Aborting unnecessary requests based on [ResourceType](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType).
-- [Pooling](#pooloptions) support to keep multiple browsers ready.
-- Blocking [ads trackers](https://npm.im/is-tracking-domain) by default.
+- Support for creating a [pool](#pool-of-instances) of multiple instances.
+- Block [ads trackers](https://npm.im/is-tracking-domain) requests.
 
 ## Install
 
@@ -47,9 +46,9 @@ See more at [examples](/examples/).
 
 All methods follow the same interface:
 
-- `url`: The target URL (*required*).
+- `url` (*required*): The target URL
 - `options`: Specific settings for the method (*optional*).
-- `callback`: Node.js callback. If you don't provide one, the method will return a `promise`.
+- `callback`: Node.js callback. If you don't provide one, the method will return a `Promise`.
 
 ### .constructor(options)
 
@@ -78,8 +77,7 @@ const browserless = require('browserless')({
 
 #### options
 
-See [puppeteer.launch#options](
-https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+See [puppeteer.launch#options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
 
 By default the library will be pass a well known list of flags, so probably you don't need any additional setup.
 
@@ -98,47 +96,6 @@ default: `true`
 Every time a new page is created, it will be an incognito page.
 
 An incognito page will not share cookies/cache with other browser pages.
-
-### .pool(options)
-
-**browserless** uses internally a singletion browser instance.
-
-You can use `.pool` constructor for creating a **pool of instances**:
-
-```js
-const createBrowserless = require('browserless')
-const browserlessPool = createBrowserless.pool()
-```
-
-After that, the API is the same. The acquire/release is done automagically.
-
-You can interact with a **browserless** instance directly as well:  
-
-```js
-const createBrowserless = require('browserless')
-const browserlessPool = createBrowserless.pool()
-
-// get a browserless instance from the pool
-browserlessPool(async browserless => {
-  // get a page from the browser instance
-  const page = await browserless.page()
-  await browserless.goto(page, { url: url.toString() })
-  const html = await page.content()
-  console.log(html)
-  process.exit()
-})
-```
-
-#### options
-
-See [puppeteer.launch#options](
-https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
-
-It follows the same API than [constructor](constructoroptions) but accept a configurable parameter called `poolOpts` for setup specific pool options
-
-##### poolOpts
-
-See [generic-pool#options](https://github.com/coopernurse/node-pool#opts).
 
 ### .html(url, options)
 
@@ -444,11 +401,53 @@ const browserless = require('browserless')
 })()
 ```
 
+## Pool of Instances
+
+**browserless** uses internally a singleton browser instance.
+
+You can use a pool instances using `@browserless/pool` package.
+
+```js
+const createBrowserless = require('@browserless/pool')
+const browserlessPool = createBrowserless({
+  poolOpts: {
+    max: 15,
+    min: 2
+  }
+})
+```
+
+
+The API is the same than `browserless`. now the constructor is accepting an extra option called `poolOpts`.
+
+This setting is used for initializing the pool properly. You can see what you can specify there at [node-pool#opts](https://github.com/coopernurse/node-pool#createpool).
+
+Also, you can interact with a standalone `browserless` instance of your pool.
+
+```js
+const createBrowserless = require('browserless')
+const browserlessPool = createBrowserless.pool()
+
+// get a browserless instance from the pool
+browserlessPool(async browserless => {
+  // get a page from the browser instance
+  const page = await browserless.page()
+  await browserless.goto(page, { url: url.toString() })
+  const html = await page.content()
+  console.log(html)
+  process.exit()
+})
+```
+
+
+You don't need to think about the acquire/release step: It's done automagically ✨.
+
+
 ## Benchmark
 
 ![](/static/bench.png)
 
-We included a tiny [benchmark](https://github.com/Kikobeats/browserless/tree/master/bench) utility for make easier testing multiple configuration settings.
+We included a tiny [benchmark](https://github.com/Kikobeats/browserless/tree/master/packages/benchmark) utility for make easier testing multiple configuration settings.
 
 ## FAQ
 
