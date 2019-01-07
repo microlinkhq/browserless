@@ -25,7 +25,7 @@ $ npm install puppeteer browserless --save
 
 ## Usage
 
-**browserless** is an high level API simplification over  for do common actions.
+**browserless** is an high level API simplification over for doing common actions.
 
 For example, if you want to take an screenshot, just do:
 
@@ -47,7 +47,8 @@ All methods follow the same interface:
 
 - `url` (*required*): The target URL
 - `options`: Specific settings for the method (*optional*).
-- `callback`: Node.js callback. If you don't provide one, the method will return a `Promise`.
+
+The methods returns a Promise or a Node.js callback if pass an additional function as the last parameter.
 
 ### .constructor(options)
 
@@ -87,10 +88,19 @@ default: `30000`
 
 This setting will change the default maximum navigation time.
 
+##### puppeteer
+
+type:`Puppeteer`</br>
+default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
+
+It's automatically detected based on your `dependencies` being supported [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox).
+
+Alternatively, you can pass it.
+
 ##### incognito
 
 type:`boolean`</br>
-default: `true`
+default: `false`
 
 Every time a new page is created, it will be an incognito page.
 

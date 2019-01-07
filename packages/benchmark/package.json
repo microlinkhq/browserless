@@ -41,6 +41,7 @@
     "pretty-ms": "latest",
     "process-stats": "latest",
     "puppeteer": "latest",
+    "puppeteer-firefox": "latest",
     "time-span": "latest"
   },
   "engines": {

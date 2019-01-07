@@ -54,8 +54,5 @@
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "test": "nyc ava"
   },
-  "license": "MIT",
-  "peerDependencies": {
-    "puppeteer": "1.x"
-  }
+  "license": "MIT"
 }

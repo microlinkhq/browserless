@@ -1,8 +1,7 @@
 'use strict'
 
 const createBrowserless = require('browserless')
-createBrowserless.pool = require('@browserless/pool')
-
+const createBrowserlessPool = require('@browserless/pool')
 const { includes, reduce } = require('lodash')
 const processStats = require('process-stats')
 const asciichart = require('asciichart')
@@ -24,6 +23,7 @@ const cli = meow(
       --pool-min       Mininum of instances in pool mode.
       --pool-max       Maximum of instances in pool mode.
       --concurrency    Define number of concurrent request.
+      --firefox        Use Firefox browser.
 
     Options
       The rest of parameters provided are passed as options.
@@ -45,6 +45,10 @@ const cli = meow(
       iterations: {
         type: 'number',
         default: 10
+      },
+      firefox: {
+        type: 'boolean',
+        default: false
       }
     }
   }
@@ -86,14 +90,19 @@ const benchmark = async ({
     poolMin,
     poolMax,
     iterations,
+    firefox,
     ...opts
   } = cli.flags
 
   if (!method) throw new TypeError('Need to provide a method to run.')
 
+  const puppeteer = firefox
+    ? require('puppeteer-firefox')
+    : require('puppeteer')
+
   const browserless = isPool
-    ? createBrowserless.pool({ min: poolMin, max: poolMax, ...opts })
-    : createBrowserless(opts)
+    ? createBrowserlessPool({ min: poolMin, max: poolMax, puppeteer, ...opts })
+    : createBrowserless({ puppeteer, ...opts })
 
   console.log(prettyObj(cli.flags))
 
