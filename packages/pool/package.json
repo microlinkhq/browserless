@@ -33,7 +33,7 @@
     "node": ">= 8"
   },
   "files": [
-    "index.js"
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {
