@@ -1,6 +1,28 @@
 language: node_js
 
 node_js:
-  - "node"
+  - lts/*
+  - node
 
-after_success: npm run coveralls
+after_success: npm run coverage
+
+stages:
+  - Test
+  - name: Release
+    if: branch = master AND commit_message !~ /(release|no-release)/
+
+jobs:
+  include:
+    - stage: Release
+      node_js: lts/*
+      install: npm install --no-package-lock
+      before_deploy:
+        - git config user.email "travis@travis-ci.org"
+        - git config user.name "Travis CI"
+        - git remote set-url origin https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: npm run release
+        on:
+          branch: master
