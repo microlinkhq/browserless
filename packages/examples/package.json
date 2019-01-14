@@ -1,10 +1,11 @@
 {
   "name": "@browserless/examples",
-  "private": true,
+  "version": "",
   "devDependencies": {
-    "p-event": "latest",
     "browserless": "latest",
     "lodash": "latest",
+    "p-event": "latest",
     "term-img": "latest"
-  }
+  },
+  "private": true
 }
