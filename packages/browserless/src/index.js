@@ -1,6 +1,7 @@
 'use strict'
 
 const extractDomain = require('extract-domain')
+const requireOneOf = require('require-one-of')
 const debug = require('debug')('browserless')
 
 const { getDevice } = require('./devices')
@@ -16,32 +17,12 @@ const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
-// The puppeteer launch causes many events to be emitted.
-process.setMaxListeners(0)
-
-const hasModule = m => {
-  try {
-    require.resolve(m)
-  } catch (e) {
-    return false
-  }
-
-  return true
-}
-
-function requireOneOf (modules) {
-  for (let module of modules) if (hasModule(module)) return require(module)
-  throw new TypeError(`'${modules.join(', ')}' not found on the system.`)
-}
-
-const _puppeteer = requireOneOf([
-  'puppeteer',
-  'puppeteer-core',
-  'puppeteer-firefox'
-])
-
 module.exports = ({
-  puppeteer = _puppeteer,
+  puppeteer = requireOneOf([
+    'puppeteer',
+    'puppeteer-core',
+    'puppeteer-firefox'
+  ]),
   incognito = false,
   timeout = 30000,
   ...launchOpts

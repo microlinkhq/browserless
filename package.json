@@ -33,6 +33,9 @@
     "screenshot",
     "text"
   ],
+  "dependencies": {
+    "require-one-of": "~1.0.0"
+  },
   "devDependencies": {
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
