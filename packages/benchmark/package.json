@@ -50,10 +50,6 @@
   "files": [
     "src"
   ],
-  "scripts": {
-    "clean": "rm -rf node_modules",
-    "coveralls": "nyc report --reporter=text-lcov | coveralls"
-  },
   "license": "MIT",
   "peerDependencies": {
     "browserless": "4"
