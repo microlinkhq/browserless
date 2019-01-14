@@ -2,7 +2,7 @@
   "name": "@browserless/pool",
   "description": "Headless Chrome API made easy",
   "homepage": "https://browserless.js.org",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "main": "src",
   "repository": {
     "type": "git",
@@ -18,10 +18,6 @@
   "dependencies": {
     "generic-pool": "~3.4.2"
   },
-  "scripts": {
-    "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc ava"
-  },
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
@@ -35,6 +31,10 @@
   "files": [
     "src"
   ],
+  "scripts": {
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "test": "nyc ava"
+  },
   "license": "MIT",
   "peerDependencies": {
     "browserless": "4",

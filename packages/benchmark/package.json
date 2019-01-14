@@ -1,9 +1,8 @@
 {
   "name": "@browserless/benchmark",
   "description": "Headless Chrome API made easy",
-  "private": true,
   "homepage": "https://browserless.js.org",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -50,6 +49,7 @@
   "files": [
     "src"
   ],
+  "private": true,
   "license": "MIT",
   "peerDependencies": {
     "browserless": "4"
