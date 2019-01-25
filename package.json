@@ -69,7 +69,7 @@
     "prerelease": "npm run update:check",
     "pretest": "npm run lint",
     "preversion": "lerna exec npx finepack && git-authors-cli && finepack",
-    "release": "lerna publish --sort --conventional-commits --yes",
+    "release": "lerna publish --sort --conventional-commits --yes -m \"chore(release): v%s\"",
     "test": "lerna exec npm run test",
     "update": "ncu -a",
     "update:check": "ncu -- --error-level 2"
