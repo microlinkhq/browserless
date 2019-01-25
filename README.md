@@ -25,7 +25,7 @@ $ npm install puppeteer browserless --save
 
 ## Usage
 
-**browserless** is an high level API simplification over for doing common actions.
+**browserless** is a high level API simplification over for doing common actions.
 
 For example, if you want to take an screenshot, just do:
 
@@ -283,7 +283,7 @@ browserless.getDevice('Macbook Pro 15')
 
 ## Advanced
 
-The following methods are exposed to be used in scenarios where you need more granuality control and less magic.
+The following methods are exposed to be used in scenarios where you need more granularity control and less magic.
 
 ### .browser
 
