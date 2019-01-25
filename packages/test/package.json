@@ -44,5 +44,8 @@
     "fixtures",
     "index.js"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -50,5 +50,8 @@
   "license": "MIT",
   "peerDependencies": {
     "browserless": "4"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
