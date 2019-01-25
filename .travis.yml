@@ -20,6 +20,7 @@ jobs:
         - git config user.email "travis@travis-ci.org"
         - git config user.name "Travis CI"
         - git remote set-url origin https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
+        - git checkout master
       deploy:
         skip_cleanup: true
         provider: script
