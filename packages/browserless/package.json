@@ -32,6 +32,7 @@
     "debug": "~4.1.0",
     "extract-domain": "~2.0.4",
     "is-tracking-domain": "~1.1.6",
+    "p-timeout": "~2.0.1",
     "require-one-of": "~1.0.2"
   },
   "devDependencies": {

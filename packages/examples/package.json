@@ -3,6 +3,7 @@
   "version": "",
   "devDependencies": {
     "browserless": "latest",
+    "puppeteer": "latest",
     "lodash": "latest",
     "p-event": "latest",
     "term-img": "latest"

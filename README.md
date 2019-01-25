@@ -260,7 +260,7 @@ These devices are used for emulation purposes.
 
 #### .getDevice(deviceName)
 
-Get an specific device descriptor settings by descriptor name.
+Get a specific device descriptor settings by descriptor name.
 
 ```js
 const browserless = require('browserless')
@@ -299,7 +299,7 @@ const browserless = require('browserless')
 
 ### .evaluate(page, response)
 
-It exposes an interface for creating your own evaluate function.
+It exposes an interface for creating your own evaluate function, passing you the `page` and `response`.
 
 ```js
 const browserless = require('browserless')()
@@ -323,7 +323,9 @@ const getUrlInfo = browserless.evaluate((page, response) => ({
 })()
 ```
 
-Internally the method performs a [.goto](#gotopage-options) operation and it will pass you the `page` and `reponse`.
+Note you don't need to close the page; It will be done under the hood.
+
+Internally the method performs a [.goto](#gotopage-options).
 
 ### .goto(page, options)
 

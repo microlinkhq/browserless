@@ -28,9 +28,7 @@ module.exports = createBrowserless => {
       path: filepath
     })
 
-    t.true(
-      await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.png'))
-    )
+    t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.png')))
   })
   ;(isCI ? test.skip : test)('.screenshot (jpeg)', async t => {
     const browserless = createBrowserless()
@@ -40,12 +38,7 @@ module.exports = createBrowserless => {
       path: filepath
     })
 
-    t.true(
-      await looksSame(
-        filepath,
-        path.resolve(__dirname, 'fixtures/example.jpeg')
-      )
-    )
+    t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.jpeg')))
   })
   ;(isCI ? test.skip : test)('devices', async t => {
     const browserless = createBrowserless()
@@ -55,17 +48,28 @@ module.exports = createBrowserless => {
       path: filepath
     })
 
-    t.true(
-      await looksSame(
-        filepath,
-        path.resolve(__dirname, 'fixtures/example-iphone.png')
-      )
-    )
+    t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example-iphone.png')))
   })
   ;(isCI ? test.skip : test)('.pdf', async t => {
     const browserless = createBrowserless()
     const buffer = await browserless.pdf('http://example.com')
     const data = await pdf(buffer)
     t.snapshot(data.text.trim())
+  })
+  ;['pdf', 'screenshot', 'html', 'text'].forEach(method => {
+    test(`.${method} wrap errors`, async t => {
+      const browserless = createBrowserless()
+      const timeout = 500
+
+      const error = await t.throwsAsync(browserless[method]('https://example.com', { timeout }))
+
+      t.is(error.name, 'TimeoutError')
+      t.is(error.message, `Navigation Timeout Exceeded: ${timeout}ms exceeded`)
+
+      const browser = await browserless.browser
+      const pages = await browser.pages()
+
+      t.is(pages.length, 1) // about:page is always open
+    })
   })
 }
