@@ -1,9 +1,9 @@
 {
-  "name": "@browserless/examples",
-  "description": "Browserless examples scripts for Node.js",
+  "name": "@browserless/test",
+  "description": "A suite for testing browserless API",
   "homepage": "https://browserless.js.org",
   "version": "5.1.1",
-  "main": "src/html.js",
+  "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
     "name": "Kiko Beats",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kikobeats/browserless/tree/master/packages/examples"
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/test"
   },
   "bugs": {
     "url": "https://github.com/Kikobeats/browserless/issues"
@@ -21,27 +21,28 @@
     "browserless",
     "chrome",
     "chromeless",
-    "example",
-    "examples",
     "headless",
     "html",
     "pdf",
     "puppeteer",
     "screenshot",
+    "spec",
+    "suite",
+    "test",
     "text"
   ],
   "devDependencies": {
-    "browserless": "latest",
-    "lodash": "latest",
-    "p-event": "latest",
-    "puppeteer": "latest",
-    "term-img": "latest"
+    "ava": "latest",
+    "img-diff-js": "latest",
+    "pdf-parse": "latest",
+    "temperment": "latest"
   },
   "engines": {
     "node": ">= 8"
   },
   "files": [
-    "src"
+    "fixtures",
+    "index.js"
   ],
   "license": "MIT"
 }

@@ -28,9 +28,7 @@ module.exports = createBrowserless => {
       path: filepath
     })
 
-    t.true(
-      await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.png'))
-    )
+    t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.png')))
   })
   ;(isCI ? test.skip : test)('.screenshot (jpeg)', async t => {
     const browserless = createBrowserless()
@@ -40,12 +38,7 @@ module.exports = createBrowserless => {
       path: filepath
     })
 
-    t.true(
-      await looksSame(
-        filepath,
-        path.resolve(__dirname, 'fixtures/example.jpeg')
-      )
-    )
+    t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.jpeg')))
   })
   ;(isCI ? test.skip : test)('devices', async t => {
     const browserless = createBrowserless()
@@ -55,12 +48,7 @@ module.exports = createBrowserless => {
       path: filepath
     })
 
-    t.true(
-      await looksSame(
-        filepath,
-        path.resolve(__dirname, 'fixtures/example-iphone.png')
-      )
-    )
+    t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example-iphone.png')))
   })
   ;(isCI ? test.skip : test)('.pdf', async t => {
     const browserless = createBrowserless()

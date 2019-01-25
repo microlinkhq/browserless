@@ -3,6 +3,7 @@
 const extractDomain = require('extract-domain')
 const requireOneOf = require('require-one-of')
 const debug = require('debug')('browserless')
+const pTimeout = require('p-timeout')
 
 const { getDevice } = require('./devices')
 const isTracker = require('./is-tracker')
@@ -18,11 +19,7 @@ const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 module.exports = ({
-  puppeteer = requireOneOf([
-    'puppeteer',
-    'puppeteer-core',
-    'puppeteer-firefox'
-  ]),
+  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -49,13 +46,27 @@ module.exports = ({
 
   const newPage = () =>
     Promise.resolve(browser).then(async browser => {
-      const context = incognito
-        ? await browser.createIncognitoBrowserContext()
-        : browser
+      const context = incognito ? await browser.createIncognitoBrowserContext() : browser
       const page = await context.newPage()
       page.setDefaultNavigationTimeout(timeout)
       return page
     })
+
+  const wrapError = fn => async (...args) => {
+    const page = await newPage()
+    let error
+    let res
+
+    try {
+      res = await pTimeout(fn(page)(...args), timeout)
+    } catch (err) {
+      error = err
+    }
+
+    await page.close()
+    if (error) throw error
+    return res
+  }
 
   const goto = async (
     page,
@@ -96,8 +107,7 @@ module.exports = ({
       return req.continue()
     })
 
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } =
-      getDevice(device) || {}
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
 
     const userAgent = deviceUserAgent || fallbackUserAgent
     if (userAgent) await page.setUserAgent(userAgent)
@@ -109,50 +119,32 @@ module.exports = ({
     return response
   }
 
-  const evaluate = fn => async (url, opts = {}) => {
-    const {
-      abortTrackers = true,
-      abortTypes = [
-        'image',
-        'imageset',
-        'media',
-        'stylesheet',
-        'font',
-        'object',
-        'sub_frame'
-      ],
-      ...args
-    } = opts
+  const evaluate = fn =>
+    wrapError(page => async (url, opts = {}) => {
+      const {
+        abortTrackers = true,
+        abortTypes = ['image', 'imageset', 'media', 'stylesheet', 'font', 'object', 'sub_frame'],
+        ...args
+      } = opts
 
-    const page = await newPage()
-    const response = await goto(page, {
-      url,
-      abortTrackers,
-      abortTypes,
-      ...args
+      const response = await goto(page, {
+        url,
+        abortTrackers,
+        abortTypes,
+        ...args
+      })
+
+      return fn(page, response)
     })
-    const content = await fn(page, response)
-    await page.close()
-    return content
-  }
 
-  const screenshot = async (url, opts = {}) => {
-    const {
-      device = 'macbook pro 13',
-      tmpOpts,
-      type = 'png',
-      viewport,
-      ...args
-    } = opts
+  const screenshot = wrapError(page => async (url, opts = {}) => {
+    const { device = 'macbook pro 13', tmpOpts, type = 'png', viewport, ...args } = opts
 
-    const page = await newPage()
     await goto(page, { url, device, ...args })
-    const file = await page.screenshot({ type, ...args })
-    await page.close()
-    return file
-  }
+    return page.screenshot({ type, ...args })
+  })
 
-  const pdf = async (url, opts = {}) => {
+  const pdf = wrapError(page => async (url, opts = {}) => {
     const {
       format = 'A4',
       margin = {
@@ -169,19 +161,16 @@ module.exports = ({
       ...args
     } = opts
 
-    const page = await newPage()
     await page.emulateMedia(media)
     await goto(page, { url, ...args })
-    const file = await page.pdf({
+    return page.pdf({
       margin,
       format,
       printBackground,
       scale,
       ...args
     })
-    await page.close()
-    return file
-  }
+  })
 
   return {
     browser,

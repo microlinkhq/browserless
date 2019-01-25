@@ -13,12 +13,24 @@
   },
   "keywords": [
     "browserless",
-    "pool"
+    "chrome",
+    "chromeless",
+    "farm",
+    "headless",
+    "html",
+    "pdf",
+    "pool",
+    "puppeteer",
+    "screenshot",
+    "text",
+    "thread",
+    "threads"
   ],
   "dependencies": {
     "generic-pool": "~3.4.2"
   },
   "devDependencies": {
+    "@browserless/test": "latest",
     "ava": "latest",
     "browserless": "latest",
     "coveralls": "latest",
@@ -37,7 +49,6 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "browserless": "4",
-    "puppeteer": "1"
+    "browserless": "4"
   }
 }

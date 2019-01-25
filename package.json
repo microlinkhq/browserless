@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "Headless Chrome API made easy",
   "homepage": "https://browserless.js.org",
-  "version": "5.0.0",
+  "version": "",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
     "name": "Kiko Beats",
@@ -56,7 +56,7 @@
     "standard-markdown": "latest"
   },
   "engines": {
-    "node": ">= 6"
+    "node": ">= 8"
   },
   "scripts": {
     "build": "gulp build",
