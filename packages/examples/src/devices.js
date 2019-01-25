@@ -5,37 +5,19 @@ const { chain } = require('lodash')
 
 const HEADER = {
   markdown: () => {
-    console.log(
-      `| name | width | height | scale | mobile? | touch? | landscape? |`
-    )
-    console.log(
-      `|------|-------|--------|-------------------|----------|----------|-------------|`
-    )
+    console.log(`| name | width | height | scale | mobile? | touch? | landscape? |`)
+    console.log(`|------|-------|--------|-------------------|----------|----------|-------------|`)
   }
 }
 
 const ROW = {
   markdown: (name, viewport) => {
-    const {
-      width,
-      height,
-      deviceScaleFactor,
-      isMobile,
-      hasTouch,
-      isLandscape
-    } = viewport
+    const { width, height, deviceScaleFactor, isMobile, hasTouch, isLandscape } = viewport
 
     return `| \`${name}\` | ${width} | ${height} | ${deviceScaleFactor} | ${isMobile} | ${hasTouch} | ${isLandscape} |`
   },
   jsx: (name, viewport) => {
-    const {
-      width,
-      height,
-      deviceScaleFactor,
-      isMobile,
-      hasTouch,
-      isLandscape
-    } = viewport
+    const { width, height, deviceScaleFactor, isMobile, hasTouch, isLandscape } = viewport
 
     return `<Row>
   <BoldCell>${name.toLowerCase()}</BoldCell>

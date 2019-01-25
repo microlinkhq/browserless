@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kikobeats/browserless.git"
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/benchmark"
   },
   "bugs": {
     "url": "https://github.com/Kikobeats/browserless/issues"
@@ -44,7 +44,7 @@
     "time-span": "latest"
   },
   "engines": {
-    "node": ">= 6"
+    "node": ">= 8"
   },
   "files": [
     "src"
