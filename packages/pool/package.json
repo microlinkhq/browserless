@@ -2,7 +2,7 @@
   "name": "@browserless/pool",
   "description": "Headless Chrome API made easy",
   "homepage": "https://browserless.js.org",
-  "version": "5.1.1",
+  "version": "5.2.0",
   "main": "src",
   "repository": {
     "type": "git",

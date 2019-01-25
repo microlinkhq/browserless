@@ -2,7 +2,7 @@
   "name": "@browserless/examples",
   "description": "Browserless examples scripts for Node.js",
   "homepage": "https://browserless.js.org",
-  "version": "5.1.1",
+  "version": "5.2.0",
   "main": "src/html.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
