@@ -136,7 +136,7 @@ Wait a quantity of time, selector or function using [page.waitFor](https://githu
 ##### waitUntil
 
 type:`array`</br>
-default: `['networkidle2', 'load', 'domcontentloaded']`
+default: `['networkidle0']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
 
