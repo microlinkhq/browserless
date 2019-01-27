@@ -54,23 +54,14 @@ const cli = meow(
   }
 )
 
-const benchmark = async ({
-  browserless,
-  method,
-  url,
-  opts,
-  iterations,
-  concurrency
-}) => {
+const benchmark = async ({ browserless, method, url, opts, iterations, concurrency }) => {
   const timer = new Measured.Timer()
   const promises = [...Array(iterations).keys()].map(n => {
     return async () => {
       const stopwatch = timer.start()
       await browserless[method](url, opts)
       const time = stopwatch.end()
-      console.log(
-        prettyObj({ iteration: n, time: prettyMs(time), rawTime: time })
-      )
+      console.log(prettyObj({ iteration: n, time: prettyMs(time), rawTime: time }))
       return time
     }
   })
@@ -96,9 +87,7 @@ const benchmark = async ({
 
   if (!method) throw new TypeError('Need to provide a method to run.')
 
-  const puppeteer = firefox
-    ? require('puppeteer-firefox')
-    : require('puppeteer')
+  const puppeteer = firefox ? require('puppeteer-firefox') : require('puppeteer')
 
   const browserless = isPool
     ? createBrowserlessPool({ min: poolMin, max: poolMax, puppeteer, ...opts })

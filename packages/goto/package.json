@@ -1,5 +1,5 @@
 {
-  "name": "browserless",
+  "name": "@browserless/goto",
   "description": "Headless Chrome API made easy",
   "homepage": "https://browserless.js.org",
   "version": "5.2.0",
@@ -11,27 +11,29 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kikobeats/browserless/tree/master/packages/browserless"
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/goto"
   },
   "bugs": {
     "url": "https://github.com/Kikobeats/browserless/issues"
   },
   "keywords": [
+    "goto",
+    "page",
     "browser",
     "browserless",
     "chrome",
     "chromeless",
     "core",
     "headless",
-    "html",
-    "pdf",
-    "puppeteer",
-    "screenshot",
-    "text"
+    "puppeteer"
   ],
   "dependencies": {
+    "debug": "~4.1.0",
+    "extract-domain": "~2.0.4",
+    "is-tracking-domain": "~1.1.6",
     "p-timeout": "~2.0.1",
-    "require-one-of": "~1.0.2"
+    "require-one-of": "~1.0.2",
+    "@browserless/devices": "~5.2.0"
   },
   "devDependencies": {
     "@browserless/test": "latest",
@@ -47,8 +49,7 @@
     "src"
   ],
   "scripts": {
-    "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc ava"
+    "test": "exit 0"
   },
   "license": "MIT"
 }

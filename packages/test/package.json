@@ -1,6 +1,6 @@
 {
   "name": "@browserless/test",
-  "description": "A suite for testing browserless API",
+  "description": "A test suite for browserless API",
   "homepage": "https://browserless.js.org",
   "version": "5.2.1",
   "main": "index.js",
@@ -22,14 +22,10 @@
     "chrome",
     "chromeless",
     "headless",
-    "html",
-    "pdf",
     "puppeteer",
-    "screenshot",
     "spec",
     "suite",
-    "test",
-    "text"
+    "test"
   ],
   "devDependencies": {
     "ava": "latest",

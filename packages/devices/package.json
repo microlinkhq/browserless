@@ -1,9 +1,9 @@
 {
-  "name": "@browserless/examples",
-  "description": "A collection of browserless example for illustating how to use",
+  "name": "@browserless/devices",
+  "description": "A collection of different devices for emulation purposes",
   "homepage": "https://browserless.js.org",
-  "version": "5.2.1",
-  "main": "src/html.js",
+  "version": "5.2.0",
+  "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
     "name": "Kiko Beats",
@@ -11,27 +11,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kikobeats/browserless/tree/master/packages/examples"
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/devices"
   },
   "bugs": {
     "url": "https://github.com/Kikobeats/browserless/issues"
   },
   "keywords": [
+    "device",
+    "devices",
     "browser",
     "browserless",
     "chrome",
     "chromeless",
-    "example",
-    "examples",
     "headless",
     "puppeteer"
   ],
   "devDependencies": {
-    "browserless": "latest",
-    "lodash": "latest",
-    "p-event": "latest",
-    "puppeteer": "latest",
-    "term-img": "latest"
+    "puppeteer": "latest"
   },
   "engines": {
     "node": ">= 8"
@@ -39,8 +35,5 @@
   "files": [
     "src"
   ],
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  }
+  "license": "MIT"
 }

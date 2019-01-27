@@ -1,6 +1,6 @@
 {
   "name": "@browserless/pool",
-  "description": "Headless Chrome API made easy",
+  "description": "Pooling support for browserless",
   "homepage": "https://browserless.js.org",
   "version": "5.2.1",
   "main": "src",
@@ -17,12 +17,9 @@
     "chromeless",
     "farm",
     "headless",
-    "html",
-    "pdf",
     "pool",
+    "cluster",
     "puppeteer",
-    "screenshot",
-    "text",
     "thread",
     "threads"
   ],
@@ -48,9 +45,6 @@
     "test": "nyc ava"
   },
   "license": "MIT",
-  "peerDependencies": {
-    "browserless": "4"
-  },
   "publishConfig": {
     "access": "public"
   }

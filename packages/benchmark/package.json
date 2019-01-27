@@ -1,6 +1,6 @@
 {
   "name": "@browserless/benchmark",
-  "description": "Headless Chrome API made easy",
+  "description": "Benchmarking tool for testing different browserless configurations",
   "homepage": "https://browserless.js.org",
   "version": "5.2.1",
   "main": "src/index.js",
@@ -17,16 +17,15 @@
     "url": "https://github.com/Kikobeats/browserless/issues"
   },
   "keywords": [
+    "benchmark",
+    "perf",
+    "bench",
     "browser",
     "browserless",
     "chrome",
     "chromeless",
     "headless",
-    "html",
-    "pdf",
-    "puppeteer",
-    "screenshot",
-    "text"
+    "puppeteer"
   ],
   "devDependencies": {
     "@browserless/pool": "latest",
@@ -50,9 +49,6 @@
     "src"
   ],
   "license": "MIT",
-  "peerDependencies": {
-    "browserless": "4"
-  },
   "publishConfig": {
     "access": "public"
   }

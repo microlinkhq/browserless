@@ -1,22 +1,12 @@
 'use strict'
 
-const extractDomain = require('extract-domain')
 const requireOneOf = require('require-one-of')
-const debug = require('debug')('browserless')
+const goto = require('@browserless/goto')
 const pTimeout = require('p-timeout')
-
-const { getDevice } = require('./devices')
-const isTracker = require('./is-tracker')
-
-const WAIT_UNTIL = ['networkidle0']
 
 const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
 const EVALUATE_HTML = page => page.content()
-
-const isExternalUrl = (domainOne, domainTwo) => domainOne !== domainTwo
-
-const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
@@ -66,57 +56,6 @@ module.exports = ({
     await page.close()
     if (error) throw error
     return res
-  }
-
-  const goto = async (
-    page,
-    {
-      url,
-      device,
-      abortTrackers,
-      abortTypes = [],
-      waitFor = 0,
-      waitUntil = WAIT_UNTIL,
-      userAgent: fallbackUserAgent,
-      viewport: fallbackViewport,
-      ...args
-    }
-  ) => {
-    await page.setRequestInterception(true)
-    let reqCount = { abort: 0, continue: 0 }
-
-    page.on('request', req => {
-      const resourceUrl = req.url()
-
-      const resourceType = req.resourceType()
-
-      if (abortTypes.includes(resourceType)) {
-        debug(`abort:${resourceType}:${++reqCount.abort}`, resourceUrl)
-        return req.abort()
-      }
-
-      const urlDomain = extractDomain(url)
-      const resourceDomain = extractDomain(resourceUrl)
-      const isExternal = isExternalUrl(urlDomain, resourceDomain)
-
-      if (abortTrackers && isExternal && isTracker(resourceDomain)) {
-        debug(`abort:tracker:${++reqCount.abort}`, resourceUrl)
-        return req.abort()
-      }
-      debug(`continue:${resourceType}:${++reqCount.continue}`, resourceUrl)
-      return req.continue()
-    })
-
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
-
-    const userAgent = deviceUserAgent || fallbackUserAgent
-    if (userAgent) await page.setUserAgent(userAgent)
-    const viewport = { ...deviceViewport, ...fallbackViewport }
-    if (!isEmpty(viewport)) await page.setViewport(viewport)
-    const response = await page.goto(url, { waitUntil, ...args })
-    if (waitFor) await page.waitFor(waitFor)
-    debug(reqCount)
-    return response
   }
 
   const evaluate = fn =>
