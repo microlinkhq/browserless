@@ -10,24 +10,34 @@
 [![Dev Dependencies Status](https://img.shields.io/david/dev/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-## Highlights
+> A [puppeter](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios. 
 
-- Built on top [puppeteer](https://github.com/GoogleChrome/puppeteer).
-- Aborting unnecessary requests based on [ResourceType](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType).
-- Support for creating a [pool](#pool-of-instances) of multiple instances.
-- Block [ads trackers](https://npm.im/is-tracking-domain) requests.
+## Why
+
+Although you can think [puppeteer](https://github.com/GoogleChrome/puppeteer) could be enough, there is a set of use cases that make sense built on top of puppeteer and they are necessary to support into robust production scenario, like:
+
+- Sensible good defaults, aborting unnecessary requests based of what you are doing (e.g, aborting image request if you just want to get [`.html`](#htmlurl-options) content).
+- Privacy by default, blocking tracker requests.
+- Easily create a pool of instance (via [`@browserless/pool`](#pool-of-instances)).
+- Built-in AdBlocker ([soon](https://github.com/Kikobeats/browserless/issues/26)).
 
 ## Install
+
+**browserless** is built on top of puppeteer, so you need to install it as well.
 
 ```bash
 $ npm install puppeteer browserless --save
 ```
 
+You can use **browserless** together with [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) or [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox).
+
+Internally, the library is divided into different packages based on the functionality
+
 ## Usage
 
-**browserless** is a high level API simplification over for doing common actions.
+The **browserless** API is like puppeteer, but doing more things under the hood (not too much, I promise).
 
-For example, if you want to take an screenshot, just do:
+For example, if you want to take an [`screenshot`](#screenshoturl-options), just do:
 
 ```js
 const browserless = require('browserless')()
@@ -39,9 +49,9 @@ browserless
   })
 ```
 
-See more at [examples](/examples/).
+You can see more common recipes at [`@browserless/examples`](https://github.com/Kikobeats/browserless/tree/master/packages/examples).
 
-## Basic
+## API
 
 All methods follow the same interface:
 
@@ -416,7 +426,7 @@ const browserless = require('browserless')
 
 **browserless** uses internally a singleton browser instance.
 
-You can use a pool instances using `@browserless/pool` package.
+You can use a pool instances using [`@browserless/pool`](https://github.com/Kikobeats/browserless/tree/master/packages/pool) package.
 
 ```js
 const createBrowserless = require('@browserless/pool')
@@ -453,18 +463,30 @@ browserlessPool(async browserless => {
 
 You don't need to think about the acquire/release step: It's done automagically ✨.
 
+## Packages
+
+**browserless** is internally divided into multiple packages for ensuring just use the mininum quantity of code necessary for your user case.
+
+| Package | Version | Dependencies |
+|--------|-------|------------|
+| [`browserless`](https://github.com/microlinkhq/metascraper/tree/master/packages/browserless) | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/browserless&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/browserless) |
+| [`@browserless/pool`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/pool) | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/pool&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/pool) |
+| [`@browserless/devices`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/devices) | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/devices&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/devices) |
+| [`@browserless/goto`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/goto) | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/goto&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/goto) |
+| [`@browserless/benchmark`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/benchmark) | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/benchmark&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/benchmark) |
+| [`@browserless/examples`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/examples) | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/examples&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/examples) |
 
 ## Benchmark
 
 ![](/static/bench.png)
 
-We included a tiny [benchmark](https://github.com/Kikobeats/browserless/tree/master/packages/benchmark) utility for make easier testing multiple configuration settings.
+For testing different approach, we included a tiny benchmark tool called [`@browserless/benchmark`](https://github.com/Kikobeats/browserless/tree/master/packages/benchmark).
 
 ## FAQ
 
 **Q: Why use browserless over Puppeteer?**
 
-**browserless** not replace puppeteer, it complements. It's just a syntactic sugar layer over official Headless Chrome.
+**browserless** not replace puppeteer, it complements. It's just a syntactic sugar layer over official Headless Chrome oriented for production scenarios.
 
 **Q: Why do you block ads scripts by default?**
 

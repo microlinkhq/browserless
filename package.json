@@ -1,6 +1,6 @@
 {
   "name": "browserless",
-  "description": "Headless Chrome API made easy",
+  "description": "A puppeter-like Node.js library for interacting with Headless production scenarios.",
   "homepage": "https://browserless.js.org",
   "version": "",
   "author": {

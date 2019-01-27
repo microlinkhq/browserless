@@ -1,6 +1,6 @@
 {
   "name": "@browserless/goto",
-  "description": "Headless Chrome API made easy",
+  "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org",
   "version": "5.2.0",
   "main": "src/index.js",
