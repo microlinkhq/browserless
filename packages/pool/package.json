@@ -2,7 +2,7 @@
   "name": "@browserless/pool",
   "description": "Pooling support for browserless",
   "homepage": "https://browserless.js.org",
-  "version": "5.2.1",
+  "version": "5.2.2",
   "main": "src",
   "repository": {
     "type": "git",
@@ -15,10 +15,10 @@
     "browserless",
     "chrome",
     "chromeless",
+    "cluster",
     "farm",
     "headless",
     "pool",
-    "cluster",
     "puppeteer",
     "thread",
     "threads"

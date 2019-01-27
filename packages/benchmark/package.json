@@ -2,7 +2,7 @@
   "name": "@browserless/benchmark",
   "description": "Benchmarking tool for testing different browserless configurations",
   "homepage": "https://browserless.js.org",
-  "version": "5.2.1",
+  "version": "5.2.2",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -17,14 +17,14 @@
     "url": "https://github.com/Kikobeats/browserless/issues"
   },
   "keywords": [
-    "benchmark",
-    "perf",
     "bench",
+    "benchmark",
     "browser",
     "browserless",
     "chrome",
     "chromeless",
     "headless",
+    "perf",
     "puppeteer"
   ],
   "devDependencies": {

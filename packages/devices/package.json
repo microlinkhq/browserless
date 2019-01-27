@@ -2,7 +2,7 @@
   "name": "@browserless/devices",
   "description": "A collection of different devices for emulation purposes",
   "homepage": "https://browserless.js.org",
-  "version": "5.2.0",
+  "version": "5.2.2",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -17,12 +17,12 @@
     "url": "https://github.com/Kikobeats/browserless/issues"
   },
   "keywords": [
-    "device",
-    "devices",
     "browser",
     "browserless",
     "chrome",
     "chromeless",
+    "device",
+    "devices",
     "headless",
     "puppeteer"
   ],
