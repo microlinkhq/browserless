@@ -1,5 +1,6 @@
 'use strict'
 
+const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
 const pTimeout = require('p-timeout')
@@ -123,4 +124,4 @@ module.exports = ({
   }
 }
 
-module.exports.devices = require('./devices')
+module.exports.devices = devices
