@@ -30,6 +30,7 @@
     "text"
   ],
   "dependencies": {
+    "@browserless/goto": "~5.2.0",
     "p-timeout": "~2.0.1",
     "require-one-of": "~1.0.2"
   },
