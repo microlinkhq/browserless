@@ -35,5 +35,8 @@
   "files": [
     "src"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "require-one-of": "~1.0.3"
+  }
 }

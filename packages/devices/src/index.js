@@ -1,6 +1,13 @@
 'use strict'
 
-const puppeteerDevices = require('puppeteer/DeviceDescriptors')
+const requireOneOf = require('require-one-of')
+
+const puppeteerDevices = requireOneOf([
+  'puppeteer/DeviceDescriptors',
+  'puppeteer-core/DeviceDescriptors',
+  'puppeteer-firefox/DeviceDescriptors'
+])
+
 const customDevices = require('./devices.json')
 
 const devices = puppeteerDevices.concat(customDevices)
