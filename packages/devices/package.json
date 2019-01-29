@@ -2,7 +2,7 @@
   "name": "@browserless/devices",
   "description": "A collection of different devices for emulation purposes",
   "homepage": "https://browserless.js.org",
-  "version": "5.2.2",
+  "version": "5.2.3",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -26,6 +26,9 @@
     "headless",
     "puppeteer"
   ],
+  "dependencies": {
+    "require-one-of": "~1.0.3"
+  },
   "devDependencies": {
     "puppeteer": "latest"
   },
@@ -35,8 +38,5 @@
   "files": [
     "src"
   ],
-  "license": "MIT",
-  "dependencies": {
-    "require-one-of": "~1.0.3"
-  }
+  "license": "MIT"
 }
