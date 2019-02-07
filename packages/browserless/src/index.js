@@ -78,8 +78,7 @@ module.exports = ({
     })
 
   const screenshot = wrapError(page => async (url, opts = {}) => {
-    const { device = 'macbook pro 13', tmpOpts, type = 'png', viewport, ...args } = opts
-
+    const { device = 'macbook pro 13', type = 'png', viewport, ...args } = opts
     await goto(page, { url, device, ...args })
     return page.screenshot({ type, ...args })
   })
@@ -96,7 +95,6 @@ module.exports = ({
       media = 'screen',
       printBackground = true,
       scale = 0.65,
-      tmpOpts,
       viewport,
       ...args
     } = opts
