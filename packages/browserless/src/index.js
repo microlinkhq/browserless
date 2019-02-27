@@ -83,6 +83,24 @@ module.exports = ({
     return page.screenshot({ type, ...args })
   })
 
+  const applyFeatures = async (fn, page, options) => {
+    const features = []
+
+    if (true === options.page_numbers) {
+      delete options.page_numbers
+
+      features.push(require('@browserless/page-numbers'))
+    }
+
+    for (let i = 0; i < features.length; ++i) {
+      if (features[i] instanceof Function) {
+        await features[i](page, options)
+      }
+    }
+
+    return fn()
+  }
+
   const pdf = wrapError(page => async (url, opts = {}) => {
     const {
       format = 'A4',
@@ -101,13 +119,22 @@ module.exports = ({
 
     await page.emulateMedia(media)
     await goto(page, { url, ...args })
-    return page.pdf({
+
+    const options = {
       margin,
       format,
       printBackground,
       scale,
       ...args
-    })
+    }
+
+    return applyFeatures(
+      () => {
+        return page.pdf(options)
+      },
+      page,
+      options
+    )
   })
 
   return {

@@ -1,0 +1,43 @@
+{
+  "name": "@browserless/page-numbers",
+  "description": "Page number references processing for PDF.",
+  "homepage": "https://browserless.js.org",
+  "version": "5.2.3",
+  "main": "src/index.js",
+  "author": {
+    "email": "josemataf@gmail.com",
+    "name": "José da Mata",
+    "url": "https://github.com/josemf"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/page-numbers"
+  },
+  "bugs": {
+    "url": "https://github.com/Kikobeats/browserless/issues"
+  },
+  "keywords": [
+    "browser",
+    "browserless",
+    "chrome",
+    "chromeless",
+    "headless",
+    "puppeteer",
+    "spec",
+    "suite",
+    "test"
+  ],
+  "devDependencies": {
+    "pdf-extract": "latest"
+  },
+  "engines": {
+    "node": ">= 8"
+  },
+  "files": [
+    "src"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "tmp": "0.0.33"
+  }
+}
