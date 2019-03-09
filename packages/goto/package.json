@@ -35,13 +35,6 @@
     "p-timeout": "~2.0.1",
     "require-one-of": "~1.0.2"
   },
-  "devDependencies": {
-    "@browserless/test": "latest",
-    "ava": "latest",
-    "coveralls": "latest",
-    "nyc": "latest",
-    "puppeteer": "latest"
-  },
   "engines": {
     "node": ">= 8"
   },
