@@ -1,0 +1,41 @@
+{
+  "name": "@browserless/pdf",
+  "description": "Sensible good defaults for exporting a website as PDF",
+  "homepage": "https://browserless.js.org",
+  "version": "5.2.3",
+  "main": "src",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/pool"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless"
+  },
+  "keywords": [
+    "browser",
+    "browserless",
+    "chrome",
+    "chromeless",
+    "headless",
+    "pdf",
+    "export",
+    "screen",
+    "media"
+  ],
+  "dependencies": {
+    "@browserless/goto": "^5.2.3"
+  },
+  "engines": {
+    "node": ">= 8"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "exit 0"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}
