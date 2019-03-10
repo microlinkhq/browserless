@@ -66,7 +66,7 @@
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard-markdown README.md && standard",
-    "postinstall": "lerna bootstrap && lerna link --force-local",
+    "postinstall": "lerna bootstrap --no-ci && lerna link --force-local",
     "postrelease": "cd packages && eachdir \"npx ci-publish\"",
     "prerelease": "npm run update:check",
     "pretest": "npm run lint",
