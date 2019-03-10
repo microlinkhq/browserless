@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org",
-  "version": "5.2.3",
+  "version": "5.2.5",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
