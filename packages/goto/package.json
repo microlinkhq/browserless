@@ -29,9 +29,10 @@
   ],
   "dependencies": {
     "@browserless/devices": "^5.2.3",
+    "got": "~9.6.0",
+    "tldts": "~4.0.5",
+    "@cliqz/adblocker": "~0.8.0",
     "debug": "~4.1.0",
-    "extract-domain": "~2.0.4",
-    "is-tracking-domain": "~1.1.6",
     "p-timeout": "~2.0.1",
     "require-one-of": "~1.0.2"
   },
@@ -42,7 +43,8 @@
     "src"
   ],
   "scripts": {
-    "test": "exit 0"
+    "test": "exit 0",
+    "postinstall": "node scripts/postinstall"
   },
   "license": "MIT"
 }
