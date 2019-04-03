@@ -40,7 +40,8 @@
     "node": ">= 8"
   },
   "files": [
-    "src"
+    "src",
+    "scripts"
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall",
