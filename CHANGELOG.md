@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.3.1](https://github.com/kikobeats/browserless/compare/v5.3.0...v5.3.1) (2019-04-03)
+
+
+### Bug Fixes
+
+* include scripts folder ([bd39b5c](https://github.com/kikobeats/browserless/commit/bd39b5c))
+
+
+
+
+
 # [5.3.0](https://github.com/kikobeats/browserless/compare/v5.2.5...v5.3.0) (2019-04-03)
 
 
