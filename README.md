@@ -19,7 +19,7 @@ Although you can think [puppeteer](https://github.com/GoogleChrome/puppeteer) co
 - Sensible good defaults, aborting unnecessary requests based of what you are doing (e.g, aborting image request if you just want to get [`.html`](#htmlurl-options) content).
 - Privacy by default, blocking tracker requests.
 - Easily create a pool of instance (via [`@browserless/pool`](#pool-of-instances)).
-- Built-in AdBlocker ([soon](https://github.com/Kikobeats/browserless/issues/26)).
+- Built-in adblocker for aborting ads requests.
 
 ## Install
 
@@ -165,12 +165,12 @@ default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
 
 A list of `resourceType` requests that can be aborted in order to make the process faster.
 
-##### abortTrackers
+##### adblock
 
 type: `boolean`</br>
 default: `true`
 
-It will be abort request coming for [tracking domains](https://npm.im/is-tracking-domain).
+It will be abort requests detected as ads.
 
 ### .text(url, options)
 
@@ -366,21 +366,14 @@ The target URL
 type: `string`</br>
 default: `[]`
 
-A list of `req.resourceType()` to be blocked.
+A list of `req.resourceType()` to be aborted.
 
-##### abortTrackers
-
-type: `boolean`</br>
-default: `true`
-
-It will be abort request coming for [tracking domains](https://npm.im/is-tracking-domain).
-
-##### abortTrackers
+##### adblock
 
 type: `boolean`</br>
 default: `true`
 
-It will be abort request coming for [tracking domains](https://npm.im/is-tracking-domain).
+It will be abort requests detected as ads.
 
 ##### waitFor
 

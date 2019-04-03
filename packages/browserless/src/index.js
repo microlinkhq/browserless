@@ -62,14 +62,14 @@ module.exports = ({
   const evaluate = fn =>
     wrapError(page => async (url, opts = {}) => {
       const {
-        abortTrackers = true,
+        adblock = true,
         abortTypes = ['image', 'imageset', 'media', 'stylesheet', 'font', 'object', 'sub_frame'],
         ...args
       } = opts
 
       const response = await goto(page, {
         url,
-        abortTrackers,
+        adblock,
         abortTypes,
         ...args
       })
@@ -78,8 +78,8 @@ module.exports = ({
     })
 
   const screenshot = wrapError(page => async (url, opts = {}) => {
-    const { device = 'macbook pro 13', type = 'png', viewport, ...args } = opts
-    await goto(page, { url, device, ...args })
+    const { adblock = true, device = 'macbook pro 13', type = 'png', viewport, ...args } = opts
+    await goto(page, { url, device, adblock, ...args })
     return page.screenshot({ type, ...args })
   })
 
