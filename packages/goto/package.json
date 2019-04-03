@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org",
-  "version": "5.2.5",
+  "version": "5.3.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -29,12 +29,12 @@
   ],
   "dependencies": {
     "@browserless/devices": "^5.2.3",
-    "got": "~9.6.0",
-    "tldts": "~4.0.5",
     "@cliqz/adblocker": "~0.8.0",
     "debug": "~4.1.0",
+    "got": "~9.6.0",
     "p-timeout": "~2.0.1",
-    "require-one-of": "~1.0.2"
+    "require-one-of": "~1.0.2",
+    "tldts": "~4.0.5"
   },
   "engines": {
     "node": ">= 8"
@@ -43,8 +43,8 @@
     "src"
   ],
   "scripts": {
-    "test": "exit 0",
-    "postinstall": "node scripts/postinstall"
+    "postinstall": "node scripts/postinstall",
+    "test": "exit 0"
   },
   "license": "MIT"
 }
