@@ -26,8 +26,7 @@ const FILTERS = [
   'http://pgl.yoyo.org/as/serverlist.php?hostformat=adblockplus;showintro=0&mimetype=plaintext',
   'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/recipes/recipes_en.txt',
   'https://www.i-dont-care-about-cookies.eu/abp/',
-  'https://raw.githubusercontent.com/liamja/Prebake/master/obtrusive.txt',
-  'https://gnuzilla.gnu.org/filters/blacklist.txt'
+  'https://raw.githubusercontent.com/liamja/Prebake/master/obtrusive.txt'
 ]
 
 const rulesFromURL = async url => {
