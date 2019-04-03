@@ -17,7 +17,6 @@
 Although you can think [puppeteer](https://github.com/GoogleChrome/puppeteer) could be enough, there is a set of use cases that make sense built on top of puppeteer and they are necessary to support into robust production scenario, like:
 
 - Sensible good defaults, aborting unnecessary requests based of what you are doing (e.g, aborting image request if you just want to get [`.html`](#htmlurl-options) content).
-- Privacy by default, blocking tracker requests.
 - Easily create a pool of instance (via [`@browserless/pool`](#pool-of-instances)).
 - Built-in adblocker for aborting ads requests.
 
