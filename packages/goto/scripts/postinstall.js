@@ -1,5 +1,6 @@
 'use strict'
 
+const { parseFilters } = require('@cliqz/adblocker')
 const { promisify } = require('util')
 const { EOL } = require('os')
 const got = require('got')
@@ -37,20 +38,15 @@ const rulesFromURL = async url => {
 const rulesFromURLs = async urls => {
   const lists = await Promise.all(urls.map(rulesFromURL))
 
-  // Remove duplicate rules
-  const set = lists.reduce((acc, list) => {
-    const rules = list.split(EOL).filter(rule => {
-      // remove empty lines
-      if (rule === '') return false
-      // remove comments
-      if (rule.startsWith('!')) return false
-      return true
-    })
+  // Parse all lists
+  const { networkFilters, cosmeticFilters } = parseFilters(lists.join(EOL), {
+    debug: true
+  })
 
-    return new Set([...acc, ...rules])
-  }, new Set())
-
-  return Array.from(set)
+  // Return cleaned version of the lists (no comments, no spaces, etc.)
+  return [
+    ...new Set([...networkFilters.map(f => f.rawLine), ...cosmeticFilters.map(f => f.rawLine)])
+  ]
 }
 
 const toTxt = (filepath, data) => writeFile(filepath, data)
