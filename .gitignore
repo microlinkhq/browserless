@@ -32,3 +32,4 @@ coverage
 .node_history
 .envrc
 .envrc
+packages/goto/src/rules.txt
