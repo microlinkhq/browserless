@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.4.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.3.3...v5.4.0) (2019-05-16)
+
+
+### Features
+
+* add cookies and headers support ([50663d9](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/50663d9))
+
+
+
+
+
 ## [5.3.2](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.3.1...v5.3.2) (2019-04-04)
 
 **Note:** Version bump only for package @browserless/goto
