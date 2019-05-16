@@ -51,7 +51,9 @@ module.exports = async (
     url,
     device,
     adblock,
+    headers,
     abortTypes = [],
+    cookies = [],
     waitFor = 0,
     waitUntil = WAIT_UNTIL,
     userAgent: fallbackUserAgent,
@@ -93,14 +95,37 @@ module.exports = async (
     return req.continue()
   })
 
-  const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
+  if (headers) {
+    debug('set headers', headers)
+    await page.setExtraHTTPHeaders(headers)
+  }
 
+  if (cookies.length) {
+    debug('set cookies', cookies)
+    await page.setCookie(...cookies)
+  }
+
+  const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
   const userAgent = deviceUserAgent || fallbackUserAgent
-  if (userAgent) await page.setUserAgent(userAgent)
+
+  if (userAgent) {
+    debug('set userAgent', userAgent)
+    await page.setUserAgent(userAgent)
+  }
+
   const viewport = { ...deviceViewport, ...fallbackViewport }
-  if (!isEmpty(viewport)) await page.setViewport(viewport)
+  if (!isEmpty(viewport)) {
+    debug('set viewport', viewport)
+    await page.setViewport(viewport)
+  }
+
   const response = await page.goto(url, { waitUntil, ...args })
-  if (waitFor) await page.waitFor(waitFor)
+
+  if (waitFor) {
+    debug('waitFor', waitFor)
+    await page.waitFor(waitFor)
+  }
+
   debug(reqCount)
   return response
 }
