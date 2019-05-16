@@ -164,6 +164,18 @@ default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
 
 A list of `resourceType` requests that can be aborted in order to make the process faster.
 
+##### cookies
+
+type: `array` </br>
+
+A collection of [cookie's object](https://github.com/GoogleChrome/puppeteer/blob/v1.16.0/docs/api.md#pagesetcookiecookies) to set in the requests send.
+
+##### headers
+
+type: `object` </br>
+
+An object containing additional HTTP headers to be sent with every request.
+
 ##### adblock
 
 type: `boolean`</br>
