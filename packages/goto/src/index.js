@@ -74,11 +74,13 @@ module.exports = async (
     }
 
     if (adblock) {
+      const frame = req.frame()
+
       const { match: isMatch } = engine.match(
         makeRequest(
           {
             type: webRequestType(resourceType),
-            sourceUrl: req.frame().url(),
+            sourceUrl: frame ? frame.url() : undefined,
             url: resourceUrl
           },
           url => tldts.parse(url)
