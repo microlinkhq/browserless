@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.1](https://github.com/kikobeats/browserless/compare/v5.4.0...v5.4.1) (2019-05-17)
+
+
+### Bug Fixes
+
+* ensure frame is a thing ([e199d49](https://github.com/kikobeats/browserless/commit/e199d49)), closes [#issuecomment-493373184](https://github.com/kikobeats/browserless/issues/issuecomment-493373184)
+
+
+
+
+
 # [5.4.0](https://github.com/kikobeats/browserless/compare/v5.3.3...v5.4.0) (2019-05-16)
 
 
