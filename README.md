@@ -102,7 +102,7 @@ This setting will change the default maximum navigation time.
 type:`Puppeteer`</br>
 default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
 
-It's automatically detected based on your `dependencies` being supported [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox).
+It's automatically detected based on your `dependencies` being supported [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-extra](https://www.npmjs.com/package/puppeteer-extra), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox).
 
 Alternatively, you can pass it.
 
@@ -114,6 +114,15 @@ default: `false`
 Every time a new page is created, it will be an incognito page.
 
 An incognito page will not share cookies/cache with other browser pages.
+
+##### stealthMode
+
+type:`boolean`</br>
+default: `false`
+
+Enables a bunch of evasion techniques that make the headless browser detection harder.
+
+Only works with the `puppeteer-extra` package and requires the [puppeteer-extra-plugin-stealth](https://www.npmjs.com/package/puppeteer-extra-plugin-stealth) to be installed
 
 ### .html(url, options)
 
