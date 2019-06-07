@@ -10,11 +10,14 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 const EVALUATE_HTML = page => page.content()
 
 module.exports = ({
-  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  puppeteer = requireOneOf(['puppeteer-extra', 'puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
   ...launchOpts
 } = {}) => {
+  if (launchOpts.stealthMode) {
+    puppeteer.use(require('puppeteer-extra-plugin-stealth')())
+  }
   let browser = puppeteer.launch({
     ignoreHTTPSErrors: true,
     args: [
