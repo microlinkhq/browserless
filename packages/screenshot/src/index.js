@@ -110,7 +110,7 @@ module.exports = page => async (url, opts = {}) => {
   if (!overlay) return screenshot
 
   const { path: overlayPath = defaultOverlayPath, color: overlayColor = 'transparent' } = overlay
-  let image = await sharp(overlayPath).overlayWith(screenshot, { top: 138, left: 112 })
+  let image = await sharp(overlayPath).composite([{ input: screenshot, top: 138, left: 112 }])
 
   if (overlayColor !== 'transparent') {
     const [r, g, b] = getOverlayColors(overlayColor)
