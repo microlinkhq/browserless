@@ -287,9 +287,12 @@ Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.o
 Can be useful for cleaning up the page.
 
 ```js
-const buffer = await browserless.screenshot(url.toString(), {
-  hideElements: ['.crisp-client', '#cookies-policy']
-})
+
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    hideElements: ['.crisp-client', '#cookies-policy']
+  })
+})()
 ```
 
 This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
@@ -303,9 +306,11 @@ Remove DOM elements matching the given [CSS selectors](https://developer.mozilla
 This sets [`display: none`](https://stackoverflow.com/a/133064/64949) on the matched elements, so it could potentially break the website layout.
 
 ```js
-const buffer = await browserless.screenshot(url.toString(), {
-  removeElements: ['.crisp-client', '#cookies-policy']
-})
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    removeElements: ['.crisp-client', '#cookies-policy']
+  })
+})()
 ```
 
 ##### clickElement
@@ -323,9 +328,11 @@ Inject [JavaScript modules](https://developers.google.com/web/fundamentals/prime
 Accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
 
 ```js
-const buffer = await browserless.screenshot(url.toString(), {
-  modules: ['https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
-})
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    modules: ['https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+  })
+})()
 ```
 
 ##### scripts
@@ -335,9 +342,11 @@ type: `string[]`
 Same as the `modules` option, but instead injects the code as [`<script>` instead of `<script type="module">`](https://developers.google.com/web/fundamentals/primers/modules). Prefer the `modules` option whenever possible.
 
 ```js
-const buffer = await browserless.screenshot(url.toString(), {
-  scripts: ['https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
-})
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    scripts: ['https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+  })
+})()
 ```
 
 ##### styles
@@ -349,9 +358,11 @@ Inject CSS styles into the page.
 Accepts an array of inline code, absolute URLs, and local file paths (must have a `.css` extension).
 
 ```js
-const buffer = await browserless.screenshot(url.toString(), {
-  modules: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`, ``]
-})
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    modules: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`, ``]
+  })
+})()
 ```
 
 ##### scrollToElement
@@ -374,12 +385,14 @@ You can configure the overlay specifying:
 - **color**: The hexadecimal background color to use (default is `'transparent'`).
 
 ```js
-const buffer = await browserless.screenshot(url.toString(), {
-  hideElements: ['.crisp-client', '#cookies-policy'],
-  overlay: {
-    color: '#F76698'
-  }
-})
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    hideElements: ['.crisp-client', '#cookies-policy'],
+    overlay: {
+      color: '#F76698'
+    }
+  })
+})()
 ```
 
 ### .devices
