@@ -34,8 +34,8 @@
     "@browserless/devices": "^5.2.3",
     "@browserless/goto": "^5.4.1",
     "@browserless/pdf": "^5.4.1",
-    "p-timeout": "~2.0.1",
-    "require-one-of": "~1.0.2"
+    "p-timeout": "~3.1.0",
+    "require-one-of": "~1.0.10"
   },
   "devDependencies": {
     "@browserless/test": "latest",

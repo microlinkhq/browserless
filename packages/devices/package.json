@@ -27,7 +27,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "require-one-of": "~1.0.3"
+    "require-one-of": "~1.0.10"
   },
   "devDependencies": {
     "puppeteer": "latest"
