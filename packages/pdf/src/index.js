@@ -14,7 +14,6 @@ module.exports = page => async (url, opts = {}) => {
     media = 'screen',
     printBackground = true,
     scale = 0.65,
-    viewport,
     ...args
   } = opts
 
