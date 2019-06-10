@@ -257,10 +257,6 @@ See [page.screenshot](https://github.com/GoogleChrome/puppeteer/blob/master/docs
 
 Additionally, you can setup:
 
-The `options` provided are passed to [page.pdf](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
-
-Additionally, you can setup:
-
 ##### device
 
 It generate the PDF using the [device](#devices) descriptor name settings, like `userAgent` and `viewport`.
