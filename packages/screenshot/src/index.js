@@ -57,10 +57,14 @@ module.exports = page => async (url, opts = {}) => {
 
   await goto(page, { url, device, adblock, ...args })
 
-  if (hideElements)
+  if (hideElements) {
     await Promise.all(hideElements.map(selector => page.$$eval(selector, toHideElements)))
-  if (removeElements)
+  }
+
+  if (removeElements) {
     await Promise.all(removeElements.map(selector => page.$$eval(selector, toRemoveElements)))
+  }
+
   if (clickElement) await page.click(clickElement)
 
   if (modules) {
