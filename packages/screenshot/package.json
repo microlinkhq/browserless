@@ -1,7 +1,7 @@
 {
   "name": "@browserless/screenshot",
   "description": "Take clean screenshot of any websites",
-  "homepage": "https://browserless.js.org",
+  "homepage": "https://browserless.js.org/#/?id=screenshoturl-options",
   "version": "0.0.0",
   "main": "src/index.js",
   "author": {

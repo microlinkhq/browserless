@@ -1,7 +1,7 @@
 {
   "name": "@browserless/devices",
   "description": "A collection of different devices for emulation purposes",
-  "homepage": "https://browserless.js.org",
+  "homepage": "https://browserless.js.org/#/?id=devices",
   "version": "5.2.3",
   "main": "src/index.js",
   "author": {
