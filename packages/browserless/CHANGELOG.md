@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.5.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.4.1...v5.5.0) (2019-06-10)
+
+
+### Features
+
+* add better screenshot ([afb7cff](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/afb7cff)), closes [#36](https://github.com/kikobeats/browserless/tree/master/packages/browserless/issues/36)
+
+
+
+
+
 ## [5.4.1](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.4.0...v5.4.1) (2019-05-17)
 
 **Note:** Version bump only for package browserless

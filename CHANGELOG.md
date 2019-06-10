@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.5.0](https://github.com/kikobeats/browserless/compare/v5.4.1...v5.5.0) (2019-06-10)
+
+
+### Bug Fixes
+
+* linter ([37837f3](https://github.com/kikobeats/browserless/commit/37837f3))
+* remove unused variable ([5b14d91](https://github.com/kikobeats/browserless/commit/5b14d91))
+
+
+### Features
+
+* add better screenshot ([afb7cff](https://github.com/kikobeats/browserless/commit/afb7cff)), closes [#36](https://github.com/kikobeats/browserless/issues/36)
+
+
+
+
+
 ## [5.4.1](https://github.com/kikobeats/browserless/compare/v5.4.0...v5.4.1) (2019-05-17)
 
 
