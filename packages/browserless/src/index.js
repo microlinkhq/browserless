@@ -77,13 +77,9 @@ module.exports = ({
       return fn(page, response)
     })
 
-  const screenshot = wrapError(page => async (url, opts = {}) => {
-    const { adblock = true, device = 'macbook pro 13', type = 'png', viewport, ...args } = opts
-    await goto(page, { url, device, adblock, ...args })
-    return page.screenshot({ type, ...args })
-  })
-
   const pdf = wrapError(require('@browserless/pdf'))
+
+  const screenshot = wrapError(require('@browserless/screenshot'))
 
   return {
     browser,

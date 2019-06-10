@@ -1,0 +1,46 @@
+{
+  "name": "@browserless/screenshot",
+  "description": "Take clean screenshot of any websites",
+  "homepage": "https://browserless.js.org",
+  "version": "0.0.0",
+  "main": "src/index.js",
+  "author": {
+    "email": "josefrancisco.verdu@gmail.com",
+    "name": "Kiko Beats",
+    "url": "https://kikobeats.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/screenshot"
+  },
+  "bugs": {
+    "url": "https://github.com/Kikobeats/browserless/issues"
+  },
+  "keywords": [
+    "browser",
+    "browserless",
+    "chrome",
+    "chromeless",
+    "core",
+    "screenshot",
+    "headless",
+    "puppeteer"
+  ],
+  "dependencies": {
+    "@browserless/goto": "~5.4.1",
+    "hex-rgb": "~4.1.0",
+    "is-url-http": "~1.2.0",
+    "sharp": "~0.22.1"
+  },
+  "engines": {
+    "node": ">= 8"
+  },
+  "files": [
+    "scripts",
+    "src"
+  ],
+  "scripts": {
+    "test": "exit 0"
+  },
+  "license": "MIT"
+}
