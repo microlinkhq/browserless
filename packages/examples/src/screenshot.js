@@ -11,5 +11,7 @@ require('./main')(async url => {
       color: '#F76698'
     }
   })
+
   termImg(buffer)
+  // require('fs').writeFileSync('screenshot.png', buffer)
 })
