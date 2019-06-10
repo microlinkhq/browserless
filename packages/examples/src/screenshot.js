@@ -5,6 +5,13 @@ const createBrowserless = require('browserless')
 const browserless = createBrowserless()
 
 require('./main')(async url => {
-  const file = await browserless.screenshot(url.toString())
-  termImg(file)
+  const buffer = await browserless.screenshot(url.toString(), {
+    hideElements: ['.crisp-client', '#cookies-policy'],
+    overlay: {
+      color: '#F76698'
+    }
+  })
+
+  termImg(buffer)
+  // require('fs').writeFileSync('screenshot.png', buffer)
 })

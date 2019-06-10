@@ -1,7 +1,7 @@
 {
   "name": "@browserless/benchmark",
   "description": "Benchmarking tool for testing different browserless configurations",
-  "homepage": "https://browserless.js.org",
+  "homepage": "https://browserless.js.org/#/?id=benchmark",
   "version": "5.2.2",
   "main": "src/index.js",
   "author": {

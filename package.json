@@ -73,7 +73,7 @@
     "preversion": "npx lerna exec \"npx git-authors-cli || true; npx finepack\" --parallel",
     "release": "lerna publish --sort --conventional-commits --yes -m \"chore(release): %s\"",
     "test": "lerna exec npm run test",
-    "update": "ncu -a",
+    "update": "lerna exec ncu -- -u",
     "update:check": "ncu -- --error-level 2"
   },
   "private": true,

@@ -1,8 +1,8 @@
 {
-  "name": "@browserless/devices",
-  "description": "A collection of different devices for emulation purposes",
-  "homepage": "https://browserless.js.org/#/?id=devices",
-  "version": "5.2.3",
+  "name": "@browserless/screenshot",
+  "description": "Take clean screenshot of any websites",
+  "homepage": "https://browserless.js.org/#/?id=screenshoturl-options",
+  "version": "0.0.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kikobeats/browserless/tree/master/packages/devices"
+    "url": "https://github.com/kikobeats/browserless/tree/master/packages/screenshot"
   },
   "bugs": {
     "url": "https://github.com/Kikobeats/browserless/issues"
@@ -21,22 +21,26 @@
     "browserless",
     "chrome",
     "chromeless",
-    "device",
-    "devices",
+    "core",
+    "screenshot",
     "headless",
     "puppeteer"
   ],
   "dependencies": {
-    "require-one-of": "~1.0.10"
-  },
-  "devDependencies": {
-    "puppeteer": "latest"
+    "@browserless/goto": "~5.4.1",
+    "hex-rgb": "~4.1.0",
+    "is-url-http": "~1.2.0",
+    "sharp": "~0.22.1"
   },
   "engines": {
     "node": ">= 8"
   },
   "files": [
+    "scripts",
     "src"
   ],
+  "scripts": {
+    "test": "exit 0"
+  },
   "license": "MIT"
 }

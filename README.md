@@ -54,8 +54,8 @@ You can see more common recipes at [`@browserless/examples`](https://github.com/
 
 All methods follow the same interface:
 
-- `url` (*required*): The target URL
-- `options`: Specific settings for the method (*optional*).
+- `url` (*required*): The target URL.
+- `options` (*optional*): Specific settings for the method.
 
 The methods returns a Promise or a Node.js callback if pass an additional function as the last parameter.
 
@@ -92,14 +92,14 @@ By default the library will be pass a well known list of flags, so probably you 
 
 ##### timeout
 
-type:`number`</br>
+type: `number`</br>
 default: `30000`
 
 This setting will change the default maximum navigation time.
 
 ##### puppeteer
 
-type:`Puppeteer`</br>
+type: `Puppeteer`</br>
 default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
 
 It's automatically detected based on your `dependencies` being supported [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox).
@@ -108,7 +108,7 @@ Alternatively, you can pass it.
 
 ##### incognito
 
-type:`boolean`</br>
+type: `boolean`</br>
 default: `false`
 
 Every time a new page is created, it will be an incognito page.
@@ -137,14 +137,14 @@ Additionally, you can setup:
 
 ##### waitFor
 
-type:`string`|`function`|`number`</br>
+type: `string`|`function`|`number`</br>
 default: `0`
 
 Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
 
 ##### waitUntil
 
-type:`array`</br>
+type: `string[]`</br>
 default: `['networkidle0']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
@@ -159,14 +159,14 @@ It will setup a custom viewport, using [page.setViewport](https://github.com/Goo
 
 ##### abortTypes
 
-type: `array` </br>
+type: `string[]` </br>
 default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
 
 A list of `resourceType` requests that can be aborted in order to make the process faster.
 
 ##### cookies
 
-type: `array` </br>
+type: `object[]` </br>
 
 A collection of [cookie's object](https://github.com/GoogleChrome/puppeteer/blob/v1.16.0/docs/api.md#pagesetcookiecookies) to set in the requests send.
 
@@ -199,7 +199,7 @@ const browserless = require('browserless')
 
 #### options
 
-They are the same than [`.html`](#html) method.
+The options you can provide are the same than [`.html`](#html) method, just the output will be different.
 
 ### .pdf(url, options)
 
@@ -223,11 +223,17 @@ Additionally, you can setup:
 
 ##### media
 
+type: `string`</br>
+default: `'screen'`
+
 Changes the CSS media type of the page using [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
 
 ##### device
 
-It generate the PDF using the [device](#devices) descriptor name settings, like `userAgent` and `viewport`.
+type: `string`</br>
+default: `'macbook pro 13'`
+
+It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
 
 ##### userAgent
 
@@ -259,7 +265,10 @@ Additionally, you can setup:
 
 ##### device
 
-It generate the PDF using the [device](#devices) descriptor name settings, like `userAgent` and `viewport`.
+type: `string`</br>
+default: `'macbook pro 13'`
+
+It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
 
 ##### userAgent
 
@@ -268,6 +277,123 @@ It will setup a custom user agent, using [page.setUserAgent](https://github.com/
 ##### viewport
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
+
+##### hideElements
+
+type: `array[]`</br>
+
+Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+Can be useful for cleaning up the page.
+
+```js
+
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    hideElements: ['.crisp-client', '#cookies-policy']
+  })
+})()
+```
+
+This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
+
+##### removeElements
+
+type: `string[]`
+
+Remove DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+This sets [`display: none`](https://stackoverflow.com/a/133064/64949) on the matched elements, so it could potentially break the website layout.
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    removeElements: ['.crisp-client', '#cookies-policy']
+  })
+})()
+```
+
+##### clickElement
+
+type: `string`
+
+Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+##### modules
+
+type: `string[]`
+
+Inject [JavaScript modules](https://developers.google.com/web/fundamentals/primers/modules) into the page.
+
+Accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    modules: ['https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+  })
+})()
+```
+
+##### scripts
+
+type: `string[]`
+
+Same as the `modules` option, but instead injects the code as [`<script>` instead of `<script type="module">`](https://developers.google.com/web/fundamentals/primers/modules). Prefer the `modules` option whenever possible.
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    scripts: ['https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+  })
+})()
+```
+
+##### styles
+
+type: `string[]`
+
+Inject CSS styles into the page.
+
+Accepts an array of inline code, absolute URLs, and local file paths (must have a `.css` extension).
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    modules: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`, ``]
+  })
+})()
+```
+
+##### scrollToElement
+
+type: `string` | `object`
+
+Scroll to the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+##### overlay
+
+![](https://i.imgur.com/vR0M3qt.png)
+
+type: `boolean` | `object`
+
+After the screenshot has been taken, this option allows you to place the screenshot with an overlay.
+
+You can configure the overlay specifying:
+
+- **path**: The image path to use to put on top of the screenshot.
+- **color**: The hexadecimal background color to use (default is `'transparent'`).
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    hideElements: ['.crisp-client', '#cookies-policy'],
+    overlay: {
+      color: '#F76698'
+    }
+  })
+})()
+```
 
 ### .devices
 
@@ -470,11 +596,12 @@ You don't need to think about the acquire/release step: It's done automagically 
 | Package | Version | Dependencies |
 |--------|-------|------------|
 | [`browserless`](https://github.com/microlinkhq/metascraper/tree/master/packages/browserless) | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/browserless&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/browserless) |
-| [`@browserless/pool`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/pool) | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/pool&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/pool) |
-| [`@browserless/devices`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/devices) | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/devices&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/devices) |
-| [`@browserless/goto`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/goto) | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/goto&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/goto) |
 | [`@browserless/benchmark`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/benchmark) | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/benchmark&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/benchmark) |
+| [`@browserless/devices`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/devices) | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/devices&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/devices) |
 | [`@browserless/examples`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/examples) | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/examples&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/examples) |
+| [`@browserless/goto`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/goto) | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/goto&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/goto) |
+| [`@browserless/pool`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/pool) | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/pool&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/pool) |
+| [`@browserless/screenshot`](https://github.com/microlinkhq/metascraper/tree/master/packages/@browserless/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) | [![Dependency Status](https://david-dm.org/microlinkhq/metascraper.svg?path=packages/@browserless/screenshot&style=flat-square)](https://david-dm.org/microlinkhq/metascraper?path=packages/@browserless/screenshot) |
 
 ## Benchmark
 
