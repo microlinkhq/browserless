@@ -8,6 +8,20 @@ const path = require('path')
 
 const defaultOverlayPath = path.resolve(__dirname, 'browser.png')
 
+const toDisableAnimations = () => {
+  const rule = `
+  *,
+  ::before,
+  ::after {
+    animation: initial !important;
+    transition: initial !important;
+  }
+`
+  const style = document.createElement('style')
+  document.body.append(style)
+  style.sheet.insertRule(rule)
+}
+
 const toHideElements = elements => {
   for (const element of elements) {
     element.style.visibility = 'hidden'
@@ -46,6 +60,7 @@ module.exports = page => async (url, opts = {}) => {
     hideElements,
     removeElements,
     clickElement,
+    disableAnimations,
     modules,
     scripts,
     styles,
@@ -56,6 +71,10 @@ module.exports = page => async (url, opts = {}) => {
   } = opts
 
   await goto(page, { url, device, adblock, ...args })
+
+  if (disableAnimations) {
+    await page.evaluate(toDisableAnimations)
+  }
 
   if (hideElements) {
     await Promise.all(hideElements.map(selector => page.$$eval(selector, toHideElements)))
