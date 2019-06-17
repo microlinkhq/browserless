@@ -10,7 +10,7 @@
 [![Dev Dependencies Status](https://img.shields.io/david/dev/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> A [puppeter](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios. 
+> A [puppeter](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
 
 ## Why
 
@@ -479,7 +479,7 @@ Internally the method performs a [.goto](#gotopage-options).
 
 ### .goto(page, options)
 
-It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), blocking [ads trackers](https://npm.im/is-tracking-domain)) requests and other requests based on `resourceType`.
+It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), blocking [ads and trackers](https://www.npmjs.com/package/@cliqz/adblocker) requests and other requests based on `resourceType`.
 
 ```js
 const browserless = require('browserless')
