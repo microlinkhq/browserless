@@ -33,6 +33,9 @@
     "pdf-parse": "latest",
     "temperment": "latest"
   },
+  "scripts": {
+    "test": "exit 0"
+  },
   "engines": {
     "node": ">= 8"
   },
