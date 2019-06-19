@@ -6,7 +6,9 @@ const debug = require('debug')('browserless:goto')
 const path = require('path')
 const fs = require('fs')
 
-const engine = PuppeteerBlocker.deserialize(new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin'))))
+const engine = PuppeteerBlocker.deserialize(
+  new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
+)
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
@@ -28,8 +30,6 @@ module.exports = async (
     ...args
   }
 ) => {
-  await page.setRequestInterception(true)
-
   if (adblock) {
     debug('enable adblocker')
     await engine.enableBlockingInPage(page)

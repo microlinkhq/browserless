@@ -32,10 +32,8 @@
     "src"
   ],
   "scripts": {
+    "coverage": "exit 0",
     "test": "exit 0"
   },
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  }
+  "license": "MIT"
 }
