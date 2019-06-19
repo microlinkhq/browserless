@@ -22,9 +22,9 @@
     "chrome",
     "chromeless",
     "core",
-    "screenshot",
     "headless",
-    "puppeteer"
+    "puppeteer",
+    "screenshot"
   ],
   "dependencies": {
     "@browserless/goto": "^5.5.2",
