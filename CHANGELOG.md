@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.5.4](https://github.com/kikobeats/browserless/compare/v5.5.3...v5.5.4) (2019-06-19)
+
+
+### Bug Fixes
+
+* add missing command ([86455d9](https://github.com/kikobeats/browserless/commit/86455d9))
+* remove unnecessary interception ([fe8ef30](https://github.com/kikobeats/browserless/commit/fe8ef30))
+
+
+
+
+
 ## [5.5.3](https://github.com/kikobeats/browserless/compare/v5.5.2...v5.5.3) (2019-06-19)
 
 **Note:** Version bump only for package browserless

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.5.4](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.5.3...v5.5.4) (2019-06-19)
+
+
+### Bug Fixes
+
+* remove unnecessary interception ([fe8ef30](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/fe8ef30))
+
+
+
+
+
 ## [5.5.2](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.5.1...v5.5.2) (2019-06-19)
 
 **Note:** Version bump only for package @browserless/goto
