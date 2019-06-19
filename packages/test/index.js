@@ -21,7 +21,7 @@ module.exports = createBrowserless => {
     const html = await browserless.html('https://example.com')
     t.true(html.includes('DOCTYPE'))
   })
-  ;(isCI ? test.skip : test)('.screenshot (png)', async t => {
+  ;(isCI ? test : test)('.screenshot (png)', async t => {
     const browserless = createBrowserless()
     const filepath = temp.file({ extension: 'png' })
     await browserless.screenshot('http://example.com', {
@@ -30,7 +30,7 @@ module.exports = createBrowserless => {
 
     t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.png')))
   })
-  ;(isCI ? test.skip : test)('.screenshot (jpeg)', async t => {
+  ;(isCI ? test : test)('.screenshot (jpeg)', async t => {
     const browserless = createBrowserless()
     const filepath = temp.file({ extension: 'jpeg' })
     await browserless.screenshot('http://example.com', {
@@ -40,7 +40,7 @@ module.exports = createBrowserless => {
 
     t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example.jpeg')))
   })
-  ;(isCI ? test.skip : test)('devices', async t => {
+  ;(isCI ? test : test)('devices', async t => {
     const browserless = createBrowserless()
     const filepath = temp.file({ extension: 'png' })
     await browserless.screenshot('http://example.com', {
@@ -50,7 +50,7 @@ module.exports = createBrowserless => {
 
     t.true(await looksSame(filepath, path.resolve(__dirname, 'fixtures/example-iphone.png')))
   })
-  ;(isCI ? test.skip : test)('.pdf', async t => {
+  ;(isCI ? test : test)('.pdf', async t => {
     const browserless = createBrowserless()
     const buffer = await browserless.pdf('http://example.com')
     const data = await pdf(buffer)
