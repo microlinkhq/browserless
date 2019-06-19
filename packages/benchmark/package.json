@@ -48,8 +48,9 @@
   "files": [
     "src"
   ],
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  }
+  "scripts": {
+    "coverage": "exit 0",
+    "test": "exit 0"
+  },
+  "license": "MIT"
 }

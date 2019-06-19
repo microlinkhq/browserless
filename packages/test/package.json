@@ -33,9 +33,6 @@
     "pdf-parse": "latest",
     "temperment": "latest"
   },
-  "scripts": {
-    "test": "exit 0"
-  },
   "engines": {
     "node": ">= 8"
   },
@@ -43,8 +40,9 @@
     "fixtures",
     "index.js"
   ],
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  }
+  "scripts": {
+    "coverage": "exit 0",
+    "test": "exit 0"
+  },
+  "license": "MIT"
 }

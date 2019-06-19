@@ -43,6 +43,7 @@
     "src"
   ],
   "scripts": {
+    "coverage": "exit 0",
     "postinstall": "node scripts/postinstall",
     "test": "exit 0"
   },

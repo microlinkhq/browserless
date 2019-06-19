@@ -51,7 +51,7 @@
     "src"
   ],
   "scripts": {
-    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
     "test": "nyc ava"
   },
   "license": "MIT"
