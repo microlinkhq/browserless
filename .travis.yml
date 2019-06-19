@@ -11,11 +11,14 @@ stages:
   - name: Release
     if: branch = master AND commit_message !~ /(release|no-release)/
 
+install:
+  - npm config set package-lock false
+  - npm install
+
 jobs:
   include:
     - stage: Release
       node_js: lts/*
-      install: npm install --no-package-lock
       before_deploy:
         - git config user.email "travis@travis-ci.org"
         - git config user.name "Travis CI"
