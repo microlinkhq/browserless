@@ -20,9 +20,10 @@ jobs:
     - stage: Release
       node_js: lts/*
       before_deploy:
-        - git config user.email "travis@travis-ci.org"
-        - git config user.name "Travis CI"
+        - git config --global user.email ${GITHUB_EMAIL}
+        - git config --global user.name ${GITHUB_USER}
         - git remote set-url origin https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
+        - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> $HOME/.npmrc 2> /dev/null
         - git checkout master
       deploy:
         skip_cleanup: true
