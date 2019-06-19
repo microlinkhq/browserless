@@ -68,7 +68,7 @@
     "coverage": "lerna exec npm run coverage --parallel",
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
-    "install": "lerna bootstrap --no-ci --force-local",
+    "install": "lerna bootstrap --force-local -- --no-package-lock",
     "lint": "standard-markdown README.md && standard",
     "postrelease": "lerna exec \"npx ci-publish --access=public\"",
     "prerelease": "npm run update:check",
