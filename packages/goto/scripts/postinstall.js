@@ -1,12 +1,15 @@
 'use strict'
 
-const { parseFilters } = require('@cliqz/adblocker')
+const { PuppeteerBlocker, getLinesWithFilters } = require('@cliqz/adblocker')
 const { promisify } = require('util')
 const { EOL } = require('os')
 const got = require('got')
 const fs = require('fs')
 
 const writeFile = promisify(fs.writeFile)
+
+// uBlock Origin –  https://github.com/uBlockOrigin/uAssets/tree/master/filters
+const RESOURCES = 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/resources.txt'
 
 const FILTERS = [
   // uBlock Origin –  https://github.com/uBlockOrigin/uAssets/tree/master/filters
@@ -25,7 +28,6 @@ const FILTERS = [
 
   // Other
   'http://pgl.yoyo.org/as/serverlist.php?hostformat=adblockplus;showintro=0&mimetype=plaintext',
-  'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/recipes/recipes_en.txt',
   'https://fanboy.co.nz/fanboy-cookiemonster.txt',
   'https://raw.githubusercontent.com/liamja/Prebake/master/obtrusive.txt'
 ]
@@ -35,25 +37,13 @@ const rulesFromURL = async url => {
   return body
 }
 
-const rulesFromURLs = async urls => {
-  const lists = await Promise.all(urls.map(rulesFromURL))
-
-  // Parse all lists
-  const { networkFilters, cosmeticFilters } = parseFilters(lists.join(EOL), {
-    debug: true
-  })
-
-  // Return cleaned version of the lists (no comments, no spaces, etc.)
-  return [
-    ...new Set([...networkFilters.map(f => f.rawLine), ...cosmeticFilters.map(f => f.rawLine)])
-  ]
-}
-
-const toTxt = (filepath, data) => writeFile(filepath, data)
-
 const main = async urls => {
-  const rules = await rulesFromURLs(urls)
-  await toTxt('src/rules.txt', rules.join(EOL))
+  const rules = Array.from(
+    getLinesWithFilters((await Promise.all(urls.map(rulesFromURL))).join(EOL))
+  )
+  const engine = PuppeteerBlocker.parse(rules.join(EOL))
+  engine.updateResources(await rulesFromURL(RESOURCES), '' + Date.now())
+  await writeFile('src/engine.bin', engine.serialize())
 }
 
 main(FILTERS)
