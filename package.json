@@ -70,7 +70,6 @@
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "install": "lerna bootstrap --no-ci --force-local",
     "lint": "standard-markdown README.md && standard",
-    "postrelease": "lerna exec ci-publish --access=public",
     "prerelease": "npm run update:check",
     "pretest": "npm run lint",
     "preversion": "lerna exec \"git-authors-cli || true; finepack\" --parallel && git-authors-cli && finepack",
