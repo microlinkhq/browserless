@@ -157,13 +157,6 @@ It will setup a custom user agent, using [page.setUserAgent](https://github.com/
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
-##### abortTypes
-
-type: `string[]` </br>
-default: `['image', 'media', 'stylesheet', 'font', 'xhr']`
-
-A list of `resourceType` requests that can be aborted in order to make the process faster.
-
 ##### cookies
 
 type: `object[]` </br>
@@ -486,10 +479,7 @@ const browserless = require('browserless')
 
 ;(async () => {
   const page = await browserless.page()
-  await browserless.goto(page, {
-    url: 'http://savevideo.me',
-    abortTypes: ['image', 'media', 'stylesheet', 'font']
-  })
+  await browserless.goto(page, { url: 'http://savevideo.me' })
 })()
 ```
 
@@ -500,13 +490,6 @@ const browserless = require('browserless')
 type: `string`
 
 The target URL
-
-##### abortTypes
-
-type: `string`</br>
-default: `[]`
-
-A list of `req.resourceType()` to be aborted.
 
 ##### adblock
 

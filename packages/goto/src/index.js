@@ -21,7 +21,6 @@ module.exports = async (
     device,
     adblock,
     headers,
-    abortTypes = [],
     cookies = [],
     waitFor = 0,
     waitUntil = WAIT_UNTIL,
