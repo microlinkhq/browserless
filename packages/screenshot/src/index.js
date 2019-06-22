@@ -8,7 +8,69 @@ const path = require('path')
 
 const defaultOverlayPath = path.resolve(__dirname, 'browser.png')
 
-const toDisableAnimations = () => {
+const isOverflown = element => {
+  return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
+}
+
+const findScrollParent = element => {
+  if (element === undefined) {
+    return
+  }
+
+  if (isOverflown(element)) {
+    return element
+  }
+
+  return findScrollParent(element.parentElement)
+}
+
+const calculateOffset = (rect, options) => {
+  if (options === undefined) {
+    return {
+      x: rect.left,
+      y: rect.top
+    }
+  }
+
+  const offset = options.offset || 0
+
+  switch (options.offsetFrom) {
+    case 'top':
+      return {
+        x: rect.left,
+        y: rect.top + offset
+      }
+    case 'right':
+      return {
+        x: rect.left - offset,
+        y: rect.top
+      }
+    case 'bottom':
+      return {
+        x: rect.left,
+        y: rect.top - offset
+      }
+    case 'left':
+      return {
+        x: rect.left + offset,
+        y: rect.top
+      }
+    default:
+      throw new Error('Invalid `scrollToElement.offsetFrom` value')
+  }
+}
+
+const doScrollToElement = (element, options) => {
+  const rect = element.getBoundingClientRect()
+  const offset = calculateOffset(rect, options)
+  const parent = findScrollParent(element)
+
+  if (parent !== undefined) {
+    parent.scrollTo(offset.x, offset.y)
+  }
+}
+
+const doDisableAnimations = () => {
   const rule = `
   *,
   ::before,
@@ -22,13 +84,13 @@ const toDisableAnimations = () => {
   style.sheet.insertRule(rule)
 }
 
-const toHideElements = elements => {
+const doHideElements = elements => {
   for (const element of elements) {
     element.style.visibility = 'hidden'
   }
 }
 
-const toRemoveElements = elements => {
+const doRemoveElements = elements => {
   for (const element of elements) {
     element.style.display = 'none'
   }
@@ -73,15 +135,15 @@ module.exports = page => async (url, opts = {}) => {
   await goto(page, { url, device, adblock, ...args })
 
   if (disableAnimations) {
-    await page.evaluate(toDisableAnimations)
+    await page.evaluate(doDisableAnimations)
   }
 
   if (hideElements) {
-    await Promise.all(hideElements.map(selector => page.$$eval(selector, toHideElements)))
+    await Promise.all(hideElements.map(selector => page.$$eval(selector, doHideElements)))
   }
 
   if (removeElements) {
-    await Promise.all(removeElements.map(selector => page.$$eval(selector, toRemoveElements)))
+    await Promise.all(removeElements.map(selector => page.$$eval(selector, doRemoveElements)))
   }
 
   if (clickElement) await page.click(clickElement)
@@ -121,7 +183,7 @@ module.exports = page => async (url, opts = {}) => {
     if (typeof scrollToElement === 'object') {
       await page.$eval(scrollToElement.element, scrollToElement, scrollToElement)
     } else {
-      await page.$eval(scrollToElement, scrollToElement)
+      await page.$eval(scrollToElement, doScrollToElement)
     }
   }
 
