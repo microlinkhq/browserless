@@ -35,7 +35,7 @@
     "@browserless/pdf": "^5.5.4",
     "@browserless/screenshot": "^5.5.4",
     "p-timeout": "~3.1.0",
-    "require-one-of": "~1.0.10"
+    "require-one-of": "~1.0.11"
   },
   "devDependencies": {
     "@browserless/test": "latest",

@@ -33,7 +33,7 @@
     "debug": "~4.1.1",
     "got": "~9.6.0",
     "p-timeout": "~3.1.0",
-    "require-one-of": "~1.0.10"
+    "require-one-of": "~1.0.11"
   },
   "engines": {
     "node": ">= 8"
