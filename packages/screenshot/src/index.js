@@ -6,7 +6,13 @@ const hexRgb = require('hex-rgb')
 const sharp = require('sharp')
 const path = require('path')
 
-const defaultOverlayPath = path.resolve(__dirname, 'browser.png')
+const browserOverlay = ['safari-light', 'safari-dark', 'chrome-light', 'chrome-dark'].reduce(
+  (acc, key) => ({
+    ...acc,
+    [key]: path.resolve(__dirname, `browser/${key}.png`)
+  }),
+  {}
+)
 
 const isOverflown = element => {
   return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
@@ -16,7 +22,6 @@ const findScrollParent = element => {
   if (element === undefined) {
     return
   }
-
   if (isOverflown(element)) {
     return element
   }
@@ -190,8 +195,9 @@ module.exports = page => async (url, opts = {}) => {
   const screenshot = await page.screenshot({ type, ...args })
   if (!overlay) return screenshot
 
-  const { path: overlayPath = defaultOverlayPath, color: overlayColor = 'transparent' } = overlay
-  let image = await sharp(overlayPath).composite([{ input: screenshot, top: 138, left: 112 }])
+  const { browser: overlayBrowser = 'safari-light', color: overlayColor = 'transparent' } = overlay
+
+  let image = await sharp(browserOverlay[overlayBrowser]).composite([{ input: screenshot }])
 
   if (overlayColor !== 'transparent') {
     const [r, g, b] = getOverlayColors(overlayColor)
