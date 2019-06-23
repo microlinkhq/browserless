@@ -6,7 +6,7 @@ const hexRgb = require('hex-rgb')
 const sharp = require('sharp')
 const path = require('path')
 
-const browserOverlay = ['safari-light', 'safari-dark', 'chrome-light', 'chrome-dark'].reduce(
+const browserOverlay = ['light', 'dark'].reduce(
   (acc, key) => ({
     ...acc,
     [key]: path.resolve(__dirname, `browser/${key}.png`)
@@ -195,7 +195,7 @@ module.exports = page => async (url, opts = {}) => {
   const screenshot = await page.screenshot({ type, ...args })
   if (!overlay) return screenshot
 
-  const { browser: overlayBrowser = 'safari-light', color: overlayColor = 'transparent' } = overlay
+  const { browser: overlayBrowser = 'light', color: overlayColor = 'transparent' } = overlay
 
   let image = await sharp(browserOverlay[overlayBrowser]).composite([{ input: screenshot }])
 
