@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.6.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.5.5...v5.6.0) (2019-06-23)
+
+
+### Features
+
+* add more browser overlays ([9e66044](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/9e66044))
+
+
+
+
+
 ## [5.5.5](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.5.4...v5.5.5) (2019-06-22)
 
 
