@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.3](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.6.2...v5.6.3) (2019-06-24)
+
+
+### Bug Fixes
+
+* remove unnecessary pixel ([77cac4c](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/77cac4c))
+
+
+
+
+
 ## [5.6.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.6.1...v5.6.2) (2019-06-23)
 
 
