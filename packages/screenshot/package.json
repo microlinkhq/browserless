@@ -28,9 +28,9 @@
   ],
   "dependencies": {
     "@browserless/goto": "^5.5.5",
-    "hex-rgb": "~4.1.0",
     "is-url-http": "~1.2.0",
-    "sharp": "~0.22.1"
+    "sharp": "~0.22.1",
+    "svg-gradient": "~1.0.0"
   },
   "engines": {
     "node": ">= 8"
