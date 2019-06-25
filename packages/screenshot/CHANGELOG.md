@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.7.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.7.0...v5.7.1) (2019-06-25)
+
+
+### Bug Fixes
+
+* add alias ([fa8d268](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/fa8d268))
+
+
+
+
+
 # [5.7.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.6.3...v5.7.0) (2019-06-25)
 
 
