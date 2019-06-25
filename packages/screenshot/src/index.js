@@ -1,12 +1,12 @@
 'use strict'
 
+const svgGradient = require('svg-gradient')
 const goto = require('@browserless/goto')
 const isUrl = require('is-url-http')
-const hexRgb = require('hex-rgb')
 const sharp = require('sharp')
 const path = require('path')
 
-const browserOverlay = ['light', 'dark'].reduce(
+const browserOverlay = ['safari-light', 'safari-dark'].reduce(
   (acc, key) => ({
     ...acc,
     [key]: path.resolve(__dirname, `browser/${key}.png`)
@@ -101,19 +101,7 @@ const doRemoveElements = elements => {
   }
 }
 
-const getOverlayColors = color => {
-  let r = 0
-  let g = 0
-  let b = 0
-
-  try {
-    ;({ red: r, green: g, blue: b } = hexRgb(color))
-  } catch (e) {
-    color = 'transparent'
-  }
-
-  return [r, g, b]
-}
+const createBackground = css => Buffer.from(svgGradient(css, { width: '1388px', height: '955px' }))
 
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
@@ -195,14 +183,21 @@ module.exports = page => async (url, opts = {}) => {
   const screenshot = await page.screenshot({ type, ...args })
   if (!overlay) return screenshot
 
-  const { browser: overlayBrowser = 'light', color: overlayColor = 'transparent' } = overlay
+  let { browserTheme, background = 'transparent' } = overlay
 
-  let image = await sharp(browserOverlay[overlayBrowser]).composite([{ input: screenshot }])
-
-  if (overlayColor !== 'transparent') {
-    const [r, g, b] = getOverlayColors(overlayColor)
-    image = await image.flatten({ background: { r, g, b, alpha: 1 } })
+  if (!background.includes('gradient')) {
+    background = `linear-gradient(45deg, ${background} 0%, ${background} 100%)`
   }
+
+  let image = await sharp(Buffer.from(createBackground(background)))
+  let inputs = [{ input: screenshot }]
+
+  if (browserTheme) {
+    const input = browserOverlay[browserTheme]
+    if (input) inputs = [{ input }].concat(inputs)
+  }
+
+  image = await image.composite(inputs)
 
   const buffer = await image.toBuffer()
   return buffer

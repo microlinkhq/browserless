@@ -375,21 +375,22 @@ Scroll to the DOM element matching the given [CSS selector](https://developer.mo
 
 ![](https://i.imgur.com/vR0M3qt.png)
 
-type: `boolean` | `object`
+type: `object`
 
-After the screenshot has been taken, this option allows you to place the screenshot with an overlay.
+After the screenshot has been taken, this option allows you to place the screenshot into a fancy overlay
 
 You can configure the overlay specifying:
 
-- **path**: The image path to use to put on top of the screenshot.
-- **color**: The hexadecimal background color to use (default is `'transparent'`).
+- **browser**: It sets the browser image overlay to use. Supported values: `safari-light`,` safari-dark`.
+- **background**: It sets the background color to use. You can pass a hexadecimal/rgb/rgba or a CSS gradient.
 
 ```js
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
     hideElements: ['.crisp-client', '#cookies-policy'],
     overlay: {
-      color: '#F76698'
+      browser: 'safari-dark',
+      background: 'linear-gradient(45deg, rgba(255,18,223,1) 0%, rgba(69,59,128,1) 66%, rgba(69,59,128,1) 100%)'
     }
   })
 })()
