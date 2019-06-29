@@ -43,11 +43,13 @@
 }
 
 ::selection {
-  background: #f9e4ac; /* WebKit/Blink Browsers */
+  background: #f9e4ac;
+  /* WebKit/Blink Browsers */
 }
 
 ::-moz-selection {
-  background: #f9e4ac; /* Gecko Browsers */
+  background: #f9e4ac;
+  /* Gecko Browsers */
 }
 
 * {
@@ -68,7 +70,7 @@ body:not(.ready) {
 }
 
 body:not(.ready) .app-nav,
-body:not(.ready) > nav,
+body:not(.ready)>nav,
 body:not(.ready) [data-cloak] {
   display: none;
 }
@@ -172,7 +174,7 @@ li input[type='checkbox'] {
   margin: 0;
 }
 
-.app-nav > a {
+.app-nav>a {
   margin: 0 16px;
   margin: 0 1rem;
   padding: 5px 0;
@@ -311,7 +313,7 @@ main {
   z-index: 3;
 }
 
-.sidebar > h1 {
+.sidebar>h1 {
   margin: 0 auto 1rem;
   font-size: 1.5rem;
   font-weight: 300;
@@ -319,12 +321,12 @@ main {
   color: var(--secondary-color);
 }
 
-.sidebar > h1 a {
+.sidebar>h1 a {
   color: inherit;
   text-decoration: none;
 }
 
-.sidebar > h1 .app-nav {
+.sidebar>h1 .app-nav {
   display: block;
   position: static;
 }
@@ -339,7 +341,7 @@ main {
   padding: 0;
 }
 
-.sidebar li > p {
+.sidebar li>p {
   font-weight: 700;
   margin: 0;
 }
@@ -426,12 +428,12 @@ body.sticky .sidebar-toggle {
   position: relative;
 }
 
-.markdown-section > * {
+.markdown-section>* {
   box-sizing: border-box;
   font-size: inherit;
 }
 
-.markdown-section > :first-child {
+.markdown-section> :first-child {
   margin-top: 0 !important;
 }
 
@@ -526,6 +528,7 @@ body.close .content {
 }
 
 @media print {
+
   .app-nav,
   .github-corner,
   .sidebar,
@@ -535,6 +538,7 @@ body.close .content {
 }
 
 @media screen and (max-width: 768px) {
+
   .github-corner,
   .sidebar,
   .sidebar-toggle {
@@ -616,6 +620,7 @@ body.close .content {
 }
 
 @-webkit-keyframes a {
+
   0%,
   to {
     -webkit-transform: rotate(0);
@@ -636,6 +641,7 @@ body.close .content {
 }
 
 @keyframes a {
+
   0%,
   to {
     -webkit-transform: rotate(0);
@@ -741,7 +747,7 @@ section.cover ul {
   padding: 0;
 }
 
-section.cover .cover-main > p:last-child a {
+section.cover .cover-main>p:last-child a {
   border-color: #42b983;
   border: 1px solid var(--primary-color);
   border-radius: 2rem;
@@ -760,29 +766,29 @@ section.cover .cover-main > p:last-child a {
   transition: all 0.15s ease;
 }
 
-section.cover .cover-main > p:last-child a:last-child {
+section.cover .cover-main>p:last-child a:last-child {
   background-color: #42b983;
   background-color: var(--primary-color);
   color: #fff;
   margin-right: 0;
 }
 
-section.cover .cover-main > p:last-child a:last-child:hover {
+section.cover .cover-main>p:last-child a:last-child:hover {
   color: inherit;
   opacity: 0.8;
 }
 
-section.cover .cover-main > p:last-child a:hover {
+section.cover .cover-main>p:last-child a:hover {
   color: inherit;
 }
 
-section.cover blockquote > p > a {
+section.cover blockquote>p>a {
   border-bottom: 2px solid #42b983;
   border-bottom: 2px solid var(--primary-color);
   transition: color 0.3s;
 }
 
-section.cover blockquote > p > a:hover {
+section.cover blockquote>p>a:hover {
   color: #42b983;
   color: var(--primary-color);
 }
@@ -832,7 +838,7 @@ body {
   padding: 0;
 }
 
-.sidebar ul li.active > a {
+.sidebar ul li.active>a {
   border-right: 2px solid;
   color: var(--sidebar-active-color);
   font-weight: 600;
@@ -986,7 +992,7 @@ body {
   word-wrap: normal;
 }
 
-.markdown-section pre > code {
+.markdown-section pre>code {
   -moz-osx-font-smoothing: initial;
   -webkit-font-smoothing: initial;
   background-color: var(--bg-color);
@@ -1028,4 +1034,8 @@ pre::after {
   right: 0;
   text-align: right;
   top: 0;
+}
+
+.sidebar ul ul {
+  margin-left: 15px;
 }
