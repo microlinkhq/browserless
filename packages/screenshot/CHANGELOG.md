@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.8.0...v5.8.1) (2019-06-29)
+
+
+### Bug Fixes
+
+* function scope ([b2c8ee8](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/b2c8ee8))
+
+
+
+
+
 # [5.8.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.7.2...v5.8.0) (2019-06-29)
 
 
