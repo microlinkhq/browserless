@@ -6,7 +6,7 @@ const browserless = createBrowserless()
 
 require('./main')(async url => {
   const buffer = await browserless.screenshot(url.toString(), {
-    hideElements: ['.crisp-client', '#cookies-policy'],
+    hide: ['.crisp-client', '#cookies-policy'],
     overlay: {
       browser: 'safari-dark',
       background:
