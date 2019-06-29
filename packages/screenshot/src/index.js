@@ -16,58 +16,59 @@ const browserOverlay = ['safari-light', 'safari-dark'].reduce(
   {}
 )
 
-const isOverflown = element => {
-  return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
-}
-
-const findScrollParent = element => {
-  if (element === undefined) {
-    return
-  }
-  if (isOverflown(element)) {
-    return element
+const scrollToElement = (element, options) => {
+  const isOverflown = element => {
+    return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
   }
 
-  return findScrollParent(element.parentElement)
-}
+  const findScrollParent = element => {
+    if (element === undefined) {
+      return
+    }
 
-const calculateOffset = (rect, options) => {
-  if (options === undefined) {
-    return {
-      x: rect.left,
-      y: rect.top
+    if (isOverflown(element)) {
+      return element
+    }
+
+    return findScrollParent(element.parentElement)
+  }
+
+  const calculateOffset = (rect, options) => {
+    if (options === undefined) {
+      return {
+        x: rect.left,
+        y: rect.top
+      }
+    }
+
+    const offset = options.offset || 0
+
+    switch (options.offsetFrom) {
+      case 'top':
+        return {
+          x: rect.left,
+          y: rect.top + offset
+        }
+      case 'right':
+        return {
+          x: rect.left - offset,
+          y: rect.top
+        }
+      case 'bottom':
+        return {
+          x: rect.left,
+          y: rect.top - offset
+        }
+      case 'left':
+        return {
+          x: rect.left + offset,
+          y: rect.top
+        }
+      default:
+        throw new Error('Invalid `scrollToElement.offsetFrom` value')
     }
   }
 
-  const offset = options.offset || 0
-
-  switch (options.offsetFrom) {
-    case 'top':
-      return {
-        x: rect.left,
-        y: rect.top + offset
-      }
-    case 'right':
-      return {
-        x: rect.left - offset,
-        y: rect.top
-      }
-    case 'bottom':
-      return {
-        x: rect.left,
-        y: rect.top - offset
-      }
-    case 'left':
-      return {
-        x: rect.left + offset,
-        y: rect.top
-      }
-    default:
-      throw new Error('Invalid `scrollToElement.offsetFrom` value')
-  }
-}
-
-const scrollToElement = (element, options) => {
   const rect = element.getBoundingClientRect()
   const offset = calculateOffset(rect, options)
   const parent = findScrollParent(element)
