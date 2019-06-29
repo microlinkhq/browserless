@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.8.0](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.7.2...v5.8.0) (2019-06-29)
+
+
+### Features
+
+* **no-relese:** Improve API ([#48](https://github.com/kikobeats/browserless/tree/master/packages/pool/issues/48)) ([98b1f65](https://github.com/kikobeats/browserless/tree/master/packages/pool/commit/98b1f65))
+
+
+
+
+
 ## [5.5.5](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.5.4...v5.5.5) (2019-06-22)
 
 **Note:** Version bump only for package @browserless/pdf

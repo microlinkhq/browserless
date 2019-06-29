@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.8.0](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.7.2...v5.8.0) (2019-06-29)
+
+
+### Features
+
+* **no-relese:** Improve API ([#48](https://github.com/kikobeats/browserless/tree/master/packages/examples/issues/48)) ([98b1f65](https://github.com/kikobeats/browserless/tree/master/packages/examples/commit/98b1f65))
+
+
+
+
+
 # [5.7.0](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.6.3...v5.7.0) (2019-06-25)
 
 
