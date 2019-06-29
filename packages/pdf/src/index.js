@@ -24,7 +24,6 @@ module.exports = page => async (url, opts = {}) => {
     margin,
     format,
     printBackground,
-    scale,
-    ...args
+    scale
   })
 }
