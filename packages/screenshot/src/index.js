@@ -6,6 +6,8 @@ const isUrl = require('is-url-http')
 const sharp = require('sharp')
 const path = require('path')
 
+const toArray = value => [].concat(value)
+
 const browserOverlay = ['safari-light', 'safari-dark'].reduce(
   (acc, key) => ({
     ...acc,
@@ -65,7 +67,7 @@ const calculateOffset = (rect, options) => {
   }
 }
 
-const doScrollToElement = (element, options) => {
+const scrollToElement = (element, options) => {
   const rect = element.getBoundingClientRect()
   const offset = calculateOffset(rect, options)
   const parent = findScrollParent(element)
@@ -89,15 +91,9 @@ const doDisableAnimations = () => {
   style.sheet.insertRule(rule)
 }
 
-const doHideElements = elements => {
+const hideElements = elements => {
   for (const element of elements) {
     element.style.visibility = 'hidden'
-  }
-}
-
-const doRemoveElements = elements => {
-  for (const element of elements) {
-    element.style.display = 'none'
   }
 }
 
@@ -112,15 +108,14 @@ module.exports = page => async (url, opts = {}) => {
     device = 'macbook pro 13',
     type = 'png',
     viewport,
-    hideElements,
-    removeElements,
-    clickElement,
+    hide,
+    click,
     disableAnimations,
     modules,
     scripts,
     styles,
     element,
-    scrollToElement,
+    scrollTo,
     overlay,
     ...args
   } = opts
@@ -131,21 +126,21 @@ module.exports = page => async (url, opts = {}) => {
     await page.evaluate(doDisableAnimations)
   }
 
-  if (hideElements) {
-    await Promise.all(hideElements.map(selector => page.$$eval(selector, doHideElements)))
+  if (hide) {
+    await Promise.all(toArray(hide).map(selector => page.$$eval(selector, hideElements)))
   }
 
-  if (removeElements) {
-    await Promise.all(removeElements.map(selector => page.$$eval(selector, doRemoveElements)))
+  if (click) {
+    for (const selector of toArray(click)) {
+      await page.click(selector)
+    }
   }
-
-  if (clickElement) await page.click(clickElement)
 
   if (modules) {
     await Promise.all(
-      modules.map(module_ => {
+      toArray(modules).map(m => {
         return page.addScriptTag({
-          [getInjectKey('js', module_)]: module_,
+          [getInjectKey('js', m)]: m,
           type: 'module'
         })
       })
@@ -154,7 +149,7 @@ module.exports = page => async (url, opts = {}) => {
 
   if (scripts) {
     await Promise.all(
-      scripts.map(script => {
+      toArray(scripts).map(script => {
         return page.addScriptTag({
           [getInjectKey('js', script)]: script
         })
@@ -164,7 +159,7 @@ module.exports = page => async (url, opts = {}) => {
 
   if (styles) {
     await Promise.all(
-      styles.map(style => {
+      toArray(styles).map(style => {
         return page.addStyleTag({
           [getInjectKey('css', style)]: style
         })
@@ -172,11 +167,11 @@ module.exports = page => async (url, opts = {}) => {
     )
   }
 
-  if (scrollToElement) {
-    if (typeof scrollToElement === 'object') {
-      await page.$eval(scrollToElement.element, scrollToElement, scrollToElement)
+  if (scrollTo) {
+    if (typeof scrollTo === 'object') {
+      await page.$eval(scrollTo.element, scrollToElement, scrollTo)
     } else {
-      await page.$eval(scrollToElement, doScrollToElement)
+      await page.$eval(scrollTo, scrollToElement)
     }
   }
 
@@ -188,7 +183,6 @@ module.exports = page => async (url, opts = {}) => {
   if (!background.includes('gradient')) {
     background = `linear-gradient(45deg, ${background} 0%, ${background} 100%)`
   }
-
   let image = await sharp(Buffer.from(createBackground(background)))
   let inputs = [{ input: screenshot }]
 
