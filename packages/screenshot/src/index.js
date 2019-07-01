@@ -2,9 +2,10 @@
 
 const svgGradient = require('svg-gradient')
 const goto = require('@browserless/goto')
-const isUrl = require('is-url-http')
 const sharp = require('sharp')
 const path = require('path')
+
+const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
 
 const toArray = value => [].concat(value)
 
