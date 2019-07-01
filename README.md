@@ -284,7 +284,7 @@ Scroll to the DOM element matching the given [CSS selector](https://developer.mo
 
 ##### overlay
 
-![](https://i.imgur.com/vR0M3qt.png)
+![](https://i.imgur.com/GBa6Mj7.png)
 
 type: `object`
 
