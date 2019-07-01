@@ -95,7 +95,7 @@ const doDisableAnimations = () => {
 
 const hideElements = elements => {
   for (const element of elements) {
-    element.style.display = 'none'
+    if (element) element.style.display = 'none'
   }
 }
 
@@ -134,7 +134,9 @@ module.exports = page => async (url, opts = {}) => {
 
   if (click) {
     for (const selector of toArray(click)) {
-      await page.click(selector)
+      try {
+        await page.click(selector)
+      } catch (err) {}
     }
   }
 
