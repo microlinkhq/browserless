@@ -271,7 +271,7 @@ Accepts an array of inline code, absolute URLs, and local file paths (must have 
 ```js
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
-    modules: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`, ``]
+    styles: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`, ``]
   })
 })()
 ```
