@@ -298,7 +298,7 @@ You can configure the overlay specifying:
 ```js
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
-    hideElements: ['.crisp-client', '#cookies-policy'],
+    hide: ['.crisp-client', '#cookies-policy'],
     overlay: {
       browser: 'safari-dark',
       background: 'linear-gradient(45deg, rgba(255,18,223,1) 0%, rgba(69,59,128,1) 66%, rgba(69,59,128,1) 100%)'
