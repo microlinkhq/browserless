@@ -94,7 +94,7 @@ const doDisableAnimations = () => {
 
 const hideElements = elements => {
   for (const element of elements) {
-    element.style.visibility = 'hidden'
+    element.style.display = 'none'
   }
 }
 
