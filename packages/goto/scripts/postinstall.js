@@ -32,7 +32,6 @@ const FILTERS = [
   // crypto miners
   'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt',
   // Hosts
-  'http://pgl.yoyo.org/as/serverlist.php?hostformat=adblockplus;showintro=0&mimetype=plaintext',
   'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts'
 ]
 
