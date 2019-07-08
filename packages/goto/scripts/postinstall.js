@@ -1,7 +1,9 @@
 'use strict'
 
 const { PuppeteerBlocker, getLinesWithFilters } = require('@cliqz/adblocker')
+const debug = require('debug-logfmt')('browserless:goto:postinstall')
 const { promisify } = require('util')
+const split = require('binary-split')
 const { EOL } = require('os')
 const got = require('got')
 const fs = require('fs')
@@ -30,28 +32,80 @@ const FILTERS = [
   // Cookies Lists
   'https://www.fanboy.co.nz/fanboy-cookiemonster.txt',
   // crypto miners
-  'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt',
-  // Hosts
+  'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt'
+]
+
+const HOSTS = [
+  // Steven Black hosts – https://github.com/StevenBlack/hosts
   'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts'
 ]
 
-const rulesFromURL = async url => {
-  const { body } = await got(url)
-  return body
+const OUTPUT_FILENAME = 'src/engine.bin'
+
+const fetch = async url => (await got(url)).body
+
+const fetchLists = async (urls, fn) => {
+  const filterLists = await Promise.all(urls.map(fn))
+  const set = filterLists.reduce((acc, set) => new Set([...acc, ...set]), new Set())
+  debug(fn.type, { urls: urls.length, count: set.size })
+  return Array.from(set)
 }
 
-const main = async urls => {
-  const rules = Array.from(
-    getLinesWithFilters((await Promise.all(urls.map(rulesFromURL))).join(EOL))
-  )
-  const engine = PuppeteerBlocker.parse(rules.join(EOL))
-  engine.updateResources(await rulesFromURL(RESOURCES), '' + Date.now())
-  await writeFile('src/engine.bin', engine.serialize())
+const fetchFilterList = async url => {
+  const entries = await fetch(url)
+  const filters = getLinesWithFilters(entries)
+  debug('filters', { url, count: filters.size })
+  return filters
 }
 
-main(FILTERS)
-  .catch(err => {
-    console.error(err)
-    process.exit(1)
+fetchFilterList.type = 'filters'
+
+const fetchHostList = async url =>
+  new Promise((resolve, reject) => {
+    const hosts = []
+    got
+      .stream(url)
+      .pipe(split())
+      .on('error', reject)
+      .on('finish', () => {
+        debug('hosts', { url, count: hosts.length })
+        resolve(getLinesWithFilters(hosts.join(EOL)))
+      })
+      .on('data', data => {
+        const line = data.toString()
+        if (line.startsWith('0.0.0')) {
+          const [, hostname] = line.split(' ')
+          hosts.push(`||${hostname}^`)
+        } else {
+          hosts.push(line)
+        }
+      })
   })
+
+fetchHostList.type = 'hosts'
+
+const main = async () => {
+  // fetch all rules and merge it into an unique list of rules
+  const [hosts, filters] = await Promise.all([
+    fetchLists(HOSTS, fetchHostList),
+    fetchLists(FILTERS, fetchFilterList)
+  ])
+
+  const rules = Array.from(new Set([...hosts, ...filters]))
+  debug.info('total', {
+    urls: HOSTS.length + FILTERS.length,
+    count: rules.length
+  })
+
+  // create a ad-blocker engine
+  const engine = PuppeteerBlocker.parse(rules.join(EOL))
+
+  // save the engine to be used lately by the process
+  const resources = `${await fetch(RESOURCES)}${Date.now()}`
+  engine.updateResources(resources)
+  await writeFile(OUTPUT_FILENAME, engine.serialize())
+}
+
+main()
+  .catch(err => console.error(err) && process.exit(1))
   .then(process.exit)
