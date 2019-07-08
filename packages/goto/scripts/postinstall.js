@@ -9,27 +9,31 @@ const fs = require('fs')
 const writeFile = promisify(fs.writeFile)
 
 // uBlock Origin –  https://github.com/uBlockOrigin/uAssets/tree/master/filters
-const RESOURCES = 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/resources.txt'
+const RESOURCES =
+  'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/resources.txt'
 
 const FILTERS = [
   // uBlock Origin –  https://github.com/uBlockOrigin/uAssets/tree/master/filters
   'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt',
+  'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/annoyances.txt',
   'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt',
   'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt',
   'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/resource-abuse.txt',
   'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/unbreak.txt',
-  'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/annoyances.txt',
 
-  // Easylist – https://easylist.to/
-  'https://easylist.to/easylist/easylist.txt',
-  'https://easylist.to/easylist/easyprivacy.txt',
-  'https://easylist.to/easylist/fanboy-annoyance.txt',
-  'https://easylist.to/easylist/fanboy-social.txt',
-
+  // Fanboy – https://www.fanboy.co.nz
+  // Easylist, Easyprivacy, Enhanced Trackers
+  'https://www.fanboy.co.nz/r/fanboy-complete.txt',
+  // Fanboy Annoyances List + Fanboy-Social List
+  'https://easylist-downloads.adblockplus.org/fanboy-annoyance.txt',
   // Other
+  // Cookies Lists
+  'https://www.fanboy.co.nz/fanboy-cookiemonster.txt',
+  // crypto miners
+  'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt',
+  // Hosts
   'http://pgl.yoyo.org/as/serverlist.php?hostformat=adblockplus;showintro=0&mimetype=plaintext',
-  'https://fanboy.co.nz/fanboy-cookiemonster.txt',
-  'https://raw.githubusercontent.com/liamja/Prebake/master/obtrusive.txt'
+  'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts'
 ]
 
 const rulesFromURL = async url => {
