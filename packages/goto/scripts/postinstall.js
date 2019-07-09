@@ -4,6 +4,7 @@ const { PuppeteerBlocker, getLinesWithFilters } = require('@cliqz/adblocker')
 const debug = require('debug-logfmt')('browserless:goto:postinstall')
 const { promisify } = require('util')
 const split = require('binary-split')
+const crypto = require('crypto')
 const { EOL } = require('os')
 const got = require('got')
 const fs = require('fs')
@@ -101,8 +102,13 @@ const main = async () => {
   const engine = PuppeteerBlocker.parse(rules.join(EOL))
 
   // save the engine to be used lately by the process
-  const resources = `${await fetch(RESOURCES)}${Date.now()}`
-  engine.updateResources(resources)
+  const resources = await fetch(RESOURCES)
+  const checksum = crypto
+    .createHash('sha1')
+    .update(resources, 'utf8')
+    .digest('hex')
+
+  engine.updateResources(resources, checksum)
   await writeFile(OUTPUT_FILENAME, engine.serialize())
 }
 
