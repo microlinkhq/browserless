@@ -70,16 +70,15 @@ const fetchHostList = async url =>
       .on('error', reject)
       .on('finish', () => {
         debug('hosts', { url, count: hosts.length })
-        resolve(getLinesWithFilters(hosts.join(EOL)))
+        return resolve(getLinesWithFilters(hosts.join(EOL)))
       })
       .on('data', data => {
-        const line = data.toString()
-        if (line.startsWith('0.0.0')) {
+        let line = data.toString()
+        if (line.startsWith('0.0.0') && !line.startsWith('0.0.0.0 0.0.0.0')) {
           const [, hostname] = line.split(' ')
-          hosts.push(`||${hostname}^`)
-        } else {
-          hosts.push(line)
+          line = `||${hostname}^`
         }
+        hosts.push(line)
       })
   })
 
