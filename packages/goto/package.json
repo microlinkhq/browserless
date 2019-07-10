@@ -30,7 +30,9 @@
   "dependencies": {
     "@browserless/devices": "^5.5.5",
     "@cliqz/adblocker": "~0.11.0",
+    "binary-split": "~1.0.5",
     "debug": "~4.1.1",
+    "debug-logfmt": "~1.0.2",
     "got": "~9.6.0",
     "p-timeout": "~3.1.0",
     "require-one-of": "~1.0.11"

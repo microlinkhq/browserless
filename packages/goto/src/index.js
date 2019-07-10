@@ -1,8 +1,8 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:goto')
 const { PuppeteerBlocker } = require('@cliqz/adblocker')
 const { getDevice } = require('@browserless/devices')
-const debug = require('debug')('browserless:goto')
 const path = require('path')
 const fs = require('fs')
 
