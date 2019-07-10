@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.6](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.8.5...v5.8.6) (2019-07-10)
+
+**Note:** Version bump only for package @browserless/pdf
+
+
+
+
+
 # [5.8.0](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.7.2...v5.8.0) (2019-06-29)
 
 
