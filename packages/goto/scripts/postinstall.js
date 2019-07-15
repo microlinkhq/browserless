@@ -3,7 +3,6 @@
 const { PuppeteerBlocker, getLinesWithFilters } = require('@cliqz/adblocker')
 const debug = require('debug-logfmt')('browserless:goto:postinstall')
 const { promisify } = require('util')
-const split = require('binary-split')
 const crypto = require('crypto')
 const { EOL } = require('os')
 const got = require('got')
@@ -33,24 +32,13 @@ const FILTERS = [
   // Cookies Lists
   'https://www.fanboy.co.nz/fanboy-cookiemonster.txt',
   // crypto miners
-  'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt'
-]
-
-const HOSTS = [
-  // Steven Black hosts – https://github.com/StevenBlack/hosts
-  'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts'
+  'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt',
+  'http://pgl.yoyo.org/as/serverlist.php?hostformat=adblockplus;showintro=0&mimetype=plaintext'
 ]
 
 const OUTPUT_FILENAME = 'src/engine.bin'
 
 const fetch = async url => (await got(url)).body
-
-const fetchLists = async (urls, fn) => {
-  const filterLists = await Promise.all(urls.map(fn))
-  const set = filterLists.reduce((acc, set) => new Set([...acc, ...set]), new Set())
-  debug(fn.type, { urls: urls.length, count: set.size })
-  return Array.from(set)
-}
 
 const fetchFilterList = async url => {
   const entries = await fetch(url)
@@ -59,43 +47,21 @@ const fetchFilterList = async url => {
   return filters
 }
 
-fetchFilterList.type = 'filters'
-
-const fetchHostList = async url =>
-  new Promise((resolve, reject) => {
-    const hosts = []
-    got
-      .stream(url)
-      .pipe(split())
-      .on('error', reject)
-      .on('finish', () => {
-        debug('hosts', { url, count: hosts.length })
-        return resolve(getLinesWithFilters(hosts.join(EOL)))
-      })
-      .on('data', data => {
-        let line = data.toString()
-        if (line.startsWith('0.0.0') && !line.startsWith('0.0.0.0 0.0.0.0')) {
-          const [, hostname] = line.split(' ')
-          line = `||${hostname}^`
-        }
-        hosts.push(line)
-      })
-  })
-
-fetchHostList.type = 'hosts'
+const fetchLists = async (urls, fn) => {
+  const filterLists = await Promise.all(urls.map(fn))
+  const set = filterLists.reduce(
+    (acc, set) => new Set([...acc, ...set]),
+    new Set()
+  )
+  debug('filters', { urls: urls.length, count: set.size })
+  return Array.from(set)
+}
 
 const main = async () => {
   // fetch all rules and merge it into an unique list of rules
-  const [hosts, filters] = await Promise.all([
-    fetchLists(HOSTS, fetchHostList),
-    fetchLists(FILTERS, fetchFilterList)
-  ])
+  const rules = await fetchLists(FILTERS, fetchFilterList)
 
-  const rules = Array.from(new Set([...hosts, ...filters]))
-  debug.info('total', {
-    urls: HOSTS.length + FILTERS.length,
-    count: rules.length
-  })
+  debug.info('total', { count: rules.length })
 
   // create a ad-blocker engine
   const engine = PuppeteerBlocker.parse(rules.join(EOL))
