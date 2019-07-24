@@ -61,8 +61,7 @@ module.exports = ({
 
   const evaluate = fn =>
     wrapError(page => async (url, opts = {}) => {
-      const { adblock = true, ...args } = opts
-      const response = await goto(page, { url, adblock, ...args })
+      const response = await goto(page, { url, ...opts })
       return fn(page, response)
     })
 

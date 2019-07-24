@@ -19,7 +19,7 @@ module.exports = async (
   {
     url,
     device,
-    adblock,
+    adblock = true,
     headers,
     cookies = [],
     waitFor = 0,
@@ -45,6 +45,7 @@ module.exports = async (
   }
 
   const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
+
   const userAgent = deviceUserAgent || fallbackUserAgent
 
   if (userAgent) {

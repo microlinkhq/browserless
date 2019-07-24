@@ -106,10 +106,8 @@ const getInjectKey = (ext, value) =>
 
 module.exports = page => async (url, opts = {}) => {
   const {
-    adblock = true,
     device = 'macbook pro 13',
     type = 'png',
-    viewport,
     hide,
     click,
     disableAnimations,
@@ -122,7 +120,7 @@ module.exports = page => async (url, opts = {}) => {
     ...args
   } = opts
 
-  await goto(page, { url, device, adblock, ...args })
+  await goto(page, { url, device, ...args })
 
   if (disableAnimations) {
     await page.evaluate(doDisableAnimations)
