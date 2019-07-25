@@ -15,7 +15,7 @@ module.exports = ({
   timeout = 30000,
   ...launchOpts
 } = {}) => {
-  let browser = puppeteer.launch({
+  const browser = puppeteer.launch({
     ignoreHTTPSErrors: true,
     args: [
       '--disable-notifications',
