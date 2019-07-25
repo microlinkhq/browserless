@@ -5,7 +5,7 @@ const timeSpan = require('time-span')
 const prettyMs = require('pretty-ms')
 const { forEach, orderBy } = require('lodash')
 
-let results = []
+const results = []
 ;(async () => {
   console.log('Creating browser...')
   const browserTime = timeSpan()
