@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.8](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.8.7...v5.8.8) (2019-07-25)
+
+
+### Bug Fixes
+
+* unify goto defaults ([#54](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/54)) ([33999e5](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/33999e5))
+
+
+
+
+
 ## [5.8.7](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.8.6...v5.8.7) (2019-07-15)
 
 **Note:** Version bump only for package @browserless/screenshot
