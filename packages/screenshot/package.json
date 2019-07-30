@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "@browserless/goto": "^5.8.8",
-    "sharp": "~0.22.1",
+    "sharp": "~0.23.0",
     "svg-gradient": "~1.0.2"
   },
   "engines": {
