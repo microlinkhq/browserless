@@ -1,6 +1,6 @@
 'use strict'
 
-const { PuppeteerBlocker, getLinesWithFilters } = require('@cliqz/adblocker')
+const { PuppeteerBlocker, getLinesWithFilters } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto:postinstall')
 const { promisify } = require('util')
 const crypto = require('crypto')
@@ -49,10 +49,7 @@ const fetchFilterList = async url => {
 
 const fetchLists = async (urls, fn) => {
   const filterLists = await Promise.all(urls.map(fn))
-  const set = filterLists.reduce(
-    (acc, set) => new Set([...acc, ...set]),
-    new Set()
-  )
+  const set = filterLists.reduce((acc, set) => new Set([...acc, ...set]), new Set())
   debug('filters', { urls: urls.length, count: set.size })
   return Array.from(set)
 }
