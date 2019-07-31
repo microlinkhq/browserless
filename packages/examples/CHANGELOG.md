@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.10](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.8.9...v5.8.10) (2019-07-31)
+
+**Note:** Version bump only for package @browserless/examples
+
+
+
+
+
 # [5.8.0](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.7.2...v5.8.0) (2019-06-29)
 
 
