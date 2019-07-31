@@ -31,7 +31,8 @@
     "lodash": "latest",
     "p-event": "latest",
     "puppeteer": "latest",
-    "term-img": "latest"
+    "term-img": "latest",
+    "unique-random-array": "latest"
   },
   "engines": {
     "node": ">= 8"
