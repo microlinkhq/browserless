@@ -196,7 +196,7 @@ module.exports = page => async (url, opts = {}) => {
   const screenshot = await page.screenshot({ type, ...args })
   if (!overlay) return screenshot
 
-  const { browser: browserTheme, background = 'transparent' } = overlay
+  const { browser: browserTheme, background } = overlay
 
   let image = await sharp(await getBackground(background))
   let inputs = [{ input: screenshot }]
