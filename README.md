@@ -293,7 +293,7 @@ After the screenshot has been taken, this option allows you to place the screens
 You can configure the overlay specifying:
 
 - **browser**: It sets the browser image overlay to use, being `safari-light` and ` safari-dark` supported values.
-- **background**: It sets the background color to use. You can pass a hexadecimal/rgb/rgba or a [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient).
+- **background**: It sets the background to use, being hexadecimal/rgb/rgba color, a [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient) or image url.
 
 ```js
 ;(async () => {
