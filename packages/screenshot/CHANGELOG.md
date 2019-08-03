@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.9.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.8.10...v5.9.0) (2019-08-03)
+
+
+### Features
+
+* add bg url overlay ([#63](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/63)) ([2bf9889](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/2bf9889)), closes [#61](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/61)
+
+
+
+
+
 ## [5.8.9](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.8.8...v5.8.9) (2019-07-30)
 
 **Note:** Version bump only for package @browserless/screenshot
