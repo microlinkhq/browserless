@@ -33,7 +33,9 @@ require('./main')(async url => {
     disableAnimations: true,
     overlay: {
       browser: 'safari-dark',
-      background: randBackground()
+      // background: '#c1c'
+      background: 'https://source.unsplash.com/random/1920x1080'
+      // background: randBackground()
     }
   })
 

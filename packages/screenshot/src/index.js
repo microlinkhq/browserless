@@ -2,8 +2,10 @@
 
 const svgGradient = require('svg-gradient')
 const goto = require('@browserless/goto')
+const isHttpUrl = require('is-url-http')
 const sharp = require('sharp')
 const path = require('path')
+const got = require('got')
 
 const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
 
@@ -99,7 +101,21 @@ const hideElements = elements => {
   }
 }
 
-const createBackground = css => Buffer.from(svgGradient(css, { width: '1388px', height: '955px' }))
+const createSvgBackground = css =>
+  Buffer.from(svgGradient(css, { width: '1388px', height: '955px' }))
+
+const getBackground = async (bg = 'transparent') => {
+  if (isHttpUrl(bg)) {
+    const { body } = await got(bg, { encoding: null })
+    return body
+  }
+
+  if (bg !== 'transparent' && !bg.includes('gradient')) {
+    bg = `linear-gradient(45deg, ${bg} 0%, ${bg} 100%)`
+  }
+
+  return Buffer.from(createSvgBackground(bg))
+}
 
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
@@ -180,12 +196,9 @@ module.exports = page => async (url, opts = {}) => {
   const screenshot = await page.screenshot({ type, ...args })
   if (!overlay) return screenshot
 
-  let { browser: browserTheme, background = 'transparent' } = overlay
+  const { browser: browserTheme, background = 'transparent' } = overlay
 
-  if (!background.includes('gradient')) {
-    background = `linear-gradient(45deg, ${background} 0%, ${background} 100%)`
-  }
-  let image = await sharp(Buffer.from(createBackground(background)))
+  let image = await sharp(await getBackground(background))
   let inputs = [{ input: screenshot }]
 
   if (browserTheme) {
