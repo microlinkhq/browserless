@@ -284,16 +284,20 @@ Scroll to the DOM element matching the given [CSS selector](https://developer.mo
 
 ##### overlay
 
-![](https://i.imgur.com/GBa6Mj7.png)
-
 type: `object`
 
 After the screenshot has been taken, this option allows you to place the screenshot into a fancy overlay
 
+![](https://i.imgur.com/GBa6Mj7.png)
+
 You can configure the overlay specifying:
 
 - **browser**: It sets the browser image overlay to use, being `safari-light` and ` safari-dark` supported values.
-- **background**: It sets the background to use, being hexadecimal/rgb/rgba color, a [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient) or image url.
+- **background**: It sets the background to use, being supported to pass:
+
+	- An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
+	- A [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
+	- An image url, eg. `https://source.unsplash.com/random/1920x1080`.
 
 ```js
 ;(async () => {
