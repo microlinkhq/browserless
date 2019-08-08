@@ -101,8 +101,7 @@ const hideElements = elements => {
   }
 }
 
-const createSvgBackground = css =>
-  Buffer.from(svgGradient(css, { width: '1388px', height: '955px' }))
+const createSvgBackground = css => svgGradient(css, { width: '1388px', height: '955px' })
 
 const getBackground = async (bg = 'transparent') => {
   if (isHttpUrl(bg)) {
@@ -110,7 +109,7 @@ const getBackground = async (bg = 'transparent') => {
     return body
   }
 
-  if (bg !== 'transparent' && !bg.includes('gradient')) {
+  if (!bg.includes('gradient')) {
     bg = `linear-gradient(45deg, ${bg} 0%, ${bg} 100%)`
   }
 
