@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.9.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.9.0...v5.9.1) (2019-08-08)
+
+
+### Bug Fixes
+
+* transparent bg ([bdf1e8f](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/bdf1e8f))
+
+
+
+
+
 # [5.9.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.8.10...v5.9.0) (2019-08-03)
 
 
