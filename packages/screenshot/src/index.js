@@ -136,6 +136,7 @@ module.exports = page => async (url, opts = {}) => {
   } = opts
 
   await goto(page, { url, device, ...args })
+  await page.evaluateHandle('document.fonts.ready')
 
   if (disableAnimations) {
     await page.evaluate(doDisableAnimations)
