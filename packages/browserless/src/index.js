@@ -15,8 +15,10 @@ module.exports = ({
   timeout = 30000,
   ...launchOpts
 } = {}) => {
+  let browser
+
   const createBrowser = async () => {
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       ignoreHTTPSErrors: true,
       args: [
         '--disable-notifications',
@@ -41,7 +43,7 @@ module.exports = ({
     return browser
   }
 
-  const browser = createBrowser()
+  browser = createBrowser()
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
