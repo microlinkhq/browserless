@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.10.0](https://github.com/kikobeats/browserless/compare/v5.9.3...v5.10.0) (2019-08-16)
+
+
+### Features
+
+* respawn the browser under be closed unexpectedly ([#65](https://github.com/kikobeats/browserless/issues/65)) ([3a39c78](https://github.com/kikobeats/browserless/commit/3a39c78)), closes [#issuecomment-500184469](https://github.com/kikobeats/browserless/issues/issuecomment-500184469)
+
+
+
+
+
 ## [5.9.3](https://github.com/kikobeats/browserless/compare/v5.9.2...v5.9.3) (2019-08-14)
 
 
