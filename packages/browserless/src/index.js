@@ -15,27 +15,35 @@ module.exports = ({
   timeout = 30000,
   ...launchOpts
 } = {}) => {
-  const browser = puppeteer.launch({
-    ignoreHTTPSErrors: true,
-    args: [
-      '--disable-notifications',
-      '--disable-offer-store-unmasked-wallet-cards',
-      '--disable-offer-upload-credit-cards',
-      '--disable-setuid-sandbox',
-      '--enable-async-dns',
-      '--enable-simple-cache-backend',
-      '--enable-tcp-fast-open',
-      '--media-cache-size=33554432',
-      '--no-default-browser-check',
-      '--no-pings',
-      '--no-sandbox',
-      '--no-zygote',
-      '--prerender-from-omnibox=disabled'
-    ],
-    ...launchOpts
-  })
+  const createBrowser = async () => {
+    const browser = await puppeteer.launch({
+      ignoreHTTPSErrors: true,
+      args: [
+        '--disable-notifications',
+        '--disable-offer-store-unmasked-wallet-cards',
+        '--disable-offer-upload-credit-cards',
+        '--disable-setuid-sandbox',
+        '--enable-async-dns',
+        '--enable-simple-cache-backend',
+        '--enable-tcp-fast-open',
+        '--media-cache-size=33554432',
+        '--no-default-browser-check',
+        '--no-pings',
+        '--no-sandbox',
+        '--no-zygote',
+        '--prerender-from-omnibox=disabled'
+      ],
+      ...launchOpts
+    })
 
-  const newPage = () =>
+    browser.on('disconnected', createBrowser)
+
+    return browser
+  }
+
+  const browser = createBrowser()
+
+  const createPage = () =>
     Promise.resolve(browser).then(async browser => {
       const context = incognito ? await browser.createIncognitoBrowserContext() : browser
       const page = await context.newPage()
@@ -44,7 +52,7 @@ module.exports = ({
     })
 
   const wrapError = fn => async (...args) => {
-    const page = await newPage()
+    const page = await createPage()
     let error
     let res
 
@@ -76,7 +84,7 @@ module.exports = ({
     evaluate,
     pdf,
     screenshot,
-    page: newPage,
+    page: createPage,
     goto
   }
 }
