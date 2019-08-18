@@ -32,6 +32,14 @@ module.exports = async (
   if (adblock) {
     debug('enable adblocker')
     await engine.enableBlockingInPage(page)
+
+    engine.on('request-blocked', ({ url }) => {
+      debug('request blocked', url)
+    })
+
+    engine.on('request-redirected', ({ url }) => {
+      debug('request redirected', url)
+    })
   }
 
   if (headers) {
