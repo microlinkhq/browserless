@@ -5,7 +5,6 @@ const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
 const pTimeout = require('p-timeout')
-const waitpid2 = require('waitpid2')
 const fkill = require('fkill')
 const del = require('del')
 
@@ -14,7 +13,6 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 const EVALUATE_HTML = page => page.content()
 
 const killBrowser = async browser => {
-  while (waitpid2.waitpid(-1, 0 | waitpid2.WNOHANG) === -1);
   await browser.close()
   const pid = browser.process().pid
   await fkill(pid)
