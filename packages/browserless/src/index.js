@@ -1,6 +1,6 @@
 'use strict'
 
-const debug = require('debug-logfmt')('browserless:goto')
+const debug = require('debug-logfmt')('browserless')
 const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
@@ -12,11 +12,12 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
 const EVALUATE_HTML = page => page.content()
 
-const killBrowser = async browser => {
-  await browser.close()
+const killBrowser = async (browser, { cleanTmp = false } = {}) => {
   const pid = browser.process().pid
   await fkill(pid)
-  const deletedPaths = await del(['/tmp/core.chromium.*', '/tmp/puppeteer_dev_profile*'])
+  const deletedPaths = cleanTmp
+    ? await del(['/tmp/core.chromium.*', '/tmp/puppeteer_dev_profile*'])
+    : []
   debug('kill', { pid, deletedPaths })
 }
 
@@ -50,7 +51,7 @@ module.exports = ({
     })
 
     browser.on('disconnected', async () => {
-      await killBrowser(browser)
+      await killBrowser(browser, { cleanTmp: true })
       spawnBrowser()
     })
 
