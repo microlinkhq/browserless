@@ -42,7 +42,7 @@ module.exports = ({
     browser.on('disconnected', () => {
       setTimeout(async () => {
         const pid = browser.process().pid
-        await fkill(pid)
+        await fkill(pid, { force: true, silent: true })
         createBrowser()
       }, 100)
     })
