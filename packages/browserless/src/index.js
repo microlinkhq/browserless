@@ -12,12 +12,12 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
 const EVALUATE_HTML = page => page.content()
 
-const killBrowser = async browser => {
+const kill = async browser => {
   await browser.close()
   const pid = browser.process().pid
   await fkill(pid)
   const deletedPaths = await del(['/tmp/core.chromium.*', '/tmp/puppeteer_dev_profile*'])
-  debug('killBrowser', { pid, deletedPaths })
+  debug('kill', { pid, deletedPaths })
 }
 
 module.exports = ({
@@ -27,11 +27,6 @@ module.exports = ({
   ...launchOpts
 } = {}) => {
   let browser
-
-  const respawnBrowser = async () => {
-    await killBrowser()
-    spawnBrowser()
-  }
 
   const spawnBrowser = async () => {
     browser = await puppeteer.launch({
@@ -54,7 +49,10 @@ module.exports = ({
       ...launchOpts
     })
 
-    browser.on('disconnected', respawnBrowser)
+    browser.on('disconnected', async () => {
+      await kill()
+      spawnBrowser()
+    })
 
     return browser
   }
@@ -96,7 +94,7 @@ module.exports = ({
   const screenshot = wrapError(require('@browserless/screenshot'))
 
   return {
-    respawnBrowser,
+    kill,
     browser,
     html: evaluate(EVALUATE_HTML),
     text: evaluate(EVALUATE_TEXT),
