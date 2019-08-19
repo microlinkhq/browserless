@@ -1,13 +1,26 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:goto')
 const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
 const pTimeout = require('p-timeout')
+const waitpid2 = require('waitpid2')
+const fkill = require('fkill')
+const del = require('del')
 
 const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
 const EVALUATE_HTML = page => page.content()
+
+const killBrowser = async browser => {
+  while (waitpid2.waitpid(-1, 0 | waitpid2.WNOHANG) === -1);
+  await browser.close()
+  const pid = browser.process().pid
+  await fkill(pid)
+  const deletedPaths = await del(['/tmp/core.chromium.*', '/tmp/puppeteer_dev_profile*'])
+  debug('killBrowser', { pid, deletedPaths })
+}
 
 module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
@@ -17,7 +30,7 @@ module.exports = ({
 } = {}) => {
   let browser
 
-  const createBrowser = async () => {
+  const spawnBrowser = async () => {
     browser = await puppeteer.launch({
       ignoreHTTPSErrors: true,
       args: [
@@ -38,12 +51,15 @@ module.exports = ({
       ...launchOpts
     })
 
-    browser.on('disconnected', createBrowser)
+    browser.on('disconnected', async () => {
+      await killBrowser()
+      spawnBrowser()
+    })
 
     return browser
   }
 
-  browser = createBrowser()
+  browser = spawnBrowser()
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
