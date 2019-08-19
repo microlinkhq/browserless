@@ -34,6 +34,7 @@
     "@browserless/goto": "^5.10.2",
     "@browserless/pdf": "^5.10.2",
     "@browserless/screenshot": "^5.10.2",
+    "fkill": "~6.2.0",
     "p-timeout": "~3.1.0",
     "require-one-of": "~1.0.11"
   },

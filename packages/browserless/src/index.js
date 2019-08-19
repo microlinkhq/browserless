@@ -4,6 +4,7 @@ const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
 const pTimeout = require('p-timeout')
+const fkill = require('fkill')
 
 const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
@@ -38,7 +39,13 @@ module.exports = ({
       ...launchOpts
     })
 
-    browser.on('disconnected', createBrowser)
+    browser.on('disconnected', () => {
+      setTimeout(async () => {
+        const pid = browser.process().pid
+        await fkill(pid)
+        createBrowser()
+      }, 100)
+    })
 
     return browser
   }
