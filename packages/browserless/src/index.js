@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:goto')
 const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
@@ -14,12 +15,21 @@ const EVALUATE_HTML = page => page.content()
 
 const killBrowser = async browser => {
   while (waitpid2.waitpid(-1, 0 | waitpid2.WNOHANG) === -1);
-  await fkill(browser.process().pid)
-  await del(['/tmp/core.chromium.*', '/tmp/puppeteer_dev_profile*'])
+  const pid = browser.process().pid
+  await fkill(pid)
+  const deletedPaths = await del([
+    '/tmp/core.chromium.*',
+    '/tmp/puppeteer_dev_profile*'
+  ])
+  debug('killBrowser', { pid, deletedPaths })
 }
 
 module.exports = ({
-  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  puppeteer = requireOneOf([
+    'puppeteer',
+    'puppeteer-core',
+    'puppeteer-firefox'
+  ]),
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -59,7 +69,9 @@ module.exports = ({
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
-      const context = incognito ? await browser.createIncognitoBrowserContext() : browser
+      const context = incognito
+        ? await browser.createIncognitoBrowserContext()
+        : browser
       const page = await context.newPage()
       page.setDefaultNavigationTimeout(timeout)
       return page
