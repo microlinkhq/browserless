@@ -69,7 +69,7 @@
   "scripts": {
     "build": "gulp build",
     "clean": "lerna clean --yes && rm -rf node_modules",
-    "contributors": "lerna exec finepack --parallel && git-authors-cli && finepack",
+    "contributors": "lerna exec finepack --parallel && git-authors-cli && finepack && git add .",
     "coverage": "lerna exec npm run coverage --parallel",
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
