@@ -10,16 +10,8 @@
   },
   "contributors": [
     {
-      "name": "Rémi Berson",
-      "email": "remi.berson@pm.me"
-    },
-    {
       "name": "Luc",
       "email": "luc.leray@gmail.com"
-    },
-    {
-      "name": "Markus Staab",
-      "email": "maggus.staab@googlemail.com"
     }
   ],
   "repository": {
