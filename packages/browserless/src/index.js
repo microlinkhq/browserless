@@ -12,7 +12,7 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
 const EVALUATE_HTML = page => page.content()
 
-const kill = async browser => {
+const killBrowser = async browser => {
   await browser.close()
   const pid = browser.process().pid
   await fkill(pid)
@@ -50,7 +50,7 @@ module.exports = ({
     })
 
     browser.on('disconnected', async () => {
-      await kill()
+      await killBrowser(browser)
       spawnBrowser()
     })
 
@@ -94,7 +94,7 @@ module.exports = ({
   const screenshot = wrapError(require('@browserless/screenshot'))
 
   return {
-    kill,
+    kill: () => killBrowser(browser),
     browser,
     html: evaluate(EVALUATE_HTML),
     text: evaluate(EVALUATE_TEXT),
@@ -107,3 +107,4 @@ module.exports = ({
 }
 
 module.exports.devices = devices
+module.exports.killBrowser = killBrowser
