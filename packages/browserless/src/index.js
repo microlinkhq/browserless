@@ -30,6 +30,11 @@ module.exports = ({
 } = {}) => {
   let browser
 
+  const respawnBrowser = async () => {
+    await killBrowser()
+    spawnBrowser()
+  }
+
   const spawnBrowser = async () => {
     browser = await puppeteer.launch({
       ignoreHTTPSErrors: true,
@@ -51,10 +56,7 @@ module.exports = ({
       ...launchOpts
     })
 
-    browser.on('disconnected', async () => {
-      await killBrowser()
-      spawnBrowser()
-    })
+    browser.on('disconnected', respawnBrowser)
 
     return browser
   }
@@ -96,6 +98,7 @@ module.exports = ({
   const screenshot = wrapError(require('@browserless/screenshot'))
 
   return {
+    respawnBrowser,
     browser,
     html: evaluate(EVALUATE_HTML),
     text: evaluate(EVALUATE_TEXT),
