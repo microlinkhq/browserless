@@ -36,7 +36,7 @@
     "@browserless/screenshot": "^5.11.0",
     "debug-logfmt": "~1.0.2",
     "del": "~5.0.0",
-    "fkill": "~6.2.0",
+    "fkill": "github:tomsotte/fkill#iss21",
     "p-timeout": "~3.1.0",
     "require-one-of": "~1.0.11"
   },

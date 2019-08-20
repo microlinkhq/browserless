@@ -14,7 +14,7 @@ const EVALUATE_HTML = page => page.content()
 
 const killBrowser = async (browser, { cleanTmp = false } = {}) => {
   const pid = browser.process().pid
-  await fkill(pid, { force: true, silent: true })
+  await fkill(pid, { tree: true, force: true, silent: true })
   const deletedPaths = cleanTmp
     ? await del(['/tmp/core.*', '/tmp/puppeteer_dev_profile*'], {
         force: true
