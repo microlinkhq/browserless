@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.11.6](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.11.5...v5.11.6) (2019-08-20)
+
+
+### Bug Fixes
+
+* ensure to kill subprocess tree ([f743112](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/f743112))
+* linter ([d1a1e59](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/d1a1e59))
+* pass force flag ([69b5aec](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/69b5aec))
+
+
+
+
+
 ## [5.11.5](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.11.4...v5.11.5) (2019-08-20)
 
 **Note:** Version bump only for package browserless
