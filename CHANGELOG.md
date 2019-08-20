@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.11.3](https://github.com/kikobeats/browserless/compare/v5.11.2...v5.11.3) (2019-08-20)
+
+
+### Bug Fixes
+
+* kill under best effort ([#69](https://github.com/kikobeats/browserless/issues/69)) ([8d8d59c](https://github.com/kikobeats/browserless/commit/8d8d59c))
+
+
+
+
+
 ## [5.11.2](https://github.com/kikobeats/browserless/compare/v5.11.1...v5.11.2) (2019-08-19)
 
 **Note:** Version bump only for package browserless
