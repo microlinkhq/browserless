@@ -16,7 +16,7 @@ const killBrowser = async (browser, { cleanTmp = false } = {}) => {
   const pid = browser.process().pid
   await fkill(pid, { force: true, silent: true })
   const deletedPaths = cleanTmp
-    ? await del(['/tmp/core.chromium.*', '/tmp/puppeteer_dev_profile*'])
+    ? await del(['/tmp/core.*', '/tmp/puppeteer_dev_profile*'])
     : []
   debug('kill', { pid, deletedPaths })
 }
