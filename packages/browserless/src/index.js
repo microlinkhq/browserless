@@ -95,7 +95,7 @@ module.exports = ({
   const screenshot = wrapError(require('@browserless/screenshot'))
 
   return {
-    kill: () => killBrowser(browser),
+    kill: opts => killBrowser(browser, opts),
     browser,
     html: evaluate(EVALUATE_HTML),
     text: evaluate(EVALUATE_TEXT),
