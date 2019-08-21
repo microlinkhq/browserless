@@ -5,7 +5,7 @@ const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
 const pTimeout = require('p-timeout')
-const fkill = require('fkill')
+const fkill = require('./fkill')
 const del = require('del')
 
 const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
@@ -17,8 +17,8 @@ const killBrowser = async (browser, { cleanTmp = false } = {}) => {
   await fkill(pid, { tree: true, force: true, silent: true })
   const deletedPaths = cleanTmp
     ? await del(['/tmp/core.*', '/tmp/puppeteer_dev_profile*'], {
-      force: true
-    })
+        force: true
+      })
     : []
   debug('kill', { pid, deletedPaths })
 }
