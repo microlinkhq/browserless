@@ -5,7 +5,7 @@ const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
 const pTimeout = require('p-timeout')
-const fkill = require('fkill')
+const fkill = require('./fkill')
 const del = require('del')
 
 const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
@@ -24,7 +24,11 @@ const killBrowser = async (browser, { cleanTmp = false } = {}) => {
 }
 
 module.exports = ({
-  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  puppeteer = requireOneOf([
+    'puppeteer',
+    'puppeteer-core',
+    'puppeteer-firefox'
+  ]),
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -64,7 +68,9 @@ module.exports = ({
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
-      const context = incognito ? await browser.createIncognitoBrowserContext() : browser
+      const context = incognito
+        ? await browser.createIncognitoBrowserContext()
+        : browser
       const page = await context.newPage()
       page.setDefaultNavigationTimeout(timeout)
       return page
