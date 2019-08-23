@@ -5,8 +5,8 @@ const { chain } = require('lodash')
 
 const HEADER = {
   markdown: () => {
-    console.log(`| name | width | height | scale | mobile? | touch? | landscape? |`)
-    console.log(`|------|-------|--------|-------------------|----------|----------|-------------|`)
+    console.log('| name | width | height | scale | mobile? | touch? | landscape? |')
+    console.log('|------|-------|--------|-------------------|----------|----------|-------------|')
   }
 }
 
