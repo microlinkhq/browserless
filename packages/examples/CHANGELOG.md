@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.11.8](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.11.7...v5.11.8) (2019-08-23)
+
+
+### Bug Fixes
+
+* linter ([67d5258](https://github.com/kikobeats/browserless/tree/master/packages/examples/commit/67d5258))
+
+
+
+
+
 # [5.9.0](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.8.10...v5.9.0) (2019-08-03)
 
 
