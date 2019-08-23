@@ -30,25 +30,18 @@ module.exports = async (
   }
 ) => {
   if (adblock) {
-    debug('enable adblocker')
     await engine.enableBlockingInPage(page)
-
-    engine.on('request-blocked', ({ url }) => {
-      debug('request blocked', url)
-    })
-
-    engine.on('request-redirected', ({ url }) => {
-      debug('request redirected', url)
-    })
+    engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
+    engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
   }
 
   if (headers) {
-    debug('set headers', headers)
+    debug({ headers })
     await page.setExtraHTTPHeaders(headers)
   }
 
   if (cookies.length) {
-    debug('set cookies', cookies)
+    debug({ cookies })
     await page.setCookie(...cookies)
   }
 
@@ -57,20 +50,20 @@ module.exports = async (
   const userAgent = deviceUserAgent || fallbackUserAgent
 
   if (userAgent) {
-    debug('set userAgent', userAgent)
+    debug({ userAgent })
     await page.setUserAgent(userAgent)
   }
 
   const viewport = { ...deviceViewport, ...fallbackViewport }
   if (!isEmpty(viewport)) {
-    debug('set viewport', viewport)
+    debug('viewport', viewport)
     await page.setViewport(viewport)
   }
 
   const response = await page.goto(url, { waitUntil, ...args })
 
   if (waitFor) {
-    debug('waitFor', waitFor)
+    debug({ waitFor })
     await page.waitFor(waitFor)
   }
 
