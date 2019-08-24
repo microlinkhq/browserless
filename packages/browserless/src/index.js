@@ -4,6 +4,7 @@ const debug = require('debug-logfmt')('browserless')
 const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
+const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const fkill = require('./fkill')
 const del = require('del')
@@ -24,11 +25,7 @@ const killBrowser = async (browser, { cleanTmp = false } = {}) => {
 }
 
 module.exports = ({
-  puppeteer = requireOneOf([
-    'puppeteer',
-    'puppeteer-core',
-    'puppeteer-firefox'
-  ]),
+  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -68,9 +65,7 @@ module.exports = ({
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
-      const context = incognito
-        ? await browser.createIncognitoBrowserContext()
-        : browser
+      const context = incognito ? await browser.createIncognitoBrowserContext() : browser
       const page = await context.newPage()
       page.setDefaultNavigationTimeout(timeout)
       return page
@@ -78,18 +73,10 @@ module.exports = ({
 
   const wrapError = fn => async (...args) => {
     const page = await createPage()
-    let error
-    let res
-
-    try {
-      res = await pTimeout(fn(page)(...args), timeout)
-    } catch (err) {
-      error = err
-    }
-
+    const result = await pReflect(pTimeout(fn(page)(...args), timeout))
     await page.close()
-    if (error) throw error
-    return res
+    if (result.isRejected) throw result.reason
+    return result.value
   }
 
   const evaluate = fn =>
