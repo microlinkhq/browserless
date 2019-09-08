@@ -56,7 +56,7 @@ module.exports = ({
     browser,
     close: async () => (await browser).close(),
     kill: async opts => driver.kill((await browser).process().pid, opts),
-    destroy: async () => driver.destroy(await browser),
+    destroy: async opts => driver.destroy(await browser, opts),
     respawn,
     // high level methods
     evaluate,

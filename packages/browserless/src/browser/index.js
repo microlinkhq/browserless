@@ -34,10 +34,10 @@ const kill = async (pid, { cleanTmp = false } = {}) => {
   return { pid, deletedPaths }
 }
 
-const destroy = async browser => {
+const destroy = async (browser, opts) => {
   const pid = browser.process().pid
   await browser.close()
-  return kill(pid)
+  return kill(pid, opts)
 }
 
 module.exports = { clean, spawn, kill, destroy }
