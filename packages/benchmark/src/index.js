@@ -56,7 +56,14 @@ const cli = meow(
   }
 )
 
-const benchmark = async ({ createBrowserless, method, url, opts, iterations, concurrency }) => {
+const benchmark = async ({
+  createBrowserless,
+  method,
+  url,
+  opts,
+  iterations,
+  concurrency
+}) => {
   const timer = new Measured.Timer()
   const promises = [...Array(iterations).keys()].map(n => {
     return async () => {
@@ -98,16 +105,18 @@ const main = async () => {
 
   if (!method) throw new TypeError('Need to provide a method to run.')
 
-  const puppeteer = firefox ? require('puppeteer-firefox') : require('puppeteer')
+  const puppeteer = firefox
+    ? require('puppeteer-firefox')
+    : require('puppeteer')
 
   const _createBrowserless = isPool
     ? () =>
-        createBrowserlessPool({
-          min: poolMin,
-          max: poolMax,
-          puppeteer,
-          ...opts
-        })
+      createBrowserlessPool({
+        min: poolMin,
+        max: poolMax,
+        puppeteer,
+        ...opts
+      })
     : () => createBrowserless({ puppeteer, ...opts })
 
   const { times, histogram } = await benchmark({
