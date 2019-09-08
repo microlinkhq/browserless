@@ -1,28 +1,16 @@
 'use strict'
 
-const debug = require('debug-logfmt')('browserless')
 const devices = require('@browserless/devices')
 const requireOneOf = require('require-one-of')
 const goto = require('@browserless/goto')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
-const fkill = require('./fkill')
-const del = require('del')
+
+const driver = require('./browser')
 
 const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 
 const EVALUATE_HTML = page => page.content()
-
-const killBrowser = async (browser, { cleanTmp = false } = {}) => {
-  const pid = browser.process().pid
-  await fkill(pid, { tree: true, force: true, silent: true })
-  const deletedPaths = cleanTmp
-    ? await del(['/tmp/core.*', '/tmp/puppeteer_dev_profile*'], {
-      force: true
-    })
-    : []
-  debug('kill', { pid, deletedPaths })
-}
 
 module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
@@ -30,38 +18,12 @@ module.exports = ({
   timeout = 30000,
   ...launchOpts
 } = {}) => {
-  let browser
+  let browser = driver.spawn(puppeteer, launchOpts)
 
-  const spawnBrowser = async () => {
-    browser = await puppeteer.launch({
-      ignoreHTTPSErrors: true,
-      args: [
-        '--disable-notifications',
-        '--disable-offer-store-unmasked-wallet-cards',
-        '--disable-offer-upload-credit-cards',
-        '--disable-setuid-sandbox',
-        '--enable-async-dns',
-        '--enable-simple-cache-backend',
-        '--enable-tcp-fast-open',
-        '--media-cache-size=33554432',
-        '--no-default-browser-check',
-        '--no-pings',
-        '--no-sandbox',
-        '--no-zygote',
-        '--prerender-from-omnibox=disabled'
-      ],
-      ...launchOpts
-    })
-
-    browser.on('disconnected', async () => {
-      await killBrowser(browser, { cleanTmp: true })
-      spawnBrowser()
-    })
-
-    return browser
+  const respawn = async () => {
+    await driver.destroy(await browser, { cleanTmp: true })
+    browser = driver.spawn(puppeteer, launchOpts)
   }
-
-  browser = spawnBrowser()
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
@@ -90,17 +52,21 @@ module.exports = ({
   const screenshot = wrapError(require('@browserless/screenshot'))
 
   return {
-    kill: opts => killBrowser(browser, opts),
+    // low level methods
     browser,
-    html: evaluate(EVALUATE_HTML),
-    text: evaluate(EVALUATE_TEXT),
+    close: async () => (await browser).close(),
+    kill: async opts => driver.kill((await browser).process().pid, opts),
+    destroy: async () => driver.destroy(await browser),
+    respawn,
+    // high level methods
     evaluate,
+    goto,
+    html: evaluate(EVALUATE_HTML),
+    page: createPage,
     pdf,
     screenshot,
-    page: createPage,
-    goto
+    text: evaluate(EVALUATE_TEXT)
   }
 }
 
 module.exports.devices = devices
-module.exports.killBrowser = killBrowser
