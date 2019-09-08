@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.11.11](https://github.com/kikobeats/browserless/compare/v5.11.10...v5.11.11) (2019-09-08)
+
+
+### Bug Fixes
+
+* pass opts ([9932e99](https://github.com/kikobeats/browserless/commit/9932e99))
+
+
+
+
+
 ## [5.11.10](https://github.com/kikobeats/browserless/compare/v5.11.9...v5.11.10) (2019-09-08)
 
 
