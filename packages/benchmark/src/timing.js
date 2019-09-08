@@ -1,9 +1,9 @@
 'use strict'
 
+const { forEach, orderBy } = require('lodash')
 const puppeteer = require('puppeteer')
 const timeSpan = require('time-span')
 const prettyMs = require('pretty-ms')
-const { forEach, orderBy } = require('lodash')
 
 const results = []
 ;(async () => {

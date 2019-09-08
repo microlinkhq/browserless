@@ -1,5 +1,7 @@
 'use strict'
 
+process.setMaxListeners(Infinity)
+
 const createBrowserless = require('browserless')
 const createBrowserlessPool = require('@browserless/pool')
 const { includes, reduce } = require('lodash')
@@ -40,11 +42,11 @@ const cli = meow(
       },
       concurrency: {
         type: 'number',
-        default: 1
+        default: 10
       },
       iterations: {
         type: 'number',
-        default: 10
+        default: 50
       },
       firefox: {
         type: 'boolean',
@@ -54,14 +56,22 @@ const cli = meow(
   }
 )
 
-const benchmark = async ({ browserless, method, url, opts, iterations, concurrency }) => {
+const benchmark = async ({ createBrowserless, method, url, opts, iterations, concurrency }) => {
   const timer = new Measured.Timer()
   const promises = [...Array(iterations).keys()].map(n => {
     return async () => {
       const stopwatch = timer.start()
+      const browserless = await createBrowserless()
       await browserless[method](url, opts)
+      await browserless.close()
       const time = stopwatch.end()
-      console.log(prettyObj({ iteration: n, time: prettyMs(time), rawTime: time }))
+      const stats = processStats()
+
+      console.log(
+        `n=${n} cpu=${stats.cpu} mem=${stats.memUsed.pretty} eventLoop=${
+          stats.delay.pretty
+        } time=${prettyMs(time)}`
+      )
       return time
     }
   })
@@ -70,7 +80,8 @@ const benchmark = async ({ browserless, method, url, opts, iterations, concurren
   const histogram = timer.toJSON().histogram
   return { times, histogram }
 }
-;(async () => {
+
+const main = async () => {
   const [url] = cli.input
   if (!url) throw new TypeError('Need to provide an URL as target.')
 
@@ -89,15 +100,19 @@ const benchmark = async ({ browserless, method, url, opts, iterations, concurren
 
   const puppeteer = firefox ? require('puppeteer-firefox') : require('puppeteer')
 
-  const browserless = isPool
-    ? createBrowserlessPool({ min: poolMin, max: poolMax, puppeteer, ...opts })
-    : createBrowserless({ puppeteer, ...opts })
-
-  console.log(prettyObj(cli.flags))
+  const _createBrowserless = isPool
+    ? () =>
+        createBrowserlessPool({
+          min: poolMin,
+          max: poolMax,
+          puppeteer,
+          ...opts
+        })
+    : () => createBrowserless({ puppeteer, ...opts })
 
   const { times, histogram } = await benchmark({
     concurrency,
-    browserless,
+    createBrowserless: _createBrowserless,
     iterations,
     method,
     url,
@@ -120,6 +135,13 @@ const benchmark = async ({ browserless, method, url, opts, iterations, concurren
   console.log()
   console.log(graph)
   console.log(prettyObj({ memUsed: memUsed.pretty, ...stats }))
+}
 
-  process.exit()
-})()
+main()
+  .then(() => {
+    process.exit(0)
+  })
+  .catch(err => {
+    console.error(err)
+    process.exit(1)
+  })
