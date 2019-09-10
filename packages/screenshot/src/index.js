@@ -91,7 +91,7 @@ const doDisableAnimations = () => {
   }
 `
   const style = document.createElement('style')
-  document.body.append(style)
+  if (document.body) document.body.append(style)
   if (style.sheet) style.sheet.insertRule(rule)
 }
 
