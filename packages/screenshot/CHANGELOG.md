@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.11.13](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.11.12...v5.11.13) (2019-09-10)
+
+
+### Bug Fixes
+
+* ensure body is a DOM node ([93e2377](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/93e2377))
+
+
+
+
+
 ## [5.11.10](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.11.9...v5.11.10) (2019-09-08)
 
 **Note:** Version bump only for package @browserless/screenshot
