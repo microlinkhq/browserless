@@ -36,7 +36,7 @@ module.exports = ({
   const wrapError = fn => async (...args) => {
     const page = await createPage()
     const result = await pReflect(pTimeout(fn(page)(...args), timeout))
-    await page.close()
+    await pReflect(page.close())
     if (result.isRejected) throw result.reason
     return result.value
   }
