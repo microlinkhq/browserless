@@ -475,42 +475,48 @@ const browserless = require('browserless')
 
 **browserless** uses internally a singleton browser instance.
 
-You can use a pool instances using [`@browserless/pool`](https://github.com/Kikobeats/browserless/tree/master/packages/pool) package.
+If you want to keep multiple browsers open, you can use [`@browserless/pool`](https://github.com/Kikobeats/browserless/tree/master/packages/pool) package.
 
 ```js
 const createBrowserless = require('@browserless/pool')
+
 const browserlessPool = createBrowserless({
-  poolOpts: {
-    max: 15,
-    min: 2
-  }
+  max: 2, // max browsers to keep open
+  timeout: 30000 // max time a browser is consiedered fresh
 })
 ```
 
-
-The API is the same than `browserless`. now the constructor is accepting an extra option called `poolOpts`.
-
-This setting is used for initializing the pool properly. You can see what you can specify there at [node-pool#opts](https://github.com/coopernurse/node-pool#createpool).
-
-Also, you can interact with a standalone `browserless` instance of your pool.
+You still can pass specific puppeteer options as second argument:
 
 ```js
-const createBrowserless = require('browserless')
-const browserlessPool = createBrowserless.pool()
+const createBrowserless = require('@browserless/pool')
 
-// get a browserless instance from the pool
-browserlessPool(async browserless => {
-  // get a page from the browser instance
-  const page = await browserless.page()
-  await browserless.goto(page, { url: url.toString() })
-  const html = await page.content()
-  console.log(html)
-  process.exit()
+const browserlessPool = createBrowserless({
+  max: 2, // max browsers to keep open
+  timeout: 30000 // max time a browser is consiedered fresh
+}, {
+  ignoreHTTPSErrors: true,
+  args: [
+    '--disable-gpu',
+    '--single-process',
+    '--no-zygote',
+    '--no-sandbox',
+    '--hide-scrollbars'
+  ]
 })
 ```
 
+After that, the API is the same than **browserless**:
 
-You don't need to think about the acquire/release step: It's done automagically ✨.
+```js
+browserlessPool
+  .screenshot('http://example.com', { device: 'iPhone 6' })
+  .then(buffer => {
+    console.log(`your screenshot is here!`)
+  })
+```
+
+Every time you call the pool, it handles acquire and release a new browser instance from the pool ✨.
 
 ## Packages
 
