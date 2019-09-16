@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.12.0](https://github.com/kikobeats/browserless/compare/v5.11.13...v5.12.0) (2019-09-16)
+
+
+### Features
+
+* better pool API ([#77](https://github.com/kikobeats/browserless/issues/77)) ([9939764](https://github.com/kikobeats/browserless/commit/9939764))
+
+
+
+
+
 ## [5.11.13](https://github.com/kikobeats/browserless/compare/v5.11.12...v5.11.13) (2019-09-10)
 
 

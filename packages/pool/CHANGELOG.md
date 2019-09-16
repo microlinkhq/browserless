@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.12.0](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.11.13...v5.12.0) (2019-09-16)
+
+
+### Features
+
+* better pool API ([#77](https://github.com/kikobeats/browserless/tree/master/packages/pool/issues/77)) ([9939764](https://github.com/kikobeats/browserless/tree/master/packages/pool/commit/9939764))
+
+
+
+
+
 ## [5.5.4](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.5.3...v5.5.4) (2019-06-19)
 
 
