@@ -486,7 +486,7 @@ const browserlessPool = createBrowserless({
 })
 ```
 
-You still can pass specific puppeteer options as second argument:
+You can still pass specific puppeteer options as second argument:
 
 ```js
 const createBrowserless = require('@browserless/pool')
