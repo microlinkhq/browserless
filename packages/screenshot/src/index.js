@@ -123,9 +123,9 @@ module.exports = page => async (url, opts = {}) => {
   const {
     device = 'macbook pro 13',
     type = 'png',
+    disableAnimations = true,
     hide,
     click,
-    disableAnimations,
     modules,
     scripts,
     styles,

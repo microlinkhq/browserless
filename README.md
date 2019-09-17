@@ -226,7 +226,7 @@ Click the DOM element matching the given [CSS selector](https://developer.mozill
 ##### disableAnimations
 
 Type: `boolean`<br>
-Default: `false`
+Default: `true`
 
 Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
 
