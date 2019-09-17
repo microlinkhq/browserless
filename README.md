@@ -420,7 +420,7 @@ It will be abort requests detected as ads.
 
 ##### headers
 
-type: `object` </br>
+type: `object`
 
 An object containing additional HTTP headers to be sent with every request.
 
