@@ -3,6 +3,7 @@
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
 const { getDevice } = require('@browserless/devices')
+const { getDomain } = require('tldts')
 const path = require('path')
 const fs = require('fs')
 
@@ -14,6 +15,21 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const WAIT_UNTIL = ['networkidle0']
 
+const parseCookies = (url, str) => {
+  const domain = `.${getDomain(url)}`
+  return str.split('; ').reduce((acc, str) => {
+    const [name, value] = str.split('=')
+    const cookie = {
+      name,
+      value,
+      domain,
+      url,
+      path: '/'
+    }
+    return [...acc, cookie]
+  }, [])
+}
+
 module.exports = async (
   page,
   {
@@ -21,10 +37,8 @@ module.exports = async (
     device,
     adblock = true,
     headers = {},
-    cookies = [],
     waitFor = 0,
     waitUntil = WAIT_UNTIL,
-    userAgent: _userAgent,
     viewport: fallbackViewport,
     ...args
   }
@@ -36,18 +50,19 @@ module.exports = async (
   }
 
   if (Object.keys(headers).length !== 0) {
-    debug({ headers })
+    debug('headers', headers)
     await page.setExtraHTTPHeaders(headers)
   }
 
-  if (cookies.length) {
-    debug({ cookies })
+  if (typeof headers.cookie === 'string') {
+    const cookies = parseCookies(url, headers.cookie)
+    debug('cookies', ...cookies)
     await page.setCookie(...cookies)
   }
 
   const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
 
-  const userAgent = _userAgent || headers['user-agent'] || deviceUserAgent
+  const userAgent = headers['user-agent'] || deviceUserAgent
 
   if (userAgent) {
     debug({ userAgent })
@@ -69,3 +84,5 @@ module.exports = async (
 
   return response
 }
+
+module.exports.parseCookies = parseCookies

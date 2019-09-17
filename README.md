@@ -395,7 +395,7 @@ const browserless = require('browserless')
 
 ;(async () => {
   const page = await browserless.page()
-  await browserless.goto(page, { url: 'http://savevideo.me' })
+  await browserless.goto(page, { url: 'http://example.com' })
 })()
 ```
 
@@ -424,6 +424,21 @@ type: `object` </br>
 
 An object containing additional HTTP headers to be sent with every request.
 
+```js
+const browserless = require('browserless')
+
+;(async () => {
+  const page = await browserless.page()
+  await browserless.goto(page, { 
+    url: 'http://example.com',
+    headers: {
+      'user-agent': 'googlebot',
+      cookie: 'foo=bar; hello=world'
+    }
+  })
+})()
+```
+
 ##### waitFor
 
 type:`string|function|number`</br>
@@ -438,20 +453,9 @@ default: `['networkidle0']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
 
-##### userAgent
-
-It will setup a custom user agent, using [page.setUserAgent](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetuseragentuseragent) method.
-
 ##### viewport
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
-
-##### cookies
-
-type: `object[]` </br>
-
-A collection of [cookie's object](https://github.com/GoogleChrome/puppeteer/blob/v1.16.0/docs/api.md#pagesetcookiecookies) to set in the requests send.
-
 ##### device
 
 type: `string`</br>
