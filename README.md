@@ -429,7 +429,7 @@ const browserless = require('browserless')
 
 ;(async () => {
   const page = await browserless.page()
-  await browserless.goto(page, { 
+  await browserless.goto(page, {
     url: 'http://example.com',
     headers: {
       'user-agent': 'googlebot',
