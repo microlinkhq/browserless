@@ -1,7 +1,7 @@
 'use strict'
 
-const debug = require('debug-logfmt')('browserless:goto')
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
+const debug = require('debug-logfmt')('browserless:goto')
 const { getDevice } = require('@browserless/devices')
 const path = require('path')
 const fs = require('fs')
@@ -20,11 +20,11 @@ module.exports = async (
     url,
     device,
     adblock = true,
-    headers,
+    headers = {},
     cookies = [],
     waitFor = 0,
     waitUntil = WAIT_UNTIL,
-    userAgent: fallbackUserAgent,
+    userAgent: _userAgent,
     viewport: fallbackViewport,
     ...args
   }
@@ -35,7 +35,7 @@ module.exports = async (
     engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
   }
 
-  if (headers) {
+  if (Object.keys(headers).length !== 0) {
     debug({ headers })
     await page.setExtraHTTPHeaders(headers)
   }
@@ -47,7 +47,7 @@ module.exports = async (
 
   const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
 
-  const userAgent = deviceUserAgent || fallbackUserAgent
+  const userAgent = _userAgent || headers['user-agent'] || deviceUserAgent
 
   if (userAgent) {
     debug({ userAgent })
