@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.13.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.12.0...v5.13.0) (2019-09-17)
+
+
+### Features
+
+* better user-agent and cookie support ([#78](https://github.com/kikobeats/browserless/tree/master/packages/goto/issues/78)) ([57c8e69](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/57c8e69))
+
+
+
+
+
 ## [5.11.10](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.11.9...v5.11.10) (2019-09-08)
 
 **Note:** Version bump only for package @browserless/goto
