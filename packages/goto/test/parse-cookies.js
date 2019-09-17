@@ -6,7 +6,7 @@ const { parseCookies } = require('../src')
 
 test('parse cookies from string with `; ` delimiter', t => {
   const url = 'https://example.com'
-  const cookiesStr = 'foo=bar;hello=world'
+  const cookiesStr = 'foo=bar; hello=world'
 
   const cookies = parseCookies(url, cookiesStr)
 
