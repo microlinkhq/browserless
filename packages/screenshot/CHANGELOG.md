@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.13.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.13.1...v5.13.2) (2019-09-18)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
 ## [5.13.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.13.0...v5.13.1) (2019-09-17)
 
 **Note:** Version bump only for package @browserless/screenshot
