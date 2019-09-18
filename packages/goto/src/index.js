@@ -17,10 +17,10 @@ const WAIT_UNTIL = ['networkidle0']
 
 const parseCookies = (url, str) => {
   const domain = `.${getDomain(url)}`
-  return str.split('; ').reduce((acc, str) => {
+  return str.split(';').reduce((acc, str) => {
     const [name, value] = str.split('=')
     const cookie = {
-      name,
+      name: name.trim(),
       value,
       domain,
       url,
