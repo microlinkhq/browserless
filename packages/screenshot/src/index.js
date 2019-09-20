@@ -6,7 +6,6 @@ const sharp = require('sharp')
 const path = require('path')
 const got = require('got')
 
-const takeScreenshotFullPage = require('./full-page')
 const preparePage = require('./prepare')
 
 const browserOverlay = ['safari-light', 'safari-dark'].reduce(
@@ -32,14 +31,10 @@ const getBackground = async (bg = 'transparent') => {
 
 const createSvgBackground = css => svgGradient(css, { width: '1388px', height: '955px' })
 
-module.exports = page => async (
-  url,
-  { direction = 'vertical', overlay, fullPage, ...opts } = {}
-) => {
+module.exports = page => async (url, { direction = 'vertical', overlay, ...opts } = {}) => {
   await preparePage(page, url, opts)
-  if (fullPage) return takeScreenshotFullPage(page, { direction, ...opts })
-
   const screenshot = await page.screenshot(opts)
+
   if (!overlay) return screenshot
 
   const { browser: browserTheme, background } = overlay
