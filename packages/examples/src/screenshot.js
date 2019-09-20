@@ -2,7 +2,6 @@
 
 const uniqueRandomArray = require('unique-random-array')
 const createBrowserless = require('browserless')
-const termImg = require('term-img')
 
 const browserless = createBrowserless()
 
@@ -41,11 +40,8 @@ require('./main')(async (url, opts) => {
     }
   }
 
-  const buffer = await browserless.screenshot(url, opts)
-  termImg(buffer)
-
-  if (opts.save) {
-    require('fs').writeFileSync('screenshot.png', buffer)
-    console.log('image saved!')
+  return {
+    output: await browserless.screenshot(url, opts),
+    isImage: true
   }
 })

@@ -1,7 +1,10 @@
 'use strict'
 
 const beautyError = require('beauty-error')
+const prettyBytes = require('pretty-bytes')
 const procStats = require('process-stats')
+const isBuffer = require('is-buffer')
+const termImg = require('term-img')
 const { URL } = require('url')
 const meow = require('meow')
 const ora = require('ora')
@@ -12,19 +15,26 @@ module.exports = async fn => {
   const spinner = ora().start()
   try {
     const url = new URL(cli.input[0]).toString()
-    const output = await fn(url, cli.flags)
+    const { output, isImage } = await fn(url, cli.flags)
 
     spinner.stop()
 
-    if (output) console.log(output)
-
-    if (!cli.flags.quiet) {
-      const { cpu, uptime, memUsed } = procStats()
-      console.log()
-      console.log(`  time   : ${uptime.pretty}`)
-      console.log(`  memory : ${memUsed.pretty}`)
-      console.log(`  cpu    : ${cpu}`)
+    if (output) {
+      if (isImage) termImg(output)
+      else console.log(output)
     }
+
+    const { cpu, uptime, memUsed } = procStats()
+
+    console.log()
+
+    if (isBuffer(output)) {
+      console.log(`  size   : ${prettyBytes(output.byteLength)}`)
+    }
+
+    console.log(`  time   : ${uptime.pretty}`)
+    console.log(`  memory : ${memUsed.pretty}`)
+    console.log(`  cpu    : ${cpu}`)
 
     process.exit()
   } catch (err) {
