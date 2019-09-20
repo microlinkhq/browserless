@@ -37,7 +37,8 @@
     "tldts": "~5.4.1"
   },
   "devDependencies": {
-    "ava": "latest"
+    "ava": "latest",
+    "puppeteer": "latest"
   },
   "engines": {
     "node": ">= 8"
