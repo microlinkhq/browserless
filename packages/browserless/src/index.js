@@ -13,7 +13,7 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 const EVALUATE_HTML = page => page.content()
 
 module.exports = ({
-  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  puppeteer = requireOneOf(['puppeteer-core', 'puppeteer', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
   ...launchOpts

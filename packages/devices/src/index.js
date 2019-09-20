@@ -3,8 +3,8 @@
 const requireOneOf = require('require-one-of')
 
 const puppeteerDevices = requireOneOf([
-  'puppeteer/DeviceDescriptors',
   'puppeteer-core/DeviceDescriptors',
+  'puppeteer/DeviceDescriptors',
   'puppeteer-firefox/DeviceDescriptors'
 ])
 
