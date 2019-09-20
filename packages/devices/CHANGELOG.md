@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.13.4](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v5.13.3...v5.13.4) (2019-09-20)
+
+**Note:** Version bump only for package @browserless/devices
+
+
+
+
+
 ## [5.5.5](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v5.5.4...v5.5.5) (2019-06-22)
 
 **Note:** Version bump only for package @browserless/devices

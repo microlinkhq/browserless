@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
-  "version": "5.13.2",
+  "version": "5.13.4",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -28,7 +28,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "@browserless/devices": "^5.5.5",
+    "@browserless/devices": "^5.13.4",
     "@cliqz/adblocker-puppeteer": "~1.1.0",
     "debug-logfmt": "~1.0.2",
     "got": "~9.6.0",
