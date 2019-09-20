@@ -26,6 +26,13 @@
     "headless",
     "puppeteer"
   ],
+  "dependencies": {
+    "beauty-error": "~1.2.2",
+    "meow": "~5.0.0",
+    "ora": "~3.4.0",
+    "process-stats": "~3.1.1",
+    "time-span": "~3.1.0"
+  },
   "devDependencies": {
     "browserless": "latest",
     "lodash": "latest",
