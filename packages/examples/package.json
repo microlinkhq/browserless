@@ -35,11 +35,11 @@
     "process-stats": "~3.1.1"
   },
   "devDependencies": {
+    "@browserless/pool": "latest",
     "browserless": "latest",
     "lodash": "latest",
     "p-event": "latest",
     "puppeteer": "latest",
-    "@browserless/pool": "latest",
     "term-img": "latest",
     "unique-random-array": "latest"
   },

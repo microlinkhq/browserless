@@ -26,15 +26,15 @@
     "headless",
     "puppeteer"
   ],
+  "dependencies": {
+    "require-one-of": "~1.0.11"
+  },
   "engines": {
     "node": ">= 8"
   },
   "files": [
     "src"
   ],
-  "dependencies": {
-    "require-one-of": "~1.0.11"
-  },
   "scripts": {
     "coverage": "exit 0",
     "test": "exit 0"
