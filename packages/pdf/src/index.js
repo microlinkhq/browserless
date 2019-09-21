@@ -1,29 +1,33 @@
 'use strict'
 
-const goto = require('@browserless/goto')
+const createGoto = require('@browserless/goto')
 
-module.exports = page => async (url, opts = {}) => {
-  const {
-    format = 'A4',
-    margin = {
-      top: '0.25cm',
-      right: '0.25cm',
-      bottom: '0.25cm',
-      left: '0.25cm'
-    },
-    media = 'screen',
-    printBackground = true,
-    scale = 0.65,
-    ...args
-  } = opts
+module.exports = ({ goto, ...gotoOpts } = {}) => {
+  goto = goto || createGoto(gotoOpts)
 
-  await page.emulateMedia(media)
-  await goto(page, { url, ...args })
+  return page => async (url, opts = {}) => {
+    const {
+      format = 'A4',
+      margin = {
+        top: '0.25cm',
+        right: '0.25cm',
+        bottom: '0.25cm',
+        left: '0.25cm'
+      },
+      media = 'screen',
+      printBackground = true,
+      scale = 0.65,
+      ...args
+    } = opts
 
-  return page.pdf({
-    margin,
-    format,
-    printBackground,
-    scale
-  })
+    await page.emulateMedia(media)
+    await goto(page, { url, ...args })
+
+    return page.pdf({
+      margin,
+      format,
+      printBackground,
+      scale
+    })
+  }
 }

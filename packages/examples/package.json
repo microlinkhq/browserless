@@ -32,14 +32,14 @@
     "meow": "~5.0.0",
     "ora": "~3.4.0",
     "pretty-bytes": "~5.3.0",
-    "process-stats": "~3.1.1",
-    "time-span": "~3.1.0"
+    "process-stats": "~3.1.1"
   },
   "devDependencies": {
     "browserless": "latest",
     "lodash": "latest",
     "p-event": "latest",
     "puppeteer": "latest",
+    "@browserless/pool": "latest",
     "term-img": "latest",
     "unique-random-array": "latest"
   },

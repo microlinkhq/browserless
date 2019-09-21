@@ -31,7 +31,6 @@
     "@browserless/test": "latest",
     "ava": "latest",
     "browserless": "latest",
-    "coveralls": "latest",
     "nyc": "latest",
     "puppeteer": "latest"
   },
@@ -42,7 +41,7 @@
     "src"
   ],
   "scripts": {
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "coverage": "exit 0",
     "test": "nyc ava"
   },
   "license": "MIT"

@@ -54,6 +54,8 @@ module.exports = createBrowserless => {
     const browserless = createBrowserless()
     const buffer = await browserless.pdf('http://example.com')
     const data = await pdf(buffer)
-    t.snapshot(data.text.trim())
+
+    const text = data.text.trim().replace('Example\nDomain', 'Example Domain')
+    t.snapshot(text)
   })
 }

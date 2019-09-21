@@ -1,6 +1,6 @@
 'use strict'
 
-const goto = require('@browserless/goto')
+const createGoto = require('@browserless/goto')
 
 const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
 
@@ -91,79 +91,83 @@ const hideElements = elements => {
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
 
-module.exports = async (page, url, opts = {}) => {
-  const {
-    fullPage,
-    device = 'macbook pro 13',
-    disableAnimations = true,
-    hide,
-    click,
-    modules,
-    scripts,
-    styles,
-    element,
-    scrollTo,
-    overlay,
-    ...args
-  } = opts
+module.exports = ({ goto, ...gotoOpts } = {}) => {
+  goto = goto || createGoto(gotoOpts)
 
-  await goto(page, { url, device, ...args })
-  await page.evaluateHandle('document.fonts.ready')
+  return async (page, url, opts = {}) => {
+    const {
+      fullPage,
+      device = 'macbook pro 13',
+      disableAnimations = true,
+      hide,
+      click,
+      modules,
+      scripts,
+      styles,
+      element,
+      scrollTo,
+      overlay,
+      ...args
+    } = opts
 
-  if (disableAnimations) {
-    await page.evaluate(doDisableAnimations)
-  }
+    await goto(page, { url, device, ...args })
+    await page.evaluateHandle('document.fonts.ready')
 
-  if (hide) {
-    await Promise.all(toArray(hide).map(selector => page.$$eval(selector, hideElements)))
-  }
-
-  if (click) {
-    for (const selector of toArray(click)) {
-      try {
-        await page.click(selector)
-      } catch (err) {}
+    if (disableAnimations) {
+      await page.evaluate(doDisableAnimations)
     }
-  }
 
-  if (modules) {
-    await Promise.all(
-      toArray(modules).map(m => {
-        return page.addScriptTag({
-          [getInjectKey('js', m)]: m,
-          type: 'module'
-        })
-      })
-    )
-  }
-
-  if (scripts) {
-    await Promise.all(
-      toArray(scripts).map(script => {
-        return page.addScriptTag({
-          [getInjectKey('js', script)]: script
-        })
-      })
-    )
-  }
-
-  if (styles) {
-    await Promise.all(
-      toArray(styles).map(style => {
-        return page.addStyleTag({
-          [getInjectKey('css', style)]: style
-        })
-      })
-    )
-  }
-
-  if (scrollTo) {
-    if (typeof scrollTo === 'object') {
-      await page.$eval(scrollTo.element, scrollToElement, scrollTo)
-    } else {
-      await page.$eval(scrollTo, scrollToElement)
+    if (hide) {
+      await Promise.all(toArray(hide).map(selector => page.$$eval(selector, hideElements)))
     }
-  }
 
-  return page
+    if (click) {
+      for (const selector of toArray(click)) {
+        try {
+          await page.click(selector)
+        } catch (err) {}
+      }
+    }
+
+    if (modules) {
+      await Promise.all(
+        toArray(modules).map(m => {
+          return page.addScriptTag({
+            [getInjectKey('js', m)]: m,
+            type: 'module'
+          })
+        })
+      )
+    }
+
+    if (scripts) {
+      await Promise.all(
+        toArray(scripts).map(script => {
+          return page.addScriptTag({
+            [getInjectKey('js', script)]: script
+          })
+        })
+      )
+    }
+
+    if (styles) {
+      await Promise.all(
+        toArray(styles).map(style => {
+          return page.addStyleTag({
+            [getInjectKey('css', style)]: style
+          })
+        })
+      )
+    }
+
+    if (scrollTo) {
+      if (typeof scrollTo === 'object') {
+        await page.$eval(scrollTo.element, scrollToElement, scrollTo)
+      } else {
+        await page.$eval(scrollTo, scrollToElement)
+      }
+    }
+
+    return page
+  }
 }

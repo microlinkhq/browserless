@@ -2,7 +2,7 @@
 
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
-const { getDevice } = require('@browserless/devices')
+const createDevices = require('@browserless/devices')
 const { getDomain } = require('tldts')
 const path = require('path')
 const fs = require('fs')
@@ -30,59 +30,66 @@ const parseCookies = (url, str) => {
   }, [])
 }
 
-module.exports = async (
-  page,
-  {
-    url,
-    device,
-    adblock = true,
-    headers = {},
-    waitFor = 0,
-    waitUntil = WAIT_UNTIL,
-    viewport: fallbackViewport,
-    ...args
+module.exports = deviceOpts => {
+  const { devices, getDevice } = createDevices(deviceOpts)
+
+  const goto = async (
+    page,
+    {
+      url,
+      device,
+      adblock = true,
+      headers = {},
+      waitFor = 0,
+      waitUntil = WAIT_UNTIL,
+      viewport: fallbackViewport,
+      ...args
+    }
+  ) => {
+    if (adblock) {
+      await engine.enableBlockingInPage(page)
+      engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
+      engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
+    }
+
+    if (Object.keys(headers).length !== 0) {
+      debug('headers', headers)
+      await page.setExtraHTTPHeaders(headers)
+    }
+
+    if (typeof headers.cookie === 'string') {
+      const cookies = parseCookies(url, headers.cookie)
+      debug('cookies', ...cookies)
+      await page.setCookie(...cookies)
+    }
+
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
+
+    const userAgent = headers['user-agent'] || deviceUserAgent
+
+    if (userAgent) {
+      debug({ userAgent })
+      await page.setUserAgent(userAgent)
+    }
+
+    const viewport = { ...deviceViewport, ...fallbackViewport }
+    if (!isEmpty(viewport)) {
+      debug('viewport', viewport)
+      await page.setViewport(viewport)
+    }
+
+    const response = await page.goto(url, { waitUntil, ...args })
+
+    if (waitFor) {
+      debug({ waitFor })
+      await page.waitFor(waitFor)
+    }
+
+    return response
   }
-) => {
-  if (adblock) {
-    await engine.enableBlockingInPage(page)
-    engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
-    engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
-  }
 
-  if (Object.keys(headers).length !== 0) {
-    debug('headers', headers)
-    await page.setExtraHTTPHeaders(headers)
-  }
-
-  if (typeof headers.cookie === 'string') {
-    const cookies = parseCookies(url, headers.cookie)
-    debug('cookies', ...cookies)
-    await page.setCookie(...cookies)
-  }
-
-  const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
-
-  const userAgent = headers['user-agent'] || deviceUserAgent
-
-  if (userAgent) {
-    debug({ userAgent })
-    await page.setUserAgent(userAgent)
-  }
-
-  const viewport = { ...deviceViewport, ...fallbackViewport }
-  if (!isEmpty(viewport)) {
-    debug('viewport', viewport)
-    await page.setViewport(viewport)
-  }
-
-  const response = await page.goto(url, { waitUntil, ...args })
-
-  if (waitFor) {
-    debug({ waitFor })
-    await page.waitFor(waitFor)
-  }
-
-  return response
+  goto.devices = devices
+  return goto
 }
 
 module.exports.parseCookies = parseCookies
