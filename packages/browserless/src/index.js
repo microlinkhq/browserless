@@ -1,8 +1,6 @@
 'use strict'
 
-const devices = require('@browserless/devices')
-const requireOneOf = require('require-one-of')
-const goto = require('@browserless/goto')
+const createGoto = require('@browserless/goto')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 
@@ -13,7 +11,8 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 const EVALUATE_HTML = page => page.content()
 
 module.exports = ({
-  puppeteer = requireOneOf(['puppeteer-core', 'puppeteer', 'puppeteer-firefox']),
+  puppeteer = require('require-one-of')(['puppeteer-core', 'puppeteer', 'puppeteer-firefox']),
+  puppeteerDevices,
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -24,6 +23,8 @@ module.exports = ({
     await driver.destroy(await browser, { cleanTmp: true })
     browser = driver.spawn(puppeteer, launchOpts)
   }
+
+  const goto = createGoto(puppeteerDevices)
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
@@ -65,8 +66,7 @@ module.exports = ({
     page: createPage,
     pdf,
     screenshot,
-    text: evaluate(EVALUATE_TEXT)
+    text: evaluate(EVALUATE_TEXT),
+    devices: goto.devices
   }
 }
-
-module.exports.devices = devices

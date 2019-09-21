@@ -26,9 +26,6 @@
     "headless",
     "puppeteer"
   ],
-  "dependencies": {
-    "require-one-of": "~1.0.11"
-  },
   "devDependencies": {
     "puppeteer": "latest"
   },
