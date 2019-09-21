@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.14.0](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.13.4...v5.14.0) (2019-09-21)
+
+
+### Features
+
+* a better way for injecting dependencies ([#84](https://github.com/kikobeats/browserless/tree/master/packages/examples/issues/84)) ([9762bbf](https://github.com/kikobeats/browserless/tree/master/packages/examples/commit/9762bbf))
+
+
+
+
+
 ## [5.13.3](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v5.13.2...v5.13.3) (2019-09-20)
 
 **Note:** Version bump only for package @browserless/examples
