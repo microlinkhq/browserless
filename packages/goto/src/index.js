@@ -30,14 +30,8 @@ const parseCookies = (url, str) => {
   }, [])
 }
 
-module.exports = (
-  puppeteerDevices = require('require-one-of')([
-    'puppeteer-core/DeviceDescriptors',
-    'puppeteer/DeviceDescriptors',
-    'puppeteer-firefox/DeviceDescriptors'
-  ])
-) => {
-  const { devices, getDevice } = createDevices(puppeteerDevices)
+module.exports = deviceOpts => {
+  const { devices, getDevice } = createDevices(deviceOpts)
 
   const goto = async (
     page,

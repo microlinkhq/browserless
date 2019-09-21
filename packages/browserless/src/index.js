@@ -24,7 +24,7 @@ module.exports = ({
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
-  const goto = createGoto(puppeteerDevices)
+  const goto = createGoto({ puppeteerDevices })
 
   const createPage = () =>
     Promise.resolve(browser).then(async browser => {
@@ -48,9 +48,9 @@ module.exports = ({
       return fn(page, response)
     })
 
-  const pdf = wrapError(require('@browserless/pdf'))
+  const pdf = wrapError(require('@browserless/pdf')({ goto }))
 
-  const screenshot = wrapError(require('@browserless/screenshot'))
+  const screenshot = wrapError(require('@browserless/screenshot')({ goto }))
 
   return {
     // low level methods

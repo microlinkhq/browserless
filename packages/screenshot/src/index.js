@@ -6,7 +6,7 @@ const sharp = require('sharp')
 const path = require('path')
 const got = require('got')
 
-const preparePage = require('./prepare')
+const createPreparePage = require('./prepare')
 
 const browserOverlay = ['safari-light', 'safari-dark'].reduce(
   (acc, key) => ({
@@ -31,23 +31,26 @@ const getBackground = async (bg = 'transparent') => {
 
 const createSvgBackground = css => svgGradient(css, { width: '1388px', height: '955px' })
 
-module.exports = page => async (url, { direction = 'vertical', overlay, ...opts } = {}) => {
-  await preparePage(page, url, opts)
-  const screenshot = await page.screenshot(opts)
+module.exports = gotoOpts => {
+  const preparePage = createPreparePage(gotoOpts)
+  return page => async (url, { direction = 'vertical', overlay, ...opts } = {}) => {
+    await preparePage(page, url, opts)
+    const screenshot = await page.screenshot(opts)
 
-  if (!overlay) return screenshot
+    if (!overlay) return screenshot
 
-  const { browser: browserTheme, background } = overlay
+    const { browser: browserTheme, background } = overlay
 
-  let image = await sharp(await getBackground(background))
-  let inputs = [{ input: screenshot }]
+    let image = await sharp(await getBackground(background))
+    let inputs = [{ input: screenshot }]
 
-  if (browserTheme) {
-    const input = browserOverlay[browserTheme]
-    if (input) inputs = [{ input }].concat(inputs)
+    if (browserTheme) {
+      const input = browserOverlay[browserTheme]
+      if (input) inputs = [{ input }].concat(inputs)
+    }
+
+    image = await image.composite(inputs)
+    const buffer = await image.toBuffer()
+    return buffer
   }
-
-  image = await image.composite(inputs)
-  const buffer = await image.toBuffer()
-  return buffer
 }

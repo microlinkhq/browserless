@@ -5,7 +5,13 @@ const customDevices = require('./devices.json')
 const getDevice = (devices, deviceName) =>
   deviceName && devices.find(device => device.name.toLowerCase() === deviceName.toLowerCase())
 
-module.exports = puppeteerDevices => {
+module.exports = ({
+  puppeteerDevices = require('require-one-of')([
+    'puppeteer-core/DeviceDescriptors',
+    'puppeteer/DeviceDescriptors',
+    'puppeteer-firefox/DeviceDescriptors'
+  ])
+} = {}) => {
   const devices = puppeteerDevices.concat(customDevices)
   return {
     devices,

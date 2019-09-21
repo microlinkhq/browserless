@@ -32,13 +32,10 @@
     "@cliqz/adblocker-puppeteer": "~1.1.0",
     "debug-logfmt": "~1.0.2",
     "got": "~9.6.0",
-    "p-timeout": "~3.2.0",
-    "require-one-of": "~1.0.11",
     "tldts": "~5.4.1"
   },
   "devDependencies": {
-    "ava": "latest",
-    "puppeteer": "latest"
+    "ava": "latest"
   },
   "engines": {
     "node": ">= 8"

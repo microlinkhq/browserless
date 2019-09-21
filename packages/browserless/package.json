@@ -35,7 +35,6 @@
     "@browserless/screenshot": "^5.13.4",
     "aggregate-error": "~3.0.0",
     "arrify": "~2.0.1",
-    "debug-logfmt": "~1.0.2",
     "del": "~5.1.0",
     "p-reflect": "~2.1.0",
     "p-timeout": "~3.2.0",
