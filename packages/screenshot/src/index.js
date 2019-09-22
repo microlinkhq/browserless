@@ -33,9 +33,9 @@ const createSvgBackground = css => svgGradient(css, { width: '1388px', height: '
 
 module.exports = gotoOpts => {
   const preparePage = createPreparePage(gotoOpts)
-  return page => async (url, { direction = 'vertical', overlay, ...opts } = {}) => {
+  return page => async (url, { type = 'png', direction = 'vertical', overlay, ...opts } = {}) => {
     await preparePage(page, url, opts)
-    const screenshot = await page.screenshot(opts)
+    const screenshot = await page.screenshot({ ...opts, type })
 
     if (!overlay) return screenshot
 
