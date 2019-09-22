@@ -20,19 +20,25 @@ module.exports = ({
   let browser = driver.spawn(puppeteer, launchOpts)
 
   const respawn = async () => {
-    await driver.destroy(await browser, { cleanTmp: true })
+    await pReflect(driver.destroy(await browser, { cleanTmp: true }))
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
   const goto = createGoto({ puppeteerDevices })
 
-  const createPage = () =>
-    Promise.resolve(browser).then(async browser => {
-      const context = incognito ? await browser.createIncognitoBrowserContext() : browser
+  const createPage = async (recover = false) => {
+    try {
+      if (recover) await respawn()
+      const _browser = await browser
+      const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
       const page = await context.newPage()
       page.setDefaultNavigationTimeout(timeout)
       return page
-    })
+    } catch (err) {
+      if (recover) throw err
+      return createPage(true)
+    }
+  }
 
   const wrapError = fn => async (...args) => {
     const page = await createPage()
