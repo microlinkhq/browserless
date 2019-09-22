@@ -13,7 +13,6 @@ const EVALUATE_HTML = page => page.content()
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer-core', 'puppeteer', 'puppeteer-firefox']),
   puppeteerDevices,
-  autoRespawn = true,
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -21,21 +20,25 @@ module.exports = ({
   let browser = driver.spawn(puppeteer, launchOpts)
 
   const respawn = async () => {
-    await driver.destroy(await browser, { cleanTmp: true })
+    await pReflect(driver.destroy(await browser, { cleanTmp: true }))
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
-  if (autoRespawn) browser.on('disconnected', respawn)
-
   const goto = createGoto({ puppeteerDevices })
 
-  const createPage = () =>
-    Promise.resolve(browser).then(async browser => {
-      const context = incognito ? await browser.createIncognitoBrowserContext() : browser
+  const createPage = async (recover = false) => {
+    try {
+      if (recover) await respawn()
+      const _browser = await browser
+      const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
       const page = await context.newPage()
       page.setDefaultNavigationTimeout(timeout)
       return page
-    })
+    } catch (err) {
+      if (recover) throw err
+      return createPage(true)
+    }
+  }
 
   const wrapError = fn => async (...args) => {
     const page = await createPage()
