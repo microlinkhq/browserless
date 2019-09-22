@@ -13,6 +13,7 @@ const EVALUATE_HTML = page => page.content()
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer-core', 'puppeteer', 'puppeteer-firefox']),
   puppeteerDevices,
+  autoRespawn = true,
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -23,6 +24,8 @@ module.exports = ({
     await driver.destroy(await browser, { cleanTmp: true })
     browser = driver.spawn(puppeteer, launchOpts)
   }
+
+  if (autoRespawn) browser.on('disconnected', respawn)
 
   const goto = createGoto({ puppeteerDevices })
 
