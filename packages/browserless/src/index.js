@@ -20,7 +20,7 @@ module.exports = ({
   let browser = driver.spawn(puppeteer, launchOpts)
 
   const respawn = async () => {
-    await pReflect(driver.destroy(await browser, { cleanTmp: true }))
+    await driver.destroy(await browser, { cleanTmp: true })
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
@@ -30,6 +30,7 @@ module.exports = ({
     try {
       if (recover) await respawn()
       const _browser = await browser
+      console.log(_browser.process().pid)
       const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
       const page = await context.newPage()
       page.setDefaultNavigationTimeout(timeout)

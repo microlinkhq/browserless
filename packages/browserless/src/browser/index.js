@@ -1,3 +1,6 @@
+'use strict'
+
+const pReflect = require('p-reflect')
 const del = require('del')
 
 const fkill = require('./fkill')
@@ -36,7 +39,7 @@ const kill = async (pid, { cleanTmp = false } = {}) => {
 
 const destroy = async (browser, opts) => {
   const pid = browser.process().pid
-  await browser.close()
+  await pReflect(browser.close())
   return kill(pid, opts)
 }
 
