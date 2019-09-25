@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.14.7](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.14.6...v5.14.7) (2019-09-25)
+
+
+### Bug Fixes
+
+* write content in a file it opts.path is present ([#93](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/93)) ([34df725](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/34df725))
+
+
+
+
+
 ## [5.14.6](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.14.5...v5.14.6) (2019-09-25)
 
 **Note:** Version bump only for package @browserless/screenshot
