@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "A puppeter-like Node.js library for interacting with Headless production scenarios.",
   "homepage": "https://browserless.js.org",
-  "version": "5.14.5",
+  "version": "5.14.6",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -32,7 +32,7 @@
   "dependencies": {
     "@browserless/goto": "^5.14.5",
     "@browserless/pdf": "^5.14.5",
-    "@browserless/screenshot": "^5.14.5",
+    "@browserless/screenshot": "^5.14.6",
     "aggregate-error": "~3.0.0",
     "arrify": "~2.0.1",
     "del": "~5.1.0",
