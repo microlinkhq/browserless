@@ -2,6 +2,7 @@
 
 const uniqueRandomArray = require('unique-random-array')
 const createBrowserless = require('browserless')
+const { set } = require('lodash')
 
 const browserless = createBrowserless()
 
@@ -29,15 +30,15 @@ const randBackground = uniqueRandomArray(BACKGROUNDS)
 
 require('./main')(async (url, opts) => {
   if (opts.background === 'unsplash') {
-    opts.overlay = {
-      background: 'https://source.unsplash.com/random/1920x1080'
-    }
+    set(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
   }
 
   if (opts.background === 'gradient') {
-    opts.overlay = {
-      background: randBackground()
-    }
+    set(opts, 'overlay.background', randBackground())
+  }
+
+  if (opts.browser) {
+    set(opts, 'overlay.browser', `safari-${opts.browser}`)
   }
 
   return {
