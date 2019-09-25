@@ -1,6 +1,7 @@
 'use strict'
 
 const createGoto = require('@browserless/goto')
+const pReflect = require('p-reflect')
 
 const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
 
@@ -111,60 +112,68 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     } = opts
 
     await goto(page, { url, device, ...args })
-    await page.evaluateHandle('document.fonts.ready')
+    await pReflect(page.evaluateHandle('document.fonts.ready'))
 
     if (disableAnimations) {
-      await page.evaluate(doDisableAnimations)
+      await pReflect(page.evaluate(doDisableAnimations))
     }
 
     if (hide) {
-      await Promise.all(toArray(hide).map(selector => page.$$eval(selector, hideElements)))
+      await Promise.all(
+        toArray(hide).map(selector => pReflect(page.$$eval(selector, hideElements)))
+      )
     }
 
     if (click) {
       for (const selector of toArray(click)) {
         try {
-          await page.click(selector)
+          await pReflect(page.click(selector))
         } catch (err) {}
       }
     }
 
     if (modules) {
       await Promise.all(
-        toArray(modules).map(m => {
-          return page.addScriptTag({
-            [getInjectKey('js', m)]: m,
-            type: 'module'
-          })
-        })
+        toArray(modules).map(m =>
+          pReflect(
+            page.addScriptTag({
+              [getInjectKey('js', m)]: m,
+              type: 'module'
+            })
+          )
+        )
       )
     }
 
     if (scripts) {
       await Promise.all(
-        toArray(scripts).map(script => {
-          return page.addScriptTag({
-            [getInjectKey('js', script)]: script
-          })
-        })
+        toArray(scripts).map(script =>
+          pReflect(
+            page.addScriptTag({
+              [getInjectKey('js', script)]: script
+            })
+          )
+        )
       )
     }
 
     if (styles) {
       await Promise.all(
-        toArray(styles).map(style => {
-          return page.addStyleTag({
-            [getInjectKey('css', style)]: style
-          })
-        })
+        toArray(styles).map(style =>
+          pReflect(
+            page.addStyleTag({
+              [getInjectKey('css', style)]: style
+            })
+          )
+        )
       )
     }
 
     if (scrollTo) {
       if (typeof scrollTo === 'object') {
-        await page.$eval(scrollTo.element, scrollToElement, scrollTo)
+        await pReflect(page.$eval(scrollTo.element, scrollToElement, scrollTo))
       } else {
-        await page.$eval(scrollTo, scrollToElement)
+        await pReflect(page.$eval(scrollTo, scrollToElement))
       }
     }
 

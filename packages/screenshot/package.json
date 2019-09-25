@@ -30,6 +30,7 @@
     "@browserless/goto": "^5.14.0",
     "got": "~9.6.0",
     "is-url-http": "~1.2.0",
+    "p-reflect": "~2.1.0",
     "sharp": "~0.23.0",
     "svg-gradient": "~1.0.2"
   },
