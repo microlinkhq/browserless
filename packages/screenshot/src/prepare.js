@@ -112,7 +112,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     } = opts
 
     await goto(page, { url, device, ...args })
-    await pReflect(page.evaluateHandle('document.fonts.ready'))
+    // await pReflect(page.evaluateHandle('document.fonts.ready'))
 
     if (disableAnimations) {
       await pReflect(page.evaluate(doDisableAnimations))
