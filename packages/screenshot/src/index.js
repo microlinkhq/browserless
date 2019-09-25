@@ -39,18 +39,16 @@ module.exports = gotoOpts => {
 
     if (!overlay) return screenshot
 
-    const { browser: browserTheme, background } = overlay
-
+    const { browser: browserSkin, background } = overlay
     let image = await sharp(await getBackground(background))
     let inputs = [{ input: screenshot }]
 
-    if (browserTheme) {
-      const input = browserOverlay[browserTheme]
+    if (browserSkin) {
+      const input = browserOverlay[browserSkin]
       if (input) inputs = [{ input }].concat(inputs)
     }
 
     image = await image.composite(inputs)
-    const buffer = await image.toBuffer()
-    return buffer
+    return opts.path ? image.toFile(opts.path) : image.toBuffer()
   }
 }
