@@ -3,6 +3,7 @@
 const createGoto = require('@browserless/goto')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
+const pRetry = require('p-retry')
 
 const driver = require('./browser')
 
@@ -11,7 +12,11 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 const EVALUATE_HTML = page => page.content()
 
 module.exports = ({
-  puppeteer = require('require-one-of')(['puppeteer-core', 'puppeteer', 'puppeteer-firefox']),
+  puppeteer = require('require-one-of')([
+    'puppeteer-core',
+    'puppeteer',
+    'puppeteer-firefox'
+  ]),
   puppeteerDevices,
   incognito = false,
   timeout = 30000,
@@ -26,19 +31,21 @@ module.exports = ({
 
   const goto = createGoto({ puppeteerDevices })
 
-  const createPage = async (recover = false) => {
-    try {
-      if (recover) await respawn()
-      const _browser = await browser
-      const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
-      const page = await context.newPage()
-      page.setDefaultNavigationTimeout(timeout)
-      return page
-    } catch (err) {
-      if (recover) throw err
-      return createPage(true)
-    }
-  }
+  const createPage = () =>
+    pRetry(
+      async () => {
+        const _browser = await browser
+        const context = incognito
+          ? await _browser.createIncognitoBrowserContext()
+          : _browser
+        const page = await context.newPage()
+        page.setDefaultNavigationTimeout(timeout)
+        return page
+      },
+      {
+        onFailedAttempt: respawn
+      }
+    )
 
   const wrapError = fn => async (...args) => {
     const page = await createPage()
