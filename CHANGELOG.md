@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.14.10](https://github.com/kikobeats/browserless/compare/v5.14.9...v5.14.10) (2019-10-01)
+
+
+### Bug Fixes
+
+* use puppeter over pupeteer-core if it's available ([080693b](https://github.com/kikobeats/browserless/commit/080693b))
+
+
+
+
+
 ## [5.14.9](https://github.com/kikobeats/browserless/compare/v5.14.8...v5.14.9) (2019-09-25)
 
 **Note:** Version bump only for package browserless
