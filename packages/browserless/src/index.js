@@ -12,11 +12,7 @@ const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
 const EVALUATE_HTML = page => page.content()
 
 module.exports = ({
-  puppeteer = require('require-one-of')([
-    'puppeteer-core',
-    'puppeteer',
-    'puppeteer-firefox'
-  ]),
+  puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   puppeteerDevices,
   incognito = false,
   timeout = 30000,
@@ -35,9 +31,7 @@ module.exports = ({
     pRetry(
       async () => {
         const _browser = await browser
-        const context = incognito
-          ? await _browser.createIncognitoBrowserContext()
-          : _browser
+        const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
         const page = await context.newPage()
         page.setDefaultNavigationTimeout(timeout)
         return page

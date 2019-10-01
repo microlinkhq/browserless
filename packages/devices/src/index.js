@@ -7,8 +7,8 @@ const getDevice = (devices, deviceName) =>
 
 module.exports = ({
   puppeteerDevices = require('require-one-of')([
-    'puppeteer-core/DeviceDescriptors',
     'puppeteer/DeviceDescriptors',
+    'puppeteer-core/DeviceDescriptors',
     'puppeteer-firefox/DeviceDescriptors'
   ])
 } = {}) => {
