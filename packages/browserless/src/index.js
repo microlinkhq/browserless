@@ -44,7 +44,7 @@ module.exports = ({
           debug('createPage:retry', {
             attemptNumber: err.attemptNumber
           })
-          respawn()
+          return respawn()
         }
       }
     )
