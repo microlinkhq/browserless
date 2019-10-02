@@ -26,14 +26,11 @@ const spawn = (puppeteer, launchOpts) =>
     ...launchOpts
   })
 
-const clean = async () =>
-  del(['/tmp/core.*', '/tmp/puppeteer_dev_profile*'], {
-    force: true
-  })
+const clean = () => del.sync(['/tmp/core.*', '/tmp/puppeteer_dev_profile*'], { force: true })
 
-const kill = async (pid, { cleanTmp = false } = {}) => {
+const kill = async (pid, { cleanup = false } = {}) => {
   await fkill(pid, { tree: true, force: true, silent: true })
-  const deletedPaths = cleanTmp ? await clean() : []
+  const deletedPaths = cleanup ? clean() : []
   return { pid, deletedPaths }
 }
 

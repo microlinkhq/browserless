@@ -21,7 +21,7 @@ module.exports = ({
   let browser = driver.spawn(puppeteer, launchOpts)
 
   const respawn = async () => {
-    await pReflect(driver.destroy(await browser, { cleanTmp: true }))
+    await pReflect(driver.destroy(await browser, { cleanup: true }))
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
