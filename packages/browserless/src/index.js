@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -21,7 +22,8 @@ module.exports = ({
   let browser = driver.spawn(puppeteer, launchOpts)
 
   const respawn = async () => {
-    await pReflect(driver.destroy(await browser, { cleanup: true }))
+    const destroyResult = await driver.destroy(await browser, { cleanup: true })
+    debug('destroy', destroyResult)
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
@@ -31,13 +33,19 @@ module.exports = ({
     pRetry(
       async () => {
         const _browser = await browser
+        debug('createPage', { pid: _browser.process().pid })
         const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
         const page = await context.newPage()
         page.setDefaultNavigationTimeout(timeout)
         return page
       },
       {
-        onFailedAttempt: respawn
+        onFailedAttempt: err => {
+          debug('createPage:retry', {
+            attemptNumber: err.attemptNumber
+          })
+          respawn()
+        }
       }
     )
 
