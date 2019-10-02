@@ -28,9 +28,9 @@
   ],
   "dependencies": {
     "beauty-error": "~1.2.2",
-    "is-buffer": "~2.0.3",
+    "is-buffer": "~2.0.4",
     "meow": "~5.0.0",
-    "ora": "~4.0.1",
+    "ora": "~4.0.2",
     "pretty-bytes": "~5.3.0",
     "process-stats": "~3.1.1"
   },
