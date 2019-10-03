@@ -37,6 +37,7 @@
     "arrify": "~2.0.1",
     "debug-logfmt": "~1.0.3",
     "del": "~5.1.0",
+    "import-lazy": "~4.0.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.1.0",
     "p-timeout": "~3.2.0",
