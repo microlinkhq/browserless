@@ -2,6 +2,7 @@
 
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
+const importLazy = require('import-lazy')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -63,9 +64,11 @@ module.exports = ({
       return fn(page, response)
     })
 
-  const pdf = wrapError(require('@browserless/pdf')({ goto }))
+  const pdf = wrapError(page => importLazy(require('@browserless/pdf')({ goto }))(page))
 
-  const screenshot = wrapError(require('@browserless/screenshot')({ goto }))
+  const screenshot = wrapError(page =>
+    importLazy(require('@browserless/screenshot')({ goto }))(page)
+  )
 
   return {
     // low level methods
