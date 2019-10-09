@@ -24,7 +24,7 @@
     "threads"
   ],
   "dependencies": {
-    "debug-logfmt": "~1.0.3",
+    "debug-logfmt": "~1.0.4",
     "generic-pool": "~3.7.1"
   },
   "devDependencies": {
