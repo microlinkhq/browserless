@@ -32,7 +32,7 @@
     "@cliqz/adblocker-puppeteer": "~1.3.1",
     "debug-logfmt": "~1.0.4",
     "got": "~9.6.0",
-    "tldts": "~5.5.0"
+    "tldts": "~5.6.0"
   },
   "devDependencies": {
     "ava": "latest"
