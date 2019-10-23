@@ -13,7 +13,7 @@ const engine = PuppeteerBlocker.deserialize(
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
-const WAIT_UNTIL = ['networkidle0']
+const WAIT_UNTIL = ['load']
 
 const parseCookies = (url, str) => {
   const domain = `.${getDomain(url)}`
