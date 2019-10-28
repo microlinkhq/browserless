@@ -12,7 +12,7 @@ require('@browserless/test')(createBrowserless)
     const error = await t.throwsAsync(browserless[method]('https://example.com', { timeout }))
 
     t.is(error.name, 'TimeoutError')
-    t.is(error.message, `Navigation Timeout Exceeded: ${timeout}ms exceeded`)
+    t.is(error.message, `Navigation timeout of ${timeout} ms exceeded`)
 
     const browser = await browserless.browser
     const pages = await browser.pages()
