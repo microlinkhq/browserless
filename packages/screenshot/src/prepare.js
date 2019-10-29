@@ -74,8 +74,10 @@ const doDisableAnimations = () => {
   *,
   ::before,
   ::after {
-    animation: initial !important;
-    transition: initial !important;
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
   }
 `
   const style = document.createElement('style')
