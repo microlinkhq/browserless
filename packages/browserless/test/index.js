@@ -7,9 +7,11 @@ require('@browserless/test')(createBrowserless)
 ;['pdf', 'screenshot', 'html', 'text'].forEach(method => {
   test(`.${method} wrap errors`, async t => {
     const browserless = createBrowserless()
-    const timeout = 500
+    const timeout = 50
 
-    const error = await t.throwsAsync(browserless[method]('https://example.com', { timeout }))
+    const error = await t.throwsAsync(
+      browserless[method]('https://example.com', { timeout })
+    )
 
     t.is(error.name, 'TimeoutError')
     t.is(error.message, `Navigation timeout of ${timeout} ms exceeded`)
