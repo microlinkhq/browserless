@@ -5,7 +5,6 @@ const browserless = createBrowserless()
 
 require('./main')(async (url, opts) => {
   return {
-    output: await browserless.html(url, opts),
-    isImage: false
+    output: await browserless.html(url, opts)
   }
 })
