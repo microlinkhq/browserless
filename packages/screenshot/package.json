@@ -29,9 +29,9 @@
   "dependencies": {
     "@browserless/goto": "^5.15.3",
     "got": "~9.6.0",
-    "is-url-http": "~1.2.0",
+    "is-url-http": "~1.2.4",
     "p-reflect": "~2.1.0",
-    "sharp": "~0.23.1",
+    "sharp": "~0.23.2",
     "svg-gradient": "~1.0.2"
   },
   "engines": {

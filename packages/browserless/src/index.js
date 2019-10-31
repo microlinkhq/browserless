@@ -41,10 +41,8 @@ module.exports = ({
         return page
       },
       {
-        onFailedAttempt: err => {
-          debug('createPage:retry', {
-            attemptNumber: err.attemptNumber
-          })
+        onFailedAttempt: ({ attemptNumber }) => {
+          debug('createPage:retry', { attemptNumber })
           return respawn()
         }
       }
