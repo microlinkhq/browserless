@@ -11,6 +11,10 @@ stages:
   - name: Release
     if: branch = master AND commit_message !~ /(release|no-release)/
 
+install:
+  - npm config set package-lock false
+  - npm install
+
 jobs:
   include:
     - stage: Release
@@ -18,6 +22,7 @@ jobs:
         - git config user.email ${GITHUB_EMAIL:-"travis@travis-ci.org"}
         - git config user.name ${GITHUB_USER:-"Travis CI"}
         - git remote set-url origin https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
+        - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> $HOME/.npmrc 2> /dev/null
         - git checkout master
       deploy:
         skip_cleanup: true

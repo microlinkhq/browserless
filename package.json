@@ -45,7 +45,6 @@
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
     "browser-sync": "latest",
-    "ci-publish": "latest",
     "concurrently": "latest",
     "finepack": "latest",
     "git-authors-cli": "latest",
