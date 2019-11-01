@@ -52,8 +52,12 @@ module.exports = (opts, launchOpts) => {
 
   const pool = genericPool.createPool(factory, { ...POOL_OPTS, ...opts })
 
-  return fn => {
+  const decorate = fn => {
     debug('acquire browser', poolInfo(pool))
     return pool.use(fn)
   }
+
+  decorate.pool = pool
+
+  return decorate
 }
