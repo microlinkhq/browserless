@@ -113,6 +113,10 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       ...args
     } = opts
 
+    page.on('dialog', async dialog => {
+      await dialog.dismiss()
+    })
+
     await goto(page, { url, device, ...args })
 
     if (disableAnimations) {
