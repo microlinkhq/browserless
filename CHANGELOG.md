@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.16.0](https://github.com/kikobeats/browserless/compare/v5.15.5...v5.16.0) (2019-11-07)
+
+
+### Bug Fixes
+
+* auto release ([fd4ea55](https://github.com/kikobeats/browserless/commit/fd4ea553566c87182d4c8afeaa86ebea029cb2ce))
+
+
+### Features
+
+* close alert before taking a screenshot ([#108](https://github.com/kikobeats/browserless/issues/108)) ([b67509b](https://github.com/kikobeats/browserless/commit/b67509b4c0ef91ce5e591caad0747b954c63242c))
+
+
+
+
+
 ## [5.15.5](https://github.com/kikobeats/browserless/compare/v5.15.4...v5.15.5) (2019-10-31)
 
 **Note:** Version bump only for package browserless
