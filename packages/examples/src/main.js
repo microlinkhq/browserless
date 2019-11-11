@@ -2,7 +2,7 @@
 
 const beautyError = require('beauty-error')
 const prettyBytes = require('pretty-bytes')
-const procStats = require('process-stats')
+const procStats = require('process-stats')()
 const isBuffer = require('is-buffer')
 const termImg = require('term-img')
 const { URL } = require('url')
