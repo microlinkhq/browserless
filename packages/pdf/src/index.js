@@ -20,7 +20,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       ...args
     } = opts
 
-    await page.emulateMedia(media)
+    await page.emulateMediaType(media)
     await goto(page, { url, ...args })
 
     return page.pdf({
