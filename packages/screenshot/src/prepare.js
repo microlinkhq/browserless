@@ -99,19 +99,24 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
   return async (page, url, opts = {}) => {
     const {
-      fullPage,
       device = 'macbook pro 13',
       disableAnimations = true,
-      hide,
+      overlay,
       click,
+      element,
+      fullPage,
+      hide,
       modules,
       scripts,
-      styles,
-      element,
       scrollTo,
-      overlay,
+      styles,
       ...args
     } = opts
+
+    if (overlay.browser) {
+      const value = overlay.browser.includes('dark') ? 'dark' : 'light'
+      await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value }])
+    }
 
     page.on('dialog', async dialog => {
       await dialog.dismiss()
