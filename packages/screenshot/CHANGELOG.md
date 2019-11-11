@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.17.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.16.1...v5.17.0) (2019-11-11)
+
+
+### Features
+
+* add color schema detection ([ca55c0d](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/ca55c0d3131b42ac86ad8079074f09b182065b0c)), closes [#101](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/101)
+
+
+
+
+
 # [5.16.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.15.5...v5.16.0) (2019-11-07)
 
 

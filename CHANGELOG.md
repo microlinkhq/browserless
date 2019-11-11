@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.17.0](https://github.com/kikobeats/browserless/compare/v5.16.1...v5.17.0) (2019-11-11)
+
+
+### Bug Fixes
+
+* update interface ([26744cd](https://github.com/kikobeats/browserless/commit/26744cd45be2dc1e608ef90b7d03c89ea6480f30))
+
+
+### Features
+
+* add color schema detection ([ca55c0d](https://github.com/kikobeats/browserless/commit/ca55c0d3131b42ac86ad8079074f09b182065b0c)), closes [#101](https://github.com/kikobeats/browserless/issues/101)
+
+
+
+
+
 ## [5.16.1](https://github.com/kikobeats/browserless/compare/v5.16.0...v5.16.1) (2019-11-11)
 
 **Note:** Version bump only for package browserless
