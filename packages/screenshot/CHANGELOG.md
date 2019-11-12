@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.17.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.17.1...v5.17.2) (2019-11-12)
+
+
+### Bug Fixes
+
+* wrap emulateMediaFeatures with pReflect ([ef27279](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/ef27279f0b3f5b8a7d29677924f4d5e08a301b0c))
+
+
+
+
+
 ## [5.17.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.17.0...v5.17.1) (2019-11-12)
 
 **Note:** Version bump only for package @browserless/screenshot
