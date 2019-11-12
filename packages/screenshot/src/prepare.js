@@ -115,7 +115,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
     if (overlay.browser) {
       const value = overlay.browser.includes('dark') ? 'dark' : 'light'
-      await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value }])
+      await pReflect(page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value }]))
     }
 
     page.on('dialog', async dialog => {
