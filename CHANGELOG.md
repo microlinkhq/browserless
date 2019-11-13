@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.17.3](https://github.com/kikobeats/browserless/compare/v5.17.2...v5.17.3) (2019-11-13)
+
+
+### Bug Fixes
+
+* empty object check ([9433126](https://github.com/kikobeats/browserless/commit/9433126d047acc29e3e850dcbed649caff42218f))
+
+
+
+
+
 ## [5.17.2](https://github.com/kikobeats/browserless/compare/v5.17.1...v5.17.2) (2019-11-12)
 
 
