@@ -40,7 +40,7 @@ module.exports = gotoOpts => {
     await preparePage(page, url, { overlay, ...opts })
     const screenshot = await page.screenshot({ ...opts, type })
 
-    if (!overlay) return screenshot
+    if (Object.keys(overlay).length === 0) return screenshot
 
     const { browser: browserSkin, background } = overlay
     let image = await sharp(await getBackground(background))
