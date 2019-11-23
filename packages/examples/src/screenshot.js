@@ -38,7 +38,7 @@ require('./main')(async (url, opts) => {
   }
 
   if (opts.browser) {
-    set(opts, 'overlay.browser', `safari-${opts.browser}`)
+    set(opts, 'overlay.browser', opts.browser)
   }
 
   return {

@@ -292,7 +292,7 @@ After the screenshot has been taken, this option allows you to place the screens
 
 You can configure the overlay specifying:
 
-- **browser**: It sets the browser image overlay to use, being `safari-light` and ` safari-dark` supported values.
+- **browser**: It sets the browser image overlay to use, being `light` and `dark` supported values.
 - **background**: It sets the background to use, being supported to pass:
 
 	- An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
@@ -304,7 +304,7 @@ You can configure the overlay specifying:
   const buffer = await browserless.screenshot(url.toString(), {
     hide: ['.crisp-client', '#cookies-policy'],
     overlay: {
-      browser: 'safari-dark',
+      browser: 'dark',
       background: 'linear-gradient(45deg, rgba(255,18,223,1) 0%, rgba(69,59,128,1) 66%, rgba(69,59,128,1) 100%)'
     }
   })

@@ -8,13 +8,10 @@ const got = require('got')
 
 const createPreparePage = require('./prepare')
 
-const browserOverlay = ['safari-light', 'safari-dark'].reduce(
-  (acc, key) => ({
-    ...acc,
-    [key]: path.resolve(__dirname, `browser/${key}.png`)
-  }),
-  {}
-)
+const browserOverlay = {
+  dark: path.resolve(__dirname, 'browser/dark.png'),
+  light: path.resolve(__dirname, 'browser/light.png')
+}
 
 const getBackground = async (bg = 'transparent') => {
   if (isHttpUrl(bg)) {
@@ -33,6 +30,7 @@ const createSvgBackground = css => svgGradient(css, { width: '1388px', height: '
 
 module.exports = gotoOpts => {
   const preparePage = createPreparePage(gotoOpts)
+
   return page => async (
     url,
     { overlay = {}, type = 'png', direction = 'vertical', ...opts } = {}
