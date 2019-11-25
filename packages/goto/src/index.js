@@ -67,14 +67,18 @@ module.exports = deviceOpts => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
       engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
-      engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
+      engine.on('request-redirected', ({ url }) =>
+        debug('adblock:redirect', url)
+      )
     }
 
     if (media) {
       await page.emulateMediaType(media)
     }
 
-    if (disableAnimations) page.evaluate(doDisableAnimations)
+    if (disableAnimations) {
+      await page.evaluate(doDisableAnimations)
+    }
 
     if (Object.keys(headers).length !== 0) {
       debug('headers', headers)
@@ -87,7 +91,8 @@ module.exports = deviceOpts => {
       await page.setCookie(...cookies)
     }
 
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } =
+      getDevice(device) || {}
 
     const userAgent = headers['user-agent'] || deviceUserAgent
 
