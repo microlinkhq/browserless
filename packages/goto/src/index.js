@@ -13,8 +13,6 @@ const engine = PuppeteerBlocker.deserialize(
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
-const WAIT_UNTIL = ['load']
-
 const parseCookies = (url, str) => {
   const domain = `.${getDomain(url)}`
   return str.split(';').reduce((acc, str) => {
@@ -58,7 +56,7 @@ module.exports = deviceOpts => {
       adblock = true,
       headers = {},
       waitFor = 0,
-      waitUntil = WAIT_UNTIL,
+      waitUntil = 'load',
       disableAnimations = true,
       viewport: fallbackViewport,
       ...args
@@ -67,17 +65,7 @@ module.exports = deviceOpts => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
       engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
-      engine.on('request-redirected', ({ url }) =>
-        debug('adblock:redirect', url)
-      )
-    }
-
-    if (media) {
-      await page.emulateMediaType(media)
-    }
-
-    if (disableAnimations) {
-      await page.evaluate(doDisableAnimations)
+      engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
     }
 
     if (Object.keys(headers).length !== 0) {
@@ -91,8 +79,7 @@ module.exports = deviceOpts => {
       await page.setCookie(...cookies)
     }
 
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } =
-      getDevice(device) || {}
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
 
     const userAgent = headers['user-agent'] || deviceUserAgent
 
@@ -102,12 +89,21 @@ module.exports = deviceOpts => {
     }
 
     const viewport = { ...deviceViewport, ...fallbackViewport }
+
     if (!isEmpty(viewport)) {
       debug('viewport', viewport)
       await page.setViewport(viewport)
     }
 
+    if (media) {
+      await page.emulateMediaType(media)
+    }
+
     const response = await page.goto(url, { waitUntil, ...args })
+
+    if (disableAnimations) {
+      await page.evaluate(doDisableAnimations)
+    }
 
     if (waitFor) {
       debug({ waitFor })
