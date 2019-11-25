@@ -30,6 +30,22 @@ const parseCookies = (url, str) => {
   }, [])
 }
 
+const doDisableAnimations = () => {
+  const rule = `
+  *,
+  ::before,
+  ::after {
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+  }
+`
+  const style = document.createElement('style')
+  if (document.body) document.body.append(style)
+  if (style.sheet) style.sheet.insertRule(rule)
+}
+
 module.exports = deviceOpts => {
   const { devices, getDevice } = createDevices(deviceOpts)
 
@@ -38,10 +54,12 @@ module.exports = deviceOpts => {
     {
       url,
       device,
+      media,
       adblock = true,
       headers = {},
       waitFor = 0,
       waitUntil = WAIT_UNTIL,
+      disableAnimations = true,
       viewport: fallbackViewport,
       ...args
     }
@@ -49,7 +67,17 @@ module.exports = deviceOpts => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
       engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
-      engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
+      engine.on('request-redirected', ({ url }) =>
+        debug('adblock:redirect', url)
+      )
+    }
+
+    if (media) {
+      await page.emulateMediaType(media)
+    }
+
+    if (disableAnimations) {
+      await page.evaluate(doDisableAnimations)
     }
 
     if (Object.keys(headers).length !== 0) {
@@ -63,7 +91,8 @@ module.exports = deviceOpts => {
       await page.setCookie(...cookies)
     }
 
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
+    const { userAgent: deviceUserAgent, viewport: deviceViewport } =
+      getDevice(device) || {}
 
     const userAgent = headers['user-agent'] || deviceUserAgent
 

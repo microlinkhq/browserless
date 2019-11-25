@@ -10,7 +10,7 @@
 [![Dev Dependencies Status](https://img.shields.io/david/dev/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> A [puppeter](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
+> A [puppeteer](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
 
 ## Why
 
@@ -131,7 +131,16 @@ const browserless = require('browserless')
 
 #### options
 
-See [browserless#goto](/#gotopage-options).
+This method use the following options by default:
+
+```js
+{
+  disableAnimations = false,
+  waitUntil: 'domcontentloaded'
+}
+```
+
+See [browserless.goto](/#gotopage-options) to know all the options and values supported.
 
 ### .text(url, options)
 
@@ -149,7 +158,16 @@ const browserless = require('browserless')
 
 #### options
 
-See [browserless#goto](/#gotopage-options).
+This method use the following options by default:
+
+```js
+{
+  disableAnimations = false,
+  waitUntil: 'domcontentloaded'
+}
+```
+
+See [browserless.goto](/#gotopage-options) to know all the options and values supported.
 
 ### .pdf(url, options)
 
@@ -167,16 +185,57 @@ const browserless = require('browserless')
 
 #### options
 
-See [browserless#goto](/#gotopage-options).
+This method use the following options by default:
+
+```js
+{
+  disableAnimations: true,
+  margin: getMargin('0.25cm'),
+  media: 'screen',
+  printBackground: true,
+  scale = 0.65,
+  waitUntil: 'networkidle0'
+}
+```
+
+See [browserless.goto](/#gotopage-options) to know all the options and values supported.
+
+Also, any [page.pdf](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagepdfoptions) option is supported.
 
 Additionally, you can setup:
 
-##### media
+##### margin
 
-type: `string`</br>
-default: `'screen'`
+type: `string` | `string[]`</br>
+default: `'0.25cm'`
 
-Changes the CSS media type of the page using [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
+It sets the paper margins. 
+
+You can pass an `object` object specifing each corner side of the paper:
+
+```js
+;(async () => {
+  const buffer = await browserless.pdf(url.toString(), {
+    margin: {
+      top: '0.25cm',
+      bottom: '0.25cm',
+      left: '0.25cm',
+      right: '0.25cm'
+    }
+  })
+})()
+```
+
+Or, in case you pass an `string`, it will be used for all the sides:
+
+```js
+;(async () => {
+  const buffer = await browserless.pdf(url.toString(), { 
+    margin: '0.25cm' 
+    }
+  })
+})()
+```
 
 ### .screenshot(url, options)
 
@@ -194,9 +253,17 @@ const browserless = require('browserless')
 
 #### options
 
-See [browserless#goto](/#gotopage-options).
+See [browserless.goto](/#gotopage-options).
+
+Also, any [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagescreenshotoptions) option is supported.
 
 Additionally, you can setup:
+
+##### click
+
+type: `string` | `string[]`</br>
+
+Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
 ##### hide
 
@@ -216,19 +283,6 @@ Can be useful for cleaning up the page.
 ```
 
 This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
-
-##### click
-
-type: `string` | `string[]`</br>
-
-Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
-
-##### disableAnimations
-
-Type: `boolean`<br>
-Default: `true`
-
-Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
 
 ##### modules
 
@@ -315,7 +369,7 @@ You can configure the overlay specifying:
 
 List of all available devices preconfigured with `deviceName`, `viewport` and `userAgent` settings.
 
-These devices are used for emulation purposes.
+These devices are used for emulation purposes. It extends from [puppeteer.devices](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#puppeteerdevices).
 
 #### .getDevice(deviceName)
 
@@ -356,9 +410,11 @@ const browserless = require('browserless')
 })()
 ```
 
-### .evaluate(page, response)
+### .evaluate(fn, gotoOpts)
 
 It exposes an interface for creating your own evaluate function, passing you the `page` and `response`.
+
+The `fn` will receive `page` and `response` as arguments:
 
 ```js
 const browserless = require('browserless')()
@@ -384,11 +440,28 @@ const getUrlInfo = browserless.evaluate((page, response) => ({
 
 Note you don't need to close the page; It will be done under the hood.
 
-Internally the method performs a [.goto](#gotopage-options).
+Internally, the method performs a [browserless.goto](#gotopage-options), being possible to pass extra arguments as second parameter:
+
+```js
+const browserless = require('browserless')()
+
+const getText = browserless.evaluate(
+  page => page.evaluate(() => document.body.innerText), {
+    waitUntil: 'domcontentloaded',
+    disableAnimations: false
+  })
+
+;(async () => {
+  const url = 'https://example.com'
+  const text = await getText(url)
+
+  console.log(text)
+})()
+```
 
 ### .goto(page, options)
 
-It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), blocking [ads and trackers](https://www.npmjs.com/package/@cliqz/adblocker) requests and other requests based on `resourceType`.
+It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), using a builtin [adblocker](https://www.npmjs.com/package/@cliqz/adblocker).
 
 ```js
 const browserless = require('browserless')
@@ -405,18 +478,26 @@ Any option passed here will bypass to [page.goto](https://github.com/GoogleChrom
 
 Additionally, you can setup:
 
-##### url
-
-type: `string`
-
-The target URL
-
 ##### adblock
 
 type: `boolean`</br>
 default: `true`
 
 It will be abort requests detected as ads.
+
+##### device
+
+type: `string`</br>
+default: `'macbook pro 13'`
+
+It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
+
+##### disableAnimations
+
+Type: `boolean`<br>
+Default: `true`
+
+Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
 
 ##### headers
 
@@ -439,6 +520,23 @@ const browserless = require('browserless')
 })()
 ```
 
+##### media
+
+type: `string`</br>
+default: `'screen'`
+
+Changes the CSS media type of the page using [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
+
+##### url
+
+type: `string`
+
+The target URL.
+
+##### viewport
+
+It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
+
 ##### waitFor
 
 type:`string|function|number`</br>
@@ -452,16 +550,6 @@ type: `string` | `string[]`</br>
 default: `['networkidle0']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
-
-##### viewport
-
-It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
-##### device
-
-type: `string`</br>
-default: `'macbook pro 13'`
-
-It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
 
 ### .page()
 

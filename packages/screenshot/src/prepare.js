@@ -69,22 +69,6 @@ const scrollToElement = (element, options) => {
   }
 }
 
-const doDisableAnimations = () => {
-  const rule = `
-  *,
-  ::before,
-  ::after {
-    animation-delay: 0s !important;
-    transition-delay: 0s !important;
-    animation-duration: 0s !important;
-    transition-duration: 0s !important;
-  }
-`
-  const style = document.createElement('style')
-  if (document.body) document.body.append(style)
-  if (style.sheet) style.sheet.insertRule(rule)
-}
-
 const hideElements = elements => {
   for (const element of elements) {
     if (element) element.style.display = 'none'
@@ -100,7 +84,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   return async (page, url, opts = {}) => {
     const {
       device = 'macbook pro 13',
-      disableAnimations = true,
       overlay,
       click,
       element,
@@ -123,10 +106,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     })
 
     await goto(page, { url, device, ...args })
-
-    if (disableAnimations) {
-      await pReflect(page.evaluate(doDisableAnimations))
-    }
 
     if (hide) {
       await Promise.all(

@@ -3,7 +3,9 @@
 const createBrowserless = require('browserless')
 const browserless = createBrowserless()
 
-require('./main')(async url => {
-  const pdf = await browserless.pdf(url.toString())
-  return pdf
+require('./main')(async (url, opts) => {
+  return {
+    output: await browserless.pdf(url, opts),
+    isImage: false
+  }
 })

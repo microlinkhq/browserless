@@ -12,6 +12,18 @@
     }
   },
   {
+    "name": "Macbook Pro 13 retina",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
+    "viewport": {
+      "width": 1280,
+      "height": 800,
+      "deviceScaleFactor": 2,
+      "isMobile": false,
+      "hasTouch": false,
+      "isLandscape": false
+    }
+  },
+  {
     "name": "Macbook Pro 15",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -24,11 +36,47 @@
     }
   },
   {
-    "name": "iMac 21.5",
+    "name": "Macbook Pro 15 retina",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
+    "viewport": {
+      "width": 1440,
+      "height": 900,
+      "deviceScaleFactor": 2,
+      "isMobile": false,
+      "hasTouch": false,
+      "isLandscape": false
+    }
+  },
+  {
+    "name": "Macbook Pro 16",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
+    "viewport": {
+      "width": 3072,
+      "height": 1920,
+      "deviceScaleFactor": 1,
+      "isMobile": false,
+      "hasTouch": false,
+      "isLandscape": false
+    }
+  },
+  {
+    "name": "iMac 21",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1980,
       "height": 1080,
+      "deviceScaleFactor": 1,
+      "isMobile": false,
+      "hasTouch": false,
+      "isLandscape": false
+    }
+  },
+  {
+    "name": "iMac 21 4k",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
+    "viewport": {
+      "width": 4096,
+      "height": 2304,
       "deviceScaleFactor": 1,
       "isMobile": false,
       "hasTouch": false,
@@ -42,6 +90,18 @@
       "width": 2560,
       "height": 1440,
       "deviceScaleFactor": 1,
+      "isMobile": false,
+      "hasTouch": false,
+      "isLandscape": false
+    }
+  },
+  {
+    "name": "iMac 27 5K",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
+    "viewport": {
+      "width": 2560,
+      "height": 1440,
+      "deviceScaleFactor": 2,
       "isMobile": false,
       "hasTouch": false,
       "isLandscape": false
