@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.18.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v5.17.5...v5.18.0) (2019-11-25)
+
+
+### Features
+
+* extends devices & setup better defaults ([#111](https://github.com/kikobeats/browserless/tree/master/packages/devices/issues/111)) ([1b6b3ca](https://github.com/kikobeats/browserless/tree/master/packages/devices/commit/1b6b3caabfc30b6a01e0e560519cfd037133f478))
+
+
+
+
+
 ## [5.14.10](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v5.14.9...v5.14.10) (2019-10-01)
 
 
