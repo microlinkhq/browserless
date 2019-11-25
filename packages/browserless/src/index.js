@@ -9,10 +9,6 @@ const pRetry = require('p-retry')
 
 const driver = require('./browser')
 
-const EVALUATE_TEXT = page => page.evaluate(() => document.body.innerText)
-
-const EVALUATE_HTML = page => page.content()
-
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   puppeteerDevices,
@@ -56,9 +52,9 @@ module.exports = ({
     return result.value
   }
 
-  const evaluate = fn =>
-    wrapError(page => async (url, opts = {}) => {
-      const response = await goto(page, { url, ...opts })
+  const evaluate = (fn, gotoOpts) =>
+    wrapError(page => async (url, opts) => {
+      const response = await goto(page, { url, ...gotoOpts, ...opts })
       return fn(page, response)
     })
 
@@ -78,11 +74,17 @@ module.exports = ({
     // high level methods
     evaluate,
     goto,
-    html: evaluate(EVALUATE_HTML),
+    html: evaluate(page => page.content(), {
+      waitUntil: 'domcontentloaded',
+      disableAnimations: false
+    }),
     page: createPage,
     pdf,
     screenshot,
-    text: evaluate(EVALUATE_TEXT),
+    text: evaluate(page => page.evaluate(() => document.body.innerText), {
+      waitUntil: 'domcontentloaded',
+      disableAnimations: false
+    }),
     devices: goto.devices
   }
 }
