@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.18.1](https://github.com/kikobeats/browserless/compare/v5.18.0...v5.18.1) (2019-11-25)
+
+
+### Bug Fixes
+
+* default opts ([b393534](https://github.com/kikobeats/browserless/commit/b393534f93dfd89b8ec2324a5cdf3767fb733567))
+* ensure to call disableAnimations after goto ([d73c964](https://github.com/kikobeats/browserless/commit/d73c9643c7c3253f90fbb5bcdcb86ee369b75c19))
+* linter ([2614c5c](https://github.com/kikobeats/browserless/commit/2614c5c9a802518b11f4c25e8d37fd5713c8d2b8))
+
+
+
+
+
 # [5.18.0](https://github.com/kikobeats/browserless/compare/v5.17.5...v5.18.0) (2019-11-25)
 
 

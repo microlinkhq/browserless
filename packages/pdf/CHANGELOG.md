@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.18.1](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.18.0...v5.18.1) (2019-11-25)
+
+
+### Bug Fixes
+
+* default opts ([b393534](https://github.com/kikobeats/browserless/tree/master/packages/pool/commit/b393534f93dfd89b8ec2324a5cdf3767fb733567))
+
+
+
+
+
 # [5.18.0](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v5.17.5...v5.18.0) (2019-11-25)
 
 
