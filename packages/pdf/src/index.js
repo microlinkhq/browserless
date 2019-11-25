@@ -5,13 +5,13 @@ const createGoto = require('@browserless/goto')
 const getMargin = unit =>
   typeof str === 'string'
     ? {
-        margin: {
-          top: unit,
-          right: unit,
-          bottom: unit,
-          left: unit
-        }
+      margin: {
+        top: unit,
+        right: unit,
+        bottom: unit,
+        left: unit
       }
+    }
     : unit
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
