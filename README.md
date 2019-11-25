@@ -135,7 +135,7 @@ This method use the following options by default:
 
 ```js
 {
-  disableAnimations = false,
+  disableAnimations: false,
   waitUntil: 'domcontentloaded'
 }
 ```
@@ -162,7 +162,7 @@ This method use the following options by default:
 
 ```js
 {
-  disableAnimations = false,
+  disableAnimations: false,
   waitUntil: 'domcontentloaded'
 }
 ```
@@ -190,10 +190,10 @@ This method use the following options by default:
 ```js
 {
   disableAnimations: true,
-  margin: getMargin('0.25cm'),
+  margin: '0.35cm',
   media: 'print',
   printBackground: true,
-  scale = 0.65,
+  scale: 0.65,
   waitUntil: 'networkidle2'
 }
 ```
@@ -207,7 +207,7 @@ Additionally, you can setup:
 ##### margin
 
 type: `string` | `string[]`</br>
-default: `'0.25cm'`
+default: `'0.35cm'`
 
 It sets the paper margins. 
 
@@ -217,10 +217,10 @@ You can pass an `object` object specifing each corner side of the paper:
 ;(async () => {
   const buffer = await browserless.pdf(url.toString(), {
     margin: {
-      top: '0.25cm',
-      bottom: '0.25cm',
-      left: '0.25cm',
-      right: '0.25cm'
+      top: '0.35cm',
+      bottom: '0.35cm',
+      left: '0.35cm',
+      right: '0.35cm'
     }
   })
 })()
@@ -230,9 +230,8 @@ Or, in case you pass an `string`, it will be used for all the sides:
 
 ```js
 ;(async () => {
-  const buffer = await browserless.pdf(url.toString(), { 
-    margin: '0.25cm' 
-    }
+  const buffer = await browserless.pdf(url.toString(), {
+    margin: '0.35cm'
   })
 })()
 ```
