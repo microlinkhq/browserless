@@ -2,31 +2,31 @@
 
 const createGoto = require('@browserless/goto')
 
-const getMargin = unit =>
-  typeof unit === 'string'
-    ? {
-      top: unit,
-      right: unit,
-      bottom: unit,
-      left: unit
-    }
-    : unit
+const getMargin = unit => {
+  if (!unit) return unit
+  if (typeof unit === 'object') return unit
+  return {
+    top: unit,
+    right: unit,
+    bottom: unit,
+    left: unit
+  }
+}
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
   return page => async (
     url,
-    {
-      margin = getMargin('0.25cm'),
-      scale = 0.65,
-      media = 'screen',
-      printBackground = true,
-      waitUntil = ['networkidle0'],
-      ...opts
-    }
+    { margin = '0.35cm', scale = 0.65, printBackground = true, waitUntil = 'networkidle2', ...opts }
   ) => {
-    await goto(page, { ...opts, url, media, waitUntil })
-    return page.pdf({ ...opts, margin, printBackground, scale })
+    await goto(page, { ...opts, url, waitUntil })
+
+    return page.pdf({
+      ...opts,
+      margin: getMargin(margin),
+      printBackground,
+      scale
+    })
   }
 }

@@ -191,10 +191,10 @@ This method use the following options by default:
 {
   disableAnimations: true,
   margin: getMargin('0.25cm'),
-  media: 'screen',
+  media: 'print',
   printBackground: true,
   scale = 0.65,
-  waitUntil: 'networkidle0'
+  waitUntil: 'networkidle2'
 }
 ```
 
@@ -547,7 +547,7 @@ Wait a quantity of time, selector or function using [page.waitFor](https://githu
 ##### waitUntil
 
 type: `string` | `string[]`</br>
-default: `['networkidle0']`
+default: `['networkidle2']`
 
 Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
 
