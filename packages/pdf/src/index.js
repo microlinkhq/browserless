@@ -18,7 +18,13 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
   return page => async (
     url,
-    { margin = '0.35cm', scale = 0.65, printBackground = true, waitUntil = 'networkidle2', ...opts }
+    {
+      margin = '0.35cm',
+      scale = 0.65,
+      printBackground = true,
+      waitUntil = 'networkidle2',
+      ...opts
+    } = {}
   ) => {
     await goto(page, { ...opts, url, waitUntil })
 
