@@ -259,7 +259,7 @@ This method use the following options by default:
 ```js
 {
   disableAnimations: true,
-  device: 'macbook pro 13',
+  device: 'macbook pro 13'
 }
 ```
 
