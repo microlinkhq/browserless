@@ -89,7 +89,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   return async (page, url, opts = {}) => {
     const {
       device = 'macbook pro 13',
-      waitUntil = ['load', 'networkidle2'],
       overlay,
       click,
       element,
@@ -111,7 +110,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       await dialog.dismiss()
     })
 
-    await goto(page, { url, device, waitUntil, ...args })
+    await goto(page, { url, device, ...args })
 
     if (hide) {
       await Promise.all(

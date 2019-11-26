@@ -74,15 +74,11 @@ module.exports = ({
     // high level methods
     evaluate,
     goto,
-    html: evaluate(page => page.content(), {
-      waitUntil: 'domcontentloaded',
-      disableAnimations: false
-    }),
+    html: evaluate(page => page.content(), { disableAnimations: false }),
     page: createPage,
     pdf,
     screenshot,
     text: evaluate(page => page.evaluate(() => document.body.innerText), {
-      waitUntil: 'domcontentloaded',
       disableAnimations: false
     }),
     devices: goto.devices

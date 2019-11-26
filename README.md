@@ -135,8 +135,7 @@ This method use the following options by default:
 
 ```js
 {
-  disableAnimations: false,
-  waitUntil: 'domcontentloaded'
+  disableAnimations: false
 }
 ```
 
@@ -162,8 +161,7 @@ This method use the following options by default:
 
 ```js
 {
-  disableAnimations: false,
-  waitUntil: 'domcontentloaded'
+  disableAnimations: false
 }
 ```
 
@@ -193,8 +191,7 @@ This method use the following options by default:
   margin: '0.35cm',
   media: 'print',
   printBackground: true,
-  scale: 0.65,
-  waitUntil: ['load', 'networkidle2']
+  scale: 0.65
 }
 ```
 
@@ -263,7 +260,6 @@ This method use the following options by default:
 {
   disableAnimations: true,
   device: 'macbook pro 13',
-  waitUntil: ['load', 'networkidle2']
 }
 ```
 
@@ -563,13 +559,6 @@ type:`string|function|number`</br>
 default: `0`
 
 Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
-
-##### waitUntil
-
-type: `string` | `string[]`</br>
-default: `['networkidle2']`
-
-Specify a list of events until consider navigation succeeded, using [page.waitForNavigation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitfornavigationoptions).
 
 ### .page()
 

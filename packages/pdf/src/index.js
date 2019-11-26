@@ -18,15 +18,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
   return page => async (
     url,
-    {
-      margin = '0.35cm',
-      scale = 0.65,
-      printBackground = true,
-      waitUntil = ['load', 'networkidle2'],
-      ...opts
-    } = {}
+    { margin = '0.35cm', scale = 0.65, printBackground = true, ...opts } = {}
   ) => {
-    await goto(page, { ...opts, url, waitUntil })
+    await goto(page, { ...opts, url })
 
     return page.pdf({
       ...opts,

@@ -56,7 +56,6 @@ module.exports = deviceOpts => {
       adblock = true,
       headers = {},
       waitFor = 0,
-      waitUntil = 'load',
       disableAnimations = true,
       viewport: fallbackViewport,
       ...args
@@ -99,7 +98,7 @@ module.exports = deviceOpts => {
       await page.emulateMediaType(media)
     }
 
-    const response = await page.goto(url, { waitUntil, ...args })
+    const response = await page.goto(url, args)
 
     if (disableAnimations) {
       await page.evaluate(doDisableAnimations)
