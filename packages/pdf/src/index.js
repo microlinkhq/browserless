@@ -22,7 +22,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       margin = '0.35cm',
       scale = 0.65,
       printBackground = true,
-      waitUntil = 'networkidle2',
+      waitUntil = ['load', 'networkidle2'],
       ...opts
     } = {}
   ) => {
