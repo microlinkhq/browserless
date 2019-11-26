@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.18.4](https://github.com/kikobeats/browserless/compare/v5.18.3...v5.18.4) (2019-11-26)
+
+
+### Bug Fixes
+
+* linter ([ad9e8e8](https://github.com/kikobeats/browserless/commit/ad9e8e8d3b0f227230a1fd6c786f8dba5895b98a))
+
+
+
+
+
 ## [5.18.3](https://github.com/kikobeats/browserless/compare/v5.18.2...v5.18.3) (2019-11-26)
 
 **Note:** Version bump only for package browserless
