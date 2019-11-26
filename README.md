@@ -194,7 +194,7 @@ This method use the following options by default:
   media: 'print',
   printBackground: true,
   scale: 0.65,
-  waitUntil: 'networkidle2'
+  waitUntil: ['load', 'networkidle2']
 }
 ```
 
@@ -209,7 +209,12 @@ Additionally, you can setup:
 type: `string` | `string[]`</br>
 default: `'0.35cm'`
 
-It sets the paper margins. 
+It sets paper margins. All possible units are:
+
+- `px` for pixel.
+- `in` for inches.
+- `cm` for centimeters.
+- `mm` for millimeters.
 
 You can pass an `object` object specifing each corner side of the paper:
 
@@ -252,7 +257,17 @@ const browserless = require('browserless')
 
 #### options
 
-See [browserless.goto](/#gotopage-options).
+This method use the following options by default:
+
+```js
+{
+  disableAnimations: true,
+  device: 'macbook pro 13',
+  waitUntil: ['load', 'networkidle2']
+}
+```
+
+See [browserless.goto](/#gotopage-options) to know all the options and values supported.
 
 Also, any [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagescreenshotoptions) option is supported.
 
@@ -263,6 +278,12 @@ Additionally, you can setup:
 type: `string` | `string[]`</br>
 
 Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+##### element
+
+type: `string` </br>
+
+Capture the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors). It will wait for the element to appear in the page and to be visible.
 
 ##### hide
 
@@ -662,7 +683,7 @@ Yes, check [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) to
 ## License
 
 **browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/kikobeats/browserless/blob/master/LICENSE.md) License.<br>
-Authored and maintained by Kiko Beats with help from [contributors](https://github.com/kikobeats/browserless/contributors).  
+Authored and maintained by Kiko Beats with help from [contributors](https://github.com/kikobeats/browserless/contributors).
 
 [logo](https://thenounproject.com/term/browser/288309/) designed by [xinh studio](https://xinh.studio/).
 

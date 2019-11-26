@@ -7,6 +7,11 @@ const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
 
 const toArray = value => [].concat(value)
 
+const getBoundingClientRect = element => {
+  const { top, left, height, width, x, y } = element.getBoundingClientRect()
+  return { top, left, height, width, x, y }
+}
+
 const scrollToElement = (element, options) => {
   const isOverflown = element => {
     return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
@@ -84,6 +89,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   return async (page, url, opts = {}) => {
     const {
       device = 'macbook pro 13',
+      waitUntil = ['load', 'networkidle2'],
       overlay,
       click,
       element,
@@ -105,7 +111,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       await dialog.dismiss()
     })
 
-    await goto(page, { url, device, ...args })
+    await goto(page, { url, device, waitUntil, ...args })
 
     if (hide) {
       await Promise.all(
@@ -115,9 +121,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
     if (click) {
       for (const selector of toArray(click)) {
-        try {
-          await pReflect(page.click(selector))
-        } catch (err) {}
+        await pReflect(page.click(selector))
       }
     }
 
@@ -166,6 +170,14 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       }
     }
 
-    return page
+    const screenshotOptions = {}
+
+    if (element) {
+      await page.waitForSelector(element, { visible: true })
+      screenshotOptions.clip = await page.$eval(element, getBoundingClientRect)
+      screenshotOptions.fullPage = false
+    }
+
+    return screenshotOptions
   }
 }
