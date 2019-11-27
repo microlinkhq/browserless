@@ -2,8 +2,8 @@
 
 const customDevices = require('./devices.json')
 
-const getDevice = (devices, deviceName) =>
-  deviceName && devices.find(device => device.name.toLowerCase() === deviceName.toLowerCase())
+const findDevice = (devices, deviceName) =>
+  devices.find(device => device.name.toLowerCase() === deviceName.toLowerCase())
 
 module.exports = ({
   puppeteerDevices = require('require-one-of')([
@@ -13,8 +13,17 @@ module.exports = ({
   ])
 } = {}) => {
   const devices = puppeteerDevices.concat(customDevices)
-  return {
-    devices,
-    getDevice: getDevice.bind(null, devices)
+
+  return ({ headers = {}, device: deviceId = '', viewport } = {}) => {
+    const device = findDevice(devices, deviceId)
+    return device
+      ? {
+        userAgent: device.userAgent || headers['user-agent'],
+        viewport: { ...device.viewport, ...viewport }
+      }
+      : {
+        userAgent: headers['user-agent'],
+        viewport
+      }
   }
 }

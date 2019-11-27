@@ -45,21 +45,11 @@ const doDisableAnimations = () => {
 }
 
 module.exports = deviceOpts => {
-  const { devices, getDevice } = createDevices(deviceOpts)
+  const getDevice = createDevices(deviceOpts)
 
   const goto = async (
     page,
-    {
-      url,
-      device,
-      media,
-      adblock = true,
-      headers = {},
-      waitFor = 0,
-      disableAnimations = true,
-      viewport: fallbackViewport,
-      ...args
-    }
+    { url, media, adblock = true, headers = {}, waitFor = 0, disableAnimations = true, ...args }
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
@@ -78,16 +68,12 @@ module.exports = deviceOpts => {
       await page.setCookie(...cookies)
     }
 
-    const { userAgent: deviceUserAgent, viewport: deviceViewport } = getDevice(device) || {}
-
-    const userAgent = headers['user-agent'] || deviceUserAgent
+    const { userAgent, viewport } = getDevice({ headers, ...args })
 
     if (userAgent) {
       debug({ userAgent })
       await page.setUserAgent(userAgent)
     }
-
-    const viewport = { ...deviceViewport, ...fallbackViewport }
 
     if (!isEmpty(viewport)) {
       debug('viewport', viewport)
@@ -112,7 +98,8 @@ module.exports = deviceOpts => {
     return response
   }
 
-  goto.devices = devices
+  goto.getDevice = getDevice
+
   return goto
 }
 

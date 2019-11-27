@@ -81,6 +81,6 @@ module.exports = ({
     text: evaluate(page => page.evaluate(() => document.body.innerText), {
       disableAnimations: false
     }),
-    devices: goto.devices
+    getDevice: goto.getDevice
   }
 }

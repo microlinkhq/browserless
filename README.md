@@ -383,26 +383,26 @@ You can configure the overlay specifying:
 
 ### .devices
 
-List of all available devices preconfigured with `deviceName`, `viewport` and `userAgent` settings.
+It has all the devices presets available, being possible to load viewport and user agents settings based on a device descriptor.
 
 These devices are used for emulation purposes. It extends from [puppeteer.devices](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#puppeteerdevices).
 
-#### .getDevice(deviceName)
+#### .getDevice({ device, viewport, headers })
 
 Get a specific device descriptor settings by descriptor name.
+
+It doesn't matter if device name is lower/upper case.
 
 ```js
 const browserless = require('browserless')
 
-browserless.getDevice('Macbook Pro 15')
-
+browserless.getDevice({ device: 'Macbook Pro 15' })
 // {
-//   name: 'Macbook Pro 15',
-//   userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X …',
+//   userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36',
 //   viewport: {
 //     width: 1440,
 //     height: 900,
-//     deviceScaleFactor: 1,
+//     deviceScaleFactor: 2,
 //     isMobile: false,
 //     hasTouch: false,
 //     isLandscape: false
