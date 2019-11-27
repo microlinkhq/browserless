@@ -29,6 +29,10 @@
   "dependencies": {
     "require-one-of": "~1.0.13"
   },
+  "devDependencies": {
+    "ava": "latest",
+    "puppeteer-core": "latest"
+  },
   "engines": {
     "node": ">= 8"
   },
@@ -37,7 +41,7 @@
   ],
   "scripts": {
     "coverage": "exit 0",
-    "test": "exit 0"
+    "test": "ava"
   },
   "license": "MIT"
 }
