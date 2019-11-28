@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.18.7](https://github.com/kikobeats/browserless/compare/v5.18.6...v5.18.7) (2019-11-28)
+
+
+### Bug Fixes
+
+* just add adblocker logs once ([e045364](https://github.com/kikobeats/browserless/commit/e04536449f161686535f159d41f860a7e54fa3c4))
+
+
+
+
+
 ## [5.18.6](https://github.com/kikobeats/browserless/compare/v5.18.5...v5.18.6) (2019-11-28)
 
 **Note:** Version bump only for package browserless
