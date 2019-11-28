@@ -88,7 +88,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
   return async (page, url, opts = {}) => {
     const {
-      device = 'macbook pro 13',
+      device: deviceId = 'macbook pro 13',
       overlay,
       click,
       element,
@@ -110,7 +110,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       await dialog.dismiss()
     })
 
-    await goto(page, { url, device, ...args })
+    const { device } = await goto(page, { url, device: deviceId, ...args })
 
     if (hide) {
       await Promise.all(
@@ -177,6 +177,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       screenshotOptions.fullPage = false
     }
 
-    return screenshotOptions
+    return { device, ...screenshotOptions }
   }
 }

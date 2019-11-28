@@ -54,7 +54,7 @@ module.exports = ({
 
   const evaluate = (fn, gotoOpts) =>
     wrapError(page => async (url, opts) => {
-      const response = await goto(page, { url, ...gotoOpts, ...opts })
+      const { response } = await goto(page, { url, ...gotoOpts, ...opts })
       return fn(page, response)
     })
 

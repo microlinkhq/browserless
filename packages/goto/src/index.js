@@ -68,16 +68,16 @@ module.exports = deviceOpts => {
       await page.setCookie(...cookies)
     }
 
-    const { userAgent, viewport } = getDevice({ headers, ...args })
+    const device = getDevice({ headers, ...args })
 
-    if (userAgent) {
-      debug({ userAgent })
-      await page.setUserAgent(userAgent)
+    if (device.userAgent) {
+      debug({ userAgent: device.userAgent })
+      await page.setUserAgent(device.userAgent)
     }
 
-    if (!isEmpty(viewport)) {
-      debug('viewport', viewport)
-      await page.setViewport(viewport)
+    if (!isEmpty(device.viewport)) {
+      debug('viewport', device.viewport)
+      await page.setViewport(device.viewport)
     }
 
     if (media) {
@@ -95,7 +95,7 @@ module.exports = deviceOpts => {
       await page.waitFor(waitFor)
     }
 
-    return response
+    return { response, device }
   }
 
   goto.getDevice = getDevice
