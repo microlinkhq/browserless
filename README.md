@@ -484,7 +484,7 @@ const browserless = require('browserless')
 
 ;(async () => {
   const page = await browserless.page()
-  const { response, device }  = await browserless.goto(page, { url: 'http://example.com' })
+  const { response, device } = await browserless.goto(page, { url: 'http://example.com' })
 })()
 ```
 
