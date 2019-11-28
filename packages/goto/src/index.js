@@ -11,6 +11,9 @@ const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
 )
 
+engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
+engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
+
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const parseCookies = (url, str) => {
@@ -53,8 +56,6 @@ module.exports = deviceOpts => {
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
-      engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
-      engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
     }
 
     if (Object.keys(headers).length !== 0) {
