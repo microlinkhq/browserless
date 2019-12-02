@@ -2,7 +2,7 @@
   "name": "@browserless/stats",
   "description": "Get performance metrics at a glance ",
   "homepage": "https://browserless.js.org",
-  "version": "5.18.8",
+  "version": "5.18.9",
   "main": "src",
   "repository": {
     "type": "git",
