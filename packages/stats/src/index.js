@@ -2,6 +2,7 @@
 
 const requireOneOf = require('require-one-of')
 const { pick, mapValues } = require('lodash')
+const prettyBytes = require('pretty-bytes')
 const lighthouse = require('lighthouse')
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
@@ -9,12 +10,29 @@ const DEFAULT_LIGHTHOUSE_CONFIG = {
   extends: 'lighthouse:default',
   settings: {
     onlyAudits: [
+      // minimal
       'first-contentful-paint',
       'first-meaningful-paint',
       'first-cpu-idle',
       'speed-index',
       'interactive',
-      'resource-summary'
+      'resource-summary',
+      // extends
+      'time-to-first-byte',
+      'estimated-input-latency',
+      'total-blocking-time',
+      'max-potential-fid',
+      'errors-in-console',
+      'bootup-time',
+      'redirects',
+      'uses-rel-preload',
+      'uses-rel-preconnect',
+      'network-rtt',
+      'network-server-latency',
+      'image-alt',
+      'dom-size',
+      'uses-http2',
+      'meta-description'
     ]
   }
 }
@@ -50,10 +68,30 @@ module.exports = async (url, opts) => {
   return mapValues(audits, audit => {
     const { id } = audit
     switch (id) {
+      case 'network-rtt':
+      case 'network-server-latency':
+        return {
+          ...pick(audit, ['title', 'description']),
+          duration: audit.numericValue,
+          duration_pretty: audit.displayValue
+        }
       case 'resource-summary':
-        return audit.details.items.map(item => pick(item, ['size', 'requestCount', 'resourceType']))
+        return {
+          ...pick(audit, ['title', 'description']),
+          ...audit.details.items.reduce(
+            (acc, { requestCount: count, resourceType: type, size }) => ({
+              ...acc,
+              [type]: {
+                count,
+                size,
+                size_pretty: prettyBytes(size)
+              }
+            }),
+            {}
+          )
+        }
       default:
-        return pick(audit, ['title', 'description', 'score', 'value'])
+        return pick(audit, ['title', 'description', 'score'])
     }
   })
 }

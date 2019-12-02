@@ -26,6 +26,7 @@
   "dependencies": {
     "lighthouse": "~5.6.0",
     "lodash": "~4.17.15",
+    "pretty-bytes": "~5.3.0",
     "require-one-of": "~1.0.13"
   },
   "devDependencies": {
