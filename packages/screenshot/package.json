@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "@browserless/goto": "^5.18.10",
-    "got": "~9.6.0",
+    "got": "~10.0.2",
     "is-url-http": "~1.2.4",
     "p-reflect": "~2.1.0",
     "sharp": "~0.23.3",
