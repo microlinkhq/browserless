@@ -40,6 +40,7 @@ const doDisableAnimations = () => {
     transition-delay: 0s !important;
     animation-duration: 0s !important;
     transition-duration: 0s !important;
+    transition-property: none !important;
   }
 `
   const style = document.createElement('style')
@@ -88,6 +89,7 @@ module.exports = deviceOpts => {
     const response = await page.goto(url, args)
 
     if (disableAnimations) {
+      debug({ disableAnimations })
       await page.evaluate(doDisableAnimations)
     }
 
