@@ -35,7 +35,6 @@ module.exports = ({
     })
     const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
     const page = await context.newPage()
-    page.setDefaultNavigationTimeout(timeout)
     return page
   }
 
