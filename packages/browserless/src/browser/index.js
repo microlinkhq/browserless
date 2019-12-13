@@ -26,12 +26,9 @@ const spawn = (puppeteer, launchOpts) =>
     ...launchOpts
   })
 
-const clean = () => del.sync(['/tmp/core.*', '/tmp/puppeteer_dev_profile*'], { force: true })
-
-const kill = async (pid, { cleanup = false } = {}) => {
+const kill = async pid => {
   await fkill(pid, { tree: true, force: true, silent: true })
-  const deletedPaths = cleanup ? clean() : []
-  return { pid, deletedPaths }
+  return { pid }
 }
 
 const destroy = async (browser, opts) => {
@@ -40,4 +37,4 @@ const destroy = async (browser, opts) => {
   return kill(pid, opts)
 }
 
-module.exports = { clean, spawn, kill, destroy }
+module.exports = { spawn, kill, destroy }

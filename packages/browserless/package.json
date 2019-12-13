@@ -36,7 +36,6 @@
     "aggregate-error": "~3.0.1",
     "arrify": "~2.0.1",
     "debug-logfmt": "~1.0.4",
-    "del": "~5.1.0",
     "import-lazy": "~4.0.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.2.0",

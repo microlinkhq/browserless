@@ -19,7 +19,7 @@ module.exports = ({
   let browser = driver.spawn(puppeteer, launchOpts)
 
   const respawn = async () => {
-    const destroyResult = await driver.destroy(await browser, { cleanup: true })
+    const destroyResult = await driver.destroy(await browser)
     debug('destroy', destroyResult)
     browser = driver.spawn(puppeteer, launchOpts)
   }
