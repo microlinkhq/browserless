@@ -31,7 +31,7 @@
     "@browserless/devices": "^5.18.5",
     "@cliqz/adblocker-puppeteer": "~1.4.0",
     "debug-logfmt": "~1.0.4",
-    "got": "~9.6.0",
+    "got": "~10.0.4",
     "tldts": "~5.6.2"
   },
   "devDependencies": {
