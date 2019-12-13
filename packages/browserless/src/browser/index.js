@@ -1,8 +1,6 @@
 'use strict'
 
 const pReflect = require('p-reflect')
-const del = require('del')
-
 const fkill = require('./fkill')
 
 const spawn = (puppeteer, launchOpts) =>
