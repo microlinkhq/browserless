@@ -26,28 +26,39 @@ module.exports = ({
 
   const goto = createGoto({ puppeteerDevices })
 
-  const createPage = () =>
-    pRetry(
-      async () => {
-        const _browser = await browser
-        debug('createPage', { pid: _browser.process().pid })
-        const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
-        const page = await context.newPage()
-        page.setDefaultNavigationTimeout(timeout)
-        return page
-      },
-      {
-        onFailedAttempt: ({ message, attemptNumber }) => {
-          debug('createPage:retry', { attemptNumber, message })
-          return respawn()
-        }
-      }
-    )
+  const createPage = async () => {
+    const _browser = await browser
+    debug('createPage', {
+      pid: _browser.process().pid,
+      incognito,
+      pages: (await _browser.pages()).length
+    })
+    const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
+    const page = await context.newPage()
+    page.setDefaultNavigationTimeout(timeout)
+    return page
+  }
 
   const wrapError = fn => async (...args) => {
-    const page = await createPage()
-    const result = await pReflect(pTimeout(fn(page)(...args), timeout))
-    await pReflect(page.close())
+    let page
+
+    const run = async () => {
+      page = await createPage()
+      return fn(page)(...args)
+    }
+
+    const result = await pReflect(
+      pTimeout(
+        pRetry(run, {
+          onFailedAttempt: ({ message, attemptNumber }) => {
+            debug('wrapError:retry', { attemptNumber, message })
+          }
+        }),
+        timeout
+      )
+    )
+
+    if (page) await pReflect(page.close())
     if (result.isRejected) throw result.reason
     return result.value
   }
