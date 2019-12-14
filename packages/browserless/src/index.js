@@ -51,7 +51,7 @@ module.exports = ({
         pRetry(run, {
           onFailedAttempt: error => {
             const { message, attemptNumber } = error
-            if (message.startsWith('net::ERR_ABORTED')) throw error
+            if (message.startsWith('net::')) throw error
             debug('wrapError:retry', { attemptNumber, message })
           }
         }),
