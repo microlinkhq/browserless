@@ -41,6 +41,8 @@ module.exports = ({
   const wrapError = fn => async (...args) => {
     let page
 
+    const closePage = () => (page ? pReflect(page.close()) : undefined)
+
     const run = async () => {
       page = await createPage()
       return fn(page)(...args)
@@ -53,13 +55,14 @@ module.exports = ({
             const { message, attemptNumber } = error
             if (message.startsWith('net::')) throw error
             debug('wrapError:retry', { attemptNumber, message })
+            return closePage()
           }
         }),
         timeout
       )
     )
 
-    if (page) await pReflect(page.close())
+    await closePage()
     if (result.isRejected) throw result.reason
     return result.value
   }
