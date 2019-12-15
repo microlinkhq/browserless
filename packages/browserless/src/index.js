@@ -2,6 +2,7 @@
 
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
+const PCancelable = require('p-cancelable')
 const importLazy = require('import-lazy')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -43,28 +44,36 @@ module.exports = ({
 
     const closePage = () => (page ? pReflect(page.close()) : undefined)
 
-    const run = async () => {
-      page = await createPage()
-      return fn(page)(...args)
+    const run = async () =>
+      new PCancelable(async (resolve, reject, onCancel) => {
+        onCancel(closePage)
+        try {
+          page = await createPage()
+          const value = await fn(page)(...args)
+          closePage()
+          return resolve(value)
+        } catch (err) {
+          closePage()
+          return reject(err)
+        }
+      })
+
+    const task = () => {
+      const promise = pRetry(run, {
+        retries: 3,
+        onFailedAttempt: async error => {
+          const { message, attemptNumber, retriesLeft } = error
+          debug('wrapError:retry', { attemptNumber, retriesLeft, message })
+          if (message.startsWith('net::')) throw error
+        }
+      })
+
+      return promise
     }
 
-    const result = await pReflect(
-      pTimeout(
-        pRetry(run, {
-          onFailedAttempt: error => {
-            const { message, attemptNumber } = error
-            if (message.startsWith('net::')) throw error
-            debug('wrapError:retry', { attemptNumber, message })
-            return closePage()
-          }
-        }),
-        timeout
-      )
-    )
-
-    await closePage()
-    if (result.isRejected) throw result.reason
-    return result.value
+    const { isRejected, value, reason } = await pReflect(pTimeout(task(), timeout))
+    if (isRejected) throw reason
+    return value
   }
 
   const evaluate = (fn, gotoOpts) =>
