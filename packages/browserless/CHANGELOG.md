@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.18.19](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.18.18...v5.18.19) (2019-12-15)
+
+
+### Bug Fixes
+
+* ensure to close page on cancel ([aec4ddb](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/aec4ddbc00aa05c421613df39109abc3642cf10d))
+
+
+
+
+
 ## [5.18.18](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.18.17...v5.18.18) (2019-12-14)
 
 **Note:** Version bump only for package browserless
