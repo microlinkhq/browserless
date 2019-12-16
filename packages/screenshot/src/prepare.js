@@ -102,7 +102,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     } = opts
 
     if (overlay.browser) {
-      const value = overlay.browser.includes('dark') ? 'dark' : 'light'
+      const value = overlay.browser.toString().includes('dark') ? 'dark' : 'light'
       await pReflect(page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value }]))
     }
 
