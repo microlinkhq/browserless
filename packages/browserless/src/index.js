@@ -58,18 +58,15 @@ module.exports = ({
         }
       })
 
-    const task = () => {
-      const promise = pRetry(run, {
-        retries: 3,
+    const task = () =>
+      pRetry(run, {
+        retries: 2,
         onFailedAttempt: async error => {
           const { message, attemptNumber, retriesLeft } = error
-          debug('wrapError:retry', { attemptNumber, retriesLeft, message })
+          debug('retry', { attemptNumber, retriesLeft, message })
           if (message.startsWith('net::')) throw error
         }
       })
-
-      return promise
-    }
 
     const { isRejected, value, reason } = await pReflect(pTimeout(task(), timeout))
     if (isRejected) throw reason
