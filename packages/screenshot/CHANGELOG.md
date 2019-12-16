@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.18.20](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.18.19...v5.18.20) (2019-12-16)
+
+
+### Bug Fixes
+
+* ensure overlay.browser is a string ([c41587d](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/c41587d1977f59236dcb3e2c322228843c708248))
+
+
+
+
+
 ## [5.18.13](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v5.18.12...v5.18.13) (2019-12-10)
 
 **Note:** Version bump only for package @browserless/screenshot
