@@ -50,10 +50,10 @@ module.exports = ({
         try {
           page = await createPage()
           const value = await fn(page)(...args)
-          closePage()
+          await closePage()
           return resolve(value)
         } catch (err) {
-          closePage()
+          await closePage()
           return reject(err)
         }
       })
