@@ -25,7 +25,7 @@ module.exports = ({
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
-  const goto = createGoto({ puppeteerDevices })
+  const goto = createGoto({ puppeteerDevices, timeout })
 
   const createPage = async () => {
     const _browser = await browser

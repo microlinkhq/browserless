@@ -4,6 +4,8 @@ const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
 const createDevices = require('@browserless/devices')
 const { getDomain } = require('tldts')
+const pReflect = require('p-reflect')
+const pTimeout = require('p-timeout')
 const path = require('path')
 const fs = require('fs')
 
@@ -48,7 +50,8 @@ const doDisableAnimations = () => {
   if (style.sheet) style.sheet.insertRule(rule)
 }
 
-module.exports = deviceOpts => {
+module.exports = ({ timeout, ...deviceOpts }) => {
+  const gotoTimeout = timeout * (1 / 3)
   const getDevice = createDevices(deviceOpts)
 
   const goto = async (
@@ -86,16 +89,20 @@ module.exports = deviceOpts => {
       await page.emulateMediaType(media)
     }
 
-    const response = await page.goto(url, args)
+    const task = () => page.goto(url, args)
 
-    if (disableAnimations) {
-      debug({ disableAnimations })
-      await page.evaluate(doDisableAnimations)
-    }
+    const { value: response } = await pReflect(pTimeout(task(), gotoTimeout))
 
-    if (waitFor) {
-      debug({ waitFor })
-      await page.waitFor(waitFor)
+    if (response) {
+      if (disableAnimations) {
+        debug({ disableAnimations })
+        await page.evaluate(doDisableAnimations)
+      }
+
+      if (waitFor) {
+        debug({ waitFor })
+        await page.waitFor(waitFor)
+      }
     }
 
     return { response, device }
