@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.19.0](https://github.com/kikobeats/browserless/compare/v5.18.22...v5.19.0) (2019-12-17)
+
+
+### Features
+
+* add goto timeout ([ac100f6](https://github.com/kikobeats/browserless/commit/ac100f684faa52495142225c617b6c8efe3b1457))
+
+
+
+
+
 ## [5.18.22](https://github.com/kikobeats/browserless/compare/v5.18.21...v5.18.22) (2019-12-16)
 
 **Note:** Version bump only for package browserless
