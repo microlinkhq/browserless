@@ -65,6 +65,7 @@ module.exports = ({
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
           if (message.startsWith('net::')) throw error
+          return respawn()
         }
       })
 
