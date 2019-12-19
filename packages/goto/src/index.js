@@ -51,7 +51,7 @@ const doDisableAnimations = () => {
 }
 
 module.exports = ({ timeout, ...deviceOpts }) => {
-  const gotoTimeout = timeout * (1 / 3)
+  const gotoTimeout = timeout * (2 / 3)
   const getDevice = createDevices(deviceOpts)
 
   const goto = async (
