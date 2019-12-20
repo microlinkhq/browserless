@@ -91,9 +91,9 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
     const task = () => page.goto(url, args)
 
-    const { value: response } = await pReflect(pTimeout(task(), gotoTimeout))
+    const { isFulfilled, value: response } = await pReflect(pTimeout(task(), gotoTimeout))
 
-    if (response) {
+    if (isFulfilled) {
       if (disableAnimations) {
         debug({ disableAnimations })
         await page.evaluate(doDisableAnimations)
