@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:stats')
 const requireOneOf = require('require-one-of')
 const { pick, mapValues } = require('lodash')
 const prettyBytes = require('pretty-bytes')
@@ -37,15 +38,9 @@ const DEFAULT_LIGHTHOUSE_CONFIG = {
   }
 }
 
-const getWsEndpoint = async getBrowserless => {
-  const browserless = await getBrowserless()
-  const browser = await browserless.browser
-  return browser.wsEndpoint()
-}
-
 // see https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#differences-from-cli-flags
-const getOptions = async getBrowserless => ({
-  port: new URL(await getWsEndpoint(getBrowserless)).port,
+const getOptions = browser => ({
+  port: new URL(browser.wsEndpoint()).port,
   output: 'json',
   logLevel: 'error'
 })
@@ -57,8 +52,13 @@ const getLighthouseReport = async (
     getBrowserless = requireOneOf(['@browserless/pool', 'browserless'])
   } = {}
 ) => {
-  const options = await getOptions(getBrowserless)
+  const browserless = await getBrowserless()
+  const browser = await browserless.browser
+  debug('create', { pid: browser.process().pid })
+  const options = await getOptions(browser)
   const { lhr } = await lighthouse(url, options, lighthouseConfig)
+  const destroyResult = await browserless.destroy()
+  debug('destroy', destroyResult)
   return lhr
 }
 
