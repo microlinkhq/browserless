@@ -61,7 +61,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
     }
-    
+
     if (disableJavaScript) {
       await page.setJavaScriptEnabled(!disableJavaScript)
     }
