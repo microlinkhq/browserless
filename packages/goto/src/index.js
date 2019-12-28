@@ -56,10 +56,14 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
   const goto = async (
     page,
-    { url, media, adblock = true, headers = {}, waitFor = 0, disableAnimations = true, ...args }
+    { url, media, adblock = true, headers = {}, waitFor = 0, disableAnimations = true, disableJavaScript = false, ...args }
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
+    }
+
+    if (disableJavaScript) {
+      await page.setJavaScriptEnabled(false)
     }
 
     if (Object.keys(headers).length !== 0) {
