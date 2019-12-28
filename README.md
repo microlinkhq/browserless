@@ -514,6 +514,13 @@ Default: `true`
 
 Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
 
+##### disableJavaScript
+
+Type: `boolean`<br>
+Default: `false`
+
+When it's `true`, it sets JavaScript as disabled on the current page.
+
 ##### headers
 
 type: `object`
