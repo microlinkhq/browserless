@@ -56,6 +56,7 @@ const getLighthouseReport = async (
   const browser = await browserless.browser
   debug('create', { pid: browser.process().pid })
   const options = await getOptions(browser)
+  debug('getOptions', options)
   const { lhr } = await lighthouse(url, options, lighthouseConfig)
   const destroyResult = await browserless.destroy()
   debug('destroy', destroyResult)
