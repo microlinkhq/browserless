@@ -3,14 +3,13 @@
   <br>
 </h1>
 
-![Last version](https://img.shields.io/github/tag/Kikobeats/browserless.svg?style=flat-square)
-[![Build Status](https://img.shields.io/travis/Kikobeats/browserless/master.svg?style=flat-square)](https://travis-ci.org/Kikobeats/browserless)
-[![Coverage Status](https://img.shields.io/coveralls/Kikobeats/browserless.svg?style=flat-square)](https://coveralls.io/github/Kikobeats/browserless)
-[![Dependency status](https://img.shields.io/david/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless)
-[![Dev Dependencies Status](https://img.shields.io/david/dev/Kikobeats/browserless.svg?style=flat-square)](https://david-dm.org/Kikobeats/browserless#info=devDependencies)
+![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
+[![Build Status](https://img.shields.io/travis/microlinkhq/browserless/master.svg?style=flat-square)](https://travis-ci.org/microlinkhq/browserless)
+[![Dependency status](https://img.shields.io/david/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless)
+[![Dev Dependencies Status](https://img.shields.io/david/dev/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> A [puppeteer](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
+> A [puppeteer](https://gcithub.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
 
 ## Why
 
@@ -48,7 +47,7 @@ browserless
   })
 ```
 
-You can see more common recipes at [`@browserless/examples`](https://github.com/Kikobeats/browserless/tree/master/packages/examples).
+You can see more common recipes at [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples).
 
 ## Basic
 
@@ -576,7 +575,7 @@ const browserless = require('browserless')
 
 **browserless** uses internally a singleton browser instance.
 
-If you want to keep multiple browsers open, you can use [`@browserless/pool`](https://github.com/Kikobeats/browserless/tree/master/packages/pool) package.
+If you want to keep multiple browsers open, you can use [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool) package.
 
 ```js
 const createBrowserless = require('@browserless/pool')
@@ -625,21 +624,21 @@ Every time you call the pool, it handles acquire and release a new browser insta
 
 | Package | Version | Dependencies |
 |--------|-------|------------|
-| [`browserless`](https://github.com/kikobeats/browserless/tree/master/packages/browserless) | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/browserless&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/browserless) |
-| [`@browserless/benchmark`](https://github.com/kikobeats/browserless/tree/master/packages/benchmark) | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/benchmark&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/benchmark) |
-| [`@browserless/devices`](https://github.com/kikobeats/browserless/tree/master/packages/devices) | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/devices&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/devices) |
-| [`@browserless/examples`](https://github.com/kikobeats/browserless/tree/master/packages/examples) | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/examples&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/examples) |
-| [`@browserless/goto`](https://github.com/kikobeats/browserless/tree/master/packages/goto) | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/goto&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/goto) |
-| [`@browserless/pdf`](https://github.com/kikobeats/browserless/tree/master/packages/pdf) | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/pdf&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/pdf) |
-| [`@browserless/pool`](https://github.com/kikobeats/browserless/tree/master/packages/pool) | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/pool&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/pool) |
-| [`@browserless/screenshot`](https://github.com/kikobeats/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) | [![Dependency Status](https://david-dm.org/kikobeats/browserless.svg?path=packages/screenshot&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/screenshot) |
-| [`@browserless/stats`](https://github.com/kikobeats/browserless/tree/master/packages/stats) | [![npm](https://img.shields.io/npm/v/@browserless/stats.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/stats) | [![Dependency Statsus](https://david-dm.org/kikobeats/browserless.svg?path=packages/stats&style=flat-square)](https://david-dm.org/kikobeats/browserless?path=packages/@browserless/stats) |
+| [`browserless`](https://github.com/microlinkhq/browserless/tree/master/packages/browserless) | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/browserless&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/browserless) |
+| [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark) | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/benchmark&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/benchmark) |
+| [`@browserless/devices`](https://github.com/microlinkhq/browserless/tree/master/packages/devices) | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/devices&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/devices) |
+| [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples) | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/examples&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/examples) |
+| [`@browserless/goto`](https://github.com/microlinkhq/browserless/tree/master/packages/goto) | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/goto&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/goto) |
+| [`@browserless/pdf`](https://github.com/microlinkhq/browserless/tree/master/packages/pdf) | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pdf&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pdf) |
+| [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool) | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pool&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pool) |
+| [`@browserless/screenshot`](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/screenshot&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/screenshot) |
+| [`@browserless/stats`](https://github.com/microlinkhq/browserless/tree/master/packages/stats) | [![npm](https://img.shields.io/npm/v/@browserless/stats.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/stats) | [![Dependency Statsus](https://david-dm.org/microlinkhq/browserless.svg?path=packages/stats&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/stats) |
 
 ## Benchmark
 
 ![](/static/bench.png)
 
-For testing different approach, we included a tiny benchmark tool called [`@browserless/benchmark`](https://github.com/Kikobeats/browserless/tree/master/packages/benchmark).
+For testing different approach, we included a tiny benchmark tool called [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark).
 
 ## FAQ
 
@@ -663,7 +662,7 @@ You can active debug mode using `DEBUG=browserless` environment variable in orde
 DEBUG=browserless node index.js
 ```
 
-Consider open an [issue](https://github.com/Kikobeats/browserless/issues/new) with the debug trace.
+Consider open an [issue](https://github.com/microlinkhq/browserless/issues/new) with the debug trace.
 
 **Q: Can I use browserless with my AWS Lambda like project?**
 
@@ -671,9 +670,9 @@ Yes, check [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) to
 
 ## License
 
-**browserless** © [Kiko Beats](https://kikobeats.com), Released under the [MIT](https://github.com/kikobeats/browserless/blob/master/LICENSE.md) License.<br>
-Authored and maintained by Kiko Beats with help from [contributors](https://github.com/kikobeats/browserless/contributors).
+**browserless** © [Microlink](https://microlink.io), Released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
+Authored and maintained by [Kiko Beats](https://kikobeats.com) with help from [contributors](https://github.com/microlinkhq/browserless/contributors).
 
-[logo](https://thenounproject.com/term/browser/288309/) designed by [xinh studio](https://xinh.studio/).
+The [logo](https://thenounproject.com/term/browser/288309/) has been designed by [xinh studio](https://xinh.studio).
 
-> [kikobeats.com](https://kikobeats.com) · GitHub [Kiko Beats](https://github.com/kikobeats) · Twitter [@kikobeats](https://twitter.com/kikobeats)
+> [microlink.io](https://microlink.io) · GitHub [@MicrolinkHQ](https://github.com/microlinkhq) · Twitter [@microlinkhq](https://twitter.com/microlinkhq)

@@ -24,10 +24,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kikobeats/browserless.git"
+    "url": "git+https://github.com/microlinkhq/browserless.git"
   },
   "bugs": {
-    "url": "https://github.com/Kikobeats/browserless/issues"
+    "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
     "browser",
