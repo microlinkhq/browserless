@@ -63,7 +63,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     }
     
     if (disableJavaScript) {
-      await page.setJavaScriptEnabled(!disableJavaScript);
+      await page.setJavaScriptEnabled(!disableJavaScript)
     }
 
     if (Object.keys(headers).length !== 0) {
