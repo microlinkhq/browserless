@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.19.11](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v5.19.10...v5.19.11) (2020-01-03)
+
+**Note:** Version bump only for package @browserless/stats
+
+
+
+
+
 ## [5.19.10](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v5.19.9...v5.19.10) (2019-12-28)
 
 **Note:** Version bump only for package @browserless/stats
