@@ -1,6 +1,5 @@
 'use strict'
 
-const debug = require('debug-logfmt')('browserless:stats')
 const requireOneOf = require('require-one-of')
 const { pick, mapValues } = require('lodash')
 const prettyBytes = require('pretty-bytes')
@@ -54,12 +53,8 @@ const getLighthouseReport = async (
 ) => {
   const browserless = await getBrowserless()
   const browser = await browserless.browser
-  debug('create', { pid: browser.process().pid })
   const options = await getOptions(browser)
-  debug('getOptions', options)
   const { lhr } = await lighthouse(url, options, lighthouseConfig)
-  const destroyResult = await browserless.destroy()
-  debug('destroy', destroyResult)
   return lhr
 }
 
