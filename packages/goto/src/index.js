@@ -56,13 +56,13 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
   const goto = async (
     page,
-    { url, mediaType, adblock = true, headers = {}, waitFor = 0, animations = true, javascript = false, ...args }
+    { url, mediaType, adblock = true, headers = {}, waitFor = 0, animations = true, javascript = true, ...args }
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
     }
 
-    if (javascript) {
+    if (javascript === false) {
       await page.setJavaScriptEnabled(false)
     }
 
