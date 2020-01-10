@@ -56,7 +56,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
   const goto = async (
     page,
-    { url, media, adblock = true, headers = {}, waitFor = 0, animations = true, disableJavaScript = false, ...args }
+    { url, mediaType, adblock = true, headers = {}, waitFor = 0, animations = true, disableJavaScript = false, ...args }
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
@@ -89,8 +89,8 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       await page.setViewport(device.viewport)
     }
 
-    if (media) {
-      await page.emulateMediaType(media)
+    if (mediaType) {
+      await page.emulateMediaType(mediaType)
     }
 
     const task = () => page.goto(url, args)
