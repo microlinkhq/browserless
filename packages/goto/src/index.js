@@ -56,7 +56,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
   const goto = async (
     page,
-    { url, media, adblock = true, headers = {}, waitFor = 0, disableAnimations = true, disableJavaScript = false, ...args }
+    { url, media, adblock = true, headers = {}, waitFor = 0, animations = true, disableJavaScript = false, ...args }
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
@@ -98,8 +98,8 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     const { isFulfilled, value: response } = await pReflect(pTimeout(task(), gotoTimeout))
 
     if (isFulfilled) {
-      if (disableAnimations) {
-        debug({ disableAnimations })
+      if (animations) {
+        debug({ animations })
         await page.evaluate(doDisableAnimations)
       }
 
