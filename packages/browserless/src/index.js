@@ -29,7 +29,7 @@ module.exports = ({
 
   const createPage = async () => {
     const _browser = await browser
-    debug('createPage', {
+    debug('new page', {
       pid: _browser.process().pid,
       incognito,
       pages: (await _browser.pages()).length
@@ -90,7 +90,6 @@ module.exports = ({
     // low level methods
     browser,
     close: async () => (await browser).close(),
-    kill: async opts => driver.kill((await browser).process().pid, opts),
     destroy: async opts => driver.destroy(await browser, opts),
     respawn,
     // high level methods

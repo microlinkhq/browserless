@@ -1,7 +1,20 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless')
 const pReflect = require('p-reflect')
-const fkill = require('./fkill')
+const pidtree = require('pidtree')
+
+const kill = async (pid, { silent = true, signal = 'SIGKILL' } = {}) => {
+  const { isRejected, value: pids = [], reason } = await pReflect(pidtree(pid, { root: true }))
+  if (isRejected && !silent) throw reason
+  pids.forEach(pid => {
+    try {
+      process.kill(pid, signal)
+    } catch (err) {
+      if (!silent) throw err
+    }
+  })
+}
 
 const spawn = (puppeteer, launchOpts) =>
   puppeteer.launch({
@@ -24,15 +37,11 @@ const spawn = (puppeteer, launchOpts) =>
     ...launchOpts
   })
 
-const kill = async pid => {
-  await fkill(pid, { tree: true, force: true, silent: true })
+const destroy = async (browser, opts) => {
+  const pid = browser.process().pid
+  debug('destroy', { pid })
+  await kill(pid, opts)
   return { pid }
 }
 
-const destroy = async (browser, opts) => {
-  const pid = browser.process().pid
-  await pReflect(browser.close())
-  return kill(pid, opts)
-}
-
-module.exports = { spawn, kill, destroy }
+module.exports = { spawn, destroy }
