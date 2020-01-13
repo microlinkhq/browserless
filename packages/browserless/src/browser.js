@@ -4,15 +4,11 @@ const debug = require('debug-logfmt')('browserless')
 const pReflect = require('p-reflect')
 const pidtree = require('pidtree')
 
-const kill = async (pid, { silent = true, signal = 'SIGKILL' } = {}) => {
-  const { isRejected, value: pids = [], reason } = await pReflect(pidtree(pid, { root: true }))
-  if (isRejected && !silent) throw reason
+const kill = async (pids, { signal = 'SIGKILL' } = {}) => {
   pids.forEach(pid => {
     try {
       process.kill(pid, signal)
-    } catch (err) {
-      if (!silent) throw err
-    }
+    } catch (_) {}
   })
 }
 
@@ -38,10 +34,12 @@ const spawn = (puppeteer, launchOpts) =>
   })
 
 const destroy = async (browser, opts) => {
-  const pid = browser.process().pid
-  debug('destroy', { pid })
-  await kill(pid, opts)
-  return { pid }
+  const { pid } = browser.process()
+  const { value: pids = [] } = await pReflect(pidtree(pid, { root: true }))
+  debug('destroy', { pids })
+  await pReflect(browser.close())
+  kill(pids, opts)
+  return { pids }
 }
 
 module.exports = { spawn, destroy }
