@@ -1,6 +1,6 @@
 'use strict'
 
-const { PuppeteerBlocker, fullLists } = require('@cliqz/adblocker-puppeteer')
+const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const { promisify } = require('util')
 const got = require('got')
 const fs = require('fs')
@@ -9,20 +9,22 @@ const writeFile = promisify(fs.writeFile)
 
 const OUTPUT_FILENAME = 'src/engine.bin'
 
-// Lightweight `fetch` polyfill on top of `got` to allow consumption by adblocker
-const fetch = async url => {
-  const body = (await got(url)).body
+// Small helpers to allow fetching different types of data with `got`
+const fetchBuffer = async url => (await got(url, { encoding: null })).body
+const fetchText = async url => Buffer.from(await fetchBuffer(url), 'ascii')
+const fetchJson = async url => JSON.parse(await fetchText(url))
 
-  return {
-    text: () => body,
-    arrayBuffer: () => Buffer.from(body, 'ascii').buffer,
-    json: () => JSON.parse(body)
-  }
-}
+// Lightweight `fetch` polyfill on top of `got` to allow consumption by adblocker
+const fetch = url =>
+  Promise.resolve({
+    text: () => fetchText(url),
+    arrayBuffer: () => fetchBuffer(url),
+    json: () => fetchJson(url)
+  })
 
 const main = async () => {
   // create a ad-blocker engine
-  const engine = await PuppeteerBlocker.fromLists(fetch, fullLists)
+  const engine = await PuppeteerBlocker.fromPrebuiltFull(fetch)
   await writeFile(OUTPUT_FILENAME, engine.serialize())
 }
 
