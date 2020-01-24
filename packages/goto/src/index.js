@@ -56,13 +56,13 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
   const goto = async (
     page,
-    { url, media, adblock = true, headers = {}, waitFor = 0, disableAnimations = true, disableJavaScript = false, ...args }
+    { url, mediaType, adblock = true, headers = {}, waitFor = 0, animations = true, javascript = true, ...args }
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
     }
 
-    if (disableJavaScript) {
+    if (javascript === false) {
       await page.setJavaScriptEnabled(false)
     }
 
@@ -89,8 +89,8 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       await page.setViewport(device.viewport)
     }
 
-    if (media) {
-      await page.emulateMediaType(media)
+    if (mediaType) {
+      await page.emulateMediaType(mediaType)
     }
 
     const task = () => page.goto(url, args)
@@ -98,8 +98,8 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     const { isFulfilled, value: response } = await pReflect(pTimeout(task(), gotoTimeout))
 
     if (isFulfilled) {
-      if (disableAnimations) {
-        debug({ disableAnimations })
+      if (animations) {
+        debug({ animations })
         await page.evaluate(doDisableAnimations)
       }
 
