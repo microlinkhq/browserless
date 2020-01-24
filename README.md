@@ -9,7 +9,7 @@
 [![Dev Dependencies Status](https://img.shields.io/david/dev/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> A [puppeteer](https://gcithub.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
+> A [puppeteer](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
 
 ## Why
 
