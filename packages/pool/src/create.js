@@ -3,6 +3,7 @@
 const debug = require('debug-logfmt')('browserless:pool')
 const createBrowserless = require('browserless')
 const genericPool = require('generic-pool')
+const mimicFn = require('mimic-fn')
 const assert = require('assert')
 
 const poolInfo = pool => ({
@@ -52,8 +53,10 @@ module.exports = (opts, launchOpts) => {
 
   const pool = genericPool.createPool(factory, { ...POOL_OPTS, ...opts })
 
-  return fn => {
+  const decorate = fn => {
     debug('acquire browser', poolInfo(pool))
     return pool.use(fn)
   }
+
+  return mimicFn(decorate, pool)
 }

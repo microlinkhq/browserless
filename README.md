@@ -591,6 +591,11 @@ const browserlessPool = createBrowserless({
   max: 2, // max browsers to keep open
   timeout: 30000 // max time a browser is consiedered fresh
 })
+
+// pool shutdown gracefully on process exit.
+process.on('exit', () => {
+  browserlessPool.drain().then(() => browserlessPool.clear())
+})
 ```
 
 You can still pass specific puppeteer options as second argument:
