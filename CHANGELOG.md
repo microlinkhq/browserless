@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.20.0](https://github.com/microlinkhq/browserless/compare/v5.19.14...v5.20.0) (2020-01-24)
+
+
+### Features
+
+* Rename some API parameters ([#130](https://github.com/microlinkhq/browserless/issues/130)) ([c649ab3](https://github.com/microlinkhq/browserless/commit/c649ab365382dbeb23df10a495a588be54012e91)), closes [#129](https://github.com/microlinkhq/browserless/issues/129) [#126](https://github.com/microlinkhq/browserless/issues/126)
+
+
+
+
+
 ## [5.19.14](https://github.com/microlinkhq/browserless/compare/v5.19.13...v5.19.14) (2020-01-17)
 
 **Note:** Version bump only for package browserless
