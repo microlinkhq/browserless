@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.20.2](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.20.1...v5.20.2) (2020-01-25)
+
+
+### Bug Fixes
+
+* unify `animations` ([2060a62](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/2060a6201d450d726e9a94c573e7cb0112478f31))
+
+
+
+
+
 # [5.20.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.19.14...v5.20.0) (2020-01-24)
 
 
