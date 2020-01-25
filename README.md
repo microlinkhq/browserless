@@ -249,88 +249,11 @@ Also, any [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/d
 
 Additionally, you can setup:
 
-##### click
-
-type: `string` | `string[]`</br>
-
-Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
-
 ##### element
 
 type: `string` </br>
 
 Capture the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors). It will wait for the element to appear in the page and to be visible.
-
-##### hide
-
-type: `string` | `string[]`</br>
-
-Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
-
-Can be useful for cleaning up the page.
-
-```js
-
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    hide: ['.crisp-client', '#cookies-policy']
-  })
-})()
-```
-
-This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
-
-##### modules
-
-type: `string` | `string[]`</br>
-
-Inject [JavaScript modules](https://developers.google.com/web/fundamentals/primers/modules) into the page.
-
-Accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
-
-```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    modules: ['https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
-  })
-})()
-```
-
-##### scripts
-
-type: `string` | `string[]`</br>
-
-Same as the `modules` option, but instead injects the code as [`<script>` instead of `<script type="module">`](https://developers.google.com/web/fundamentals/primers/modules). Prefer the `modules` option whenever possible.
-
-```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    scripts: ['https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
-  })
-})()
-```
-
-##### styles
-
-type: `string` | `string[]`</br>
-
-Inject CSS styles into the page.
-
-Accepts an array of inline code, absolute URLs, and local file paths (must have a `.css` extension).
-
-```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    styles: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`, ``]
-  })
-})()
-```
-
-##### scrollTo
-
-type: `string` | `object`
-
-Scroll to the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
 ##### overlay
 
@@ -480,13 +403,6 @@ default: `true`
 
 It will be abort requests detected as ads.
 
-##### device
-
-type: `string`</br>
-default: `'macbook pro 13'`
-
-It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
-
 ##### animations
 
 Type: `boolean`<br>
@@ -494,12 +410,18 @@ Default: `false`
 
 Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
 
-##### disableJavaScript
+##### click
 
-Type: `boolean`<br>
-Default: `false`
+type: `string` | `string[]`</br>
 
-When it's `true`, it sets JavaScript as disabled on the current page.
+Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+##### device
+
+type: `string`</br>
+default: `'macbook pro 13'`
+
+It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
 
 ##### headers
 
@@ -522,12 +444,90 @@ const browserless = require('browserless')
 })()
 ```
 
-##### media
+##### hide
+
+type: `string` | `string[]`</br>
+
+Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+Can be useful for cleaning up the page.
+
+```js
+
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    hide: ['.crisp-client', '#cookies-policy']
+  })
+})()
+```
+
+This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
+
+##### javascript
+
+Type: `boolean`<br>
+Default: `true`
+
+When it's `false`, it disables JavaScript on the current page.
+
+##### mediaType
 
 type: `string`</br>
 default: `'screen'`
 
-Changes the CSS media type of the page using [page.emulateMedia](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
+Changes the CSS media type of the page using [page.emulateMediaType](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
+
+##### modules
+
+type: `string` | `string[]`</br>
+
+Inject [JavaScript modules](https://developers.google.com/web/fundamentals/primers/modules) into the page.
+
+Accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    modules: ['https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+  })
+})()
+```
+
+##### scripts
+
+type: `string` | `string[]`</br>
+
+Same as the `modules` option, but instead injects the code as [`<script>` instead of `<script type="module">`](https://developers.google.com/web/fundamentals/primers/modules). Prefer the `modules` option whenever possible.
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    scripts: ['https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+  })
+})()
+```
+
+##### scrollTo
+
+type: `string` | `object`
+
+Scroll to the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+
+##### styles
+
+type: `string` | `string[]`</br>
+
+Inject CSS styles into the page.
+
+Accepts an array of inline code, absolute URLs, and local file paths (must have a `.css` extension).
+
+```js
+;(async () => {
+  const buffer = await browserless.screenshot(url.toString(), {
+    styles: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`, ``]
+  })
+})()
+```
 
 ##### url
 

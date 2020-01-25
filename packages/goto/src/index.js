@@ -18,6 +18,81 @@ engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
+const toArray = value => [].concat(value)
+
+const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
+
+const getInjectKey = (ext, value) =>
+  isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
+
+const hideElements = elements => {
+  for (const element of elements) {
+    if (element) element.style.visibility = 'hidden'
+  }
+}
+
+const scrollToElement = (element, options) => {
+  const isOverflown = element => {
+    return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
+  }
+
+  const findScrollParent = element => {
+    if (element === undefined) {
+      return
+    }
+
+    if (isOverflown(element)) {
+      return element
+    }
+
+    return findScrollParent(element.parentElement)
+  }
+
+  const calculateOffset = (rect, options) => {
+    if (options === undefined) {
+      return {
+        x: rect.left,
+        y: rect.top
+      }
+    }
+
+    const offset = options.offset || 0
+
+    switch (options.offsetFrom) {
+      case 'top':
+        return {
+          x: rect.left,
+          y: rect.top + offset
+        }
+      case 'right':
+        return {
+          x: rect.left - offset,
+          y: rect.top
+        }
+      case 'bottom':
+        return {
+          x: rect.left,
+          y: rect.top - offset
+        }
+      case 'left':
+        return {
+          x: rect.left + offset,
+          y: rect.top
+        }
+      default:
+        throw new Error('Invalid `scrollToElement.offsetFrom` value')
+    }
+  }
+
+  const rect = element.getBoundingClientRect()
+  const offset = calculateOffset(rect, options)
+  const parent = findScrollParent(element)
+
+  if (parent !== undefined) {
+    parent.scrollTo(offset.x, offset.y)
+  }
+}
+
 const parseCookies = (url, str) => {
   const domain = `.${getDomain(url)}`
   return str.split(';').reduce((acc, str) => {
@@ -64,10 +139,17 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       waitFor = 0,
       animations = false,
       javascript = true,
+      hide,
+      click,
+      modules,
+      scripts,
+      styles,
+      scrollTo,
       ...args
     }
   ) => {
     if (adblock) {
+      debug({ adblock })
       await engine.enableBlockingInPage(page)
     }
 
@@ -100,22 +182,83 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     }
 
     if (mediaType) {
+      debug({ mediaType })
       await page.emulateMediaType(mediaType)
     }
 
-    const task = () => page.goto(url, args)
-
-    const { isFulfilled, value: response } = await pReflect(pTimeout(task(), gotoTimeout))
+    const { isFulfilled, value: response } = await pReflect(
+      pTimeout(page.goto(url, args), gotoTimeout)
+    )
 
     if (isFulfilled) {
-      if (animations) {
+      if (waitFor) {
+        debug({ waitFor })
+        await page.waitFor(waitFor)
+      }
+
+      if (animations === false) {
         debug({ animations })
         await page.evaluate(disableAnimations)
       }
 
-      if (waitFor) {
-        debug({ waitFor })
-        await page.waitFor(waitFor)
+      if (hide) {
+        debug({ hide })
+        await Promise.all(
+          toArray(hide).map(selector => pReflect(page.$$eval(selector, hideElements)))
+        )
+      }
+
+      if (click) {
+        for (const selector of toArray(click)) {
+          debug({ click: selector })
+          await pReflect(page.click(selector))
+        }
+      }
+
+      if (modules) {
+        await Promise.all(
+          toArray(modules).map(m =>
+            pReflect(
+              page.addScriptTag({
+                [getInjectKey('js', m)]: m,
+                type: 'module'
+              })
+            )
+          )
+        )
+      }
+
+      if (scripts) {
+        await Promise.all(
+          toArray(scripts).map(script =>
+            pReflect(
+              page.addScriptTag({
+                [getInjectKey('js', script)]: script
+              })
+            )
+          )
+        )
+      }
+
+      if (styles) {
+        await Promise.all(
+          toArray(styles).map(style =>
+            pReflect(
+              page.addStyleTag({
+                [getInjectKey('css', style)]: style
+              })
+            )
+          )
+        )
+      }
+
+      if (scrollTo) {
+        debug({ scrollTo })
+        if (typeof scrollTo === 'object') {
+          await pReflect(page.$eval(scrollTo.element, scrollToElement, scrollTo))
+        } else {
+          await pReflect(page.$eval(scrollTo, scrollToElement))
+        }
       }
     }
 
