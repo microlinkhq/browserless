@@ -481,16 +481,20 @@ Changes the CSS media type of the page using [page.emulateMediaType](https://git
 
 type: `string` | `string[]`</br>
 
-Inject [JavaScript modules](https://developers.google.com/web/fundamentals/primers/modules) into the browser page.
+Injects [&lt;script type="module"&gt;](https://v8.dev/features/modules) into the browser page.
 
-It accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
+It can accept:
+
+- Absolute URLs (e.g., `'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js'`).
+- Local file (e.g., `'local-file.js').
+- Inline code (e.g., `"document.body.style.backgroundColor = 'red'"`).
 
 ```js
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
     modules: [
-      'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 
-      'local-file.js', 
+      'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js',
+      'local-file.js',
       "document.body.style.backgroundColor = 'red'"
     ]
   })
@@ -501,15 +505,28 @@ It accepts an array of inline code, absolute URLs, and local file paths (must ha
 
 type: `string` | `string[]`</br>
 
-Same as the `modules` option, but instead injects the code as [`<script>` instead of `<script type="module">`](https://developers.google.com/web/fundamentals/primers/modules). Prefer the `modules` option whenever possible.
+Injects [&lt;script&gt;](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script) into the browser page.
+
+It can accept:
+
+- Absolute URLs (e.g., `'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js'`).
+- Local file (e.g., `'local-file.js').
+- Inline code (e.g., `"document.body.style.backgroundColor = 'red'"`).
+
 
 ```js
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
-    scripts: ['https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+    scripts: [
+      'https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js',
+      'local-file.js',
+      `document.body.style.backgroundColor = 'red`
+    ]
   })
 })()
 ```
+
+Prefer to use [modules](#modules) whenever possible.
 
 ##### scrollTo
 
@@ -521,14 +538,22 @@ Scroll to the DOM element matching the given [CSS selector](https://developer.mo
 
 type: `string` | `string[]`</br>
 
-Inject CSS styles into the page.
+Injects [&lt;style&gt;](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style) into the browser page.
 
-Accepts an array of inline code, absolute URLs, and local file paths (must have a `.css` extension).
+It can accept:
+
+- Absolute URLs (e.g., `'https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css'`).
+- Local file (e.g., `'local-file.css').
+- Inline code (e.g., `"body { background: red; }"`).
 
 ```js
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
-    styles: ['https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css', 'local-file.css', `body { background: red; }`]
+    styles: [
+      'https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css',
+      'local-file.css',
+      `body { background: red; }`
+    ]
   })
 })()
 ```
