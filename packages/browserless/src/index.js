@@ -95,13 +95,11 @@ module.exports = ({
     // high level methods
     evaluate,
     goto,
-    html: evaluate(page => page.content(), { disableAnimations: false }),
+    html: evaluate(page => page.content()),
     page: createPage,
     pdf,
     screenshot,
-    text: evaluate(page => page.evaluate(() => document.body.innerText), {
-      disableAnimations: false
-    }),
+    text: evaluate(page => page.evaluate(() => document.body.innerText)),
     getDevice: goto.getDevice
   }
 }

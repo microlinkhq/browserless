@@ -33,7 +33,7 @@ const parseCookies = (url, str) => {
   }, [])
 }
 
-const doDisableAnimations = () => {
+const disableAnimations = () => {
   const rule = `
   *,
   ::before,
@@ -56,7 +56,16 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
   const goto = async (
     page,
-    { url, mediaType, adblock = true, headers = {}, waitFor = 0, animations = true, javascript = true, ...args }
+    {
+      url,
+      mediaType,
+      adblock = true,
+      headers = {},
+      waitFor = 0,
+      animations = false,
+      javascript = true,
+      ...args
+    }
   ) => {
     if (adblock) {
       await engine.enableBlockingInPage(page)
@@ -100,7 +109,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     if (isFulfilled) {
       if (animations) {
         debug({ animations })
-        await page.evaluate(doDisableAnimations)
+        await page.evaluate(disableAnimations)
       }
 
       if (waitFor) {

@@ -130,14 +130,6 @@ const browserless = require('browserless')
 
 #### options
 
-This method use the following options by default:
-
-```js
-{
-  disableAnimations: false
-}
-```
-
 See [browserless.goto](/#gotopage-options) to know all the options and values supported.
 
 ### .text(url, options)
@@ -155,14 +147,6 @@ const browserless = require('browserless')
 ```
 
 #### options
-
-This method use the following options by default:
-
-```js
-{
-  disableAnimations: false
-}
-```
 
 See [browserless.goto](/#gotopage-options) to know all the options and values supported.
 
@@ -186,9 +170,7 @@ This method use the following options by default:
 
 ```js
 {
-  disableAnimations: true,
   margin: '0.35cm',
-  media: 'print',
   printBackground: true,
   scale: 0.65
 }
@@ -257,7 +239,6 @@ This method use the following options by default:
 
 ```js
 {
-  disableAnimations: true,
   device: 'macbook pro 13'
 }
 ```
@@ -462,8 +443,7 @@ const browserless = require('browserless')()
 
 const getText = browserless.evaluate(
   page => page.evaluate(() => document.body.innerText), {
-    waitUntil: 'domcontentloaded',
-    disableAnimations: false
+    waitUntil: 'domcontentloaded'
   })
 
 ;(async () => {
@@ -507,10 +487,10 @@ default: `'macbook pro 13'`
 
 It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
 
-##### disableAnimations
+##### animations
 
 Type: `boolean`<br>
-Default: `true`
+Default: `false`
 
 Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
 
