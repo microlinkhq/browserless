@@ -72,6 +72,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     }
 
     if (javascript === false) {
+      debug({ javascript })
       await page.setJavaScriptEnabled(false)
     }
 
