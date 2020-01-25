@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.21.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.20.3...v5.21.0) (2020-01-25)
+
+
+### Features
+
+* move some screenshot tweaks into goto level ([049b08a](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/049b08a61cee4676bc87992cfc2f86249e3b7896)), closes [#128](https://github.com/kikobeats/browserless/tree/master/packages/goto/issues/128)
+
+
+
+
+
 ## [5.20.3](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.20.2...v5.20.3) (2020-01-25)
 
 **Note:** Version bump only for package @browserless/goto

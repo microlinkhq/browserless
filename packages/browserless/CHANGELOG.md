@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.21.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.20.3...v5.21.0) (2020-01-25)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
 ## [5.20.3](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v5.20.2...v5.20.3) (2020-01-25)
 
 **Note:** Version bump only for package browserless
