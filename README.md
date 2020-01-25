@@ -481,7 +481,7 @@ Changes the CSS media type of the page using [page.emulateMediaType](https://git
 
 type: `string` | `string[]`</br>
 
-Inject [JavaScript modules](https://developers.google.com/web/fundamentals/primers/modules) into the page.
+Inject [JavaScript modules](https://developers.google.com/web/fundamentals/primers/modules) into the browser page.
 
 Accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
 
