@@ -483,12 +483,16 @@ type: `string` | `string[]`</br>
 
 Inject [JavaScript modules](https://developers.google.com/web/fundamentals/primers/modules) into the browser page.
 
-Accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
+It accepts an array of inline code, absolute URLs, and local file paths (must have a `.js` extension).
 
 ```js
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
-    modules: ['https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 'local-file.js', `document.body.style.backgroundColor = 'red`]
+    modules: [
+      'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js', 
+      'local-file.js', 
+      "document.body.style.backgroundColor = 'red'"
+    ]
   })
 })()
 ```
