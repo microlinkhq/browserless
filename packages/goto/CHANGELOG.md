@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.22.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.21.0...v5.22.0) (2020-01-26)
+
+
+### Features
+
+* add remove API parameter ([be34700](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/be34700a2a959de409f44193abf9a690f95f772a))
+
+
+
+
+
 # [5.21.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v5.20.3...v5.21.0) (2020-01-25)
 
 
