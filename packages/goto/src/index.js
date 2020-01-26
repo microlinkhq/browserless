@@ -31,6 +31,12 @@ const hideElements = elements => {
   }
 }
 
+const removeElements = elements => {
+  for (const element of elements) {
+    element.style.display = 'none'
+  }
+}
+
 const scrollToElement = (element, options) => {
   const isOverflown = element => {
     return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
@@ -140,6 +146,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       animations = false,
       javascript = true,
       hide,
+      remove,
       click,
       modules,
       scripts,
@@ -205,6 +212,13 @@ module.exports = ({ timeout, ...deviceOpts }) => {
         debug({ hide })
         await Promise.all(
           toArray(hide).map(selector => pReflect(page.$$eval(selector, hideElements)))
+        )
+      }
+
+      if (remove) {
+        debug({ remove })
+        await Promise.all(
+          toArray(remove).map(selector => pReflect(page.$$eval(selector, removeElements)))
         )
       }
 
