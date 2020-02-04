@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.0.0](https://github.com/microlinkhq/browserless/compare/v5.22.1...v6.0.0) (2020-02-04)
+
+
+### Build System
+
+* update dependencies ([9565612](https://github.com/microlinkhq/browserless/commit/956561290aad05cca7b090b53a50f601bae20a67))
+
+
+### BREAKING CHANGES
+
+* requires Node.js >= 10
+
+
+
+
+
 ## [5.22.1](https://github.com/microlinkhq/browserless/compare/v5.22.0...v5.22.1) (2020-02-04)
 
 **Note:** Version bump only for package browserless
