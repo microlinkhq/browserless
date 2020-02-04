@@ -12,6 +12,7 @@ const OUTPUT_FILENAME = 'src/engine.bin'
 // Lightweight `fetch` polyfill on top of `got` to allow consumption by adblocker
 const fetch = url =>
   Promise.resolve({
+    text: () => got(url),
     arrayBuffer: () => got(url).buffer(),
     json: () => got(url).json()
   })
