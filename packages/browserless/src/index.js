@@ -60,7 +60,7 @@ module.exports = ({
 
     const task = () =>
       pRetry(run, {
-        retries: 6,
+        retries: 5,
         onFailedAttempt: async error => {
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
