@@ -14,10 +14,7 @@ const BROWSER_THEMES = {
 }
 
 const getBackground = async (bg = 'transparent') => {
-  if (isHttpUrl(bg)) {
-    const { body } = await got(bg, { encoding: null })
-    return body
-  }
+  if (isHttpUrl(bg)) return got(bg).buffer()
 
   if (!bg.includes('gradient')) {
     bg = `linear-gradient(45deg, ${bg} 0%, ${bg} 100%)`
