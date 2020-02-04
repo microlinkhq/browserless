@@ -9,17 +9,15 @@ const writeFile = promisify(fs.writeFile)
 
 const OUTPUT_FILENAME = 'src/engine.bin'
 
-// Small helpers to allow fetching different types of data with `got`
-const fetchBuffer = async url => (await got(url, { encoding: null })).body
-const fetchText = async url => Buffer.from(await fetchBuffer(url), 'ascii')
-const fetchJson = async url => JSON.parse(await fetchText(url))
-
 // Lightweight `fetch` polyfill on top of `got` to allow consumption by adblocker
 const fetch = url =>
   Promise.resolve({
-    text: () => fetchText(url),
-    arrayBuffer: () => fetchBuffer(url),
-    json: () => fetchJson(url)
+    text: () =>
+      got(url)
+        .text()
+        .then(str => Buffer.from(str, 'ascii')),
+    arrayBuffer: () => got(url).buffer(),
+    json: () => got(url).json()
   })
 
 const main = async () => {
