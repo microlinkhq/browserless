@@ -26,7 +26,7 @@
     "@browserless/goto": "^5.22.0"
   },
   "engines": {
-    "node": ">= 8"
+    "node": ">= 10"
   },
   "files": [
     "src"

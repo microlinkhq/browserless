@@ -40,7 +40,7 @@
     "ava": "latest"
   },
   "engines": {
-    "node": ">= 8"
+    "node": ">= 10"
   },
   "files": [
     "scripts",
