@@ -29,7 +29,7 @@
   "dependencies": {
     "@browserless/goto": "^6.0.0",
     "got": "~10.4.0",
-    "is-url-http": "~2.0.0",
+    "is-url-http": "~2.1.1",
     "p-reflect": "~2.1.0",
     "sharp": "~0.24.0",
     "svg-gradient": "~1.0.2"
