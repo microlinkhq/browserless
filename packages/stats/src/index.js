@@ -1,9 +1,10 @@
 'use strict'
 
+const { pickBy, pick, mapValues } = require('lodash')
 const requireOneOf = require('require-one-of')
-const { pick, mapValues } = require('lodash')
 const prettyBytes = require('pretty-bytes')
 const lighthouse = require('lighthouse')
+const prettyMs = require('pretty-ms')
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const DEFAULT_LIGHTHOUSE_CONFIG = {
@@ -58,36 +59,30 @@ const getLighthouseReport = async (
   return lhr
 }
 
+const getDuration = ({ numericValue: duration }) =>
+  duration ? { duration, duration_pretty: prettyMs(duration) } : undefined
+
 module.exports = async (url, opts) => {
   const { audits } = await getLighthouseReport(url, opts)
 
   return mapValues(audits, audit => {
     const { id } = audit
     switch (id) {
-      case 'network-rtt':
-      case 'network-server-latency':
-        return {
-          ...pick(audit, ['title', 'description']),
-          duration: audit.numericValue,
-          duration_pretty: audit.displayValue
-        }
       case 'resource-summary':
         return {
           ...pick(audit, ['title', 'description']),
           ...audit.details.items.reduce(
-            (acc, { requestCount: count, resourceType: type, size }) => ({
-              ...acc,
-              [type]: {
-                count,
-                size,
-                size_pretty: prettyBytes(size)
-              }
-            }),
+            (acc, { requestCount: count, resourceType: type, size }) => {
+              return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
+            },
             {}
           )
         }
       default:
-        return pick(audit, ['title', 'description', 'score'])
+        return pickBy({
+          ...pick(audit, ['title', 'description', 'score']),
+          ...getDuration(audit)
+        })
     }
   })
 }
