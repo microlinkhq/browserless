@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.1.0](https://github.com/microlinkhq/browserless/compare/v6.0.0...v6.1.0) (2020-02-07)
+
+
+### Features
+
+* add duration when is possible ([cbb72cb](https://github.com/microlinkhq/browserless/commit/cbb72cb83941fd8b854af698f7040ee932b8de19))
+
+
+
+
+
 # [6.0.0](https://github.com/microlinkhq/browserless/compare/v5.22.1...v6.0.0) (2020-02-04)
 
 
