@@ -62,6 +62,8 @@ const getLighthouseReport = async (
 const getDuration = ({ numericValue: duration }) =>
   duration ? { duration, duration_pretty: prettyMs(duration) } : undefined
 
+const getScore = ({ score }) => (score ? { score: Number((score * 100).toFixed(0)) } : undefined)
+
 module.exports = async (url, opts) => {
   const { audits } = await getLighthouseReport(url, opts)
 
@@ -80,7 +82,8 @@ module.exports = async (url, opts) => {
         }
       default:
         return pickBy({
-          ...pick(audit, ['title', 'description', 'score']),
+          ...pick(audit, ['title', 'description']),
+          ...getScore(audit),
           ...getDuration(audit)
         })
     }
