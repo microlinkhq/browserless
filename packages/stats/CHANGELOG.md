@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.2.0](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v6.1.0...v6.2.0) (2020-02-08)
+
+
+### Features
+
+* normalize score ([6075a76](https://github.com/kikobeats/browserless/tree/master/packages/stats/commit/6075a76ee6c316c42d2bbe6b55f5aed63b250d2b))
+
+
+
+
+
 # [6.1.0](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v6.0.0...v6.1.0) (2020-02-07)
 
 
