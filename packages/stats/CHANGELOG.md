@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.3.0](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v6.2.0...v6.3.0) (2020-02-08)
+
+
+### Features
+
+* add lighthouse details ([ccd112f](https://github.com/kikobeats/browserless/tree/master/packages/stats/commit/ccd112fe64bca72d41349e28d6125f35aef3c8b0))
+
+
+
+
+
 # [6.2.0](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v6.1.0...v6.2.0) (2020-02-08)
 
 
