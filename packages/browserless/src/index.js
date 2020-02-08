@@ -2,7 +2,6 @@
 
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
-const PCancelable = require('p-cancelable')
 const importLazy = require('import-lazy')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -20,8 +19,7 @@ module.exports = ({
   let browser = driver.spawn(puppeteer, launchOpts)
 
   const respawn = async () => {
-    const destroyResult = await driver.destroy(await browser)
-    debug('destroy', destroyResult)
+    await driver.destroy(await browser)
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
@@ -41,37 +39,36 @@ module.exports = ({
 
   const wrapError = fn => async (...args) => {
     let page
+    let isRejected = false
 
     const closePage = () => (page ? pReflect(page.close()) : undefined)
 
-    const run = async () =>
-      new PCancelable(async (resolve, reject, onCancel) => {
-        onCancel(closePage)
-        try {
-          page = await createPage()
-          const value = await fn(page)(...args)
-          await closePage()
-          return resolve(value)
-        } catch (err) {
-          await closePage()
-          return reject(err)
-        }
-      })
+    const run = async () => {
+      try {
+        page = await createPage()
+        return fn(page)(...args)
+      } finally {
+        await closePage()
+      }
+    }
 
     const task = () =>
       pRetry(run, {
         retries: 5,
         onFailedAttempt: async error => {
+          if (isRejected) throw new pRetry.AbortError()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
           if (message.startsWith('net::')) throw error
-          return respawn()
+          await respawn()
         }
       })
 
-    const { isRejected, value, reason } = await pReflect(pTimeout(task(), timeout))
-    if (isRejected) throw reason
-    return value
+    const { isFulfilled, value, reason } = await pReflect(pTimeout(task(), timeout))
+
+    if (isFulfilled) return value
+    isRejected = true
+    throw reason
   }
 
   const evaluate = (fn, gotoOpts) =>

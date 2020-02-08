@@ -35,7 +35,6 @@
     "@browserless/screenshot": "^6.1.0",
     "debug-logfmt": "~1.0.4",
     "import-lazy": "~4.0.0",
-    "p-cancelable": "~2.0.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.2.0",
     "p-timeout": "~3.2.0",
