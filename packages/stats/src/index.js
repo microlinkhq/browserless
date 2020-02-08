@@ -1,6 +1,6 @@
 'use strict'
 
-const { pickBy, pick, mapValues } = require('lodash')
+const { toNumber, get, isEmpty, pickBy, pick, mapValues } = require('lodash')
 const requireOneOf = require('require-one-of')
 const prettyBytes = require('pretty-bytes')
 const lighthouse = require('lighthouse')
@@ -10,6 +10,7 @@ const prettyMs = require('pretty-ms')
 const DEFAULT_LIGHTHOUSE_CONFIG = {
   extends: 'lighthouse:default',
   settings: {
+    // emulatedFormFactor: 'mobile',
     onlyAudits: [
       // minimal
       'first-contentful-paint',
@@ -49,7 +50,7 @@ const getLighthouseReport = async (
   url,
   {
     lighthouseConfig = DEFAULT_LIGHTHOUSE_CONFIG,
-    getBrowserless = requireOneOf(['@browserless/pool', 'browserless'])
+    getBrowserless = requireOneOf(['browserless'])
   } = {}
 ) => {
   const browserless = await getBrowserless()
@@ -62,7 +63,10 @@ const getLighthouseReport = async (
 const getDuration = ({ numericValue: duration }) =>
   duration ? { duration, duration_pretty: prettyMs(duration) } : undefined
 
-const getScore = ({ score }) => (score ? { score: Number((score * 100).toFixed(0)) } : undefined)
+const getScore = ({ score }) => (score ? { score: toNumber((score * 100).toFixed(0)) } : undefined)
+
+const getDetails = ({ details }) =>
+  !isEmpty(get(details, 'items')) ? { details: pick(details, ['heading', 'items']) } : undefined
 
 module.exports = async (url, opts) => {
   const { audits } = await getLighthouseReport(url, opts)
@@ -84,7 +88,8 @@ module.exports = async (url, opts) => {
         return pickBy({
           ...pick(audit, ['title', 'description']),
           ...getScore(audit),
-          ...getDuration(audit)
+          ...getDuration(audit),
+          ...getDetails(audit)
         })
     }
   })
