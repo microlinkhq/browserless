@@ -1,7 +1,6 @@
 'use strict'
 
 const createGoto = require('@browserless/goto')
-const pReflect = require('p-reflect')
 
 const getBoundingClientRect = element => {
   const { top, left, height, width, x, y } = element.getBoundingClientRect()
@@ -13,11 +12,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
   return async (page, url, opts = {}) => {
     const { device: deviceId = 'macbook pro 13', overlay, element, fullPage, ...args } = opts
-
-    if (overlay.browser) {
-      const value = overlay.browser.toString().includes('dark') ? 'dark' : 'light'
-      await pReflect(page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value }]))
-    }
 
     page.on('dialog', async dialog => {
       await dialog.dismiss()

@@ -145,6 +145,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       waitFor = 0,
       animations = false,
       javascript = true,
+      preferScheme,
       hide,
       remove,
       click,
@@ -191,6 +192,10 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     if (mediaType) {
       debug({ mediaType })
       await page.emulateMediaType(mediaType)
+    }
+
+    if (preferScheme) {
+      await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: preferScheme }])
     }
 
     const { isFulfilled, value: response } = await pReflect(

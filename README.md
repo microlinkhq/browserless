@@ -405,8 +405,8 @@ It will be abort requests detected as ads.
 
 ##### animations
 
-Type: `boolean`<br>
-Default: `false`
+type: `boolean`<br>
+default: `false`
 
 Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
 
@@ -450,7 +450,6 @@ type: `string` | `string[]`</br>
 
 Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
-
 ```js
 
 ;(async () => {
@@ -464,8 +463,8 @@ This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on th
 
 ##### javascript
 
-Type: `boolean`<br>
-Default: `true`
+type: `boolean`<br>
+default: `true`
 
 When it's `false`, it disables JavaScript on the current page.
 
@@ -500,7 +499,6 @@ It can accept:
 })()
 ```
 
-
 ##### remove
 
 type: `string` | `string[]`</br>
@@ -518,6 +516,13 @@ Remove DOM elements matching the given [CSS selectors](https://developer.mozilla
 ```
 
 This sets [`display: none`](https://stackoverflow.com/a/133064/64949) on the matched elements, so it could potentially break the website layout.
+
+##### preferScheme
+
+type: `string`</br>
+default: `'no-preference'`
+
+Sets [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme) CSS media feature, used to detect if the user has requested the system use a `'light'` or `'dark'` color theme.
 
 ##### scripts
 
