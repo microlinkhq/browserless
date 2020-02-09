@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.4.0](https://github.com/microlinkhq/browserless/compare/v6.3.0...v6.4.0) (2020-02-09)
+
+
+### Bug Fixes
+
+* ensure to wait the value ([8135da3](https://github.com/microlinkhq/browserless/commit/8135da3e610b9b837123222cedc781bd989d9318))
+
+
+### Features
+
+* add preferScheme ([dc905f6](https://github.com/microlinkhq/browserless/commit/dc905f676c3472cfef0aaa103fe039a78a0e8da9))
+
+
+
+
+
 # [6.3.0](https://github.com/microlinkhq/browserless/compare/v6.2.0...v6.3.0) (2020-02-08)
 
 
