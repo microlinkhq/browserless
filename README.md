@@ -408,7 +408,7 @@ It will be abort requests detected as ads.
 type: `boolean`<br>
 default: `false`
 
-Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition).
+Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition), also it sets [prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) consequently.
 
 ##### click
 
@@ -517,7 +517,7 @@ Remove DOM elements matching the given [CSS selectors](https://developer.mozilla
 
 This sets [`display: none`](https://stackoverflow.com/a/133064/64949) on the matched elements, so it could potentially break the website layout.
 
-##### preferScheme
+##### colorScheme
 
 type: `string`</br>
 default: `'no-preference'`

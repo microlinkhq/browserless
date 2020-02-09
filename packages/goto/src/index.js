@@ -131,6 +131,13 @@ const disableAnimations = () => {
   if (style.sheet) style.sheet.insertRule(rule)
 }
 
+const getMediaFeatures = ({ animations, colorScheme }) => {
+  const prefers = []
+  if (animations === false) prefers.push({ name: 'prefers-reduced-motion', value: 'reduce' })
+  if (colorScheme) prefers.push({ name: 'prefers-color-scheme', value: colorScheme })
+  return prefers
+}
+
 module.exports = ({ timeout, ...deviceOpts }) => {
   const gotoTimeout = timeout * (1 / 4)
   const getDevice = createDevices(deviceOpts)
@@ -145,7 +152,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       waitFor = 0,
       animations = false,
       javascript = true,
-      preferScheme,
+      colorScheme,
       hide,
       remove,
       click,
@@ -194,9 +201,8 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       await page.emulateMediaType(mediaType)
     }
 
-    if (preferScheme) {
-      await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: preferScheme }])
-    }
+    const mediaFeatures = getMediaFeatures({ animations, colorScheme })
+    if (mediaFeatures.length > 0) await page.emulateMediaFeatures(mediaFeatures)
 
     const { isFulfilled, value: response } = await pReflect(
       pTimeout(page.goto(url, args), gotoTimeout)
