@@ -46,7 +46,8 @@ module.exports = ({
     const run = async () => {
       try {
         page = await createPage()
-        return fn(page)(...args)
+        const value = await fn(page)(...args)
+        return value
       } finally {
         await closePage()
       }
