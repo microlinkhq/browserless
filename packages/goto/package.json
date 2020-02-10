@@ -31,7 +31,7 @@
     "@browserless/devices": "^6.0.0",
     "@cliqz/adblocker-puppeteer": "~1.6.3",
     "debug-logfmt": "~1.0.4",
-    "got": "~10.5.2",
+    "got": "~10.5.5",
     "p-reflect": "~2.1.0",
     "p-timeout": "~3.2.0",
     "tldts": "~5.6.3"
