@@ -30,6 +30,8 @@
     "@browserless/goto": "^6.4.2",
     "got": "~10.5.5",
     "is-url-http": "~2.1.1",
+    "mime-types": "~2.1.26",
+    "prism-themes": "~1.3.0",
     "sharp": "~0.24.0",
     "svg-gradient": "~1.0.2"
   },

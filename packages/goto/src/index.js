@@ -247,10 +247,12 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
       debug({ hide, remove })
 
-      await Promise.all([
-        hide && forEachSelector(page, hide, hideElements),
-        remove && forEachSelector(page, hide, removeElements)
-      ]).filter(Boolean)
+      await Promise.all(
+        [
+          hide && forEachSelector(page, hide, hideElements),
+          remove && forEachSelector(page, hide, removeElements)
+        ].filter(Boolean)
+      )
 
       if (click) {
         for (const selector of toArray(click)) {
@@ -261,11 +263,13 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 
       debug({ modules, scripts, styles })
 
-      await Promise.all([
-        modules && injectScripts(page, modules, { type: 'modules' }),
-        scripts && injectScripts(page, scripts),
-        styles && injectStyles(page, styles)
-      ]).filter(Boolean)
+      await Promise.all(
+        [
+          modules && injectScripts(page, modules, { type: 'modules' }),
+          scripts && injectScripts(page, scripts),
+          styles && injectStyles(page, styles)
+        ].filter(Boolean)
+      )
 
       if (scrollTo) {
         debug({ scrollTo })
