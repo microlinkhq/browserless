@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.4.2](https://github.com/microlinkhq/browserless/compare/v6.4.1...v6.4.2) (2020-02-11)
+
+
+### Bug Fixes
+
+* postinstall script for adblocker ([#145](https://github.com/microlinkhq/browserless/issues/145)) ([38fe5a9](https://github.com/microlinkhq/browserless/commit/38fe5a9cd46ae355c785273078311ef4362f8376))
+
+
+
+
+
 ## [6.4.1](https://github.com/microlinkhq/browserless/compare/v6.4.0...v6.4.1) (2020-02-10)
 
 **Note:** Version bump only for package browserless
