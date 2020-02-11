@@ -1,7 +1,7 @@
 module.exports = (payload, { prism, theme }) => `
 <html>
   <head>
-    <style>${theme}</style>
+    ${theme}
     <style>
       body {
         margin: 0;

@@ -9,6 +9,8 @@ const pTimeout = require('p-timeout')
 const path = require('path')
 const fs = require('fs')
 
+const URL_REGEX = /^(https?|file):\/\/|^data:/
+
 const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
 )
@@ -20,7 +22,7 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const toArray = value => [].concat(value)
 
-const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
+const isUrl = string => URL_REGEX.test(string)
 
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
@@ -292,3 +294,4 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 module.exports.parseCookies = parseCookies
 module.exports.injectScripts = injectScripts
 module.exports.injectStyles = injectStyles
+module.exports.isUrl = isUrl
