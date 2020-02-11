@@ -202,7 +202,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     }
 
     const mediaFeatures = getMediaFeatures({ animations, colorScheme })
-    if (mediaFeatures.length > 0) await page.emulateMediaFeatures(mediaFeatures)
+    if (mediaFeatures.length > 0) await pReflect(page.emulateMediaFeatures(mediaFeatures))
 
     const { isFulfilled, value: response } = await pReflect(
       pTimeout(page.goto(url, args), gotoTimeout)
