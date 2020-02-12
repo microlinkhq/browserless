@@ -6,10 +6,9 @@ const createDevices = require('@browserless/devices')
 const { getDomain } = require('tldts')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
+const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
-
-const URL_REGEX = /^(https?|file):\/\/|^data:/
 
 const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
@@ -21,8 +20,6 @@ engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const toArray = value => [].concat(value)
-
-const isUrl = string => URL_REGEX.test(string)
 
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
