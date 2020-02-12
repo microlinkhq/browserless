@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.6.2](https://github.com/microlinkhq/browserless/compare/v6.6.1...v6.6.2) (2020-02-12)
+
+
+### Bug Fixes
+
+* ensure response is available ([a7148a4](https://github.com/microlinkhq/browserless/commit/a7148a4f0e79e5676477efe7b333f0a24cb4fc5a))
+
+
+
+
+
 ## [6.6.1](https://github.com/microlinkhq/browserless/compare/v6.6.0...v6.6.1) (2020-02-12)
 
 **Note:** Version bump only for package browserless
