@@ -13,7 +13,7 @@ module.exports = gotoOpts => {
 
   return page => async (
     url,
-    { codeScheme = 'dracula', overlay: overlayOpts = {}, ...opts } = {}
+    { codeScheme = 'atom-dark', overlay: overlayOpts = {}, ...opts } = {}
   ) => {
     const [screenshotOpts, response] = await goto(page, url, opts)
 
