@@ -17,7 +17,7 @@ module.exports = gotoOpts => {
   ) => {
     const [screenshotOpts, response] = await goto(page, url, opts)
 
-    if (isJSON(response.headers()) && codeScheme) {
+    if (codeScheme && isJSON(response.headers())) {
       await pretty(page, response, { codeScheme, ...opts })
     }
 
