@@ -20,7 +20,7 @@ module.exports = async fn => {
     spinner.stop()
 
     if (output) {
-      if (isImage) termImg(output)
+      if (isImage) [].concat(output).forEach(termImg)
       else console.log(output)
     }
 

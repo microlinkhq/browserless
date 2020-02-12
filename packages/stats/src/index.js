@@ -10,7 +10,9 @@ const prettyMs = require('pretty-ms')
 const DEFAULT_LIGHTHOUSE_CONFIG = {
   extends: 'lighthouse:default',
   settings: {
-    // emulatedFormFactor: 'mobile',
+    maxWaitForFcp: 10.5 * 1000,
+    maxWaitForLoad: 24.5 * 1000,
+    emulatedFormFactor: 'desktop',
     onlyAudits: [
       // minimal
       'first-contentful-paint',
@@ -20,6 +22,7 @@ const DEFAULT_LIGHTHOUSE_CONFIG = {
       'interactive',
       'resource-summary',
       // extends
+      'screenshot-thumbnails',
       'time-to-first-byte',
       'estimated-input-latency',
       'total-blocking-time',
