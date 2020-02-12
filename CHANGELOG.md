@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.6.0](https://github.com/microlinkhq/browserless/compare/v6.5.0...v6.6.0) (2020-02-12)
+
+
+### Features
+
+* add screenshots thumbnails for stats ([38c0525](https://github.com/microlinkhq/browserless/commit/38c0525e6f747ef1547db18cc30628d6d610115b))
+
+
+
+
+
 # [6.5.0](https://github.com/microlinkhq/browserless/compare/v6.4.4...v6.5.0) (2020-02-12)
 
 

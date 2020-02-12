@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.6.0](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v6.5.0...v6.6.0) (2020-02-12)
+
+
+### Features
+
+* add screenshots thumbnails for stats ([38c0525](https://github.com/kikobeats/browserless/tree/master/packages/stats/commit/38c0525e6f747ef1547db18cc30628d6d610115b))
+
+
+
+
+
 # [6.3.0](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v6.2.0...v6.3.0) (2020-02-08)
 
 
