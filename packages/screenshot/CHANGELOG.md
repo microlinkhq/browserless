@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.5.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.4.4...v6.5.0) (2020-02-12)
+
+
+### Bug Fixes
+
+* resolve theme path properly ([4cf2bea](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/4cf2bea9d5e456372688599a24f7f077a5e783e8))
+
+
+### Features
+
+* pretty json output ([51e4169](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/51e4169989a7ff01bfb2d5852c2958c3cad223bd))
+
+
+
+
+
 ## [6.4.4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.4.3...v6.4.4) (2020-02-12)
 
 **Note:** Version bump only for package @browserless/screenshot
