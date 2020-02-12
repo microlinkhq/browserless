@@ -97,5 +97,10 @@
     "package.json": [
       "finepack"
     ]
+  },
+  "standard": {
+    "ignore": [
+      "packages/screenshot/src/pretty/prism.js"
+    ]
   }
 }

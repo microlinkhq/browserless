@@ -10,14 +10,12 @@ const getBoundingClientRect = element => {
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
-  return async (page, url, opts = {}) => {
-    const { device: deviceId = 'macbook pro 13', overlay, element, fullPage, ...args } = opts
-
+  return async (page, url, { device = 'macbook pro 13', element, ...opts } = {}) => {
     page.on('dialog', async dialog => {
       await dialog.dismiss()
     })
 
-    const { device } = await goto(page, { url, device: deviceId, ...args })
+    const { response } = await goto(page, { url, device, ...opts })
 
     const screenshotOptions = {}
 
@@ -27,6 +25,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       screenshotOptions.fullPage = false
     }
 
-    return { device, ...screenshotOptions }
+    return [screenshotOptions, response]
   }
 }

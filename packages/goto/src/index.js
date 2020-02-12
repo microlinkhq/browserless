@@ -6,6 +6,7 @@ const createDevices = require('@browserless/devices')
 const { getDomain } = require('tldts')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
+const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
@@ -19,8 +20,6 @@ engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const toArray = value => [].concat(value)
-
-const isUrl = string => /^(https?|file):\/\/|^data:/.test(string)
 
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
@@ -138,6 +137,32 @@ const getMediaFeatures = ({ animations, colorScheme }) => {
   return prefers
 }
 
+const injectScripts = (page, values, attributes) =>
+  Promise.all(
+    toArray(values).map(value =>
+      pReflect(
+        page.addScriptTag({
+          [getInjectKey('js', value)]: value,
+          ...attributes
+        })
+      )
+    )
+  )
+
+const injectStyles = (page, styles) =>
+  Promise.all(
+    toArray(styles).map(style =>
+      pReflect(
+        page.addStyleTag({
+          [getInjectKey('css', style)]: style
+        })
+      )
+    )
+  )
+
+const forEachSelector = (page, selectors, fn) =>
+  toArray(selectors).map(selector => pReflect(page.$$eval(selector, fn)))
+
 module.exports = ({ timeout, ...deviceOpts }) => {
   const gotoTimeout = timeout * (1 / 4)
   const getDevice = createDevices(deviceOpts)
@@ -219,19 +244,14 @@ module.exports = ({ timeout, ...deviceOpts }) => {
         await page.evaluate(disableAnimations)
       }
 
-      if (hide) {
-        debug({ hide })
-        await Promise.all(
-          toArray(hide).map(selector => pReflect(page.$$eval(selector, hideElements)))
-        )
-      }
+      debug({ hide, remove })
 
-      if (remove) {
-        debug({ remove })
-        await Promise.all(
-          toArray(remove).map(selector => pReflect(page.$$eval(selector, removeElements)))
-        )
-      }
+      await Promise.all(
+        [
+          hide && forEachSelector(page, hide, hideElements),
+          remove && forEachSelector(page, hide, removeElements)
+        ].filter(Boolean)
+      )
 
       if (click) {
         for (const selector of toArray(click)) {
@@ -240,42 +260,15 @@ module.exports = ({ timeout, ...deviceOpts }) => {
         }
       }
 
-      if (modules) {
-        await Promise.all(
-          toArray(modules).map(m =>
-            pReflect(
-              page.addScriptTag({
-                [getInjectKey('js', m)]: m,
-                type: 'module'
-              })
-            )
-          )
-        )
-      }
+      debug({ modules, scripts, styles })
 
-      if (scripts) {
-        await Promise.all(
-          toArray(scripts).map(script =>
-            pReflect(
-              page.addScriptTag({
-                [getInjectKey('js', script)]: script
-              })
-            )
-          )
-        )
-      }
-
-      if (styles) {
-        await Promise.all(
-          toArray(styles).map(style =>
-            pReflect(
-              page.addStyleTag({
-                [getInjectKey('css', style)]: style
-              })
-            )
-          )
-        )
-      }
+      await Promise.all(
+        [
+          modules && injectScripts(page, modules, { type: 'modules' }),
+          scripts && injectScripts(page, scripts),
+          styles && injectStyles(page, styles)
+        ].filter(Boolean)
+      )
 
       if (scrollTo) {
         debug({ scrollTo })
@@ -296,3 +289,5 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 }
 
 module.exports.parseCookies = parseCookies
+module.exports.injectScripts = injectScripts
+module.exports.injectStyles = injectStyles

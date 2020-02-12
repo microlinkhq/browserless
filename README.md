@@ -43,7 +43,7 @@ const browserless = require('browserless')()
 browserless
   .screenshot('http://example.com', { device: 'iPhone 6' })
   .then(buffer => {
-    console.log(`your screenshot is here!`)
+    console.log('your screenshot is here!')
   })
 ```
 
@@ -160,7 +160,7 @@ const browserless = require('browserless')
 ;(async () => {
   const url = 'https://example.com'
   const buffer = await browserless.pdf(url)
-  console.log(`PDF generated!`)
+  console.log('PDF generated!')
 })()
 ```
 
@@ -229,7 +229,7 @@ const browserless = require('browserless')
 ;(async () => {
   const url = 'https://example.com'
   const buffer = await browserless.screenshot(url)
-  console.log(`Screenshot taken!`)
+  console.log('Screenshot taken!')
 })()
 ```
 
@@ -248,6 +248,20 @@ See [browserless.goto](/#gotopage-options) to know all the options and values su
 Also, any [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagescreenshotoptions) option is supported.
 
 Additionally, you can setup:
+
+##### codeScheme
+
+type: `string`</br>
+default: `'atom-dark'`
+
+When this value is present and the response `'Content-Type'` header is `'json'`, it beautifies HTML markup using [Prism](https://prismjs.com).
+
+![](https://i.imgur.com/uFfviX7.png)
+
+The syntax highlight theme can be customized, being possible to setup:
+
+- A [prism-themes](https://github.com/PrismJS/prism-themes/tree/master/themes) identifier (e.g., `'dracula'`).
+- A remote URL (e.g., `'https://unpkg.com/prism-theme-night-owl'`).
 
 ##### element
 
@@ -543,7 +557,7 @@ It can accept:
     scripts: [
       'https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js',
       'local-file.js',
-      `document.body.style.backgroundColor = 'red`
+      "document.body.style.backgroundColor = 'red'"
     ]
   })
 })()
@@ -575,7 +589,7 @@ It can accept:
     styles: [
       'https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css',
       'local-file.css',
-      `body { background: red; }`
+      'body { background: red; }'
     ]
   })
 })()
@@ -656,7 +670,7 @@ After that, the API is the same than **browserless**:
 browserlessPool
   .screenshot('http://example.com', { device: 'iPhone 6' })
   .then(buffer => {
-    console.log(`your screenshot is here!`)
+    console.log('your screenshot is here!')
   })
 ```
 
