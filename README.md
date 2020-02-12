@@ -249,6 +249,20 @@ Also, any [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/d
 
 Additionally, you can setup:
 
+##### codeScheme
+
+type: `string`</br>
+default: `'atom-dark'`
+
+When this value is present and the response `'Content-Type'` header is `'json'`, it beautifies HTML markup using [Prism](https://prismjs.com).
+
+![](https://i.imgur.com/uFfviX7.png)
+
+The syntax highlight theme can be customized, being possible to setup:
+
+- A [prism-themes](https://github.com/PrismJS/prism-themes/tree/master/themes) identifier (e.g., `'dracula'`).
+- A remote URL (e.g., `'https://unpkg.com/prism-theme-night-owl'`).
+
 ##### element
 
 type: `string` </br>
