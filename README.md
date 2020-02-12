@@ -43,7 +43,7 @@ const browserless = require('browserless')()
 browserless
   .screenshot('http://example.com', { device: 'iPhone 6' })
   .then(buffer => {
-    console.log(`your screenshot is here!`)
+    console.log('your screenshot is here!')
   })
 ```
 
@@ -160,7 +160,7 @@ const browserless = require('browserless')
 ;(async () => {
   const url = 'https://example.com'
   const buffer = await browserless.pdf(url)
-  console.log(`PDF generated!`)
+  console.log('PDF generated!')
 })()
 ```
 
@@ -229,7 +229,7 @@ const browserless = require('browserless')
 ;(async () => {
   const url = 'https://example.com'
   const buffer = await browserless.screenshot(url)
-  console.log(`Screenshot taken!`)
+  console.log('Screenshot taken!')
 })()
 ```
 
@@ -557,7 +557,7 @@ It can accept:
     scripts: [
       'https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js',
       'local-file.js',
-      `document.body.style.backgroundColor = 'red`
+      "document.body.style.backgroundColor = 'red'"
     ]
   })
 })()
@@ -589,7 +589,7 @@ It can accept:
     styles: [
       'https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css',
       'local-file.css',
-      `body { background: red; }`
+      'body { background: red; }'
     ]
   })
 })()
@@ -670,7 +670,7 @@ After that, the API is the same than **browserless**:
 browserlessPool
   .screenshot('http://example.com', { device: 'iPhone 6' })
   .then(buffer => {
-    console.log(`your screenshot is here!`)
+    console.log('your screenshot is here!')
   })
 ```
 
