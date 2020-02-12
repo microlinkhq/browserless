@@ -291,4 +291,3 @@ module.exports = ({ timeout, ...deviceOpts }) => {
 module.exports.parseCookies = parseCookies
 module.exports.injectScripts = injectScripts
 module.exports.injectStyles = injectStyles
-module.exports.isUrl = isUrl

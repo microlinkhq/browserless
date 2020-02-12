@@ -1,7 +1,7 @@
 'use strict'
 
-const { isUrl } = require('@browserless/goto')
 const { readFile } = require('fs').promises
+const isUrl = require('is-url-http')
 const path = require('path')
 
 const THEME_CACHE = Object.create(null)
