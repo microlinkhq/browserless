@@ -87,6 +87,16 @@ module.exports = async (url, opts) => {
             {}
           )
         }
+      case 'screenshot-thumbnails':
+        return {
+          ...pick(audit, ['title', 'description']),
+          details: {
+            items: audit.details.items.map(item => ({
+              ...item,
+              timing_pretty: prettyMs(item.timing)
+            }))
+          }
+        }
       default:
         return pickBy({
           ...pick(audit, ['title', 'description']),
