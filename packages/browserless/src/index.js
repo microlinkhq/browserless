@@ -60,7 +60,6 @@ module.exports = ({
           if (isRejected) throw new pRetry.AbortError()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
-          if (message.startsWith('net::')) throw error
           await respawn()
         }
       })
