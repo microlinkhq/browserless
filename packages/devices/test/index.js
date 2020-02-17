@@ -7,14 +7,14 @@ const getDevice = require('..')()
 test('undefined as default', t => {
   t.deepEqual(getDevice(), {
     userAgent: undefined,
-    viewport: undefined
+    viewport: {}
   })
 })
 
 test('support user agent from headers', t => {
   t.deepEqual(getDevice({ headers: { 'user-agent': 'googlebot' } }), {
     userAgent: 'googlebot',
-    viewport: undefined
+    viewport: {}
   })
 })
 
