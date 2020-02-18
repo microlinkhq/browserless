@@ -79,20 +79,20 @@ module.exports = async (url, opts) => {
     switch (id) {
       case 'resource-summary': {
         const items = get(audit, 'details.items')
-        const values = isEmpty(items)
+        const details = isEmpty(items)
           ? undefined
           : items.reduce((acc, { requestCount: count, resourceType: type, size }) => {
             return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
           }, {})
 
-        return { ...pick(audit, ['title', 'description']), values }
+        return { ...pick(audit, ['title', 'description']), details }
       }
       case 'screenshot-thumbnails': {
         const items = get(audit, 'details.items')
-        const values = isEmpty(items)
+        const details = isEmpty(items)
           ? undefined
-          : items.map(item => ({ ...item, timing_pretty: prettyMs(item.timing) }))
-        return { ...pick(audit, ['title', 'description']), values }
+          : { items: items.map(item => ({ ...item, timing_pretty: prettyMs(item.timing) })) }
+        return { ...pick(audit, ['title', 'description']), details }
       }
       default:
         return pickBy({
