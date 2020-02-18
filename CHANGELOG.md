@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.6.4](https://github.com/microlinkhq/browserless/compare/v6.6.3...v6.6.4) (2020-02-18)
+
+
+### Bug Fixes
+
+* linter ([80b8485](https://github.com/microlinkhq/browserless/commit/80b84855a09212a3a7f3b73597d7841c88b1167d))
+* linter ([40dc936](https://github.com/microlinkhq/browserless/commit/40dc93689779159d7c651fdb697a5cfe0dbf1a72))
+
+
+### Reverts
+
+* Revert "test: update snapshot" ([d148030](https://github.com/microlinkhq/browserless/commit/d148030e1dd0bea8373479054bd5a0c731c800dc))
+
+
+
+
+
 ## [6.6.3](https://github.com/microlinkhq/browserless/compare/v6.6.2...v6.6.3) (2020-02-14)
 
 **Note:** Version bump only for package browserless
