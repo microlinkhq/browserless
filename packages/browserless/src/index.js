@@ -11,7 +11,6 @@ const driver = require('./browser')
 
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
-  puppeteerDevices,
   incognito = false,
   timeout = 30000,
   ...launchOpts
@@ -23,7 +22,7 @@ module.exports = ({
     browser = driver.spawn(puppeteer, launchOpts)
   }
 
-  const goto = createGoto({ puppeteerDevices, timeout })
+  const goto = createGoto({ timeout, ...launchOpts })
 
   const createPage = async () => {
     const _browser = await browser
