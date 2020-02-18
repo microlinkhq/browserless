@@ -27,13 +27,13 @@ module.exports = ({
 
   const createPage = async () => {
     const _browser = await browser
+    const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
+    const page = await context.newPage()
     debug('new page', {
       pid: _browser.process().pid,
       incognito,
       pages: (await _browser.pages()).length
     })
-    const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
-    const page = await context.newPage()
     return page
   }
 
