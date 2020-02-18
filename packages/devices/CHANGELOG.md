@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.7.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v6.6.6...v6.7.0) (2020-02-18)
+
+
+### Features
+
+* improve lossy device support ([#149](https://github.com/kikobeats/browserless/tree/master/packages/devices/issues/149)) ([d3b3890](https://github.com/kikobeats/browserless/tree/master/packages/devices/commit/d3b3890a6377f3783e8b85d5738c747568b7bd86))
+
+
+
+
+
 # [6.0.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v5.22.1...v6.0.0) (2020-02-04)
 
 
