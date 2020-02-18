@@ -28,7 +28,7 @@ module.exports = ({
     const result = didyoumean(deviceDescriptor, deviceDescriptors)
     if (!result) return undefined
 
-    return result.winner
+    return devices[result.winner]
   }
 
   const getDevices = ({ headers = {}, device: deviceDescriptor, viewport } = {}) => {
