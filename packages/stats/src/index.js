@@ -77,26 +77,23 @@ module.exports = async (url, opts) => {
   return mapValues(audits, audit => {
     const { id } = audit
     switch (id) {
-      case 'resource-summary':
-        return {
-          ...pick(audit, ['title', 'description']),
-          ...audit.details.items.reduce(
-            (acc, { requestCount: count, resourceType: type, size }) => {
-              return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
-            },
-            {}
-          )
-        }
-      case 'screenshot-thumbnails':
-        return {
-          ...pick(audit, ['title', 'description']),
-          details: {
-            items: audit.details.items.map(item => ({
-              ...item,
-              timing_pretty: prettyMs(item.timing)
-            }))
-          }
-        }
+      case 'resource-summary': {
+        const items = get(audit, 'details.items')
+        const values = isEmpty(items)
+          ? undefined
+          : items.reduce((acc, { requestCount: count, resourceType: type, size }) => {
+            return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
+          }, {})
+
+        return { ...pick(audit, ['title', 'description']), values }
+      }
+      case 'screenshot-thumbnails': {
+        const items = get(audit, 'details.items')
+        const values = isEmpty(items)
+          ? undefined
+          : items.map(item => ({ ...item, timing_pretty: prettyMs(item.timing) }))
+        return { ...pick(audit, ['title', 'description']), values }
+      }
       default:
         return pickBy({
           ...pick(audit, ['title', 'description']),
