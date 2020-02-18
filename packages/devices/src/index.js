@@ -1,21 +1,32 @@
 'use strict'
 
+const { default: didyoumean } = require('didyoumean3')
 const customDevices = require('./devices.json')
-
-const findDevice = (devices, deviceName) =>
-  devices.find(device => device.name.toLowerCase() === deviceName.toLowerCase())
 
 module.exports = ({
   puppeteerDevices = require('require-one-of')([
     'puppeteer/DeviceDescriptors',
     'puppeteer-core/DeviceDescriptors',
     'puppeteer-firefox/DeviceDescriptors'
-  ])
+  ]),
+  lossyDeviceName = true
 } = {}) => {
-  const devices = puppeteerDevices.concat(customDevices)
+  const devices = puppeteerDevices.concat(customDevices).reduce(
+    (acc, { name, ...props }) => ({
+      ...acc,
+      [name]: props
+    }),
+    {}
+  )
 
-  return ({ headers = {}, device: deviceId = '', viewport } = {}) => {
-    const device = findDevice(devices, deviceId)
+  const deviceDescriptors = Object.keys(devices)
+
+  const getDevices = ({ headers = {}, device: deviceDescriptor = '', viewport } = {}) => {
+    const device =
+      devices[
+        lossyDeviceName ? didyoumean(deviceDescriptor, deviceDescriptors).winner : deviceDescriptor
+      ]
+
     return device
       ? {
         userAgent: device.userAgent || headers['user-agent'],
@@ -26,4 +37,8 @@ module.exports = ({
         viewport
       }
   }
+
+  getDevices.devices = devices
+
+  return getDevices
 }

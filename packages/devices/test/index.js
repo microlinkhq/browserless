@@ -2,9 +2,11 @@
 
 const test = require('ava')
 
-const getDevice = require('..')()
+const createGetDevice = require('..')
 
 test('undefined as default', t => {
+  const getDevice = createGetDevice()
+
   t.deepEqual(getDevice(), {
     userAgent: undefined,
     viewport: undefined
@@ -12,6 +14,8 @@ test('undefined as default', t => {
 })
 
 test('support user agent from headers', t => {
+  const getDevice = createGetDevice()
+
   t.deepEqual(getDevice({ headers: { 'user-agent': 'googlebot' } }), {
     userAgent: 'googlebot',
     viewport: undefined
@@ -19,6 +23,7 @@ test('support user agent from headers', t => {
 })
 
 test('unify user agent from device', t => {
+  const getDevice = createGetDevice()
   const device = getDevice({ device: 'iPad' })
 
   t.deepEqual(getDevice({ device: 'iPad', headers: { 'user-agent': 'googlebot' } }), {
@@ -27,11 +32,12 @@ test('unify user agent from device', t => {
   })
 })
 
-test('case insensitive device support', t => {
-  const one = getDevice({ device: 'macbook pro 13' })
-  const two = getDevice({ device: 'Macbook Pro 13' })
+test('support lossy device name', t => {
+  const getDevice = createGetDevice({ lossyDeviceName: true })
+  const device = getDevice({ device: 'Macbook Pro 13' })
 
-  t.true(typeof one === 'object')
-  t.true(typeof two === 'object')
-  t.deepEqual(one, two)
+  t.deepEqual(getDevice({ device: 'macbook pro 13' }), device)
+  t.deepEqual(getDevice({ device: 'MACBOOK PRO 13' }), device)
+  t.deepEqual(getDevice({ device: 'macbook pro' }), device)
+  t.deepEqual(getDevice({ device: 'macboo pro' }), device)
 })
