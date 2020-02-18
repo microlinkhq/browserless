@@ -46,6 +46,8 @@ module.exports = ({
   }
 
   getDevices.devices = devices
+  getDevices.findDevice = findDevice
+  getDevices.deviceDescriptors = deviceDescriptors
 
   return getDevices
 }
