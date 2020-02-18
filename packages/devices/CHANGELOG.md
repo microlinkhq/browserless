@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.7.1](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v6.7.0...v6.7.1) (2020-02-18)
+
+
+### Bug Fixes
+
+* return lossy device ([7214952](https://github.com/kikobeats/browserless/tree/master/packages/devices/commit/7214952e470b96b583e001f5730cf6f1a1c0ff06))
+
+
+
+
+
 # [6.7.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v6.6.6...v6.7.0) (2020-02-18)
 
 

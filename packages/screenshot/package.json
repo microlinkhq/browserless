@@ -2,7 +2,7 @@
   "name": "@browserless/screenshot",
   "description": "Take clean screenshot of any websites",
   "homepage": "https://browserless.js.org/#/?id=screenshoturl-options",
-  "version": "6.7.0",
+  "version": "6.7.1",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -27,7 +27,7 @@
     "screenshot"
   ],
   "dependencies": {
-    "@browserless/goto": "^6.7.0",
+    "@browserless/goto": "^6.7.1",
     "got": "~10.5.5",
     "is-url-http": "~2.1.1",
     "mime-types": "~2.1.26",
