@@ -36,6 +36,7 @@ test('support lossy device name', t => {
   const getDevice = createGetDevice({ lossyDeviceName: true })
   const device = getDevice({ device: 'Macbook Pro 13' })
 
+  t.deepEqual(getDevice(), { userAgent: undefined, viewport: undefined })
   t.deepEqual(getDevice({ device: 'macbook pro 13' }), device)
   t.deepEqual(getDevice({ device: 'MACBOOK PRO 13' }), device)
   t.deepEqual(getDevice({ device: 'macbook pro' }), device)

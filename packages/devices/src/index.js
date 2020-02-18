@@ -9,7 +9,7 @@ module.exports = ({
     'puppeteer-core/DeviceDescriptors',
     'puppeteer-firefox/DeviceDescriptors'
   ]),
-  lossyDeviceName = true
+  lossyDeviceName = false
 } = {}) => {
   const devices = puppeteerDevices.concat(customDevices).reduce(
     (acc, { name, ...props }) => ({
@@ -21,11 +21,18 @@ module.exports = ({
 
   const deviceDescriptors = Object.keys(devices)
 
-  const getDevices = ({ headers = {}, device: deviceDescriptor = '', viewport } = {}) => {
-    const device =
-      devices[
-        lossyDeviceName ? didyoumean(deviceDescriptor, deviceDescriptors).winner : deviceDescriptor
-      ]
+  const findDevice = (deviceDescriptor, lossyEnabled) => {
+    if (!deviceDescriptor) return undefined
+    if (!lossyEnabled) return devices[deviceDescriptor]
+
+    const result = didyoumean(deviceDescriptor, deviceDescriptors)
+    if (!result) return undefined
+
+    return result.winner
+  }
+
+  const getDevices = ({ headers = {}, device: deviceDescriptor, viewport } = {}) => {
+    const device = findDevice(deviceDescriptor, lossyDeviceName)
 
     return device
       ? {
