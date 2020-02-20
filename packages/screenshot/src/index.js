@@ -1,6 +1,7 @@
 'use strict'
 
 const { extension } = require('mime-types')
+const pReflect = require('p-reflect')
 
 const createGoto = require('./goto')
 const overlay = require('./overlay')
@@ -18,7 +19,7 @@ module.exports = gotoOpts => {
     const [screenshotOpts, response] = await goto(page, url, opts)
 
     if (codeScheme && response && isJSON(response.headers())) {
-      await pretty(page, response, { codeScheme, ...opts })
+      await pReflect(pretty(page, response, { codeScheme, ...opts }))
     }
 
     const screenshot = await page.screenshot({
