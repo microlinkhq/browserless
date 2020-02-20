@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.7.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.7.1...v6.7.2) (2020-02-20)
+
+
+### Bug Fixes
+
+* ensure json is not malformed ([752340c](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/752340ca2c44f43bb77ea313ce13f740636ad271))
+
+
+
+
+
 ## [6.7.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.7.0...v6.7.1) (2020-02-18)
 
 **Note:** Version bump only for package @browserless/screenshot
