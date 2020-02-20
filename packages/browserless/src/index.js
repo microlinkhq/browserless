@@ -31,7 +31,7 @@ module.exports = ({
     debug('new page', {
       pid: _browser.process().pid,
       incognito,
-      pages: (await _browser.pages()).length
+      pages: (await _browser.pages()).length - 1
     })
     return page
   }
