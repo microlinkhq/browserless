@@ -89,6 +89,24 @@ See [puppeteer.launch#options](https://github.com/GoogleChrome/puppeteer/blob/ma
 
 Additionally, you can setup:
 
+##### lossyDeviceName
+
+type: `boolean`</br>
+default: `false`
+
+It enables lossy detection over the device descriptor input.
+
+```js
+const browserless = require('browserless')({ lossyDeviceName: true })
+
+browserless.getDevice({ device: 'macbook pro 13' })
+browserless.getDevice({ device: 'MACBOOK PRO 13' })
+browserless.getDevice({ device: 'macbook pro' })
+browserless.getDevice({ device: 'macboo pro' })
+```
+
+This setting is oriented for find the device even if the descriptor device name is not exactly the same.
+
 ##### timeout
 
 type: `number`</br>
