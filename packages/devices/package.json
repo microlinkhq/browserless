@@ -27,7 +27,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "didyoumean3": "~1.1.4",
+    "didyoumean3": "~1.2.2",
     "require-one-of": "~1.0.13"
   },
   "devDependencies": {
