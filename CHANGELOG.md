@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.8.0](https://github.com/microlinkhq/browserless/compare/v6.7.5...v6.8.0) (2020-02-23)
+
+
+### Features
+
+* expose retries as parameter ([adfe001](https://github.com/microlinkhq/browserless/commit/adfe001d7426c36aa9f2981488af576cf094dffa))
+
+
+
+
+
 ## [6.7.5](https://github.com/microlinkhq/browserless/compare/v6.7.4...v6.7.5) (2020-02-23)
 
 **Note:** Version bump only for package browserless
