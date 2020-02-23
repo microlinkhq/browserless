@@ -13,6 +13,7 @@ module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
+  retries = 3,
   ...launchOpts
 } = {}) => {
   let browser = driver.spawn(puppeteer, launchOpts)
@@ -54,7 +55,7 @@ module.exports = ({
 
     const task = () =>
       pRetry(run, {
-        retries: 3,
+        retries,
         onFailedAttempt: async error => {
           if (error && error.name === 'AbortError') throw error
           if (isRejected) throw new pRetry.AbortError()

@@ -114,6 +114,13 @@ default: `30000`
 
 This setting will change the default maximum navigation time.
 
+##### retries
+
+type: `number`</br>
+default: `3`
+
+The number of retries that can be performed before considering a navigation as failed.
+
 ##### puppeteer
 
 type: `Puppeteer`</br>
