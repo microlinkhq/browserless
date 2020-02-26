@@ -590,7 +590,7 @@ It can accept:
 
 Prefer to use [modules](#modules) whenever possible.
 
-##### scrollTo
+##### scroll
 
 type: `string` | `object`
 

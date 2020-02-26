@@ -36,7 +36,7 @@ const removeElements = elements => {
   }
 }
 
-const scrollToElement = (element, options) => {
+const scrollTo = (element, options) => {
   const isOverflown = element => {
     return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
   }
@@ -85,7 +85,7 @@ const scrollToElement = (element, options) => {
           y: rect.top
         }
       default:
-        throw new Error('Invalid `scrollToElement.offsetFrom` value')
+        throw new Error('Invalid `scroll.offsetFrom` value')
     }
   }
 
@@ -94,7 +94,7 @@ const scrollToElement = (element, options) => {
   const parent = findScrollParent(element)
 
   if (parent !== undefined) {
-    parent.scrollTo(offset.x, offset.y)
+    parent.scroll(offset.x, offset.y)
   }
 }
 
@@ -184,7 +184,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       modules,
       scripts,
       styles,
-      scrollTo,
+      scroll,
       ...args
     }
   ) => {
@@ -270,12 +270,12 @@ module.exports = ({ timeout, ...deviceOpts }) => {
         ].filter(Boolean)
       )
 
-      if (scrollTo) {
-        debug({ scrollTo })
-        if (typeof scrollTo === 'object') {
-          await pReflect(page.$eval(scrollTo.element, scrollToElement, scrollTo))
+      if (scroll) {
+        debug({ scroll })
+        if (typeof scroll === 'object') {
+          await pReflect(page.$eval(scroll.element, scrollTo, scroll))
         } else {
-          await pReflect(page.$eval(scrollTo, scrollToElement))
+          await pReflect(page.$eval(scroll, scrollTo))
         }
       }
     }
