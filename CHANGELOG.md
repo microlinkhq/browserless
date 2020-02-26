@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.9.0](https://github.com/microlinkhq/browserless/compare/v6.8.1...v6.9.0) (2020-02-26)
+
+
+### Features
+
+* rename scrollTo into scroll ([8bb3bd2](https://github.com/microlinkhq/browserless/commit/8bb3bd250c8e9211429aab6891a571e44c3fd7e5))
+
+
+
+
+
 ## [6.8.1](https://github.com/microlinkhq/browserless/compare/v6.8.0...v6.8.1) (2020-02-23)
 
 **Note:** Version bump only for package browserless
