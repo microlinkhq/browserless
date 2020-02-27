@@ -37,7 +37,6 @@ const destroy = async (browser, opts) => {
   const { pid } = browser.process()
   const { value: pids = [] } = await pReflect(pidtree(pid, { root: true }))
   debug('destroy', { pids })
-  await pReflect(browser.close())
   kill(pids, opts)
   return { pids }
 }
