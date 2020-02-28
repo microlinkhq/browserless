@@ -15,20 +15,43 @@ const kill = async (pids, { signal = 'SIGKILL' } = {}) => {
 const spawn = (puppeteer, launchOpts) =>
   puppeteer.launch({
     ignoreHTTPSErrors: true,
+    // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
+    // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
+    // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
     args: [
+      // base
+      '--disable-cloud-import',
+      '--disable-gesture-typing',
+      '--disable-infobars',
       '--disable-notifications',
       '--disable-offer-store-unmasked-wallet-cards',
       '--disable-offer-upload-credit-cards',
-      '--disable-setuid-sandbox',
+      '--disable-print-preview',
+      '--disable-speech-api',
+      '--disable-tab-for-desktop-share',
+      '--disable-translate',
+      '--disable-voice-input',
+      '--disable-wake-on-wifi',
       '--enable-async-dns',
       '--enable-simple-cache-backend',
       '--enable-tcp-fast-open',
-      '--media-cache-size=33554432',
+      '--enable-webgl',
+      '--hide-scrollbars',
+      '--ignore-gpu-blacklist',
+      '--mute-audio',
       '--no-default-browser-check',
       '--no-pings',
-      '--no-sandbox',
       '--no-zygote',
-      '--prerender-from-omnibox=disabled'
+      '--prerender-from-omnibox=disabled',
+      '--use-gl=swiftshader',
+      '--no-sandbox',
+      // extra
+      '--disable-web-security',
+      '--font-render-hinting=none', // could be 'none', 'medium'
+      '--enable-font-antialiasing',
+      // perf
+      '--single-process',
+      '--memory-pressure-off'
     ],
     ...launchOpts
   })
