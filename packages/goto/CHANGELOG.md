@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.9.3](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.9.2...v6.9.3) (2020-02-28)
+
+
+### Performance Improvements
+
+* add timers ([5743d83](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/5743d83e3a8584f068006f5da92237120a3307ce))
+
+
+
+
+
 # [6.9.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.8.1...v6.9.0) (2020-02-26)
 
 
