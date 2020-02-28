@@ -10,12 +10,12 @@ const getBoundingClientRect = element => {
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
-  return async (page, url, { device = 'macbook pro 13', element, ...opts } = {}) => {
+  return async (page, url, { element, ...opts } = {}) => {
     page.on('dialog', async dialog => {
       await dialog.dismiss()
     })
 
-    const { response } = await goto(page, { url, device, ...opts })
+    const { response } = await goto(page, { url, ...opts })
 
     const screenshotOptions = {}
 

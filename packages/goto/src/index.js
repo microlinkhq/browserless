@@ -2,6 +2,7 @@
 
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
+const { shallowEqualObjects } = require('shallow-equal')
 const createDevices = require('@browserless/devices')
 const { getDomain } = require('tldts')
 const prettyMs = require('pretty-ms')
@@ -165,9 +166,10 @@ const injectStyles = (page, styles) =>
 const forEachSelector = (page, selectors, fn) =>
   toArray(selectors).map(selector => pReflect(page.$$eval(selector, fn)))
 
-module.exports = ({ timeout, ...deviceOpts }) => {
+module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) => {
   const gotoTimeout = timeout * (1 / 4)
   const getDevice = createDevices(deviceOpts)
+  const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
   const goto = async (
     page,
@@ -221,7 +223,7 @@ module.exports = ({ timeout, ...deviceOpts }) => {
       debug({ userAgent: device.userAgent, duration: prettyMs(timeUserAgent()) })
     }
 
-    if (!isEmpty(device.viewport)) {
+    if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
       const timeViewport = timeSpan()
       await page.setViewport(device.viewport)
       debug('viewport', device.viewport, { duration: prettyMs(timeViewport()) })
@@ -311,6 +313,10 @@ module.exports = ({ timeout, ...deviceOpts }) => {
   }
 
   goto.getDevice = getDevice
+  goto.devices = getDevice.devices
+  goto.findDevice = getDevice.findDevice
+  goto.deviceDescriptors = getDevice.deviceDescriptors
+  goto.defaultViewport = defaultViewport
 
   return goto
 }

@@ -16,14 +16,14 @@ module.exports = ({
   retries = 3,
   ...launchOpts
 } = {}) => {
-  let browser = driver.spawn(puppeteer, launchOpts)
+  const goto = createGoto({ timeout, ...launchOpts })
+
+  let browser = driver.spawn(puppeteer, { defaultViewport: goto.defaultViewport, ...launchOpts })
 
   const respawn = async () => {
     await driver.destroy(await browser)
     browser = driver.spawn(puppeteer, launchOpts)
   }
-
-  const goto = createGoto({ timeout, ...launchOpts })
 
   const createPage = async () => {
     const _browser = await browser

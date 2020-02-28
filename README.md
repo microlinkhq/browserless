@@ -89,6 +89,13 @@ See [puppeteer.launch#options](https://github.com/GoogleChrome/puppeteer/blob/ma
 
 Additionally, you can setup:
 
+##### defaultDevice
+
+type: `string`</br>
+default: `'Macbook Pro 13'`
+
+Sets a consistent device viewport for each page.
+
 ##### lossyDeviceName
 
 type: `boolean`</br>
