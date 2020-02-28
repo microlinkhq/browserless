@@ -12,7 +12,7 @@ const puppeteer = require(puppeterPackage)
 const puppeteerDevices = require(`${puppeterPackage}/DeviceDescriptors`)
 const BROWSERLESS_TIMEOUT = 15000
 const HEADLESS = true
-const TMP_FOLDER = '/tmp'
+// const TMP_FOLDER = '/tmp'
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
 // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269

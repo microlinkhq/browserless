@@ -4,7 +4,9 @@ const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
 const createDevices = require('@browserless/devices')
 const { getDomain } = require('tldts')
+const prettyMs = require('pretty-ms')
 const pReflect = require('p-reflect')
+const timeSpan = require('time-span')
 const pTimeout = require('p-timeout')
 const isUrl = require('is-url-http')
 const path = require('path')
@@ -189,94 +191,119 @@ module.exports = ({ timeout, ...deviceOpts }) => {
     }
   ) => {
     if (adblock) {
-      debug({ adblock })
       await engine.enableBlockingInPage(page)
     }
 
     if (javascript === false) {
-      debug({ javascript })
+      const timeJavaScript = timeSpan()
       await page.setJavaScriptEnabled(false)
+      debug({ javascript, duration: prettyMs(timeJavaScript()) })
     }
 
-    if (Object.keys(headers).length !== 0) {
-      debug('headers', headers)
+    if (Object.keys(headers).length > 0) {
+      const timeHeaders = timeSpan()
       await page.setExtraHTTPHeaders(headers)
+      debug({ headers: Object.keys(headers).length, duration: prettyMs(timeHeaders()) })
     }
 
     if (typeof headers.cookie === 'string') {
       const cookies = parseCookies(url, headers.cookie)
-      debug('cookies', ...cookies)
+      const timeCookies = timeSpan()
       await page.setCookie(...cookies)
+      debug('cookies', ...cookies, { duration: prettyMs(timeCookies()) })
     }
 
     const device = getDevice({ headers, ...args })
 
     if (device.userAgent) {
-      debug({ userAgent: device.userAgent })
+      const timeUserAgent = timeSpan()
       await page.setUserAgent(device.userAgent)
+      debug({ userAgent: device.userAgent, duration: prettyMs(timeUserAgent()) })
     }
 
     if (!isEmpty(device.viewport)) {
-      debug('viewport', device.viewport)
+      const timeViewport = timeSpan()
       await page.setViewport(device.viewport)
+      debug('viewport', device.viewport, { duration: prettyMs(timeViewport()) })
     }
 
     if (mediaType) {
-      debug({ mediaType })
+      const timeMediaType = timeSpan()
       await page.emulateMediaType(mediaType)
+      debug({ mediaType, duration: prettyMs(timeMediaType()) })
     }
 
     const mediaFeatures = getMediaFeatures({ animations, colorScheme })
-    if (mediaFeatures.length > 0) await pReflect(page.emulateMediaFeatures(mediaFeatures))
 
-    const { isFulfilled, value: response } = await pReflect(
+    if (mediaFeatures.length > 0) {
+      const timeMediaFeatures = timeSpan()
+      await pReflect(page.emulateMediaFeatures(mediaFeatures))
+      debug({ mediaFeatures: mediaFeatures.length, duration: prettyMs(timeMediaFeatures()) })
+    }
+
+    const timeGoto = timeSpan()
+    const { isFulfilled, value: response, reason } = await pReflect(
       pTimeout(page.goto(url, args), gotoTimeout)
     )
 
+    debug('goto', {
+      isFulfilled,
+      reason: isFulfilled ? undefined : reason.message || reason,
+      duration: prettyMs(timeGoto())
+    })
+
     if (isFulfilled) {
       if (waitFor) {
-        debug({ waitFor })
+        const timeWaitFor = timeSpan()
         await page.waitFor(waitFor)
+        debug({ waitFor, duration: prettyMs(timeWaitFor()) })
       }
 
       if (animations === false) {
-        debug({ animations })
+        const timeAnimations = timeSpan()
         await page.evaluate(disableAnimations)
+        debug({ animations, duration: prettyMs(timeAnimations()) })
       }
 
-      debug({ hide, remove })
+      const hideOrRemove = [
+        hide && forEachSelector(page, hide, hideElements),
+        remove && forEachSelector(page, hide, removeElements)
+      ].filter(Boolean)
 
-      await Promise.all(
-        [
-          hide && forEachSelector(page, hide, hideElements),
-          remove && forEachSelector(page, hide, removeElements)
-        ].filter(Boolean)
-      )
+      if (hideOrRemove.length > 0) {
+        const timeHideOrRemove = timeSpan()
+        await Promise.all(hideOrRemove)
+        debug({ hideOrRemove: hideOrRemove.length, duration: prettyMs(timeHideOrRemove()) })
+      }
 
       if (click) {
         for (const selector of toArray(click)) {
-          debug({ click: selector })
+          const timeClick = timeSpan()
           await pReflect(page.click(selector))
+          debug({ click: selector, duration: prettyMs(timeClick()) })
         }
       }
 
-      debug({ modules, scripts, styles })
+      const injections = [
+        modules && injectScripts(page, modules, { type: 'modules' }),
+        scripts && injectScripts(page, scripts),
+        styles && injectStyles(page, styles)
+      ].filter(Boolean)
 
-      await Promise.all(
-        [
-          modules && injectScripts(page, modules, { type: 'modules' }),
-          scripts && injectScripts(page, scripts),
-          styles && injectStyles(page, styles)
-        ].filter(Boolean)
-      )
+      if (injections.length > 0) {
+        const timeInjections = timeSpan()
+        await Promise.all(hideOrRemove)
+        debug({ injections: injections.length, duration: prettyMs(timeInjections()) })
+      }
 
       if (scroll) {
-        debug({ scroll })
+        const timeScroll = timeSpan()
         if (typeof scroll === 'object') {
           await pReflect(page.$eval(scroll.element, scrollTo, scroll))
         } else {
           await pReflect(page.$eval(scroll, scrollTo))
         }
+        debug({ scroll, duration: prettyMs(timeScroll()) })
       }
     }
 
