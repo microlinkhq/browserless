@@ -168,7 +168,7 @@ const forEachSelector = (page, selectors, fn) =>
   toArray(selectors).map(selector => pReflect(page.$$eval(selector, fn)))
 
 module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) => {
-  const gotoTimeout = timeout * (1 / 4)
+  const gotoTimeout = timeout * (1 / 2)
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
