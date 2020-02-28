@@ -1,5 +1,6 @@
 'use strict'
 
+const debugAdblock = require('debug-logfmt')('browserless:goto:adblock')
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
 const { shallowEqualObjects } = require('shallow-equal')
@@ -17,8 +18,8 @@ const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
 )
 
-engine.on('request-blocked', ({ url }) => debug('adblock:block', url))
-engine.on('request-redirected', ({ url }) => debug('adblock:redirect', url))
+engine.on('request-blocked', ({ url }) => debugAdblock('block', url))
+engine.on('request-redirected', ({ url }) => debugAdblock('redirect', url))
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
