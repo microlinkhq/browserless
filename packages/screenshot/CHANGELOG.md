@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.10.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.9.3...v6.10.0) (2020-02-28)
+
+
+### Features
+
+* add defaultDevice ([8c6c1e5](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/8c6c1e514ad2bf789dafc2df87c969b37eec75d6))
+
+
+
+
+
 ## [6.9.3](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.9.2...v6.9.3) (2020-02-28)
 
 
