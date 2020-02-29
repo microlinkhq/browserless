@@ -6,8 +6,11 @@ const importLazy = require('import-lazy')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
+const whoops = require('whoops')
 
 const driver = require('./browser')
+
+const browserTimeout = whoops('browserTimeout')
 
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
@@ -65,7 +68,11 @@ module.exports = ({
         }
       })
 
-    const { isFulfilled, value, reason } = await pReflect(pTimeout(task(), timeout))
+    const { isFulfilled, value, reason } = await pReflect(
+      pTimeout(task(), timeout, message => {
+        throw browserTimeout({ message })
+      })
+    )
 
     if (isFulfilled) return value
     isRejected = true
