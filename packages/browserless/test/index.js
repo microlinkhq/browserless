@@ -10,7 +10,7 @@ require('@browserless/test')(createBrowserless)
     const browserless = createBrowserless({ timeout })
     const error = await t.throwsAsync(browserless[method]('https://example.com'))
 
-    t.is(error.name, 'TimeoutError')
+    t.is(error.name, 'BrowserTimeout')
     t.is(error.message, `Promise timed out after ${timeout} milliseconds`)
 
     const browser = await browserless.browser

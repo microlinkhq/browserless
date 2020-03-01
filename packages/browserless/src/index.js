@@ -10,7 +10,7 @@ const whoops = require('whoops')
 
 const driver = require('./browser')
 
-const browserTimeout = whoops('browserTimeout')
+const browserTimeout = whoops('BrowserTimeout')
 
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
