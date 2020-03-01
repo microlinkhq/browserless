@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.11.1](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.0...v6.11.1) (2020-03-01)
+
+
+### Bug Fixes
+
+* error messsage ([72b121a](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/72b121a13ffac7dadaab623399d630d9f81550b7))
+
+
+
+
+
 # [6.11.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.10.2...v6.11.0) (2020-03-01)
 
 
