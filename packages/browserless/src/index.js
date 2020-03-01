@@ -10,7 +10,9 @@ const whoops = require('whoops')
 
 const driver = require('./browser')
 
-const browserTimeout = whoops('BrowserTimeout')
+const browserTimeout = whoops('BrowserTimeout', {
+  message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
+})
 
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
@@ -69,8 +71,8 @@ module.exports = ({
       })
 
     const { isFulfilled, value, reason } = await pReflect(
-      pTimeout(task(), timeout, message => {
-        throw browserTimeout({ message })
+      pTimeout(task(), timeout, () => {
+        throw browserTimeout({ timeout })
       })
     )
 
