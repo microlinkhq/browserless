@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.11.2](https://github.com/microlinkhq/browserless/compare/v6.11.1...v6.11.2) (2020-03-02)
+
+
+### Bug Fixes
+
+* linter ([d1b69d5](https://github.com/microlinkhq/browserless/commit/d1b69d567ec501270b43ba328a0a7581e79aa1c2))
+
+
+
+
+
 ## [6.11.1](https://github.com/microlinkhq/browserless/compare/v6.11.0...v6.11.1) (2020-03-01)
 
 

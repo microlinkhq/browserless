@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.11.2](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.11.1...v6.11.2) (2020-03-02)
+
+
+### Bug Fixes
+
+* linter ([d1b69d5](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/d1b69d567ec501270b43ba328a0a7581e79aa1c2))
+
+
+
+
+
 ## [6.8.1](https://github.com/kikobeats/browserless/tree/master/packages/stats/compare/v6.8.0...v6.8.1) (2020-02-23)
 
 **Note:** Version bump only for package @browserless/stats
