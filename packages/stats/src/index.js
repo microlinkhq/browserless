@@ -71,6 +71,8 @@ const getScore = ({ score }) => (score ? { score: toNumber((score * 100).toFixed
 const getDetails = ({ details }) =>
   !isEmpty(get(details, 'items')) ? { details: pick(details, ['heading', 'items']) } : undefined
 
+const getInfo = audit => pick(audit, ['title', 'description'])
+
 module.exports = async (url, opts) => {
   const { audits } = await getLighthouseReport(url, opts)
 
@@ -82,21 +84,79 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : items.reduce((acc, { requestCount: count, resourceType: type, size }) => {
-            return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
-          }, {})
+              return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
+            }, {})
 
-        return { ...pick(audit, ['title', 'description']), details }
+        return { ...getInfo(audit), details }
       }
       case 'screenshot-thumbnails': {
         const items = get(audit, 'details.items')
         const details = isEmpty(items)
           ? undefined
           : { items: items.map(item => ({ ...item, timing_pretty: prettyMs(item.timing) })) }
-        return { ...pick(audit, ['title', 'description']), details }
+        return { ...getInfo(audit), details }
+      }
+      case 'network-server-latency': {
+        const items = get(audit, 'details.items')
+        const details = isEmpty(items)
+          ? undefined
+          : {
+              items: items.map(({ origin, serverResponseTime: duration }) => ({
+                origin,
+                duration,
+                duration_pretty: prettyMs(duration)
+              }))
+            }
+        return { ...getInfo(audit), ...getDuration(audit), details }
+      }
+      case 'network-rtt': {
+        const items = get(audit, 'details.items')
+        const details = isEmpty(items)
+          ? undefined
+          : {
+              items: items.map(({ origin, rtt: duration }) => ({
+                origin,
+                duration,
+                duration_pretty: prettyMs(duration)
+              }))
+            }
+        return { ...getInfo(audit), ...getDuration(audit), details }
+      }
+      case 'bootup-time': {
+        const items = get(audit, 'details.items')
+        const details = isEmpty(items)
+          ? undefined
+          : {
+              items: items.map(
+                ({ url, total: duration, scripting: script, scriptParseCompile: parse }) => ({
+                  url: url.toLowerCase(),
+                  duration,
+                  duration_pretty: prettyMs(duration),
+                  script,
+                  script_pretty: prettyMs(script),
+                  parse,
+                  parse_pretty: prettyMs(parse)
+                })
+              )
+            }
+        return { ...getInfo(audit), ...getScore(audit), ...getDuration(audit), details }
+      }
+      case 'uses-rel-preconnect': {
+        const items = get(audit, 'details.items')
+        const details = isEmpty(items)
+          ? undefined
+          : {
+              items: items.map(({ url: origin, wastedMs: duration }) => ({
+                origin,
+                duration,
+                duration_pretty: prettyMs(duration)
+              }))
+            }
+        return { ...getInfo(audit), ...getScore(audit), ...getDuration(audit), details }
       }
       default:
         return pickBy({
-          ...pick(audit, ['title', 'description']),
+          ...getInfo(audit),
           ...getScore(audit),
           ...getDuration(audit),
           ...getDetails(audit)

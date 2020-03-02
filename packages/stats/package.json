@@ -32,7 +32,11 @@
   },
   "devDependencies": {
     "@browserless/test": "latest",
+    "ava": "latest",
     "browserless": "latest",
+    "coveralls": "latest",
+    "nyc": "latest",
+    "p-memoize": "latest",
     "puppeteer": "latest"
   },
   "engines": {
@@ -42,8 +46,8 @@
     "src"
   ],
   "scripts": {
-    "coverage": "exit 0",
-    "test": "exit 0"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "test": "nyc ava --serial"
   },
   "license": "MIT"
 }
