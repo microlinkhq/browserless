@@ -4,7 +4,7 @@ const pMemoize = require('p-memoize')
 
 const test = require('ava')
 
-const getStats = require('../')
+const getStats = require('..')
 
 const memStats = pMemoize(getStats)
 
