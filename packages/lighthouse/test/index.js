@@ -55,8 +55,8 @@ test('duration + duration_pretty', async t => {
   t.true(!isNil(insights['first-cpu-idle'].duration))
   t.true(!isNil(insights['first-cpu-idle'].duration_pretty))
 
-  t.true(!isNil(insights['interactive'].duration))
-  t.true(!isNil(insights['interactive'].duration_pretty))
+  t.true(!isNil(insights.interactive.duration))
+  t.true(!isNil(insights.interactive.duration_pretty))
 
   t.true(!isNil(insights['bootup-time'].duration))
   t.true(!isNil(insights['bootup-time'].duration_pretty))
@@ -98,7 +98,7 @@ test('duration + duration_pretty', async t => {
   t.true(!isNil(insights['max-potential-fid'].duration_pretty))
   t.true(!isNil(insights['time-to-first-byte'].duration_pretty))
   t.true(!isNil(insights['first-cpu-idle'].duration_pretty))
-  t.true(!isNil(insights['interactive'].duration_pretty))
+  t.true(!isNil(insights.interactive.duration_pretty))
 })
 
 test('timing + timing_pretty', async t => {
@@ -122,7 +122,7 @@ test('score', async t => {
   t.true(!isNil(insights['max-potential-fid'].score))
   t.true(!isNil(insights['time-to-first-byte'].score))
   t.true(!isNil(insights['first-cpu-idle'].score))
-  t.true(!isNil(insights['interactive'].score))
+  t.true(!isNil(insights.interactive.score))
   t.true(!isNil(insights['uses-rel-preload'].score))
   t.true(!isNil(insights['uses-rel-preconnect'].score))
   t.true(!isNil(insights['dom-size'].score))

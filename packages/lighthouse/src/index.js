@@ -84,8 +84,8 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : items.reduce((acc, { requestCount: count, resourceType: type, size }) => {
-              return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
-            }, {})
+            return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
+          }, {})
 
         return { ...getInfo(audit), details }
       }
@@ -101,12 +101,12 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-              items: items.map(({ origin, serverResponseTime: duration }) => ({
-                origin,
-                duration,
-                duration_pretty: prettyMs(duration)
-              }))
-            }
+            items: items.map(({ origin, serverResponseTime: duration }) => ({
+              origin,
+              duration,
+              duration_pretty: prettyMs(duration)
+            }))
+          }
         return { ...getInfo(audit), ...getDuration(audit), details }
       }
       case 'network-rtt': {
@@ -114,12 +114,12 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-              items: items.map(({ origin, rtt: duration }) => ({
-                origin,
-                duration,
-                duration_pretty: prettyMs(duration)
-              }))
-            }
+            items: items.map(({ origin, rtt: duration }) => ({
+              origin,
+              duration,
+              duration_pretty: prettyMs(duration)
+            }))
+          }
         return { ...getInfo(audit), ...getDuration(audit), details }
       }
       case 'bootup-time': {
@@ -127,18 +127,18 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-              items: items.map(
-                ({ url, total: duration, scripting: script, scriptParseCompile: parse }) => ({
-                  url: url.toLowerCase(),
-                  duration,
-                  duration_pretty: prettyMs(duration),
-                  script,
-                  script_pretty: prettyMs(script),
-                  parse,
-                  parse_pretty: prettyMs(parse)
-                })
-              )
-            }
+            items: items.map(
+              ({ url, total: duration, scripting: script, scriptParseCompile: parse }) => ({
+                url: url.toLowerCase(),
+                duration,
+                duration_pretty: prettyMs(duration),
+                script,
+                script_pretty: prettyMs(script),
+                parse,
+                parse_pretty: prettyMs(parse)
+              })
+            )
+          }
         return { ...getInfo(audit), ...getScore(audit), ...getDuration(audit), details }
       }
       case 'uses-rel-preconnect': {
@@ -146,12 +146,12 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-              items: items.map(({ url: origin, wastedMs: duration }) => ({
-                origin,
-                duration,
-                duration_pretty: prettyMs(duration)
-              }))
-            }
+            items: items.map(({ url: origin, wastedMs: duration }) => ({
+              origin,
+              duration,
+              duration_pretty: prettyMs(duration)
+            }))
+          }
         return { ...getInfo(audit), ...getScore(audit), ...getDuration(audit), details }
       }
       default:
