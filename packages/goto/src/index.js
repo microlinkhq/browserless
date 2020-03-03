@@ -302,7 +302,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
 
       if (injections.length > 0) {
         const timeInjections = timeSpan()
-        await Promise.all(hideOrRemove)
+        await Promise.all(injections)
         debug({
           injections: injections.length,
           duration: prettyMs(timeInjections())
