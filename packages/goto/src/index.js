@@ -203,10 +203,25 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       debug({ javascript, duration: prettyMs(timeJavaScript()) })
     }
 
+    const device = getDevice({ headers, ...args })
+
+    if (device.userAgent && !headers['user-agent']) {
+      headers['user-agent'] = device.userAgent
+    }
+
+    if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
+      const timeViewport = timeSpan()
+      await page.setViewport(device.viewport)
+      debug('viewport', device.viewport, { duration: prettyMs(timeViewport()) })
+    }
+
     if (Object.keys(headers).length > 0) {
       const timeHeaders = timeSpan()
       await page.setExtraHTTPHeaders(headers)
-      debug({ headers: Object.keys(headers).length, duration: prettyMs(timeHeaders()) })
+      debug({
+        headers: Object.keys(headers).length,
+        duration: prettyMs(timeHeaders())
+      })
     }
 
     if (typeof headers.cookie === 'string') {
@@ -214,20 +229,6 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       const timeCookies = timeSpan()
       await page.setCookie(...cookies)
       debug('cookies', ...cookies, { duration: prettyMs(timeCookies()) })
-    }
-
-    const device = getDevice({ headers, ...args })
-
-    if (device.userAgent) {
-      const timeUserAgent = timeSpan()
-      await page.setUserAgent(device.userAgent)
-      debug({ userAgent: device.userAgent, duration: prettyMs(timeUserAgent()) })
-    }
-
-    if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
-      const timeViewport = timeSpan()
-      await page.setViewport(device.viewport)
-      debug('viewport', device.viewport, { duration: prettyMs(timeViewport()) })
     }
 
     if (mediaType) {
@@ -241,7 +242,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
     if (mediaFeatures.length > 0) {
       const timeMediaFeatures = timeSpan()
       await pReflect(page.emulateMediaFeatures(mediaFeatures))
-      debug({ mediaFeatures: mediaFeatures.length, duration: prettyMs(timeMediaFeatures()) })
+      debug({
+        mediaFeatures: mediaFeatures.length,
+        duration: prettyMs(timeMediaFeatures())
+      })
     }
 
     const timeGoto = timeSpan()
@@ -276,7 +280,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       if (hideOrRemove.length > 0) {
         const timeHideOrRemove = timeSpan()
         await Promise.all(hideOrRemove)
-        debug({ hideOrRemove: hideOrRemove.length, duration: prettyMs(timeHideOrRemove()) })
+        debug({
+          hideOrRemove: hideOrRemove.length,
+          duration: prettyMs(timeHideOrRemove())
+        })
       }
 
       if (click) {
@@ -296,7 +303,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       if (injections.length > 0) {
         const timeInjections = timeSpan()
         await Promise.all(hideOrRemove)
-        debug({ injections: injections.length, duration: prettyMs(timeInjections()) })
+        debug({
+          injections: injections.length,
+          duration: prettyMs(timeInjections())
+        })
       }
 
       if (scroll) {
