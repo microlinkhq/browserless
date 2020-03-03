@@ -167,6 +167,15 @@ const injectStyles = (page, styles) =>
 const forEachSelector = (page, selectors, fn) =>
   toArray(selectors).map(selector => pReflect(page.$$eval(selector, fn)))
 
+const run = async ({ fn, debug: props }) => {
+  const debugProps = { duration: timeSpan() }
+  const result = await pReflect(fn)
+  debugProps.duration = prettyMs(debugProps.duration())
+  if (result.isRejected) debugProps.error = result.reason.message || result.reason
+  debug(props, debugProps)
+  return result
+}
+
 module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) => {
   const gotoTimeout = timeout * (1 / 2)
   const getDevice = createDevices(deviceOpts)
@@ -193,14 +202,19 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       ...args
     }
   ) => {
+    const prePromises = []
+
     if (adblock) {
-      await engine.enableBlockingInPage(page)
+      prePromises.push(engine.enableBlockingInPage(page))
     }
 
     if (javascript === false) {
-      const timeJavaScript = timeSpan()
-      await page.setJavaScriptEnabled(false)
-      debug({ javascript, duration: prettyMs(timeJavaScript()) })
+      prePromises.push(
+        run({
+          fn: page.setJavaScriptEnabled(false),
+          debug: { javascript }
+        })
+      )
     }
 
     const device = getDevice({ headers, ...args })
@@ -210,66 +224,74 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
     }
 
     if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
-      const timeViewport = timeSpan()
-      await page.setViewport(device.viewport)
-      debug('viewport', device.viewport, { duration: prettyMs(timeViewport()) })
+      prePromises.push(
+        run({
+          fn: page.setViewport(device.viewport),
+          debug: 'viewport'
+        })
+      )
     }
 
     if (Object.keys(headers).length > 0) {
-      const timeHeaders = timeSpan()
-      await page.setExtraHTTPHeaders(headers)
-      debug({
-        headers: Object.keys(headers).length,
-        duration: prettyMs(timeHeaders())
-      })
+      prePromises.push(
+        run({
+          fn: page.setExtraHTTPHeaders(headers),
+          debug: { headers: Object.keys(headers).length }
+        })
+      )
     }
 
     if (typeof headers.cookie === 'string') {
       const cookies = parseCookies(url, headers.cookie)
-      const timeCookies = timeSpan()
-      await page.setCookie(...cookies)
-      debug('cookies', ...cookies, { duration: prettyMs(timeCookies()) })
+      prePromises.push(
+        run({
+          fn: page.setCookie(...cookies),
+          debug: ['cookies', ...cookies]
+        })
+      )
     }
 
     if (mediaType) {
-      const timeMediaType = timeSpan()
-      await page.emulateMediaType(mediaType)
-      debug({ mediaType, duration: prettyMs(timeMediaType()) })
+      prePromises.push(
+        run({
+          fn: page.emulateMediaType(mediaType),
+          debug: { mediaType }
+        })
+      )
     }
 
     const mediaFeatures = getMediaFeatures({ animations, colorScheme })
 
     if (mediaFeatures.length > 0) {
-      const timeMediaFeatures = timeSpan()
-      await pReflect(page.emulateMediaFeatures(mediaFeatures))
-      debug({
-        mediaFeatures: mediaFeatures.length,
-        duration: prettyMs(timeMediaFeatures())
-      })
+      prePromises.push(
+        run({
+          fn: page.emulateMediaFeatures(mediaFeatures),
+          debug: { mediaFeatures: mediaFeatures.length }
+        })
+      )
     }
 
-    const timeGoto = timeSpan()
-    const { isFulfilled, value: response, reason } = await pReflect(
-      pTimeout(page.goto(url, args), gotoTimeout)
-    )
+    await Promise.all(prePromises)
 
-    debug('goto', {
-      isFulfilled,
-      reason: isFulfilled ? undefined : reason.message || reason,
-      duration: prettyMs(timeGoto())
+    const { isFulfilled, value: response } = await run({
+      fn: pTimeout(page.goto(url, args), gotoTimeout),
+      debug: 'goto'
     })
 
     if (isFulfilled) {
+      const postPromises = []
+
       if (waitFor) {
-        const timeWaitFor = timeSpan()
-        await page.waitFor(waitFor)
-        debug({ waitFor, duration: prettyMs(timeWaitFor()) })
+        await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
       }
 
       if (animations === false) {
-        const timeAnimations = timeSpan()
-        await page.evaluate(disableAnimations)
-        debug({ animations, duration: prettyMs(timeAnimations()) })
+        postPromises.push(
+          run({
+            fn: page.evaluate(disableAnimations),
+            debug: { animations }
+          })
+        )
       }
 
       const hideOrRemove = [
@@ -278,20 +300,12 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       ].filter(Boolean)
 
       if (hideOrRemove.length > 0) {
-        const timeHideOrRemove = timeSpan()
-        await Promise.all(hideOrRemove)
-        debug({
-          hideOrRemove: hideOrRemove.length,
-          duration: prettyMs(timeHideOrRemove())
-        })
-      }
-
-      if (click) {
-        for (const selector of toArray(click)) {
-          const timeClick = timeSpan()
-          await pReflect(page.click(selector))
-          debug({ click: selector, duration: prettyMs(timeClick()) })
-        }
+        postPromises.push(
+          run({
+            fn: Promise.all(hideOrRemove),
+            debug: { hideOrRemove: hideOrRemove.length }
+          })
+        )
       }
 
       const injections = [
@@ -301,22 +315,28 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       ].filter(Boolean)
 
       if (injections.length > 0) {
-        const timeInjections = timeSpan()
-        await Promise.all(hideOrRemove)
-        debug({
-          injections: injections.length,
-          duration: prettyMs(timeInjections())
-        })
+        postPromises.push(
+          run({
+            fn: Promise.all(injections),
+            debug: { injections: injections.length }
+          })
+        )
+      }
+
+      await Promise.all(postPromises)
+
+      if (click) {
+        for (const selector of toArray(click)) {
+          await run({ fn: page.click(selector), debug: { click: selector } })
+        }
       }
 
       if (scroll) {
-        const timeScroll = timeSpan()
         if (typeof scroll === 'object') {
-          await pReflect(page.$eval(scroll.element, scrollTo, scroll))
+          await run({ fn: page.$eval(scroll.element, scrollTo, scroll), debug: { scroll } })
         } else {
-          await pReflect(page.$eval(scroll, scrollTo))
+          await run({ fn: page.$eval(scroll, scrollTo), debug: { scroll } })
         }
-        debug({ scroll, duration: prettyMs(timeScroll()) })
       }
     }
 
