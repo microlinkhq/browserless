@@ -717,8 +717,10 @@ Every time you call the pool, it handles acquire and release a new browser insta
 ```js
 const lighthouse = require('@browserless/lighthouse')
 
-const audits = await lighthouse('https://browserless.js.org')
-console.log(JSON.stringify(audits, null, 2))
+lighthouse('https://browserless.js.org').then(audit => {
+  console.log(JSON.stringify(audits, null, 2))
+})
+
 ```
 
 ## Packages
