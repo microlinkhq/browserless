@@ -15,9 +15,11 @@
 
 Although you can think [puppeteer](https://github.com/GoogleChrome/puppeteer) could be enough, there is a set of use cases that make sense built on top of puppeteer and they are necessary to support into robust production scenario, like:
 
-- Sensible good defaults, aborting unnecessary requests based of what you are doing (e.g, aborting image request if you just want to get [`.html`](#htmlurl-options) content).
-- Easily create a pool of instance (via [`@browserless/pool`](#pool-of-instances)).
-- Built-in adblocker for aborting ads requests.
+- Perform browser action (such as [text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)) with the best perfomance possible.
+- Run browser tasks (such as HTTP headers, viewport, cookies, CSS features,...) on parallel.
+- Abort 3rd party advertisement requests using a built-in [adblocker powered by Cliqz](#gotopage-options).
+- Simple [Google Lighthouse](#lighthouse) integration for getting perfomance metrics reports.
+- Create your own [pool of instances](#pool-of-instances) with variable size.
 
 ## Install
 
@@ -425,7 +427,7 @@ const getText = browserless.evaluate(
 
 ### .goto(page, options)
 
-It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), using a builtin [adblocker](https://www.npmjs.com/package/@cliqz/adblocker).
+It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), using a builtin [adblocker by Cliqz](https://www.npmjs.com/package/@cliqz/adblocker).
 
 ```js
 const browserless = require('browserless')
