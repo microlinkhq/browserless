@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.11.6](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.5...v6.11.6) (2020-03-04)
+
+
+### Bug Fixes
+
+* handle websockets errors ([e708c06](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/e708c0649514069911465403f1f3e464fd9d49ee))
+
+
+
+
+
 ## [6.11.5](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.4...v6.11.5) (2020-03-04)
 
 **Note:** Version bump only for package browserless
