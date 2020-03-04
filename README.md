@@ -708,6 +708,17 @@ browserlessPool
 
 Every time you call the pool, it handles acquire and release a new browser instance from the pool ✨.
 
+## Lighthouse
+
+**browserless** has a simple [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that uses Puppeteer under the hood.
+
+```js
+const lighthouse = require('@browserless/lighthouse')
+
+const audits = await lighthouse('https://browserless.js.org')
+console.log(JSON.stringify(audits, null, 2))
+```
+
 ## Packages
 
 **browserless** is internally divided into multiple packages for ensuring just use the mininum quantity of code necessary for your user case.
