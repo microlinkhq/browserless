@@ -62,7 +62,8 @@ module.exports = ({
       pRetry(run, {
         retries,
         onFailedAttempt: async error => {
-          if (error && error.name === 'AbortError') throw error
+          if (!(error instanceof Error) && 'error' in error) error = error.error
+          if (error.name === 'AbortError') throw error
           if (isRejected) throw new pRetry.AbortError()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
