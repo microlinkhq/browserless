@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.11.7](https://github.com/microlinkhq/browserless/compare/v6.11.6...v6.11.7) (2020-03-05)
+
+
+### Bug Fixes
+
+* linter ([df0eddf](https://github.com/microlinkhq/browserless/commit/df0eddf223a28d2b900c136c9f223fbbcf58e4f6))
+
+
+### Performance Improvements
+
+* add gpu test ([b992f1c](https://github.com/microlinkhq/browserless/commit/b992f1c00222939d6d127c7aba524aced380a622))
+* add useful benchmarks ([d9ccf1d](https://github.com/microlinkhq/browserless/commit/d9ccf1dcfbb87f481271fb2a2dda3972a3478205))
+
+
+
+
+
 ## [6.11.6](https://github.com/microlinkhq/browserless/compare/v6.11.5...v6.11.6) (2020-03-04)
 
 
