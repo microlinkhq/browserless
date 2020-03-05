@@ -9,8 +9,6 @@ const ITERATIONS = [...Array(N).keys()]
 
 bench('calculate a sieve value', async function (b) {
   b.start()
-  for (const i in ITERATIONS) {
-    sieveOfErathosthenes(33554432).length === 2063689
-  }
+  ITERATIONS.forEach(() => sieveOfErathosthenes(33554432))
   b.end()
 })
