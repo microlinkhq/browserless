@@ -28,6 +28,7 @@
     "puppeteer"
   ],
   "dependencies": {
+    "nanobench": "~2.1.1",
     "sieve-of-eratosthenes": "0.0.3"
   },
   "devDependencies": {
@@ -39,7 +40,6 @@
     "lodash": "latest",
     "measured": "latest",
     "meow": "latest",
-    "nanobench": "latest",
     "p-all": "latest",
     "percentile": "latest",
     "pretty-ms": "latest",
