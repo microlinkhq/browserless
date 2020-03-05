@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.11.8](https://github.com/microlinkhq/browserless/compare/v6.11.7...v6.11.8) (2020-03-05)
+
+
+### Performance Improvements
+
+* add flags benchmark ([4d796db](https://github.com/microlinkhq/browserless/commit/4d796db11c90c001625497a3bfee2dc51fb50ef3))
+
+
+
+
+
 ## [6.11.7](https://github.com/microlinkhq/browserless/compare/v6.11.6...v6.11.7) (2020-03-05)
 
 
