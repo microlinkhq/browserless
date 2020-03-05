@@ -8,7 +8,7 @@ const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 const whoops = require('whoops')
 
-const driver = require('./browser')
+const driver = require('./driver')
 
 const browserTimeout = whoops('BrowserTimeout', {
   message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
@@ -111,3 +111,5 @@ module.exports = ({
     getDevice: goto.getDevice
   }
 }
+
+module.exports.driver = driver
