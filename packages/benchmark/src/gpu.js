@@ -22,7 +22,7 @@ const createGPUBenchmark = ({ withFlag }) => {
   return gpuBench
 }
 
-const N = 1000
+const N = process.argv[2] || 1000
 
 const ITERATIONS = [...Array(N).keys()]
 
@@ -39,13 +39,13 @@ const createBench = ({ name, setup, teardown }) => {
 }
 
 createBench({
-  name: 'with flag',
+  name: `with flag ${N} iterations`,
   setup: () => createGPUBenchmark({ withFlag: true }),
   teardown: fn => fn.browserless.destroy()
 })
 
 createBench({
-  name: 'without flag',
+  name: `without flag ${N} iterations`,
   setup: () => createGPUBenchmark({ withFlag: false }),
   teardown: fn => fn.browserless.destroy()
 })
