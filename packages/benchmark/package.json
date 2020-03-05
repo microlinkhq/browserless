@@ -36,6 +36,7 @@
     "lodash": "latest",
     "measured": "latest",
     "meow": "latest",
+    "nanobench": "latest",
     "p-all": "latest",
     "percentile": "latest",
     "pretty-ms": "latest",

@@ -6,18 +6,12 @@ const percentile = require('percentile')
 const timeSpan = require('time-span')
 const prettyMs = require('pretty-ms')
 
-const puppeterPackage = 'puppeteer'
-
-const puppeteer = require(puppeterPackage)
-const puppeteerDevices = require(`${puppeterPackage}/DeviceDescriptors`)
 const BROWSERLESS_TIMEOUT = 15000
 const HEADLESS = true
 // const TMP_FOLDER = '/tmp'
 
 const createBrowserless = id =>
   browserlessFactory({
-    puppeteer,
-    puppeteerDevices,
     headless: HEADLESS,
     lossyDeviceName: true,
     timeout: BROWSERLESS_TIMEOUT
