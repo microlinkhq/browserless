@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.12.0](https://github.com/microlinkhq/browserless/compare/v6.11.8...v6.12.0) (2020-03-08)
+
+
+### Bug Fixes
+
+* linter ([875b509](https://github.com/microlinkhq/browserless/commit/875b509cd72d381e3deb5014d6979d20395d9c8d))
+
+
+### Features
+
+* add perception property ([ab2ab18](https://github.com/microlinkhq/browserless/commit/ab2ab1805ddfb693b2fefc31cc606733c5825518))
+
+
+
+
+
 ## [6.11.8](https://github.com/microlinkhq/browserless/compare/v6.11.7...v6.11.8) (2020-03-05)
 
 
