@@ -1,10 +1,12 @@
 'use strict'
 
-const { toNumber, get, isEmpty, pickBy, pick, mapValues } = require('lodash')
+const { get, isEmpty, pickBy, mapValues } = require('lodash')
 const requireOneOf = require('require-one-of')
 const prettyBytes = require('pretty-bytes')
 const lighthouse = require('lighthouse')
 const prettyMs = require('pretty-ms')
+
+const { getPerception, getDuration, getScore, getDetails, getInfo } = require('./normalize')
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const DEFAULT_LIGHTHOUSE_CONFIG = {
@@ -63,16 +65,6 @@ const getLighthouseReport = async (
   return lhr
 }
 
-const getDuration = ({ numericValue: duration }) =>
-  duration ? { duration, duration_pretty: prettyMs(duration) } : undefined
-
-const getScore = ({ score }) => (score ? { score: toNumber((score * 100).toFixed(0)) } : undefined)
-
-const getDetails = ({ details }) =>
-  !isEmpty(get(details, 'items')) ? { details: pick(details, ['heading', 'items']) } : undefined
-
-const getInfo = audit => pick(audit, ['title', 'description'])
-
 module.exports = async (url, opts) => {
   const { audits } = await getLighthouseReport(url, opts)
 
@@ -84,8 +76,8 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : items.reduce((acc, { requestCount: count, resourceType: type, size }) => {
-            return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
-          }, {})
+              return { ...acc, [type]: { count, size, size_pretty: prettyBytes(size) } }
+            }, {})
 
         return { ...getInfo(audit), details }
       }
@@ -101,12 +93,12 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-            items: items.map(({ origin, serverResponseTime: duration }) => ({
-              origin,
-              duration,
-              duration_pretty: prettyMs(duration)
-            }))
-          }
+              items: items.map(({ origin, serverResponseTime: duration }) => ({
+                origin,
+                duration,
+                duration_pretty: prettyMs(duration)
+              }))
+            }
         return { ...getInfo(audit), ...getDuration(audit), details }
       }
       case 'network-rtt': {
@@ -114,12 +106,12 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-            items: items.map(({ origin, rtt: duration }) => ({
-              origin,
-              duration,
-              duration_pretty: prettyMs(duration)
-            }))
-          }
+              items: items.map(({ origin, rtt: duration }) => ({
+                origin,
+                duration,
+                duration_pretty: prettyMs(duration)
+              }))
+            }
         return { ...getInfo(audit), ...getDuration(audit), details }
       }
       case 'bootup-time': {
@@ -127,18 +119,18 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-            items: items.map(
-              ({ url, total: duration, scripting: script, scriptParseCompile: parse }) => ({
-                url: url.toLowerCase(),
-                duration,
-                duration_pretty: prettyMs(duration),
-                script,
-                script_pretty: prettyMs(script),
-                parse,
-                parse_pretty: prettyMs(parse)
-              })
-            )
-          }
+              items: items.map(
+                ({ url, total: duration, scripting: script, scriptParseCompile: parse }) => ({
+                  url: url.toLowerCase(),
+                  duration,
+                  duration_pretty: prettyMs(duration),
+                  script,
+                  script_pretty: prettyMs(script),
+                  parse,
+                  parse_pretty: prettyMs(parse)
+                })
+              )
+            }
         return { ...getInfo(audit), ...getScore(audit), ...getDuration(audit), details }
       }
       case 'uses-rel-preconnect': {
@@ -146,17 +138,18 @@ module.exports = async (url, opts) => {
         const details = isEmpty(items)
           ? undefined
           : {
-            items: items.map(({ url: origin, wastedMs: duration }) => ({
-              origin,
-              duration,
-              duration_pretty: prettyMs(duration)
-            }))
-          }
+              items: items.map(({ url: origin, wastedMs: duration }) => ({
+                origin,
+                duration,
+                duration_pretty: prettyMs(duration)
+              }))
+            }
         return { ...getInfo(audit), ...getScore(audit), ...getDuration(audit), details }
       }
       default:
         return pickBy({
           ...getInfo(audit),
+          ...getPerception(audit),
           ...getScore(audit),
           ...getDuration(audit),
           ...getDetails(audit)
