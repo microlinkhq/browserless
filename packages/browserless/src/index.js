@@ -2,6 +2,7 @@
 
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
+const PCancelable = require('p-cancelable')
 const importLazy = require('import-lazy')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -48,15 +49,19 @@ module.exports = ({
 
     const closePage = () => (page ? pReflect(page.close()) : undefined)
 
-    const run = async () => {
-      try {
-        page = await createPage()
-        const value = await fn(page)(...args)
-        return value
-      } finally {
-        await closePage()
-      }
-    }
+    const run = () =>
+      new PCancelable(async (resolve, reject, onCancel) => {
+        try {
+          page = await createPage()
+          onCancel(closePage)
+          const value = await fn(page)(...args)
+          await closePage()
+          resolve(value)
+        } catch (err) {
+          await closePage()
+          reject(err)
+        }
+      })
 
     const task = () =>
       pRetry(run, {
