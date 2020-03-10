@@ -140,3 +140,14 @@ test('size + size_pretty', async t => {
     t.true(!isNil(resourceSummary.details[key].size_pretty))
   })
 })
+
+test('perception', async t => {
+  const url = 'https://kikobeats.com'
+  const insights = await memStats(url)
+
+  t.true(!isNil(insights['first-contentful-paint'].perception))
+  t.true(!isNil(insights['first-meaningful-paint'].perception))
+  t.true(!isNil(insights['speed-index'].perception))
+  t.true(!isNil(insights['first-cpu-idle'].perception))
+  t.true(!isNil(insights['interactive'].perception))
+})
