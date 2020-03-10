@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.12.2](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.12.1...v6.12.2) (2020-03-10)
+
+
+### Bug Fixes
+
+* perception ([f09b741](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/f09b741aceda69042355185f98aca8055e827eb1))
+
+
+
+
+
 # [6.12.0](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.11.8...v6.12.0) (2020-03-08)
 
 
