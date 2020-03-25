@@ -29,7 +29,7 @@
   "dependencies": {
     "@browserless/goto": "^6.11.7",
     "debug-logfmt": "~1.0.4",
-    "got": "~10.6.0",
+    "got": "~10.7.0",
     "is-url-http": "~2.1.1",
     "mime-types": "~2.1.26",
     "p-reflect": "~2.1.0",
