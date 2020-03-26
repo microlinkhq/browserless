@@ -30,10 +30,10 @@
     "beauty-error": "~1.2.3",
     "data-uri-to-buffer": "~3.0.0",
     "is-buffer": "~2.0.4",
-    "meow": "~6.0.1",
+    "meow": "~6.1.0",
     "ora": "~4.0.3",
     "pretty-bytes": "~5.3.0",
-    "process-stats": "~3.3.0"
+    "process-stats": "~3.3.4"
   },
   "devDependencies": {
     "@browserless/pool": "latest",
