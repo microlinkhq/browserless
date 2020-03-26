@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.12.3](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.12.2...v6.12.3) (2020-03-26)
+
+
+### Bug Fixes
+
+* indent ([59dd193](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/59dd193802ac21c9d7958b860b167b7ceb0d78e7))
+* indent ([2e537f0](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/2e537f0df3027aaabc54abc3328720492e78d35c))
+
+
+
+
+
 ## [6.12.2](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.12.1...v6.12.2) (2020-03-10)
 
 
