@@ -149,5 +149,5 @@ test('perception', async t => {
   t.true(!isNil(insights['first-meaningful-paint'].perception))
   t.true(!isNil(insights['speed-index'].perception))
   t.true(!isNil(insights['first-cpu-idle'].perception))
-  t.true(!isNil(insights['interactive'].perception))
+  t.true(!isNil(insights.interactive.perception))
 })

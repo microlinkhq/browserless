@@ -147,7 +147,7 @@ module.exports = async (url, opts) => {
         return { ...getInfo(audit), ...getScore(audit), ...getDuration(audit), details }
       }
 
-      default:
+      default: {
         const durationProps = getDuration(audit)
         return pickBy({
           ...getInfo(audit),
@@ -156,6 +156,7 @@ module.exports = async (url, opts) => {
           ...durationProps,
           ...getDetails(audit)
         })
+      }
     }
   })
 }
