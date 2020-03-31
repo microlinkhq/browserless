@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "A puppeter-like Node.js library for interacting with Headless production scenarios.",
   "homepage": "https://browserless.js.org",
-  "version": "6.12.4",
+  "version": "6.12.5",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -30,9 +30,9 @@
     "text"
   ],
   "dependencies": {
-    "@browserless/goto": "^6.12.4",
-    "@browserless/pdf": "^6.12.4",
-    "@browserless/screenshot": "^6.12.4",
+    "@browserless/goto": "^6.12.5",
+    "@browserless/pdf": "^6.12.5",
+    "@browserless/screenshot": "^6.12.5",
     "debug-logfmt": "~1.0.4",
     "import-lazy": "~4.0.0",
     "p-reflect": "~2.1.0",
