@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.13.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.13.1...v6.13.2) (2020-04-05)
+
+
+### Reverts
+
+* Revert "fix: consider html as text" ([004c443](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/004c44388486ff8b64a1d43045cbb0005504b95d))
+
+
+
+
+
 ## [6.13.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.13.0...v6.13.1) (2020-04-05)
 
 
