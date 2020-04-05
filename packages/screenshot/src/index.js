@@ -1,16 +1,20 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless:screenshot')
+
 const { extension } = require('mime-types')
 const prettyMs = require('pretty-ms')
 const timeSpan = require('time-span')
 const pReflect = require('p-reflect')
 
+const pretty = require('./pretty')
 const createGoto = require('./goto')
 const overlay = require('./overlay')
-const pretty = require('./pretty')
 
-const isJSON = headers => extension(headers['content-type']) === 'json'
+const getContentType = headers => {
+  const ext = extension(headers['content-type'])
+  return ext === 'txt' ? 'text' : ext
+}
 
 module.exports = gotoOpts => {
   const goto = createGoto(gotoOpts)
@@ -23,10 +27,15 @@ module.exports = gotoOpts => {
     const [screenshotOpts, response] = await goto(page, url, opts)
     debug('goto', { duration: prettyMs(timeGoto()) })
 
-    if (codeScheme && response && isJSON(response.headers())) {
-      const timePretty = timeSpan()
-      await pReflect(pretty(page, response, { codeScheme, ...opts }))
-      debug('pretty', { duration: prettyMs(timePretty()) })
+    if (codeScheme && response) {
+      const headers = response.headers()
+      const contentType = getContentType(headers)
+
+      if (contentType === 'json' || contentType === 'text') {
+        const timePretty = timeSpan()
+        await pReflect(pretty(page, response, { codeScheme, contentType, ...opts }))
+        debug('pretty', { duration: prettyMs(timePretty()) })
+      }
     }
 
     const timeScreenshot = timeSpan()

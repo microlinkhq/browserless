@@ -28,9 +28,12 @@
   ],
   "dependencies": {
     "@browserless/goto": "^6.12.6",
+    "cli-truncate": "~2.1.0",
     "debug-logfmt": "~1.0.4",
     "got": "~10.7.0",
     "is-url-http": "~2.1.2",
+    "lodash": "~4.17.15",
+    "map-values-deep": "~1.0.2",
     "mime-types": "~2.1.26",
     "p-reflect": "~2.1.0",
     "pretty-ms": "~6.0.1",
@@ -38,6 +41,9 @@
     "sharp": "~0.25.2",
     "svg-gradient": "~1.0.2",
     "time-span": "~4.0.0"
+  },
+  "devDependencies": {
+    "express": "~4.17.1"
   },
   "engines": {
     "node": ">= 10"
