@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.13.0](https://github.com/microlinkhq/browserless/compare/v6.12.6...v6.13.0) (2020-04-05)
+
+
+### Features
+
+* add theme syntax support for text ([18ab1b4](https://github.com/microlinkhq/browserless/commit/18ab1b4be421ad596b0aae1051d282abb7041b41))
+
+
+
+
+
 ## [6.12.6](https://github.com/microlinkhq/browserless/compare/v6.12.5...v6.12.6) (2020-04-04)
 
 **Note:** Version bump only for package browserless
