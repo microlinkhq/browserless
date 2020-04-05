@@ -13,7 +13,7 @@ const overlay = require('./overlay')
 
 const getContentType = headers => {
   const ext = extension(headers['content-type'])
-  return ext === 'txt' ? 'text' : ext
+  return ext === 'txt' || ext === 'html' ? 'text' : ext
 }
 
 module.exports = gotoOpts => {
