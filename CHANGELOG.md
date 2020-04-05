@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.13.1](https://github.com/microlinkhq/browserless/compare/v6.13.0...v6.13.1) (2020-04-05)
+
+
+### Bug Fixes
+
+* consider html as text ([718328d](https://github.com/microlinkhq/browserless/commit/718328d6133aa3e1ac6d90e3b3fc781edc794f00))
+
+
+
+
+
 # [6.13.0](https://github.com/microlinkhq/browserless/compare/v6.12.6...v6.13.0) (2020-04-05)
 
 
