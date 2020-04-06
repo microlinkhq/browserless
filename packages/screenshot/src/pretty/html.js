@@ -1,13 +1,6 @@
 const mapValuesDeep = require('map-values-deep')
 const truncate = require('cli-truncate')
 
-const textStyle = ({ factor = 1 }) => `
-  line-height: 1.6;
-  font-size: ${36 * factor}px;
-  font-weight: 400;
-  font-family: "Operator Mono", "Fira Code", "SF Mono", "Ubuntu Mono", "Roboto Mono", Menlo, monospace;
-`
-
 const resetCSS = `<style>
   * {
     box-sizing: border-box;
@@ -31,12 +24,11 @@ const resetCSS = `<style>
     bottom: 0;
   }
 
-  .language-js span {
-    ${textStyle({ factor: 1 })}
-  }
-
-  .language-text span {
-    ${textStyle({ factor: 1.25 })}
+  span  {
+    line-height: 1.6;
+    font-size: 36px;
+    font-weight: 400;
+    font-family: "Operator Mono", "Fira Code", "SF Mono", "Ubuntu Mono", "Roboto Mono", Menlo, monospace;
   }
 </style>`
 
