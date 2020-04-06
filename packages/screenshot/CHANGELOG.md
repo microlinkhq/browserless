@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [6.14.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.13.2...v6.14.0) (2020-04-06)
+
+
+### Features
+
+* prettify html when is possible ([3b5ca58](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/3b5ca58d0039b27c777eb8f923f9023f975f3db6))
+
+
+
+
+
 ## [6.13.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.13.1...v6.13.2) (2020-04-05)
 
 
