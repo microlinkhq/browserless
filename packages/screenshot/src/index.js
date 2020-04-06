@@ -11,9 +11,11 @@ const pretty = require('./pretty')
 const createGoto = require('./goto')
 const overlay = require('./overlay')
 
+const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
+
 const getContentType = headers => {
-  const ext = extension(headers['content-type'])
-  return ext === 'txt' ? 'text' : ext
+  const contentType = extension(headers['content-type'])
+  return contentType === 'txt' ? 'text' : contentType
 }
 
 module.exports = gotoOpts => {
@@ -31,7 +33,7 @@ module.exports = gotoOpts => {
       const headers = response.headers()
       const contentType = getContentType(headers)
 
-      if (contentType === 'json' || contentType === 'text') {
+      if (PRETTY_CONTENT_TYPES.includes(contentType)) {
         const timePretty = timeSpan()
         await pReflect(pretty(page, response, { codeScheme, contentType, ...opts }))
         debug('pretty', { duration: prettyMs(timePretty()) })

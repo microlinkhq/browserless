@@ -1,24 +1,34 @@
 'use strict'
 
+const { extension } = require('mime-types')
+const pReflect = require('p-reflect')
 const express = require('express')
+const got = require('got')
+
 const app = express()
 const port = 1337
 
 const pretty = require('../../../src/pretty')
 
-const data = {
-  json: require('./data'),
-  text: `build time AWS_REGION: us-east-1
-. run time AWS_REGION: us-west-1
-build time AWS_EXECUTION_ENV: AWS_ECS_FARGATE
-. run time AWS_EXECUTION_ENV: AWS_Lambda_nodejs10.x`
+const getContentType = headers => {
+  const ext = extension(headers['content-type'])
+  return ext === 'txt' ? 'text' : ext
+}
+
+const getContent = async url => {
+  const { isRejected, value, reason } = await pReflect(got(url, { responseType: 'buffer' }))
+  const result = isRejected ? reason.response : value
+  const contentType = getContentType(result.headers)
+  const data = result.body
+  return { data, contentType }
 }
 
 app.get('/', async (req, res) => {
-  const { contentType = 'json', codeScheme = 'atom-dark' } = req.query
-  const response = { json: () => data.json, text: () => data.text }
+  const { codeScheme = 'atom-dark', url } = req.query
+  const { contentType, data } = await getContent(url)
+  const response = { json: () => JSON.parse(data.toString()), text: () => data.toString() }
   const page = { setContent: html => res.send(html) }
-  res.setHeader('Content-Type', 'text/html; charset=UTF-8')
+  // res.setHeader('Content-Type', text/html; charset=UTF-8')
   await pretty(page, response, { codeScheme, contentType })
   res.end()
 })

@@ -21,7 +21,7 @@ const resetCSS = `<style>
   body pre[class*="language-"] {
     margin: 0;
     border-radius: 0;
-    padding: .5rem 1rem;
+    padding: 2rem;
     border: 0;
 
     position: absolute;
@@ -41,7 +41,7 @@ const resetCSS = `<style>
 </style>`
 
 const JSON_MAX_LENGTH = 80
-const TRUNCATE_MAX_LENGTH = JSON_MAX_LENGTH * 0.6
+const TRUNCATE_MAX_LENGTH = JSON_MAX_LENGTH * 0.5
 
 const compactJSON = payload => {
   const sanetized = mapValuesDeep(payload, value => {

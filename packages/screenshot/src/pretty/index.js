@@ -10,11 +10,16 @@ const getHtml = require('./html')
 const { injectScripts, injectStyles } = require('@browserless/goto')
 
 module.exports = async (page, response, { codeScheme, contentType, styles, scripts, modules }) => {
+  const isHTML = contentType === 'html'
   const [theme, payload, prism] = await Promise.all([
     getTheme(codeScheme),
-    response[contentType](),
+    response[isHTML ? 'text' : contentType](),
     getPrism
   ])
+
+  if (isHTML && payload.startsWith('<')) {
+    return
+  }
 
   const html = getHtml(payload, { contentType, prism, theme })
   await page.setContent(html)
