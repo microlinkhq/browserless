@@ -71,7 +71,7 @@ module.exports = (payload, { contentType, prism, theme }) => {
 
   return `<html>
   <head>${css}</head>
-  <body><pre><code class="${lang}">${code}</code></pre></body>
+  <body id="screenshot"><pre><code class="${lang}">${code}</code></pre></body>
   <script>${prism}</script>
 </html>`
 }
