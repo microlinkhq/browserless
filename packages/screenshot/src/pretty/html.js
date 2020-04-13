@@ -32,13 +32,13 @@ const resetCSS = `<style>
   }
 </style>`
 
-const JSON_MAX_LENGTH = 80
-const TRUNCATE_MAX_LENGTH = JSON_MAX_LENGTH * 0.5
+const JSON_MAX_LENGTH = 80 * 0.5
+const TEXT_MAX_LENGTH = 100 * 0.6
 
 const compactJSON = payload => {
   const sanetized = mapValuesDeep(payload, value => {
     if (typeof value !== 'string') return value
-    return truncate(value, TRUNCATE_MAX_LENGTH, { position: 'end' }).trim()
+    return truncate(value, JSON_MAX_LENGTH, { position: 'end' }).trim()
   })
 
   return (
@@ -55,7 +55,7 @@ const compactJSON = payload => {
 const compactText = payload => {
   return payload
     .split('\n')
-    .map(str => truncate(str, TRUNCATE_MAX_LENGTH, { position: 'end' }).trim())
+    .map(str => truncate(str, TEXT_MAX_LENGTH, { position: 'end' }).trim())
     .join('\n')
 }
 
