@@ -28,7 +28,7 @@ const resetCSS = `<style>
     line-height: 1.6;
     font-size: 36px;
     font-weight: 400;
-    font-family: "Operator Mono", "Fira Code", "SF Mono", "Ubuntu Mono", "Roboto Mono", Menlo, monospace;
+    font-family: "Operator Mono", "Fira Code", "SF Mono", "Roboto Mono", "Ubuntu Mono", Menlo, monospace;
   }
 </style>`
 
