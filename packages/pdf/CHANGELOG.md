@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.14.3](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v6.14.2...v6.14.3) (2020-04-13)
+
+**Note:** Version bump only for package @browserless/pdf
+
+
+
+
+
 ## [6.12.6](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v6.12.5...v6.12.6) (2020-04-04)
 
 **Note:** Version bump only for package @browserless/pdf
