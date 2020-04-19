@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/benchmark/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+**Note:** Version bump only for package @browserless/benchmark
+
+
+
+
+
 ## [6.11.8](https://github.com/kikobeats/browserless/tree/master/packages/benchmark/compare/v6.11.7...v6.11.8) (2020-03-05)
 
 

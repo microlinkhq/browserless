@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+
+### Features
+
+* use object map interface ([#165](https://github.com/kikobeats/browserless/tree/master/packages/devices/issues/165)) ([e78aac1](https://github.com/kikobeats/browserless/tree/master/packages/devices/commit/e78aac1335d04655b10e5dc4cb45d6e928aae89d))
+
+
+### BREAKING CHANGES
+
+* It needs puppeteer 3.x
+
+* fix: linter
+
+
+
+
+
 ## [6.11.7](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v6.11.6...v6.11.7) (2020-03-05)
 
 **Note:** Version bump only for package @browserless/devices

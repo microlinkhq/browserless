@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.0.0](https://github.com/microlinkhq/browserless/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+
+### Features
+
+* use object map interface ([#165](https://github.com/microlinkhq/browserless/issues/165)) ([e78aac1](https://github.com/microlinkhq/browserless/commit/e78aac1335d04655b10e5dc4cb45d6e928aae89d))
+
+
+### BREAKING CHANGES
+
+* It needs puppeteer 3.x
+
+* fix: linter
+
+
+
+
+
 ## [6.14.4](https://github.com/microlinkhq/browserless/compare/v6.14.3...v6.14.4) (2020-04-13)
 
 **Note:** Version bump only for package browserless
