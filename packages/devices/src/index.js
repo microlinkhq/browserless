@@ -11,14 +11,7 @@ module.exports = ({
   ]),
   lossyDeviceName = false
 } = {}) => {
-  const devices = puppeteerDevices.concat(customDevices).reduce(
-    (acc, { name, ...props }) => ({
-      ...acc,
-      [name]: props
-    }),
-    {}
-  )
-
+  const devices = { ...puppeteerDevices, ...customDevices }
   const deviceDescriptors = Object.keys(devices)
 
   const findDevice = (deviceDescriptor, lossyEnabled) => {

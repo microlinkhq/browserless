@@ -1,5 +1,5 @@
-[
-  {
+{
+  "Macbook Pro 13": {
     "name": "Macbook Pro 13",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -11,7 +11,7 @@
       "isLandscape": false
     }
   },
-  {
+  "Macbook Pro 15": {
     "name": "Macbook Pro 15",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -23,7 +23,7 @@
       "isLandscape": false
     }
   },
-  {
+  "Macbook Pro 16": {
     "name": "Macbook Pro 16",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -35,7 +35,7 @@
       "isLandscape": false
     }
   },
-  {
+  "iMac 21": {
     "name": "iMac 21",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -47,7 +47,7 @@
       "isLandscape": false
     }
   },
-  {
+  "iMac 21 4k": {
     "name": "iMac 21 4k",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -59,7 +59,7 @@
       "isLandscape": false
     }
   },
-  {
+  "iMac 27": {
     "name": "iMac 27",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -71,7 +71,7 @@
       "isLandscape": false
     }
   },
-  {
+  "iMac 27 5K": {
     "name": "iMac 27 5K",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
@@ -83,4 +83,4 @@
       "isLandscape": false
     }
   }
-]
+}
