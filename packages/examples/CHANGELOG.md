@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.1.0](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v7.0.0...v7.1.0) (2020-04-20)
+
+
+### Features
+
+* better lighthouse integration ([#166](https://github.com/kikobeats/browserless/tree/master/packages/examples/issues/166)) ([bd4c32f](https://github.com/kikobeats/browserless/tree/master/packages/examples/commit/bd4c32fa1667b69b8d3f7929d9e789a6e0d3b58d))
+
+
+
+
+
 # [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/examples/compare/v6.14.4...v7.0.0) (2020-04-19)
 
 **Note:** Version bump only for package @browserless/examples
