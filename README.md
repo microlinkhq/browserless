@@ -695,15 +695,75 @@ Every time you call the pool, it handles acquire and release a new browser insta
 
 ## Lighthouse
 
-**browserless** has a simple [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that uses Puppeteer under the hood.
+**browserless** has a [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that uses Puppeteer under the hood.
 
 ```js
 const lighthouse = require('@browserless/lighthouse')
 
-lighthouse('https://browserless.js.org').then(audit => {
-  console.log(JSON.stringify(audits, null, 2))
+lighthouse('https://browserless.js.org').then(report => {
+  console.log(JSON.stringify(report, null, 2))
 })
 ```
+
+### .lighthouse(url, options)
+
+It generates a report from the target `url`, extending from `lighthouse:default` settings, being these settings the same than Google Chrome Audits reports on Developer Tools.
+
+#### options
+
+The following options are used by default:
+
+```js
+{
+  logLevel: 'error',
+  output: 'json',
+  device: 'desktop',
+  onlyCategories: ['perfomance', 'best-practices', 'accessibility', 'seo']
+}
+```
+
+See [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/master/docs/configuration.md) to know all the options and values supported.
+
+Additionally, you can setup:
+
+##### getBrowserless
+
+type: `function`</br>
+default: `requireOneOf(['browserless'])`
+
+The browserless instance to use for getting the browser.
+
+##### logLevel
+
+type: `string`</br>
+default: `'error'`</br>
+values: `['silent', 'error', 'info', 'verbose']`
+
+The level of logging to enable.
+
+##### output
+
+type: `string` | `string[]`</br>
+default: `'json'`</br>
+values: `['json', 'csv', 'html']`
+
+The type(s) of report output to be produced.
+
+##### device
+
+type: `string`</br>
+default: `'desktop'`</br>
+values: `['desktop', 'mobile', 'none']`
+
+How emulation (useragent, device screen metrics, touch) should be applied. `'none'` indicates Lighthouse should leave the host browser as-is.
+
+##### onlyCategories
+
+type: `string[]` | `null`</br>
+default: `['performance', 'best-practices', 'accessibility', 'seo']`</br>
+values: `'performance'` | `'best-practices'` | `'accessibility'` | `'pwa'` | `'seo'`
+
+If present, the run should only conduct this list of categories.
 
 ## Packages
 
