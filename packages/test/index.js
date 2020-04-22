@@ -3,6 +3,7 @@
 const { imgDiff } = require('img-diff-js')
 const existsFile = require('exists-file')
 const { copy } = require('fs-extra')
+const { words } = require('lodash')
 const temp = require('temperment')
 const pdf = require('pdf-parse')
 const path = require('path')
@@ -29,7 +30,7 @@ module.exports = createBrowserless => {
   test('.html', async t => {
     const browserless = createBrowserless()
     const html = await browserless.html('https://example.com')
-    t.snapshot(html)
+    t.snapshot(words(html))
   })
 
   test('.screenshot (png)', async t => {
@@ -61,7 +62,6 @@ module.exports = createBrowserless => {
     const browserless = createBrowserless()
     const buffer = await browserless.pdf('http://example.com')
     const data = await pdf(buffer)
-    const text = data.text.trim().replace('Example\nDomain', 'Example Domain')
-    t.snapshot(text)
+    t.snapshot(words(data.text))
   })
 }
