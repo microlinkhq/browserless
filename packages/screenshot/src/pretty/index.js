@@ -1,7 +1,7 @@
 'use strict'
 
 const { readFile } = require('fs').promises
-const isHtml = require('is-html')
+const isHtml = require('is-html-content')
 const path = require('path')
 
 const getPrism = readFile(path.resolve(__dirname, 'prism.js'))
