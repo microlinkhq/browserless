@@ -29,8 +29,8 @@
   ],
   "devDependencies": {
     "ava": "latest",
+    "exists-file": "latest",
     "img-diff-js": "latest",
-    "is-ci": "latest",
     "pdf-parse": "latest",
     "temperment": "latest"
   },
