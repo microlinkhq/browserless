@@ -8,19 +8,22 @@ const pdf = require('pdf-parse')
 const path = require('path')
 const test = require('ava')
 
-const looksSame = async (actualFilename, expectedFilename) => {
-  const { imagesAreSame } = await imgDiff({ actualFilename, expectedFilename })
-  return imagesAreSame
-}
+const looksSame = async (actualFilename, expectedFilename) =>
+  imgDiff({
+    actualFilename,
+    expectedFilename
+    // options: {
+    //   threshold: 0.8
+    // }
+  })
 
-const imageSnapshot = async (t, expectedFilename, filename) => {
+const imageComparison = async (t, expectedFilename, filename) => {
   const actualFilename = path.resolve(__dirname, `snapshots/${filename}`)
   if (!(await existsFile(actualFilename))) {
     await copy(expectedFilename, actualFilename)
     return true
   }
-  const isSame = await looksSame(expectedFilename, actualFilename)
-  return isSame
+  return looksSame(expectedFilename, actualFilename)
 }
 module.exports = createBrowserless => {
   test('.html', async t => {
@@ -33,21 +36,25 @@ module.exports = createBrowserless => {
     const browserless = createBrowserless()
     const filepath = temp.file({ extension: 'png' })
     await browserless.screenshot('http://example.com', { path: filepath })
-    t.true(await imageSnapshot(t, filepath, 'example.png'))
+
+    const { imagesAreSame, diffCount } = await imageComparison(t, filepath, 'example.png')
+    t.true(imagesAreSame, `images are different by ${diffCount} differential pixels`)
   })
 
   test('.screenshot (jpeg)', async t => {
     const browserless = createBrowserless()
     const filepath = temp.file({ extension: 'jpeg' })
     await browserless.screenshot('http://example.com', { type: 'jpeg', path: filepath })
-    t.true(await imageSnapshot(t, filepath, 'example.jpeg'))
+    const { imagesAreSame, diffCount } = await imageComparison(t, filepath, 'example.jpeg')
+    t.true(imagesAreSame, `images are different by ${diffCount} differential pixels`)
   })
 
   test('.screenshot with device emulation', async t => {
     const browserless = createBrowserless()
     const filepath = temp.file({ extension: 'png' })
     await browserless.screenshot('http://example.com', { device: 'iPhone 6', path: filepath })
-    t.true(await imageSnapshot(t, filepath, 'iphone.png'))
+    const { imagesAreSame, diffCount } = await imageComparison(t, filepath, 'iphone.png')
+    t.true(imagesAreSame, `images are different by ${diffCount} differential pixels`)
   })
 
   test('.pdf', async t => {
