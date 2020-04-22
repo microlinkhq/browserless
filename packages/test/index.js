@@ -10,13 +10,7 @@ const path = require('path')
 const test = require('ava')
 
 const looksSame = async (actualFilename, expectedFilename) =>
-  imgDiff({
-    actualFilename,
-    expectedFilename
-    // options: {
-    //   threshold: 0.8
-    // }
-  })
+  imgDiff({ actualFilename, expectedFilename })
 
 const imageComparison = async (t, expectedFilename, filename) => {
   const actualFilename = path.resolve(__dirname, `snapshots/${filename}`)
