@@ -31,6 +31,7 @@
     "ava": "latest",
     "exists-file": "latest",
     "img-diff-js": "latest",
+    "is-ci": "latest",
     "lodash": "latest",
     "pdf-parse": "latest",
     "temperment": "latest"
