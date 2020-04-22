@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.1.1](https://github.com/microlinkhq/browserless/compare/v7.1.0...v7.1.1) (2020-04-22)
+
+
+### Bug Fixes
+
+* html can start with space ([f09ca56](https://github.com/microlinkhq/browserless/commit/f09ca56bfb1ec1d7a033fa42a91590afb1481659))
+
+
+### Reverts
+
+* Revert "build(deps): bump got from 10.7.0 to 11.0.1 (#167)" ([8bf1ed7](https://github.com/microlinkhq/browserless/commit/8bf1ed7367c067ef02e9e25caf99ac5c06fbd954)), closes [#167](https://github.com/microlinkhq/browserless/issues/167)
+
+
+
+
+
 # [7.1.0](https://github.com/microlinkhq/browserless/compare/v7.0.0...v7.1.0) (2020-04-20)
 
 
