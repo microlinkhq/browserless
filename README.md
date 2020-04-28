@@ -737,7 +737,7 @@ The browserless instance to use for getting the browser.
 
 type: `string`</br>
 default: `'error'`</br>
-values: `['silent', 'error', 'info', 'verbose']`
+values: 'silent' | 'error' | 'info' | 'verbose' </br>
 
 The level of logging to enable.
 
@@ -753,7 +753,7 @@ The type(s) of report output to be produced.
 
 type: `string`</br>
 default: `'desktop'`</br>
-values: `['desktop', 'mobile', 'none']`
+values: 'desktop' | 'mobile' | 'none' </br>
 
 How emulation (useragent, device screen metrics, touch) should be applied. `'none'` indicates Lighthouse should leave the host browser as-is.
 
