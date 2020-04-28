@@ -763,7 +763,7 @@ type: `string[]` | `null`</br>
 default: `['performance', 'best-practices', 'accessibility', 'seo']`</br>
 values: `'performance'` | `'best-practices'` | `'accessibility'` | `'pwa'` | `'seo'`
 
-If present, the run should only conduct this list of categories.
+Includes only the specified categories in the final report.
 
 ## Packages
 
