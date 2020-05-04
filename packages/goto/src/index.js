@@ -28,17 +28,15 @@ const toArray = value => [].concat(value)
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
 
-const hideElements = elements => {
-  for (const element of elements) {
-    if (element) element.style.visibility = 'hidden'
-  }
-}
+const hideElements = (page, elements) =>
+  page.addStyleTag({
+    content: `${elements.join(', ')} { visibility: hidden; }`
+  })
 
-const removeElements = elements => {
-  for (const element of elements) {
-    element.style.display = 'none'
-  }
-}
+const removeElements = (page, elements) =>
+  page.addStyleTag({
+    content: `${elements.join(', ')} { display: none; }`
+  })
 
 const scrollTo = (element, options) => {
   const isOverflown = element => {
@@ -163,9 +161,6 @@ const injectStyles = (page, styles) =>
       )
     )
   )
-
-const forEachSelector = (page, selectors, fn) =>
-  toArray(selectors).map(selector => pReflect(page.$$eval(selector, fn)))
 
 const run = async ({ fn, debug: props }) => {
   const debugProps = { duration: timeSpan() }
@@ -295,8 +290,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       }
 
       const hideOrRemove = [
-        hide && forEachSelector(page, hide, hideElements),
-        remove && forEachSelector(page, hide, removeElements)
+        hide && hideElements(page, hide),
+        remove && removeElements(page, remove)
       ].filter(Boolean)
 
       if (hideOrRemove.length > 0) {
