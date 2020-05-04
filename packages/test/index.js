@@ -41,7 +41,7 @@ module.exports = createBrowserless => {
 
     const { diffCount } = await imageComparison(t, filepath, 'example.png')
     t.true(
-      diffCount < PIXELS_DIFFERENCE,
+      diffCount <= PIXELS_DIFFERENCE,
       `images are different by ${diffCount} differential pixels`
     )
   })
@@ -52,7 +52,7 @@ module.exports = createBrowserless => {
     await browserless.screenshot('http://example.com', { type: 'jpeg', path: filepath })
     const { diffCount } = await imageComparison(t, filepath, 'example.jpeg')
     t.true(
-      diffCount < PIXELS_DIFFERENCE,
+      diffCount <= PIXELS_DIFFERENCE,
       `images are different by ${diffCount} differential pixels`
     )
   })
@@ -63,7 +63,7 @@ module.exports = createBrowserless => {
     await browserless.screenshot('http://example.com', { device: 'iPhone 6', path: filepath })
     const { diffCount } = await imageComparison(t, filepath, 'iphone.png')
     t.true(
-      diffCount < PIXELS_DIFFERENCE,
+      diffCount <= PIXELS_DIFFERENCE,
       `images are different by ${diffCount} differential pixels`
     )
   })
