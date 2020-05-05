@@ -30,12 +30,12 @@ const getInjectKey = (ext, value) =>
 
 const hideElements = (page, elements) =>
   page.addStyleTag({
-    content: `${elements.join(', ')} { visibility: hidden; }`
+    content: `${elements.join(', ')} { visibility: hidden !important; }`
   })
 
 const removeElements = (page, elements) =>
   page.addStyleTag({
-    content: `${elements.join(', ')} { display: none; }`
+    content: `${elements.join(', ')} { display: none !important; }`
   })
 
 const scrollTo = (element, options) => {
