@@ -31,7 +31,7 @@ module.exports = createBrowserless => {
   test('.html', async t => {
     const browserless = createBrowserless()
     const html = await browserless.html('https://example.com')
-    t.snapshot(words(html).sort())
+    t.snapshot([...new Set(words(html))].sort())
   })
 
   test('.screenshot (png)', async t => {

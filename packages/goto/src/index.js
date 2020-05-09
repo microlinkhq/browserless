@@ -179,6 +179,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       animations = false,
       javascript = true,
       colorScheme,
+      waitUntil,
       hide,
       remove,
       click,
@@ -189,6 +190,12 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       ...args
     }
   ) => {
+    const isWaitUntilAuto = waitUntil === 'auto'
+
+    if (isWaitUntilAuto) {
+      waitUntil = 'load'
+    }
+
     const prePromises = []
 
     if (adblock) {
@@ -267,6 +274,19 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
 
     if (isFulfilled) {
       const postPromises = []
+
+      if (isWaitUntilAuto) {
+        await run({
+          fn: pTimeout(
+            Promise.all([
+              page.waitForNavigation({ waitUntil: 'networkidle2' }),
+              page.evaluate(() => window.history.pushState(null, null, '#'))
+            ]),
+            gotoTimeout * (1 / 3)
+          ),
+          debug: { isWaitUntilAuto }
+        })
+      }
 
       if (waitFor) {
         await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
