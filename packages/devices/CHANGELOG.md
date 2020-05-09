@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.2.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v7.1.7...v7.2.0) (2020-05-09)
+
+
+### Features
+
+* add `waitUntil: 'auto'` ([#171](https://github.com/kikobeats/browserless/tree/master/packages/devices/issues/171)) ([2116b67](https://github.com/kikobeats/browserless/tree/master/packages/devices/commit/2116b67ccddf210b76594fa71b053ee5c4b7e28c))
+
+
+
+
+
 # [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v6.14.4...v7.0.0) (2020-04-19)
 
 
