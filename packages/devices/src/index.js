@@ -11,7 +11,7 @@ module.exports = ({
   ]),
   lossyDeviceName = false
 } = {}) => {
-  const devices = { ...puppeteerDevices, ...customDevices }
+  const devices = { ...puppeteerDevices.devicesMap, ...customDevices }
   const deviceDescriptors = Object.keys(devices)
 
   const findDevice = (deviceDescriptor, lossyEnabled) => {
@@ -29,13 +29,13 @@ module.exports = ({
 
     return device
       ? {
-        userAgent: device.userAgent || headers['user-agent'],
-        viewport: { ...device.viewport, ...viewport }
-      }
+          userAgent: device.userAgent || headers['user-agent'],
+          viewport: { ...device.viewport, ...viewport }
+        }
       : {
-        userAgent: headers['user-agent'],
-        viewport
-      }
+          userAgent: headers['user-agent'],
+          viewport
+        }
   }
 
   getDevices.devices = devices
