@@ -28,15 +28,12 @@ const toArray = value => [].concat(value)
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
 
-const hideElements = (page, elements) =>
-  page.addStyleTag({
-    content: `${elements.join(', ')} { visibility: hidden !important; }`
-  })
-
-const removeElements = (page, elements) =>
-  page.addStyleTag({
-    content: `${elements.join(', ')} { display: none !important; }`
-  })
+const injectCSS = (page, css) =>
+  pReflect(
+    page.addStyleTag({
+      content: css
+    })
+  )
 
 const scrollTo = (element, options) => {
   const isOverflown = element => {
@@ -115,23 +112,6 @@ const parseCookies = (url, str) => {
   }, [])
 }
 
-const disableAnimations = () => {
-  const rule = `
-  *,
-  ::before,
-  ::after {
-    animation-delay: 0s !important;
-    transition-delay: 0s !important;
-    animation-duration: 0s !important;
-    transition-duration: 0s !important;
-    transition-property: none !important;
-  }
-`
-  const style = document.createElement('style')
-  if (document.body) document.body.append(style)
-  if (style.sheet) style.sheet.insertRule(rule)
-}
-
 const getMediaFeatures = ({ animations, colorScheme }) => {
   const prefers = []
   if (animations === false) prefers.push({ name: 'prefers-reduced-motion', value: 'reduce' })
@@ -161,6 +141,18 @@ const injectStyles = (page, styles) =>
       )
     )
   )
+
+const disableAnimations = `
+  *,
+  ::before,
+  ::after {
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+    transition-property: none !important;
+  }
+`.trim()
 
 const run = async ({ fn, debug: props }) => {
   const debugProps = { duration: timeSpan() }
@@ -281,17 +273,12 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       }
 
       if (animations === false) {
-        postPromises.push(
-          run({
-            fn: page.evaluate(disableAnimations),
-            debug: { animations }
-          })
-        )
+        postPromises.push(injectCSS(page, disableAnimations))
       }
 
       const hideOrRemove = [
-        hide && hideElements(page, hide),
-        remove && removeElements(page, remove)
+        hide && injectCSS(page, `${toArray(hide).join(', ')} { visibility: hidden !important; }`),
+        remove && injectCSS(page, `${toArray(remove).join(', ')} { display: none !important; }`)
       ].filter(Boolean)
 
       if (hideOrRemove.length > 0) {
