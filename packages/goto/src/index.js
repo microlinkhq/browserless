@@ -275,6 +275,19 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
     if (isFulfilled) {
       const postPromises = []
 
+      if (isWaitUntilAuto) {
+        await run({
+          fn: pTimeout(
+            Promise.all([
+              page.waitForNavigation({ waitUntil: 'networkidle2' }),
+              page.evaluate(() => window.history.pushState(null, null, '#'))
+            ]),
+            gotoTimeout * (1 / 3)
+          ),
+          debug: { isWaitUntilAuto }
+        })
+      }
+
       if (waitFor) {
         await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
       }
@@ -327,19 +340,6 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
           await run({ fn: page.$eval(scroll, scrollTo), debug: { scroll } })
         }
       }
-    }
-
-    if (isWaitUntilAuto) {
-      await run({
-        fn: pTimeout(
-          Promise.all([
-            page.waitForNavigation({ waitUntil: 'networkidle2' }),
-            page.evaluate(() => window.history.pushState(null, null, '#'))
-          ]),
-          gotoTimeout * (1 / 3)
-        ),
-        debug: { isWaitUntilAuto }
-      })
     }
 
     return { response, device }
