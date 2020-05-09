@@ -634,6 +634,24 @@ default: `0`
 
 Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
 
+##### waitUntil
+
+type: `string` | `string[]`</br>
+default: `'load'`</br>
+values: `'auto'` | `'load'` | `'domcontentloaded'` | `'networkidle0'` | `'networkidle2'`
+
+When to consider navigation succeeded.
+
+If you provide an array of event strings, navigation is considered to be successful after all events have been fired.
+
+Events can be either:
+
+- `'auto'`: A combination of `'load'` and `'networkidle2'` in a smart way to wait the minimum time necessary.
+- `'load'`: Consider navigation to be finished when the load event is fired.
+- `'domcontentloaded'`: Consider navigation to be finished when the DOMContentLoaded event is fired.
+- `'networkidle0'`: Consider navigation to be finished when there are no more than 0 network connections for at least 500 ms.
+- `'networkidle2'`: Consider navigation to be finished when there are no more than 2 network connections for at least 500 ms.
+
 ### .page()
 
 It returns a standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
