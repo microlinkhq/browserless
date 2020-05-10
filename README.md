@@ -637,7 +637,7 @@ Wait a quantity of time, selector or function using [page.waitFor](https://githu
 ##### waitUntil
 
 type: `string` | `string[]`</br>
-default: `'load'`</br>
+default: `'auto'`</br>
 values: `'auto'` | `'load'` | `'domcontentloaded'` | `'networkidle0'` | `'networkidle2'`
 
 When to consider navigation succeeded.

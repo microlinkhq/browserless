@@ -193,7 +193,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
     const isWaitUntilAuto = waitUntil === 'auto'
 
     if (isWaitUntilAuto) {
-      waitUntil = 'load'
+      waitUntil = 'auto'
     }
 
     const prePromises = []
