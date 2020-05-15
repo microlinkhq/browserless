@@ -2,7 +2,7 @@
   "name": "@browserless/benchmark",
   "description": "Benchmarking tool for testing different browserless configurations",
   "homepage": "https://browserless.js.org/#/?id=benchmark",
-  "version": "6.10.0",
+  "version": "7.0.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -27,6 +27,10 @@
     "perf",
     "puppeteer"
   ],
+  "dependencies": {
+    "nanobench": "~2.1.1",
+    "sieve-of-eratosthenes": "0.0.3"
+  },
   "devDependencies": {
     "@browserless/pool": "latest",
     "asciichart": "latest",

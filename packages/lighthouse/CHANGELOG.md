@@ -3,6 +3,80 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.1.2](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v7.1.1...v7.1.2) (2020-04-22)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
+
+
+
+
+# [7.1.0](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v7.0.0...v7.1.0) (2020-04-20)
+
+
+### Features
+
+* better lighthouse integration ([#166](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/issues/166)) ([bd4c32f](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/bd4c32fa1667b69b8d3f7929d9e789a6e0d3b58d))
+
+
+
+
+
+# [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
+
+
+
+
+## [6.12.3](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.12.2...v6.12.3) (2020-03-26)
+
+
+### Bug Fixes
+
+* indent ([59dd193](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/59dd193802ac21c9d7958b860b167b7ceb0d78e7))
+* indent ([2e537f0](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/2e537f0df3027aaabc54abc3328720492e78d35c))
+
+
+
+
+
+## [6.12.2](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.12.1...v6.12.2) (2020-03-10)
+
+
+### Bug Fixes
+
+* perception ([f09b741](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/f09b741aceda69042355185f98aca8055e827eb1))
+
+
+
+
+
+# [6.12.0](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.11.8...v6.12.0) (2020-03-08)
+
+
+### Bug Fixes
+
+* linter ([875b509](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/875b509cd72d381e3deb5014d6979d20395d9c8d))
+
+
+### Features
+
+* add perception property ([ab2ab18](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/commit/ab2ab1805ddfb693b2fefc31cc606733c5825518))
+
+
+
+
+
+## [6.11.7](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.11.6...v6.11.7) (2020-03-05)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
+
+
+
+
 ## [6.11.2](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v6.11.1...v6.11.2) (2020-03-02)
 
 

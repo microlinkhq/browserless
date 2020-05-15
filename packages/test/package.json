@@ -2,7 +2,7 @@
   "name": "@browserless/test",
   "description": "A test suite for browserless API",
   "homepage": "https://browserless.js.org",
-  "version": "6.5.0",
+  "version": "7.2.0",
   "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -29,8 +29,10 @@
   ],
   "devDependencies": {
     "ava": "latest",
+    "exists-file": "latest",
     "img-diff-js": "latest",
     "is-ci": "latest",
+    "lodash": "latest",
     "pdf-parse": "latest",
     "temperment": "latest"
   },

@@ -3,6 +3,236 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.3.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.2.0...v7.3.0) (2020-05-10)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+# [7.2.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.7...v7.2.0) (2020-05-09)
+
+
+### Features
+
+* add `waitUntil: 'auto'` ([#171](https://github.com/kikobeats/browserless/tree/master/packages/browserless/issues/171)) ([2116b67](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/2116b67ccddf210b76594fa71b053ee5c4b7e28c))
+
+
+
+
+
+## [7.1.7](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.6...v7.1.7) (2020-05-09)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.6](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.5...v7.1.6) (2020-05-05)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.5](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.4...v7.1.5) (2020-05-04)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.4](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.3...v7.1.4) (2020-05-04)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.3](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.2...v7.1.3) (2020-04-30)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.2](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.1...v7.1.2) (2020-04-22)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.1](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v7.1.0...v7.1.1) (2020-04-22)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+# [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.14.4](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.14.3...v6.14.4) (2020-04-13)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.14.3](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.14.2...v6.14.3) (2020-04-13)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.14.2](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.14.1...v6.14.2) (2020-04-07)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.14.1](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.14.0...v6.14.1) (2020-04-06)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+# [6.14.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.13.2...v6.14.0) (2020-04-06)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.13.2](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.13.1...v6.13.2) (2020-04-05)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.13.1](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.13.0...v6.13.1) (2020-04-05)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+# [6.13.0](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.12.6...v6.13.0) (2020-04-05)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.6](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.12.5...v6.12.6) (2020-04-04)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.5](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.12.4...v6.12.5) (2020-03-31)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.4](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.12.3...v6.12.4) (2020-03-27)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.3](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.12.2...v6.12.3) (2020-03-26)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.1](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.12.0...v6.12.1) (2020-03-10)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.11.7](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.6...v6.11.7) (2020-03-05)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.11.6](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.5...v6.11.6) (2020-03-04)
+
+
+### Bug Fixes
+
+* handle websockets errors ([e708c06](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/e708c0649514069911465403f1f3e464fd9d49ee))
+
+
+
+
+
+## [6.11.5](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.4...v6.11.5) (2020-03-04)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.11.4](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.3...v6.11.4) (2020-03-03)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.11.3](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.2...v6.11.3) (2020-03-03)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
 ## [6.11.1](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v6.11.0...v6.11.1) (2020-03-01)
 
 

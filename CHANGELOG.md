@@ -3,6 +3,339 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.3.0](https://github.com/microlinkhq/browserless/compare/v7.2.0...v7.3.0) (2020-05-10)
+
+
+### Features
+
+* waitUntil as auto by default ([345baee](https://github.com/microlinkhq/browserless/commit/345baee619238f4a6258658f30f6dfbf1d3d00d4))
+
+
+
+
+
+# [7.2.0](https://github.com/microlinkhq/browserless/compare/v7.1.7...v7.2.0) (2020-05-09)
+
+
+### Features
+
+* add `waitUntil: 'auto'` ([#171](https://github.com/microlinkhq/browserless/issues/171)) ([2116b67](https://github.com/microlinkhq/browserless/commit/2116b67ccddf210b76594fa71b053ee5c4b7e28c))
+
+
+
+
+
+## [7.1.7](https://github.com/microlinkhq/browserless/compare/v7.1.6...v7.1.7) (2020-05-09)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.6](https://github.com/microlinkhq/browserless/compare/v7.1.5...v7.1.6) (2020-05-05)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.5](https://github.com/microlinkhq/browserless/compare/v7.1.4...v7.1.5) (2020-05-04)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.4](https://github.com/microlinkhq/browserless/compare/v7.1.3...v7.1.4) (2020-05-04)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.3](https://github.com/microlinkhq/browserless/compare/v7.1.2...v7.1.3) (2020-04-30)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.2](https://github.com/microlinkhq/browserless/compare/v7.1.1...v7.1.2) (2020-04-22)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [7.1.1](https://github.com/microlinkhq/browserless/compare/v7.1.0...v7.1.1) (2020-04-22)
+
+
+### Bug Fixes
+
+* html can start with space ([f09ca56](https://github.com/microlinkhq/browserless/commit/f09ca56bfb1ec1d7a033fa42a91590afb1481659))
+
+
+### Reverts
+
+* Revert "build(deps): bump got from 10.7.0 to 11.0.1 (#167)" ([8bf1ed7](https://github.com/microlinkhq/browserless/commit/8bf1ed7367c067ef02e9e25caf99ac5c06fbd954)), closes [#167](https://github.com/microlinkhq/browserless/issues/167)
+
+
+
+
+
+# [7.1.0](https://github.com/microlinkhq/browserless/compare/v7.0.0...v7.1.0) (2020-04-20)
+
+
+### Features
+
+* better lighthouse integration ([#166](https://github.com/microlinkhq/browserless/issues/166)) ([bd4c32f](https://github.com/microlinkhq/browserless/commit/bd4c32fa1667b69b8d3f7929d9e789a6e0d3b58d))
+
+
+
+
+
+# [7.0.0](https://github.com/microlinkhq/browserless/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+
+### Features
+
+* use object map interface ([#165](https://github.com/microlinkhq/browserless/issues/165)) ([e78aac1](https://github.com/microlinkhq/browserless/commit/e78aac1335d04655b10e5dc4cb45d6e928aae89d))
+
+
+### BREAKING CHANGES
+
+* It needs puppeteer 3.x
+
+* fix: linter
+
+
+
+
+
+## [6.14.4](https://github.com/microlinkhq/browserless/compare/v6.14.3...v6.14.4) (2020-04-13)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.14.3](https://github.com/microlinkhq/browserless/compare/v6.14.2...v6.14.3) (2020-04-13)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.14.2](https://github.com/microlinkhq/browserless/compare/v6.14.1...v6.14.2) (2020-04-07)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.14.1](https://github.com/microlinkhq/browserless/compare/v6.14.0...v6.14.1) (2020-04-06)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+# [6.14.0](https://github.com/microlinkhq/browserless/compare/v6.13.2...v6.14.0) (2020-04-06)
+
+
+### Features
+
+* prettify html when is possible ([3b5ca58](https://github.com/microlinkhq/browserless/commit/3b5ca58d0039b27c777eb8f923f9023f975f3db6))
+
+
+
+
+
+## [6.13.2](https://github.com/microlinkhq/browserless/compare/v6.13.1...v6.13.2) (2020-04-05)
+
+
+### Reverts
+
+* Revert "fix: consider html as text" ([004c443](https://github.com/microlinkhq/browserless/commit/004c44388486ff8b64a1d43045cbb0005504b95d))
+
+
+
+
+
+## [6.13.1](https://github.com/microlinkhq/browserless/compare/v6.13.0...v6.13.1) (2020-04-05)
+
+
+### Bug Fixes
+
+* consider html as text ([718328d](https://github.com/microlinkhq/browserless/commit/718328d6133aa3e1ac6d90e3b3fc781edc794f00))
+
+
+
+
+
+# [6.13.0](https://github.com/microlinkhq/browserless/compare/v6.12.6...v6.13.0) (2020-04-05)
+
+
+### Features
+
+* add theme syntax support for text ([18ab1b4](https://github.com/microlinkhq/browserless/commit/18ab1b4be421ad596b0aae1051d282abb7041b41))
+
+
+
+
+
+## [6.12.6](https://github.com/microlinkhq/browserless/compare/v6.12.5...v6.12.6) (2020-04-04)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.5](https://github.com/microlinkhq/browserless/compare/v6.12.4...v6.12.5) (2020-03-31)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.4](https://github.com/microlinkhq/browserless/compare/v6.12.3...v6.12.4) (2020-03-27)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+## [6.12.3](https://github.com/microlinkhq/browserless/compare/v6.12.2...v6.12.3) (2020-03-26)
+
+
+### Bug Fixes
+
+* indent ([59dd193](https://github.com/microlinkhq/browserless/commit/59dd193802ac21c9d7958b860b167b7ceb0d78e7))
+* indent ([2e537f0](https://github.com/microlinkhq/browserless/commit/2e537f0df3027aaabc54abc3328720492e78d35c))
+
+
+
+
+
+## [6.12.2](https://github.com/microlinkhq/browserless/compare/v6.12.1...v6.12.2) (2020-03-10)
+
+
+### Bug Fixes
+
+* perception ([f09b741](https://github.com/microlinkhq/browserless/commit/f09b741aceda69042355185f98aca8055e827eb1))
+
+
+
+
+
+## [6.12.1](https://github.com/microlinkhq/browserless/compare/v6.12.0...v6.12.1) (2020-03-10)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
+# [6.12.0](https://github.com/microlinkhq/browserless/compare/v6.11.8...v6.12.0) (2020-03-08)
+
+
+### Bug Fixes
+
+* linter ([875b509](https://github.com/microlinkhq/browserless/commit/875b509cd72d381e3deb5014d6979d20395d9c8d))
+
+
+### Features
+
+* add perception property ([ab2ab18](https://github.com/microlinkhq/browserless/commit/ab2ab1805ddfb693b2fefc31cc606733c5825518))
+
+
+
+
+
+## [6.11.8](https://github.com/microlinkhq/browserless/compare/v6.11.7...v6.11.8) (2020-03-05)
+
+
+### Performance Improvements
+
+* add flags benchmark ([4d796db](https://github.com/microlinkhq/browserless/commit/4d796db11c90c001625497a3bfee2dc51fb50ef3))
+
+
+
+
+
+## [6.11.7](https://github.com/microlinkhq/browserless/compare/v6.11.6...v6.11.7) (2020-03-05)
+
+
+### Bug Fixes
+
+* linter ([df0eddf](https://github.com/microlinkhq/browserless/commit/df0eddf223a28d2b900c136c9f223fbbcf58e4f6))
+
+
+### Performance Improvements
+
+* add gpu test ([b992f1c](https://github.com/microlinkhq/browserless/commit/b992f1c00222939d6d127c7aba524aced380a622))
+* add useful benchmarks ([d9ccf1d](https://github.com/microlinkhq/browserless/commit/d9ccf1dcfbb87f481271fb2a2dda3972a3478205))
+
+
+
+
+
+## [6.11.6](https://github.com/microlinkhq/browserless/compare/v6.11.5...v6.11.6) (2020-03-04)
+
+
+### Bug Fixes
+
+* handle websockets errors ([e708c06](https://github.com/microlinkhq/browserless/commit/e708c0649514069911465403f1f3e464fd9d49ee))
+* linter ([14fd923](https://github.com/microlinkhq/browserless/commit/14fd92324819737eede40532c1ea655430d5fee4))
+* linter ([b21ef88](https://github.com/microlinkhq/browserless/commit/b21ef88747a9de2dbdeb237c99085d068ecb12cf))
+
+
+
+
+
+## [6.11.5](https://github.com/microlinkhq/browserless/compare/v6.11.4...v6.11.5) (2020-03-04)
+
+
+### Performance Improvements
+
+* browser actions on parallel ([#152](https://github.com/microlinkhq/browserless/issues/152)) ([178a92d](https://github.com/microlinkhq/browserless/commit/178a92d89cb421f6a8dd9ef1a8787f71be6e34a2))
+
+
+
+
+
+## [6.11.4](https://github.com/microlinkhq/browserless/compare/v6.11.3...v6.11.4) (2020-03-03)
+
+
+### Bug Fixes
+
+* injections ([dc7de29](https://github.com/microlinkhq/browserless/commit/dc7de291a78ed0c27be3dfb33e361f0e016f81ff))
+
+
+
+
+
+## [6.11.3](https://github.com/microlinkhq/browserless/compare/v6.11.2...v6.11.3) (2020-03-03)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
 ## [6.11.2](https://github.com/microlinkhq/browserless/compare/v6.11.1...v6.11.2) (2020-03-02)
 
 

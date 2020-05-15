@@ -15,9 +15,11 @@
 
 Although you can think [puppeteer](https://github.com/GoogleChrome/puppeteer) could be enough, there is a set of use cases that make sense built on top of puppeteer and they are necessary to support into robust production scenario, like:
 
-- Sensible good defaults, aborting unnecessary requests based of what you are doing (e.g, aborting image request if you just want to get [`.html`](#htmlurl-options) content).
-- Easily create a pool of instance (via [`@browserless/pool`](#pool-of-instances)).
-- Built-in adblocker for aborting ads requests.
+- Perform browser action (such as [text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)) with the best perfomance possible.
+- Run browser tasks (such as HTTP headers, viewport, cookies, CSS features,...) on parallel.
+- Abort 3rd party advertisement requests using a built-in [adblocker powered by Cliqz](#gotopage-options).
+- Simple [Google Lighthouse](#lighthouse) integration for getting perfomance metrics reports.
+- Create your own [pool of instances](#pool-of-instances) with variable size.
 
 ## Install
 
@@ -417,7 +419,7 @@ const getText = browserless.evaluate(page => page.evaluate(() => document.body.i
 
 ### .goto(page, options)
 
-It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), using a builtin [adblocker](https://www.npmjs.com/package/@cliqz/adblocker).
+It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), using a builtin [adblocker by Cliqz](https://www.npmjs.com/package/@cliqz/adblocker).
 
 ```js
 const browserless = require('browserless')
@@ -632,6 +634,24 @@ default: `0`
 
 Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
 
+##### waitUntil
+
+type: `string` | `string[]`</br>
+default: `'auto'`</br>
+values: `'auto'` | `'load'` | `'domcontentloaded'` | `'networkidle0'` | `'networkidle2'`
+
+When to consider navigation succeeded.
+
+If you provide an array of event strings, navigation is considered to be successful after all events have been fired.
+
+Events can be either:
+
+- `'auto'`: A combination of `'load'` and `'networkidle2'` in a smart way to wait the minimum time necessary.
+- `'load'`: Consider navigation to be finished when the load event is fired.
+- `'domcontentloaded'`: Consider navigation to be finished when the DOMContentLoaded event is fired.
+- `'networkidle0'`: Consider navigation to be finished when there are no more than 0 network connections for at least 500 ms.
+- `'networkidle2'`: Consider navigation to be finished when there are no more than 2 network connections for at least 500 ms.
+
 ### .page()
 
 It returns a standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
@@ -690,6 +710,78 @@ browserlessPool.screenshot('http://example.com', { device: 'iPhone 6' }).then(bu
 ```
 
 Every time you call the pool, it handles acquire and release a new browser instance from the pool ✨.
+
+## Lighthouse
+
+**browserless** has a [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that uses Puppeteer under the hood.
+
+```js
+const lighthouse = require('@browserless/lighthouse')
+
+lighthouse('https://browserless.js.org').then(report => {
+  console.log(JSON.stringify(report, null, 2))
+})
+```
+
+### .lighthouse(url, options)
+
+It generates a report from the target `url`, extending from `lighthouse:default` settings, being these settings the same than Google Chrome Audits reports on Developer Tools.
+
+#### options
+
+The following options are used by default:
+
+```js
+{
+  logLevel: 'error',
+  output: 'json',
+  device: 'desktop',
+  onlyCategories: ['perfomance', 'best-practices', 'accessibility', 'seo']
+}
+```
+
+See [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/master/docs/configuration.md) to know all the options and values supported.
+
+Additionally, you can setup:
+
+##### getBrowserless
+
+type: `function`</br>
+default: `requireOneOf(['browserless'])`
+
+The browserless instance to use for getting the browser.
+
+##### logLevel
+
+type: `string`</br>
+default: `'error'`</br>
+values: `'silent'` | `'error'` | `'info'` | `'verbose'` </br>
+
+The level of logging to enable.
+
+##### output
+
+type: `string` | `string[]`</br>
+default: `'json'`</br>
+values: `'json'` | `'csv'` | `'html'`
+
+The type(s) of report output to be produced.
+
+##### device
+
+type: `string`</br>
+default: `'desktop'`</br>
+values: `'desktop'` | `'mobile'` | `'none'` </br>
+
+How emulation (useragent, device screen metrics, touch) should be applied. `'none'` indicates Lighthouse should leave the host browser as-is.
+
+##### onlyCategories
+
+type: `string[]` | `null`</br>
+default: `['performance', 'best-practices', 'accessibility', 'seo']`</br>
+values: `'performance'` | `'best-practices'` | `'accessibility'` | `'pwa'` | `'seo'`
+
+Includes only the specified categories in the final report.
 
 ## Packages
 

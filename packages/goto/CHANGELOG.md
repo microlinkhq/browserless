@@ -3,6 +3,162 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.3.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.2.0...v7.3.0) (2020-05-10)
+
+
+### Features
+
+* waitUntil as auto by default ([345baee](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/345baee619238f4a6258658f30f6dfbf1d3d00d4))
+
+
+
+
+
+# [7.2.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.1.7...v7.2.0) (2020-05-09)
+
+
+### Features
+
+* add `waitUntil: 'auto'` ([#171](https://github.com/kikobeats/browserless/tree/master/packages/goto/issues/171)) ([2116b67](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/2116b67ccddf210b76594fa71b053ee5c4b7e28c))
+
+
+
+
+
+## [7.1.7](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.1.6...v7.1.7) (2020-05-09)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [7.1.6](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.1.5...v7.1.6) (2020-05-05)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [7.1.5](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.1.4...v7.1.5) (2020-05-04)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [7.1.4](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.1.3...v7.1.4) (2020-05-04)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [7.1.3](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.1.2...v7.1.3) (2020-04-30)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [7.1.2](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.1.1...v7.1.2) (2020-04-22)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+# [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [6.14.3](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.14.2...v6.14.3) (2020-04-13)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [6.12.6](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.12.5...v6.12.6) (2020-04-04)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [6.12.5](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.12.4...v6.12.5) (2020-03-31)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [6.12.4](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.12.3...v6.12.4) (2020-03-27)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [6.12.3](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.12.2...v6.12.3) (2020-03-26)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [6.11.7](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.11.6...v6.11.7) (2020-03-05)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
+## [6.11.5](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.11.4...v6.11.5) (2020-03-04)
+
+
+### Performance Improvements
+
+* browser actions on parallel ([#152](https://github.com/kikobeats/browserless/tree/master/packages/goto/issues/152)) ([178a92d](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/178a92d89cb421f6a8dd9ef1a8787f71be6e34a2))
+
+
+
+
+
+## [6.11.4](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.11.3...v6.11.4) (2020-03-03)
+
+
+### Bug Fixes
+
+* injections ([dc7de29](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/dc7de291a78ed0c27be3dfb33e361f0e016f81ff))
+
+
+
+
+
+## [6.11.3](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.11.2...v6.11.3) (2020-03-03)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
 ## [6.10.2](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v6.10.1...v6.10.2) (2020-02-28)
 
 **Note:** Version bump only for package @browserless/goto

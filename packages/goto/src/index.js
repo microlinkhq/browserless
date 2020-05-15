@@ -28,17 +28,12 @@ const toArray = value => [].concat(value)
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
 
-const hideElements = elements => {
-  for (const element of elements) {
-    if (element) element.style.visibility = 'hidden'
-  }
-}
-
-const removeElements = elements => {
-  for (const element of elements) {
-    element.style.display = 'none'
-  }
-}
+const injectCSS = (page, css) =>
+  pReflect(
+    page.addStyleTag({
+      content: css
+    })
+  )
 
 const scrollTo = (element, options) => {
   const isOverflown = element => {
@@ -117,23 +112,6 @@ const parseCookies = (url, str) => {
   }, [])
 }
 
-const disableAnimations = () => {
-  const rule = `
-  *,
-  ::before,
-  ::after {
-    animation-delay: 0s !important;
-    transition-delay: 0s !important;
-    animation-duration: 0s !important;
-    transition-duration: 0s !important;
-    transition-property: none !important;
-  }
-`
-  const style = document.createElement('style')
-  if (document.body) document.body.append(style)
-  if (style.sheet) style.sheet.insertRule(rule)
-}
-
 const getMediaFeatures = ({ animations, colorScheme }) => {
   const prefers = []
   if (animations === false) prefers.push({ name: 'prefers-reduced-motion', value: 'reduce' })
@@ -164,8 +142,17 @@ const injectStyles = (page, styles) =>
     )
   )
 
-const forEachSelector = (page, selectors, fn) =>
-  toArray(selectors).map(selector => pReflect(page.$$eval(selector, fn)))
+const disableAnimations = `
+  *,
+  ::before,
+  ::after {
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+    transition-property: none !important;
+  }
+`.trim()
 
 const run = async ({ fn, debug: props }) => {
   const debugProps = { duration: timeSpan() }
@@ -192,6 +179,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       animations = false,
       javascript = true,
       colorScheme,
+      waitUntil,
       hide,
       remove,
       click,
@@ -202,6 +190,12 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       ...args
     }
   ) => {
+    const isWaitUntilAuto = waitUntil === 'auto'
+
+    if (isWaitUntilAuto) {
+      waitUntil = 'auto'
+    }
+
     const prePromises = []
 
     if (adblock) {
@@ -281,22 +275,30 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
     if (isFulfilled) {
       const postPromises = []
 
+      if (isWaitUntilAuto) {
+        await run({
+          fn: pTimeout(
+            Promise.all([
+              page.waitForNavigation({ waitUntil: 'networkidle2' }),
+              page.evaluate(() => window.history.pushState(null, null, '#'))
+            ]),
+            gotoTimeout * (1 / 3)
+          ),
+          debug: { isWaitUntilAuto }
+        })
+      }
+
       if (waitFor) {
         await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
       }
 
       if (animations === false) {
-        postPromises.push(
-          run({
-            fn: page.evaluate(disableAnimations),
-            debug: { animations }
-          })
-        )
+        postPromises.push(injectCSS(page, disableAnimations))
       }
 
       const hideOrRemove = [
-        hide && forEachSelector(page, hide, hideElements),
-        remove && forEachSelector(page, hide, removeElements)
+        hide && injectCSS(page, `${toArray(hide).join(', ')} { visibility: hidden !important; }`),
+        remove && injectCSS(page, `${toArray(remove).join(', ')} { display: none !important; }`)
       ].filter(Boolean)
 
       if (hideOrRemove.length > 0) {

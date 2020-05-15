@@ -1,6 +1,7 @@
 'use strict'
 
 const { readFile } = require('fs').promises
+const isHtml = require('is-html-content')
 const path = require('path')
 
 const getPrism = readFile(path.resolve(__dirname, 'prism.js'))
@@ -9,14 +10,17 @@ const getHtml = require('./html')
 
 const { injectScripts, injectStyles } = require('@browserless/goto')
 
-module.exports = async (page, response, { codeScheme, styles, scripts, modules }) => {
+module.exports = async (page, response, { codeScheme, contentType, styles, scripts, modules }) => {
+  const isHtmlContentType = contentType === 'html'
   const [theme, payload, prism] = await Promise.all([
     getTheme(codeScheme),
-    response.json(),
+    response[isHtmlContentType ? 'text' : contentType](),
     getPrism
   ])
 
-  const html = getHtml(payload, { prism, theme })
+  if (isHtmlContentType && isHtml(payload)) return
+
+  const html = getHtml(payload, { contentType, prism, theme })
   await page.setContent(html)
 
   await Promise.all(

@@ -8,7 +8,7 @@ const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 const whoops = require('whoops')
 
-const driver = require('./browser')
+const driver = require('./driver')
 
 const browserTimeout = whoops('BrowserTimeout', {
   message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
@@ -62,7 +62,8 @@ module.exports = ({
       pRetry(run, {
         retries,
         onFailedAttempt: async error => {
-          if (error && error.name === 'AbortError') throw error
+          if (!(error instanceof Error) && 'error' in error) error = error.error
+          if (error.name === 'AbortError') throw error
           if (isRejected) throw new pRetry.AbortError()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
@@ -110,3 +111,5 @@ module.exports = ({
     getDevice: goto.getDevice
   }
 }
+
+module.exports.driver = driver

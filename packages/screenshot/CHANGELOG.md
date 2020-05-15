@@ -3,6 +3,242 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.3.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.2.0...v7.3.0) (2020-05-10)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+# [7.2.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.7...v7.2.0) (2020-05-09)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [7.1.7](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.6...v7.1.7) (2020-05-09)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [7.1.6](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.5...v7.1.6) (2020-05-05)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [7.1.5](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.4...v7.1.5) (2020-05-04)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [7.1.4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.3...v7.1.4) (2020-05-04)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [7.1.3](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.2...v7.1.3) (2020-04-30)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [7.1.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.1...v7.1.2) (2020-04-22)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [7.1.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.1.0...v7.1.1) (2020-04-22)
+
+
+### Bug Fixes
+
+* html can start with space ([f09ca56](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/f09ca56bfb1ec1d7a033fa42a91590afb1481659))
+
+
+### Reverts
+
+* Revert "build(deps): bump got from 10.7.0 to 11.0.1 (#167)" ([8bf1ed7](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/8bf1ed7367c067ef02e9e25caf99ac5c06fbd954)), closes [#167](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/167)
+
+
+
+
+
+# [7.0.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.14.4...v7.0.0) (2020-04-19)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.14.4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.14.3...v6.14.4) (2020-04-13)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.14.3](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.14.2...v6.14.3) (2020-04-13)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.14.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.14.1...v6.14.2) (2020-04-07)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.14.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.14.0...v6.14.1) (2020-04-06)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+# [6.14.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.13.2...v6.14.0) (2020-04-06)
+
+
+### Features
+
+* prettify html when is possible ([3b5ca58](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/3b5ca58d0039b27c777eb8f923f9023f975f3db6))
+
+
+
+
+
+## [6.13.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.13.1...v6.13.2) (2020-04-05)
+
+
+### Reverts
+
+* Revert "fix: consider html as text" ([004c443](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/004c44388486ff8b64a1d43045cbb0005504b95d))
+
+
+
+
+
+## [6.13.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.13.0...v6.13.1) (2020-04-05)
+
+
+### Bug Fixes
+
+* consider html as text ([718328d](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/718328d6133aa3e1ac6d90e3b3fc781edc794f00))
+
+
+
+
+
+# [6.13.0](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.12.6...v6.13.0) (2020-04-05)
+
+
+### Features
+
+* add theme syntax support for text ([18ab1b4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/18ab1b4be421ad596b0aae1051d282abb7041b41))
+
+
+
+
+
+## [6.12.6](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.12.5...v6.12.6) (2020-04-04)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.12.5](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.12.4...v6.12.5) (2020-03-31)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.12.4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.12.3...v6.12.4) (2020-03-27)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.12.3](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.12.2...v6.12.3) (2020-03-26)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.12.1](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.12.0...v6.12.1) (2020-03-10)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.11.7](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.11.6...v6.11.7) (2020-03-05)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.11.5](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.11.4...v6.11.5) (2020-03-04)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.11.4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.11.3...v6.11.4) (2020-03-03)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
+## [6.11.3](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.11.2...v6.11.3) (2020-03-03)
+
+**Note:** Version bump only for package @browserless/screenshot
+
+
+
+
+
 ## [6.10.2](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v6.10.1...v6.10.2) (2020-02-28)
 
 **Note:** Version bump only for package @browserless/screenshot

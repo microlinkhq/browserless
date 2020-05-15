@@ -2,7 +2,7 @@
   "name": "@browserless/devices",
   "description": "A collection of different devices for emulation purposes",
   "homepage": "https://browserless.js.org/#/?id=devices",
-  "version": "6.8.1",
+  "version": "7.2.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -27,7 +27,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "didyoumean3": "~1.2.2",
+    "didyoumean3": "~1.2.3",
     "require-one-of": "~1.0.13"
   },
   "devDependencies": {
