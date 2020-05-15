@@ -40,11 +40,9 @@ For example, if you want to take an [`screenshot`](#screenshoturl-options), just
 ```js
 const browserless = require('browserless')()
 
-browserless
-  .screenshot('http://example.com', { device: 'iPhone 6' })
-  .then(buffer => {
-    console.log('your screenshot is here!')
-  })
+browserless.screenshot('http://example.com', { device: 'iPhone 6' }).then(buffer => {
+  console.log('your screenshot is here!')
+})
 ```
 
 You can see more common recipes at [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples).
@@ -73,13 +71,7 @@ or passing specific launchers options:
 // Creating an instance for running it at AWS Lambda
 const browserless = require('browserless')({
   ignoreHTTPSErrors: true,
-  args: [
-    '--disable-gpu',
-    '--single-process',
-    '--no-zygote',
-    '--no-sandbox',
-    '--hide-scrollbars'
-  ]
+  args: ['--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox', '--hide-scrollbars']
 })
 ```
 
@@ -314,9 +306,9 @@ You can configure the overlay specifying:
 - **browser**: It sets the browser image overlay to use, being `light` and `dark` supported values.
 - **background**: It sets the background to use, being supported to pass:
 
-	- An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
-	- A [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
-	- An image url, eg. `https://source.unsplash.com/random/1920x1080`.
+      	- An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
+      	- A [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
+      	- An image url, eg. `https://source.unsplash.com/random/1920x1080`.
 
 ```js
 ;(async () => {
@@ -324,7 +316,8 @@ You can configure the overlay specifying:
     hide: ['.crisp-client', '#cookies-policy'],
     overlay: {
       browser: 'dark',
-      background: 'linear-gradient(45deg, rgba(255,18,223,1) 0%, rgba(69,59,128,1) 66%, rgba(69,59,128,1) 100%)'
+      background:
+        'linear-gradient(45deg, rgba(255,18,223,1) 0%, rgba(69,59,128,1) 66%, rgba(69,59,128,1) 100%)'
     }
   })
 })()
@@ -410,10 +403,9 @@ Internally, the method performs a [browserless.goto](#gotopage-options), being p
 ```js
 const browserless = require('browserless')()
 
-const getText = browserless.evaluate(
-  page => page.evaluate(() => document.body.innerText), {
-    waitUntil: 'domcontentloaded'
-  })
+const getText = browserless.evaluate(page => page.evaluate(() => document.body.innerText), {
+  waitUntil: 'domcontentloaded'
+})
 
 ;(async () => {
   const url = 'https://example.com'
@@ -497,7 +489,6 @@ type: `string` | `string[]`</br>
 Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
 ```js
-
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
     hide: ['.crisp-client', '#cookies-policy']
@@ -551,9 +542,7 @@ type: `string` | `string[]`</br>
 
 Remove DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
-
 ```js
-
 ;(async () => {
   const buffer = await browserless.screenshot(url.toString(), {
     remove: ['.crisp-client', '#cookies-policy']
@@ -581,7 +570,6 @@ It can accept:
 - Absolute URLs (e.g., `'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js'`).
 - Local file (e.g., `'local-file.js').
 - Inline code (e.g., `"document.body.style.backgroundColor = 'red'"`).
-
 
 ```js
 ;(async () => {
@@ -681,29 +669,24 @@ You can still pass specific puppeteer options as second argument:
 ```js
 const createBrowserless = require('@browserless/pool')
 
-const browserlessPool = createBrowserless({
-  max: 2, // max browsers to keep open
-  timeout: 30000 // max time a browser is consiedered fresh
-}, {
-  ignoreHTTPSErrors: true,
-  args: [
-    '--disable-gpu',
-    '--single-process',
-    '--no-zygote',
-    '--no-sandbox',
-    '--hide-scrollbars'
-  ]
-})
+const browserlessPool = createBrowserless(
+  {
+    max: 2, // max browsers to keep open
+    timeout: 30000 // max time a browser is consiedered fresh
+  },
+  {
+    ignoreHTTPSErrors: true,
+    args: ['--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox', '--hide-scrollbars']
+  }
+)
 ```
 
 After that, the API is the same than **browserless**:
 
 ```js
-browserlessPool
-  .screenshot('http://example.com', { device: 'iPhone 6' })
-  .then(buffer => {
-    console.log('your screenshot is here!')
-  })
+browserlessPool.screenshot('http://example.com', { device: 'iPhone 6' }).then(buffer => {
+  console.log('your screenshot is here!')
+})
 ```
 
 Every time you call the pool, it handles acquire and release a new browser instance from the pool ✨.
@@ -712,15 +695,16 @@ Every time you call the pool, it handles acquire and release a new browser insta
 
 **browserless** is internally divided into multiple packages for ensuring just use the mininum quantity of code necessary for your user case.
 
-| Package | Version | Dependencies |
-|--------|-------|------------|
-| [`browserless`](https://github.com/microlinkhq/browserless/tree/master/packages/browserless) | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/browserless&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/browserless) |
-| [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark) | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/benchmark&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/benchmark) |
-| [`@browserless/devices`](https://github.com/microlinkhq/browserless/tree/master/packages/devices) | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/devices&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/devices) |
-| [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples) | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/examples&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/examples) |
-| [`@browserless/goto`](https://github.com/microlinkhq/browserless/tree/master/packages/goto) | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/goto&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/goto) |
-| [`@browserless/pdf`](https://github.com/microlinkhq/browserless/tree/master/packages/pdf) | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pdf&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pdf) |
-| [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool) | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pool&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pool) |
+| Package                                                                                                 | Version                                                                                                                                     | Dependencies                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`browserless`](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/browserless&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/browserless)            |
+| [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/benchmark&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/benchmark)   |
+| [`@browserless/devices`](https://github.com/microlinkhq/browserless/tree/master/packages/devices)       | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices)       | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/devices&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/devices)       |
+| [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples)     | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples)     | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/examples&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/examples)     |
+| [`@browserless/errors`](https://github.com/microlinkhq/browserless/tree/master/packages/errors)         | [![npm](https://img.shields.io/npm/v/@browserless/errors.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/errors)         | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/errors&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/errors)         |
+| [`@browserless/goto`](https://github.com/microlinkhq/browserless/tree/master/packages/goto)             | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto)             | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/goto&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/goto)             |
+| [`@browserless/pdf`](https://github.com/microlinkhq/browserless/tree/master/packages/pdf)               | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf)               | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pdf&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pdf)               |
+| [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool)             | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool)             | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pool&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pool)             |
 | [`@browserless/screenshot`](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/screenshot&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/screenshot) |
 | [`@browserless/lighthouse`](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse) | [![npm](https://img.shields.io/npm/v/@browserless/lighthouse.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/lighthouse) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/lighthouse&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/lighthouse) |
 
