@@ -39,8 +39,8 @@ module.exports = ({
   }
 
   const wrapError = fn => async (...args) => {
-    let page
     let isRejected = false
+    let page
 
     const closePage = () => (page ? pReflect(page.close()) : undefined)
 
@@ -67,15 +67,10 @@ module.exports = ({
         }
       })
 
-    const { isFulfilled, value, reason } = await pReflect(
-      pTimeout(task(), timeout, () => {
-        throw browserTimeout({ timeout })
-      })
-    )
-
-    if (isFulfilled) return value
-    isRejected = true
-    throw reason
+    return pTimeout(task(), timeout, () => {
+      isRejected = true
+      throw browserTimeout({ timeout })
+    })
   }
 
   const evaluate = (fn, gotoOpts) =>

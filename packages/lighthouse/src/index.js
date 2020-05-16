@@ -46,6 +46,7 @@ module.exports = async (
 ) => {
   const browserless = await getBrowserless()
   const browser = await browserless.browser
+  let isRejected = false
 
   const lighthouseOpts = await getOptions(browser, { logLevel, output })
   const lighthouseConfig = getLighthouseConfiguration(opts)
@@ -56,13 +57,15 @@ module.exports = async (
     pRetry(run, {
       retries,
       onFailedAttempt: async error => {
+        if (isRejected) throw new pRetry.AbortError()
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
         await browserless.respawn()
       }
     })
 
-  return pTimeout(task(), timeout, () => {
+  return pTimeout(task(), timeout, async () => {
+    isRejected = true
     throw browserTimeout({ timeout })
   })
 }
