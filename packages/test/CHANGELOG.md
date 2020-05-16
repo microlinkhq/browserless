@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.4.2](https://github.com/kikobeats/browserless/tree/master/packages/test/compare/v7.4.1...v7.4.2) (2020-05-16)
+
+**Note:** Version bump only for package @browserless/test
+
+
+
+
+
 # [7.2.0](https://github.com/kikobeats/browserless/tree/master/packages/test/compare/v7.1.7...v7.2.0) (2020-05-09)
 
 
