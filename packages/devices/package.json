@@ -32,6 +32,8 @@
   },
   "devDependencies": {
     "ava": "latest",
+    "coveralls": "latest",
+    "nyc": "latest",
     "puppeteer-core": "latest"
   },
   "engines": {
@@ -41,8 +43,8 @@
     "src"
   ],
   "scripts": {
-    "coverage": "exit 0",
-    "test": "ava"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "test": "nyc ava"
   },
   "license": "MIT"
 }
