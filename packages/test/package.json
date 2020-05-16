@@ -30,6 +30,7 @@
   "devDependencies": {
     "ava": "latest",
     "exists-file": "latest",
+    "fs-extra": "latest",
     "img-diff-js": "latest",
     "is-ci": "latest",
     "lodash": "latest",
