@@ -1,7 +1,11 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:lighthouse')
+const { browserTimeout } = require('@browserless/errors')
 const requireOneOf = require('require-one-of')
 const lighthouse = require('lighthouse')
+const pTimeout = require('p-timeout')
+const pRetry = require('p-retry')
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const getLighthouseConfiguration = ({
@@ -9,6 +13,7 @@ const getLighthouseConfiguration = ({
   device = 'desktop',
   ...props
 }) => ({
+  // TODO: try `'lighthouse:recommended'`
   extends: 'lighthouse:default',
   settings: {
     onlyCategories,
@@ -23,10 +28,9 @@ const getOptions = (browser, { logLevel, output }) => ({
   logLevel
 })
 
-const getBrowser = async getBrowserless => {
-  const browserless = await getBrowserless()
-  const browser = await browserless.browser
-  return browser
+const getLighthouseReport = async (url, opts, lighthouseConfig) => {
+  const { lhr, report } = await lighthouse(url, opts, lighthouseConfig)
+  return opts.output === 'json' ? lhr : report
 }
 
 module.exports = async (
@@ -35,12 +39,30 @@ module.exports = async (
     getBrowserless = requireOneOf(['browserless']),
     logLevel = 'error',
     output = 'json',
+    timeout = 30000,
+    retries = 5,
     ...opts
-  } = {}
+  }
 ) => {
-  const browser = await getBrowser(getBrowserless)
-  const options = await getOptions(browser, { logLevel, output })
+  const browserless = await getBrowserless()
+  const browser = await browserless.browser
+
+  const lighthouseOpts = await getOptions(browser, { logLevel, output })
   const lighthouseConfig = getLighthouseConfiguration(opts)
-  const { lhr, report } = await lighthouse(url, options, lighthouseConfig)
-  return output === 'json' ? lhr : report
+
+  const run = () => getLighthouseReport(url, lighthouseOpts, lighthouseConfig)
+
+  const task = () =>
+    pRetry(run, {
+      retries,
+      onFailedAttempt: async error => {
+        const { message, attemptNumber, retriesLeft } = error
+        debug('retry', { attemptNumber, retriesLeft, message })
+        await browserless.respawn()
+      }
+    })
+
+  return pTimeout(task(), timeout, () => {
+    throw browserTimeout({ timeout })
+  })
 }

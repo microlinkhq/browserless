@@ -14,7 +14,7 @@ module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
-  retries = 3,
+  retries = 5,
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ timeout, ...launchOpts })

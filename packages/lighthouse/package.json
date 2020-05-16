@@ -24,7 +24,11 @@
     "stats"
   ],
   "dependencies": {
+    "@browserless/errors": "~7.4.0",
+    "debug-logfmt": "~1.0.4",
     "lighthouse": "~5.6.0",
+    "p-retry": "~4.2.0",
+    "p-timeout": "~3.2.0",
     "require-one-of": "~1.0.13"
   },
   "devDependencies": {
