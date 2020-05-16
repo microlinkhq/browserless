@@ -32,12 +32,10 @@
     "require-one-of": "~1.0.13"
   },
   "devDependencies": {
-    "@browserless/test": "latest",
     "ava": "latest",
     "browserless": "latest",
     "coveralls": "latest",
     "nyc": "latest",
-    "p-memoize": "latest",
     "puppeteer": "latest"
   },
   "engines": {

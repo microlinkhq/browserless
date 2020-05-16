@@ -34,7 +34,7 @@
     "ava": "latest",
     "coveralls": "latest",
     "nyc": "latest",
-    "puppeteer-core": "latest"
+    "puppeteer": "latest"
   },
   "engines": {
     "node": ">= 10"
