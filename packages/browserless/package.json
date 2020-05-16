@@ -30,7 +30,7 @@
     "text"
   ],
   "dependencies": {
-    "@browserless/errors": "^7.3.0",
+    "@browserless/errors": "^7.4.0",
     "@browserless/goto": "^7.3.0",
     "@browserless/pdf": "^7.3.0",
     "@browserless/screenshot": "^7.3.0",
