@@ -13,7 +13,6 @@ const getLighthouseConfiguration = ({
   device = 'desktop',
   ...props
 }) => ({
-  // TODO: try `'lighthouse:recommended'`
   extends: 'lighthouse:default',
   settings: {
     onlyCategories,
