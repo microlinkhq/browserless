@@ -31,7 +31,7 @@
     "@browserless/devices": "^7.2.0",
     "@cliqz/adblocker-puppeteer": "~1.14.4",
     "debug-logfmt": "~1.0.4",
-    "got": "~11.1.2",
+    "got": "~11.1.3",
     "is-url-http": "~2.1.2",
     "p-reflect": "~2.1.0",
     "p-timeout": "~3.2.0",
@@ -41,7 +41,9 @@
     "tldts": "~5.6.25"
   },
   "devDependencies": {
-    "ava": "latest"
+    "ava": "latest",
+    "coveralls": "latest",
+    "nyc": "latest"
   },
   "engines": {
     "node": ">= 10"
@@ -51,9 +53,9 @@
     "src"
   ],
   "scripts": {
-    "coverage": "exit 0",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
     "postinstall": "node scripts/postinstall",
-    "test": "ava"
+    "test": "nyc ava"
   },
   "license": "MIT"
 }

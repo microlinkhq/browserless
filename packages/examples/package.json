@@ -29,7 +29,7 @@
   "dependencies": {
     "beauty-error": "~1.2.4",
     "is-buffer": "~2.0.4",
-    "meow": "~7.0.0",
+    "meow": "~7.0.1",
     "ora": "~4.0.4",
     "pretty-bytes": "~5.3.0",
     "process-stats": "~3.4.1"

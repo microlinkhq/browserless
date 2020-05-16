@@ -1,24 +1,20 @@
 'use strict'
 
+const { browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const importLazy = require('import-lazy')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
-const whoops = require('whoops')
 
 const driver = require('./driver')
-
-const browserTimeout = whoops('BrowserTimeout', {
-  message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
-})
 
 module.exports = ({
   puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
-  retries = 3,
+  retries = 5,
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ timeout, ...launchOpts })
@@ -43,8 +39,8 @@ module.exports = ({
   }
 
   const wrapError = fn => async (...args) => {
-    let page
     let isRejected = false
+    let page
 
     const closePage = () => (page ? pReflect(page.close()) : undefined)
 
@@ -71,15 +67,10 @@ module.exports = ({
         }
       })
 
-    const { isFulfilled, value, reason } = await pReflect(
-      pTimeout(task(), timeout, () => {
-        throw browserTimeout({ timeout })
-      })
-    )
-
-    if (isFulfilled) return value
-    isRejected = true
-    throw reason
+    return pTimeout(task(), timeout, () => {
+      isRejected = true
+      throw browserTimeout({ timeout })
+    })
   }
 
   const evaluate = (fn, gotoOpts) =>
