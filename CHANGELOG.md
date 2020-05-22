@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.4.3](https://github.com/microlinkhq/browserless/compare/v7.4.2...v7.4.3) (2020-05-22)
+
+
+### Bug Fixes
+
+* waitUntil default value is auto ([9240c99](https://github.com/microlinkhq/browserless/commit/9240c99ae3ccde0f9e35b757199e0105bf93a251))
+
+
+
+
+
 ## [7.4.2](https://github.com/microlinkhq/browserless/compare/v7.4.1...v7.4.2) (2020-05-16)
 
 **Note:** Version bump only for package browserless
