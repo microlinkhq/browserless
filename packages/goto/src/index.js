@@ -171,29 +171,29 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
   const goto = async (
     page,
     {
-      url,
-      mediaType,
       adblock = true,
-      headers = {},
-      waitFor = 0,
       animations = false,
-      javascript = true,
-      colorScheme,
-      waitUntil,
-      hide,
-      remove,
       click,
+      colorScheme,
+      headers = {},
+      hide,
+      javascript = true,
+      mediaType,
       modules,
+      remove,
       scripts,
-      styles,
       scroll,
+      styles,
+      url,
+      waitFor = 0,
+      waitUntil = 'auto',
       ...args
     }
   ) => {
     const isWaitUntilAuto = waitUntil === 'auto'
 
     if (isWaitUntilAuto) {
-      waitUntil = 'auto'
+      waitUntil = 'load'
     }
 
     const prePromises = []
@@ -335,7 +335,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
 
       if (scroll) {
         if (typeof scroll === 'object') {
-          await run({ fn: page.$eval(scroll.element, scrollTo, scroll), debug: { scroll } })
+          await run({
+            fn: page.$eval(scroll.element, scrollTo, scroll),
+            debug: { scroll }
+          })
         } else {
           await run({ fn: page.$eval(scroll, scrollTo), debug: { scroll } })
         }
