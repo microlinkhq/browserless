@@ -11,7 +11,7 @@ const path = require('path')
 
 const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
-const getLighthouseConfiguration = ({
+const getConfig = ({
   onlyCategories = ['performance', 'best-practices', 'accessibility', 'seo'],
   device = 'desktop',
   ...props
@@ -25,20 +25,22 @@ const getLighthouseConfiguration = ({
 })
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
-const getOptions = (browser, { logLevel, output }) => ({
-  port: new URL(browser.wsEndpoint()).port,
+const getFlags = (browser, { disableStorageReset = true, logLevel = 'info', output = 'json' }) => ({
+  disableStorageReset,
+  logLevel,
   output,
-  logLevel
+  port: new URL(browser.wsEndpoint()).port
 })
 
 module.exports = async (
   url,
   {
+    disableStorageReset,
     getBrowserless = requireOneOf(['browserless']),
-    logLevel = 'error',
-    output = 'json',
-    timeout = 30000,
+    logLevel,
+    output,
     retries = 5,
+    timeout = 30000,
     ...opts
   }
 ) => {
@@ -46,12 +48,12 @@ module.exports = async (
   const browser = await browserless.browser
   let isRejected = false
 
-  const lighthouseOpts = await getOptions(browser, { logLevel, output })
-  const lighthouseConfig = getLighthouseConfiguration(opts)
+  const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
+  const config = getConfig(opts)
 
   const run = () => {
     const subprocess = execa.node(lighthousePath)
-    subprocess.send({ url, opts: lighthouseOpts, config: lighthouseConfig })
+    subprocess.send({ url, flags, config })
     return pEvent(subprocess, 'message')
   }
 
