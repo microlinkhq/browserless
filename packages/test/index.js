@@ -28,7 +28,7 @@ const imageComparison = async (t, expectedFilename, filename) => {
 }
 
 module.exports = createBrowserless => {
-  test('.html', async t => {
+  ;(isCI ? test.skip : test)('.html', async t => {
     const browserless = createBrowserless()
     const html = await browserless.html('https://example.com')
     t.snapshot([...new Set(words(html))].sort())
