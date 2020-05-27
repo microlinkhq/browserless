@@ -3,11 +3,14 @@
 const debug = require('debug-logfmt')('browserless:lighthouse')
 const { browserTimeout } = require('@browserless/errors')
 const requireOneOf = require('require-one-of')
-const lighthouse = require('lighthouse')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
+const pEvent = require('p-event')
+const execa = require('execa')
+const path = require('path')
 
-// See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
+const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
+
 const getLighthouseConfiguration = ({
   onlyCategories = ['performance', 'best-practices', 'accessibility', 'seo'],
   device = 'desktop',
@@ -21,16 +24,12 @@ const getLighthouseConfiguration = ({
   }
 })
 
+// See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const getOptions = (browser, { logLevel, output }) => ({
   port: new URL(browser.wsEndpoint()).port,
   output,
   logLevel
 })
-
-const getLighthouseReport = async (url, opts, lighthouseConfig) => {
-  const { lhr, report } = await lighthouse(url, opts, lighthouseConfig)
-  return opts.output === 'json' ? lhr : report
-}
 
 module.exports = async (
   url,
@@ -50,7 +49,11 @@ module.exports = async (
   const lighthouseOpts = await getOptions(browser, { logLevel, output })
   const lighthouseConfig = getLighthouseConfiguration(opts)
 
-  const run = () => getLighthouseReport(url, lighthouseOpts, lighthouseConfig)
+  const run = () => {
+    const subprocess = execa.node(lighthousePath)
+    subprocess.send({ url, opts: lighthouseOpts, config: lighthouseConfig })
+    return pEvent(subprocess, 'message')
+  }
 
   const task = () =>
     pRetry(run, {
@@ -63,8 +66,10 @@ module.exports = async (
       }
     })
 
-  return pTimeout(task(), timeout, async () => {
+  const result = await pTimeout(task(), timeout, async () => {
     isRejected = true
     throw browserTimeout({ timeout })
   })
+
+  return result
 }

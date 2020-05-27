@@ -26,7 +26,9 @@
   "dependencies": {
     "@browserless/errors": "^7.4.1",
     "debug-logfmt": "~1.0.4",
+    "execa": "~4.0.2",
     "lighthouse": "~5.6.0",
+    "p-event": "~4.1.0",
     "p-retry": "~4.2.0",
     "p-timeout": "~3.2.0",
     "require-one-of": "~1.0.13"
