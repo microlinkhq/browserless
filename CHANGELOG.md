@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.5.1](https://github.com/microlinkhq/browserless/compare/v7.5.0...v7.5.1) (2020-05-27)
+
+
+### Bug Fixes
+
+* ensure to destroy subprocess ([d1a968c](https://github.com/microlinkhq/browserless/commit/d1a968ccd9433503a34db38dbb4cf1b2b6f08890))
+
+
+
+
+
 # [7.5.0](https://github.com/microlinkhq/browserless/compare/v7.4.4...v7.5.0) (2020-05-27)
 
 
