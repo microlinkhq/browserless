@@ -25,7 +25,10 @@ const getConfig = ({
 })
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
-const getFlags = (browser, { disableStorageReset = true, logLevel = 'info', output = 'json' }) => ({
+const getFlags = (
+  browser,
+  { disableStorageReset = true, logLevel = 'error', output = 'json' }
+) => ({
   disableStorageReset,
   logLevel,
   output,
