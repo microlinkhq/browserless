@@ -53,9 +53,17 @@ module.exports = async (
 
   const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
   const config = getConfig(opts)
+  let subprocess
+
+  const destroy = () => {
+    debug('destroy', { pid: subprocess.pid })
+    subprocess.kill()
+  }
 
   const run = () => {
-    const subprocess = execa.node(lighthousePath)
+    subprocess = execa.node(lighthousePath)
+    subprocess.stderr.pipe(process.stderr)
+    debug('run', { pid: subprocess.pid })
     subprocess.send({ url, flags, config })
     return pEvent(subprocess, 'message')
   }
@@ -67,12 +75,18 @@ module.exports = async (
         if (isRejected) throw new pRetry.AbortError()
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
+        destroy()
         await browserless.respawn()
       }
     })
 
-  return pTimeout(task(), timeout, async () => {
+  const result = await pTimeout(task(), timeout, async () => {
     isRejected = true
+    destroy()
     throw browserTimeout({ timeout })
   })
+
+  destroy()
+
+  return result
 }
