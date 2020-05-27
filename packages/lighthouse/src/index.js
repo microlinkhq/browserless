@@ -68,10 +68,8 @@ module.exports = async (
       }
     })
 
-  const result = await pTimeout(task(), timeout, async () => {
+  return pTimeout(task(), timeout, async () => {
     isRejected = true
     throw browserTimeout({ timeout })
   })
-
-  return result
 }
