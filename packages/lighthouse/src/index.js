@@ -3,12 +3,15 @@
 const debug = require('debug-logfmt')('browserless:lighthouse')
 const { browserTimeout } = require('@browserless/errors')
 const requireOneOf = require('require-one-of')
-const lighthouse = require('lighthouse')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
+const pEvent = require('p-event')
+const execa = require('execa')
+const path = require('path')
 
-// See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
-const getLighthouseConfiguration = ({
+const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
+
+const getConfig = ({
   onlyCategories = ['performance', 'best-practices', 'accessibility', 'seo'],
   device = 'desktop',
   ...props
@@ -21,25 +24,26 @@ const getLighthouseConfiguration = ({
   }
 })
 
-const getOptions = (browser, { logLevel, output }) => ({
-  port: new URL(browser.wsEndpoint()).port,
+// See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
+const getFlags = (
+  browser,
+  { disableStorageReset = true, logLevel = 'error', output = 'json' }
+) => ({
+  disableStorageReset,
+  logLevel,
   output,
-  logLevel
+  port: new URL(browser.wsEndpoint()).port
 })
-
-const getLighthouseReport = async (url, opts, lighthouseConfig) => {
-  const { lhr, report } = await lighthouse(url, opts, lighthouseConfig)
-  return opts.output === 'json' ? lhr : report
-}
 
 module.exports = async (
   url,
   {
+    disableStorageReset,
     getBrowserless = requireOneOf(['browserless']),
-    logLevel = 'error',
-    output = 'json',
-    timeout = 30000,
+    logLevel,
+    output,
     retries = 5,
+    timeout = 30000,
     ...opts
   }
 ) => {
@@ -47,10 +51,14 @@ module.exports = async (
   const browser = await browserless.browser
   let isRejected = false
 
-  const lighthouseOpts = await getOptions(browser, { logLevel, output })
-  const lighthouseConfig = getLighthouseConfiguration(opts)
+  const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
+  const config = getConfig(opts)
 
-  const run = () => getLighthouseReport(url, lighthouseOpts, lighthouseConfig)
+  const run = () => {
+    const subprocess = execa.node(lighthousePath)
+    subprocess.send({ url, flags, config })
+    return pEvent(subprocess, 'message')
+  }
 
   const task = () =>
     pRetry(run, {
