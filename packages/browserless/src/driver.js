@@ -4,13 +4,13 @@ const debug = require('debug-logfmt')('browserless')
 const pReflect = require('p-reflect')
 const pidtree = require('pidtree')
 
-const kill = async (pids, { signal = 'SIGKILL' } = {}) => {
+// TODO: Use https://github.com/sindresorhus/fkill/pull/34
+const fkill = pids =>
   pids.forEach(pid => {
     try {
-      process.kill(pid, signal)
+      process.kill(pid, 'SIGKILL')
     } catch (_) {}
   })
-}
 
 const args = [
   // base
@@ -61,8 +61,8 @@ const spawn = (puppeteer, launchOpts) =>
 const destroy = async (browser, opts) => {
   const { pid } = browser.process()
   const { value: pids = [] } = await pReflect(pidtree(pid, { root: true }))
+  fkill(pids)
   debug('destroy', { pids })
-  kill(pids, opts)
   return { pids }
 }
 
