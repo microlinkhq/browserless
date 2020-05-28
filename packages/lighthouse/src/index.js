@@ -55,8 +55,8 @@ module.exports = async (
   const config = getConfig(opts)
   let subprocess
 
-  const destroy = () => {
-    debug('destroy', { pid: subprocess.pid })
+  const destroy = stage => {
+    debug(`destroy:${stage}`, { pid: subprocess.pid })
     subprocess.kill()
   }
 
@@ -75,18 +75,18 @@ module.exports = async (
         if (isRejected) throw new pRetry.AbortError()
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
-        destroy()
+        destroy('retry')
         await browserless.respawn()
       }
     })
 
   const result = await pTimeout(task(), timeout, async () => {
     isRejected = true
-    destroy()
+    destroy('timeout')
     throw browserTimeout({ timeout })
   })
 
-  destroy()
+  destroy('done')
 
   return result
 }
