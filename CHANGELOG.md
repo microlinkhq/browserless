@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.5.3](https://github.com/microlinkhq/browserless/compare/v7.5.2...v7.5.3) (2020-06-01)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
 ## [7.5.2](https://github.com/microlinkhq/browserless/compare/v7.5.1...v7.5.2) (2020-05-28)
 
 **Note:** Version bump only for package browserless
