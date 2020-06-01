@@ -23,7 +23,7 @@ engine.on('request-redirected', ({ url }) => debugAdblock('redirect', url))
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
-const toArray = value => [].concat(value)
+const castArray = value => [].concat(value)
 
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
@@ -121,7 +121,7 @@ const getMediaFeatures = ({ animations, colorScheme }) => {
 
 const injectScripts = (page, values, attributes) =>
   Promise.all(
-    toArray(values).map(value =>
+    castArray(values).map(value =>
       pReflect(
         page.addScriptTag({
           [getInjectKey('js', value)]: value,
@@ -133,7 +133,7 @@ const injectScripts = (page, values, attributes) =>
 
 const injectStyles = (page, styles) =>
   Promise.all(
-    toArray(styles).map(style =>
+    castArray(styles).map(style =>
       pReflect(
         page.addStyleTag({
           [getInjectKey('css', style)]: style
@@ -297,8 +297,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       }
 
       const hideOrRemove = [
-        hide && injectCSS(page, `${toArray(hide).join(', ')} { visibility: hidden !important; }`),
-        remove && injectCSS(page, `${toArray(remove).join(', ')} { display: none !important; }`)
+        hide && injectCSS(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
+        remove && injectCSS(page, `${castArray(remove).join(', ')} { display: none !important; }`)
       ].filter(Boolean)
 
       if (hideOrRemove.length > 0) {
@@ -328,7 +328,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       await Promise.all(postPromises)
 
       if (click) {
-        for (const selector of toArray(click)) {
+        for (const selector of castArray(click)) {
           await run({ fn: page.click(selector), debug: { click: selector } })
         }
       }
