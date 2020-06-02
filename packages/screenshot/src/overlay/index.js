@@ -30,7 +30,7 @@ module.exports = async (screenshot, { browser: theme, background, path }) => {
     ? [{ input: browserOverlay }, { input: screenshot }]
     : [{ input: screenshot }]
 
-  const image = sharp(await getBackground(background)).composite(inputs)
+  const image = sharp(await getBackground(String(background))).composite(inputs)
 
   return path ? image.toFile(path) : image.toBuffer()
 }
