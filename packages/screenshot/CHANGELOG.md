@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.5.5](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.5.4...v7.5.5) (2020-06-02)
+
+
+### Bug Fixes
+
+* ensure background is a string ([af8a9f4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/af8a9f4882fe3be3201da1f6aeef62ef2856832a))
+
+
+
+
+
 ## [7.5.4](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v7.5.3...v7.5.4) (2020-06-01)
 
 **Note:** Version bump only for package @browserless/screenshot
