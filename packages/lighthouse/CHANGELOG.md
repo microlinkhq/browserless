@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.5.6](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v7.5.5...v7.5.6) (2020-06-06)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
+
+
+
+
 ## [7.5.2](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v7.5.1...v7.5.2) (2020-05-28)
 
 **Note:** Version bump only for package @browserless/lighthouse
