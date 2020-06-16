@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.5.7](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.5.6...v7.5.7) (2020-06-16)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
 ## [7.5.6](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v7.5.5...v7.5.6) (2020-06-06)
 
 **Note:** Version bump only for package @browserless/goto

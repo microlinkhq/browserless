@@ -2,7 +2,7 @@
   "name": "@browserless/examples",
   "description": "A collection of browserless example for illustating how to use",
   "homepage": "https://browserless.js.org",
-  "version": "7.5.4",
+  "version": "7.5.7",
   "main": "src/html.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
