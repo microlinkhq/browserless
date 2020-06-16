@@ -38,7 +38,7 @@
     "pretty-ms": "~7.0.0",
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
-    "tldts": "~5.6.29"
+    "tldts": "~5.6.33"
   },
   "devDependencies": {
     "ava": "latest",
