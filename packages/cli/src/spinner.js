@@ -3,7 +3,7 @@
 const createProcStats = require('process-stats')
 const simpleAverage = require('simple-average')
 const prettyBytes = require('pretty-bytes')
-const { white, gray } = require('kleur')
+const { gray } = require('kleur')
 const ora = require('ora')
 
 const TICK_INTERVAL = 100
