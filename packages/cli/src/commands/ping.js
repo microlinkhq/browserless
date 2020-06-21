@@ -3,7 +3,7 @@
 const createBrowserless = require('browserless')
 const browserless = createBrowserless()
 
-const getUrlInfo = browserless.evaluate(async (page, response) => {
+const ping = browserless.evaluate(async (page, response) => {
   const redirectChain = response.request().redirectChain()
   return {
     headers: response.headers(),
@@ -15,8 +15,4 @@ const getUrlInfo = browserless.evaluate(async (page, response) => {
   }
 })
 
-require('./main')(async (url, opts) => {
-  return {
-    output: await getUrlInfo(url, opts)
-  }
-})
+module.exports = ping

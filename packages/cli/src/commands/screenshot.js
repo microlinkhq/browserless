@@ -3,6 +3,7 @@
 const uniqueRandomArray = require('unique-random-array')
 const createBrowserless = require('browserless')
 const { set } = require('lodash')
+const termImg = require('term-img')
 
 const browserless = createBrowserless()
 
@@ -28,7 +29,7 @@ const BACKGROUNDS = [
 
 const randBackground = uniqueRandomArray(BACKGROUNDS)
 
-require('./main')(async (url, opts) => {
+module.exports = async (url, opts) => {
   if (opts.background === 'unsplash') {
     set(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
   }
@@ -41,8 +42,6 @@ require('./main')(async (url, opts) => {
     set(opts, 'overlay.browser', opts.browser)
   }
 
-  return {
-    output: await browserless.screenshot(url, opts),
-    isImage: true
-  }
-})
+  const screenshot = await browserless.screenshot(url, opts)
+  return termImg(screenshot)
+}

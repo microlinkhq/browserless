@@ -11,13 +11,11 @@ process.on('exit', () => {
   browserlessPool.drain().then(() => browserlessPool.clear())
 })
 
-require('./main')(async url => {
-  // get a browserless instance from the pool
+module.exports = async (url, opts) => {
   return browserlessPool(async browserless => {
-    // get a page from the browser instance
     const page = await browserless.page()
-    await browserless.goto(page, { url: url.toString() })
+    await browserless.goto(page, { url, ...opts })
     const output = await page.content()
-    return { output }
+    return output
   })
-})
+}
