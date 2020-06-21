@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [7.5.8](https://github.com/microlinkhq/browserless/compare/v7.5.7...v7.5.8) (2020-06-21)
+
+
+### Bug Fixes
+
+* linter ([edf5144](https://github.com/microlinkhq/browserless/commit/edf5144f9952d429413037ae7a9140c2ea9df6b1))
+
+
+
+
+
 ## [7.5.7](https://github.com/microlinkhq/browserless/compare/v7.5.6...v7.5.7) (2020-06-16)
 
 **Note:** Version bump only for package browserless
