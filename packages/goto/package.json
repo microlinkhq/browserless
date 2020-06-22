@@ -38,12 +38,14 @@
     "pretty-ms": "~7.0.0",
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
-    "tldts": "~5.6.33"
+    "tldts": "~5.6.35",
+    "top-user-agents": "~1.0.9",
+    "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
     "ava": "latest",
-    "coveralls": "latest",
-    "nyc": "latest"
+    "browserless": "latest",
+    "puppeteer": "latest"
   },
   "engines": {
     "node": ">= 10"
@@ -53,9 +55,8 @@
     "src"
   ],
   "scripts": {
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
     "postinstall": "node scripts/postinstall",
-    "test": "nyc ava"
+    "test": "ava test/**/*.js"
   },
   "license": "MIT"
 }

@@ -14,6 +14,9 @@ const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
+const EVASIONS = require('./evasions')
+const ALL_EVASIONS = Object.keys(EVASIONS)
+
 const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
 )
@@ -163,10 +166,17 @@ const run = async ({ fn, debug: props }) => {
   return result
 }
 
-module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) => {
+module.exports = ({
+  evasions = ALL_EVASIONS,
+  defaultDevice = 'Macbook Pro 13',
+  timeout,
+  ...deviceOpts
+}) => {
   const gotoTimeout = timeout * (1 / 2)
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
+
+  const applyEvasions = evasions.filter(Boolean).reduce((acc, key) => [...acc, EVASIONS[key]], [])
 
   const goto = async (
     page,
@@ -265,7 +275,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
       )
     }
 
-    await Promise.all(prePromises)
+    await Promise.all(prePromises.concat(applyEvasions.map(fn => fn(page))))
 
     const { isFulfilled, value: response } = await run({
       fn: pTimeout(page.goto(url, args), gotoTimeout),
@@ -360,3 +370,4 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) 
 module.exports.parseCookies = parseCookies
 module.exports.injectScripts = injectScripts
 module.exports.injectStyles = injectStyles
+module.exports.evasions = ALL_EVASIONS
