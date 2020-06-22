@@ -44,7 +44,7 @@ const args = [
   '--font-render-hinting=none', // could be 'none', 'medium'
   '--enable-font-antialiasing',
   // perf
-  '--single-process',
+  // '--single-process'
   '--memory-pressure-off'
 ]
 
