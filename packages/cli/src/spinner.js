@@ -36,7 +36,7 @@ const start = () => {
   }, TICK_INTERVAL)
 }
 
-const stop = str => {
+const stop = (str = '') => {
   spinner.stop()
   clearInterval(timer)
   const sizeValue = `=${prettyBytes(Buffer.from(JSON.stringify(str)).byteLength)}`
