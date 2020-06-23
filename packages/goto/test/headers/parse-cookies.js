@@ -2,7 +2,7 @@
 
 const test = require('ava')
 
-const { parseCookies } = require('../src')
+const { parseCookies } = require('../../src')
 
 test('parse cookies from string with `; ` delimiter', t => {
   const url = 'https://example.com'

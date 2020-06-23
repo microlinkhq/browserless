@@ -166,12 +166,7 @@ const run = async ({ fn, debug: props }) => {
   return result
 }
 
-module.exports = ({
-  evasions = ALL_EVASIONS,
-  defaultDevice = 'Macbook Pro 13',
-  timeout,
-  ...deviceOpts
-}) => {
+module.exports = ({ evasions = [], defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) => {
   const gotoTimeout = timeout * (1 / 2)
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
@@ -236,21 +231,32 @@ module.exports = ({
       )
     }
 
-    if (Object.keys(headers).length > 0) {
+    const headersKeys = Object.keys(headers)
+
+    if (headersKeys.length > 0) {
+      if (headers.cookie) {
+        const cookies = parseCookies(url, headers.cookie)
+        prePromises.push(
+          run({
+            fn: page.setCookie(...cookies),
+            debug: ['cookies', ...cookies]
+          })
+        )
+      }
+
+      if (headers['user-agent']) {
+        prePromises.push(
+          run({
+            fn: page.setUserAgent(headers['user-agent']),
+            debug: { 'user-agent': headers['user-agent'] }
+          })
+        )
+      }
+
       prePromises.push(
         run({
           fn: page.setExtraHTTPHeaders(headers),
-          debug: { headers: Object.keys(headers).length }
-        })
-      )
-    }
-
-    if (typeof headers.cookie === 'string') {
-      const cookies = parseCookies(url, headers.cookie)
-      prePromises.push(
-        run({
-          fn: page.setCookie(...cookies),
-          debug: ['cookies', ...cookies]
+          debug: { headers: headersKeys }
         })
       )
     }
