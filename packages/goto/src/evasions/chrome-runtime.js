@@ -10,7 +10,6 @@
  */
 module.exports = page =>
   page.evaluateOnNewDocument(() => {
-    const installer = { install () {} }
     window.chrome = {
       app: {
         isInstalled: false,
@@ -23,15 +22,6 @@ module.exports = page =>
           CANNOT_RUN: 'cannot_run',
           READY_TO_RUN: 'ready_to_run',
           RUNNING: 'running'
-        }
-      },
-      csi () {},
-      loadTimes () {},
-      webstore: {
-        onInstallStageChanged: {},
-        onDownloadProgress: {},
-        install (url, onSuccess, onFailure) {
-          installer.install(url, onSuccess, onFailure)
         }
       },
       runtime: {
@@ -48,6 +38,7 @@ module.exports = page =>
         },
         PlatformArch: {
           ARM: 'arm',
+          ARM64: 'arm64',
           MIPS: 'mips',
           MIPS64: 'mips64',
           X86_32: 'x86-32',
@@ -72,9 +63,7 @@ module.exports = page =>
           NO_UPDATE: 'no_update',
           THROTTLED: 'throttled',
           UPDATE_AVAILABLE: 'update_available'
-        },
-        connect: function () {}.bind(function () {}), // eslint-disable-line
-        sendMessage: function () {}.bind(function () {}) // eslint-disable-line
+        }
       }
     }
   })
