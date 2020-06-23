@@ -61,7 +61,7 @@ test('set `cookie` header', async t => {
   const headers = request.headers()
   const content = JSON.parse(body)
 
-  t.is(content.headers['Cookie'], 'yummy_cookie=choco; tasty_cookie=strawberry')
-  t.is(headers['cookie'], 'yummy_cookie=choco; tasty_cookie=strawberry')
+  t.is(content.headers.Cookie, 'yummy_cookie=choco; tasty_cookie=strawberry')
+  t.is(headers.cookie, 'yummy_cookie=choco; tasty_cookie=strawberry')
   t.is(cookies.length, 2)
 })

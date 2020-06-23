@@ -58,6 +58,7 @@ module.exports = page =>
             type: 'application/x-nacl',
             suffixes: '',
             description: 'Native Client Executable',
+            // eslint-disable-next-line
             enabledPlugin: Plugin,
             __pluginName: 'Native Client'
           },
@@ -165,6 +166,7 @@ module.exports = page =>
             obj.item = fakeData.fns.item('Plugin')
             return obj
           })
+          // eslint-disable-next-line
           .map(obj => Object.setPrototypeOf(obj, Plugin.prototype))
         arr.forEach(obj => {
           arr[obj.name] = obj

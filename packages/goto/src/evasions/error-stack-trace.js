@@ -20,6 +20,7 @@ module.exports = page =>
       URIError
     }
     for (const name in errors) {
+      // eslint-disable-next-line
       globalThis[name] = (function (NativeError) {
         return function (message) {
           const err = new NativeError(message)
@@ -34,12 +35,15 @@ module.exports = page =>
               return lines.join('\n')
             }
           }
+          // eslint-disable-next-line
           if (this === globalThis) {
             // called as function, not constructor
+            // eslint-disable-next-line
             stub.__proto__ = NativeError
             return stub
           }
           Object.assign(this, stub)
+          // eslint-disable-next-line
           this.__proto__ = NativeError
         }
       })(errors[name])
