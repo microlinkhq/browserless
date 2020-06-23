@@ -171,7 +171,9 @@ module.exports = ({ evasions = [], defaultDevice = 'Macbook Pro 13', timeout, ..
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
-  const applyEvasions = evasions.filter(Boolean).reduce((acc, key) => [...acc, EVASIONS[key]], [])
+  const applyEvasions = castArray(evasions)
+    .filter(Boolean)
+    .reduce((acc, key) => [...acc, EVASIONS[key]], [])
 
   const goto = async (
     page,
