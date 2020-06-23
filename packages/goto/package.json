@@ -45,7 +45,8 @@
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
-    "puppeteer": "latest"
+    "puppeteer": "latest",
+    "ua-string": "latest"
   },
   "engines": {
     "node": ">= 10"
