@@ -3,6 +3,7 @@
 const debug = require('debug-logfmt')('browserless')
 const pReflect = require('p-reflect')
 const pidtree = require('pidtree')
+const os = require('os')
 
 // TODO: Use https://github.com/sindresorhus/fkill/pull/34
 const fkill = pids =>
@@ -44,9 +45,9 @@ const args = [
   '--font-render-hinting=none', // could be 'none', 'medium'
   '--enable-font-antialiasing',
   // perf
-  // '--single-process'
-  '--memory-pressure-off'
-]
+  os.cpus().length === 1 ? '--single-process' : false
+  // '--memory-pressure-off'
+].filter(Boolean)
 
 const spawn = (puppeteer, launchOpts) =>
   puppeteer.launch({
