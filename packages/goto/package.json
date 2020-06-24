@@ -45,6 +45,7 @@
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
+    "is-ci": "latest",
     "puppeteer": "latest",
     "ua-string": "latest"
   },
