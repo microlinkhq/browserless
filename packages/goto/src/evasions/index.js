@@ -10,6 +10,5 @@ module.exports = {
   navigatorPlugins: require('./navigator-plugins'),
   navigatorWebdriver: require('./navigator-webdriver'),
   randomizeUserAgent: require('./randomize-user-agent'),
-  webglVendor: require('./webgl-vendor'),
-  windowOuter: require('./window-outer')
+  webglVendor: require('./webgl-vendor')
 }
