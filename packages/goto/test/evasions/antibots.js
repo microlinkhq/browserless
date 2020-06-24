@@ -48,3 +48,47 @@ test('device-info.fr/are_you_a_bot', async t => {
   })
   t.true(content.includes('You are human!'))
 })
+
+test('bot.sannysoft.com', async t => {
+  const browserless = createBrowserless({ evasions })
+
+  const getReport = browserless.evaluate((page, response) =>
+    page.evaluate(() => {
+      return {
+        userAgent: document.getElementById('user-agent-result').classList.contains('passed'),
+        webdriver: document.getElementById('webdriver-result').classList.contains('passed'),
+        webdriverAdvanced: document
+          .getElementById('advanced-webdriver-result')
+          .classList.contains('passed'),
+        chrome: document.getElementById('chrome-result').classList.contains('passed'),
+        permissions: document.getElementById('permissions-result').classList.contains('passed'),
+        pluginsLength: document
+          .getElementById('plugins-length-result')
+          .classList.contains('passed'),
+        pluginsType: document.getElementById('plugins-type-result').classList.contains('passed'),
+        languages: document.getElementById('languages-result').classList.contains('passed'),
+        webglVendor: document.getElementById('webgl-vendor').classList.contains('passed'),
+        webglRenderer: document.getElementById('webgl-renderer').classList.contains('passed'),
+        brokenImageDimensions: document
+          .getElementById('broken-image-dimensions')
+          .classList.contains('passed')
+      }
+    })
+  )
+
+  const report = await getReport('https://bot.sannysoft.com/')
+
+  t.deepEqual(report, {
+    userAgent: true,
+    webdriver: true,
+    webdriverAdvanced: true,
+    chrome: true,
+    permissions: true,
+    pluginsLength: true,
+    pluginsType: true,
+    languages: true,
+    webglVendor: true,
+    webglRenderer: true,
+    brokenImageDimensions: true
+  })
+})
