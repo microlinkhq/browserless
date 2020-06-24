@@ -225,20 +225,18 @@ test('setup a better webgl video card', async t => {
   await page.close()
 })
 
-test('window.outerWidth & window.outerHeight are defined', async t => {
+test('window dimensions are defined', async t => {
   const page = await browserless.page()
 
   const windowOuterWidth = () => page.evaluate(() => window.outerWidth)
   const windowOuterHeight = () => page.evaluate(() => window.outerHeight)
-
-  t.is(await windowOuterWidth(), 0)
-  t.is(await windowOuterHeight(), 0)
-
-  await evasions.windowOuter(page)
-  await page.goto(fileUrl)
+  const windowInnerWidth = () => page.evaluate(() => window.innerWidth)
+  const windowInnerHeight = () => page.evaluate(() => window.innerHeight)
 
   t.true((await windowOuterWidth()) > 0)
   t.true((await windowOuterHeight()) > 0)
+  t.true((await windowInnerWidth()) > 0)
+  t.true((await windowInnerHeight()) > 0)
 
   await page.close()
 })
