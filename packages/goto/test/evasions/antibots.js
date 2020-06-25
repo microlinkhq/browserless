@@ -93,3 +93,9 @@ test('bot.sannysoft.com', async t => {
     brokenImageDimensions: true
   })
 })
+
+test('amiunique.org/fp', async t => {
+  const browserless = createBrowserless({ evasions })
+  const content = await browserless.text('https://amiunique.org/fp')
+  t.false(content.includes('You can be tracked'))
+})
