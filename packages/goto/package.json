@@ -56,9 +56,14 @@
     "scripts",
     "src"
   ],
+  "ava": {
+    "files": [
+      "!test/fixtures"
+    ]
+  },
   "scripts": {
     "postinstall": "node scripts/postinstall",
-    "test": "ava test/**/*.js"
+    "test": "ava"
   },
   "license": "MIT"
 }
