@@ -53,7 +53,7 @@ test('device-info.fr/are_you_a_bot', async t => {
 test('bot.sannysoft.com', async t => {
   const browserless = createBrowserless({ evasions })
 
-  const getReport = browserless.evaluate((page, response) =>
+  const getReport = browserless.evaluate(page =>
     page.evaluate(() => {
       return {
         userAgent: document.getElementById('user-agent-result').classList.contains('passed'),
@@ -98,4 +98,24 @@ test('amiunique.org/fp', async t => {
   const browserless = createBrowserless({ evasions })
   const content = await browserless.text('https://amiunique.org/fp')
   t.false(content.includes('You can be tracked'))
+})
+
+test('browserleaks.com/webgl', async t => {
+  const browserless = createBrowserless({ evasions })
+
+  const getGpuInfo = browserless.evaluate(page =>
+    page.evaluate(() => {
+      return {
+        vendor: document.getElementById('f_unmasked_vendor').textContent,
+        renderer: document.getElementById('f_unmasked_renderer').textContent
+      }
+    })
+  )
+
+  const gpuInfo = await getGpuInfo('https://browserleaks.com/webgl')
+
+  t.deepEqual(gpuInfo, {
+    vendor: '! Intel Inc.',
+    renderer: '! Intel(R) Iris(TM) Plus Graphics 640'
+  })
 })

@@ -189,38 +189,65 @@ test('navigator.vendor is defined', async t => {
   await page.close()
 })
 
-test('setup a better webgl video card', async t => {
+test('hide webgl vendor', async t => {
   const page = await browserless.page()
 
-  const videoCard = () =>
+  const webgl = () =>
     page.evaluate(() => {
-      try {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
-        let webGLVendor, webGLRenderer
-        if (ctx.getSupportedExtensions().indexOf('WEBGL_debug_renderer_info') >= 0) {
-          webGLVendor = ctx.getParameter(
-            ctx.getExtension('WEBGL_debug_renderer_info').UNMASKED_VENDOR_WEBGL
-          )
-          webGLRenderer = ctx.getParameter(
-            ctx.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL
-          )
-        } else {
-          webGLVendor = 'Not supported'
-          webGLRenderer = 'Not supported'
-        }
-        return [webGLVendor, webGLRenderer]
-      } catch (e) {
-        return 'Not supported;;;Not supported'
+      const canvas = document.createElement('canvas')
+      const ctx =
+        canvas.getContext('webgl') ||
+        canvas.getContext('experimental-webgl') ||
+        canvas.getContext('moz-webgl')
+      const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
+      return {
+        vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
+        renderer: ctx.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
       }
     })
 
-  t.deepEqual(await videoCard(), ['Google Inc.', 'Google SwiftShader'])
+  t.deepEqual(await webgl(), {
+    vendor: 'Google Inc.',
+    renderer: 'Google SwiftShader'
+  })
 
   await evasions.webglVendor(page)
   await page.goto(fileUrl)
 
-  t.deepEqual(await videoCard(), ['Intel Inc.', 'Intel(R) Iris(TM) Plus Graphics 640'])
+  t.deepEqual(await webgl(), {
+    vendor: 'Intel Inc.',
+    renderer: 'Intel(R) Iris(TM) Plus Graphics 640'
+  })
+
+  await page.close()
+})
+
+test('hide webgl2 vendor', async t => {
+  const page = await browserless.page()
+
+  const webgl2 = () =>
+    page.evaluate(() => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('webgl2') || canvas.getContext('experimental-webgl2')
+      const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
+      return {
+        vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
+        renderer: ctx.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+      }
+    })
+
+  t.deepEqual(await webgl2(), {
+    vendor: 'Google Inc.',
+    renderer: 'Google SwiftShader'
+  })
+
+  await evasions.webglVendor(page)
+  await page.goto(fileUrl)
+
+  t.deepEqual(await webgl2(), {
+    vendor: 'Intel Inc.',
+    renderer: 'Intel(R) Iris(TM) Plus Graphics 640'
+  })
 
   await page.close()
 })
