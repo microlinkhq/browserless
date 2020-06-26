@@ -48,7 +48,7 @@
   ],
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc ava --serial"
+    "test": "nyc ava --serial --timeout=2m"
   },
   "license": "MIT"
 }
