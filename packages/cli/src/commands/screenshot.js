@@ -43,5 +43,5 @@ module.exports = async (url, opts) => {
   }
 
   const screenshot = await browserless.screenshot(url, opts)
-  return termImg(screenshot)
+  return termImg(screenshot, { width: '50%' })
 }
