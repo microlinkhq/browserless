@@ -9,6 +9,6 @@ const printCommand = command => `⬩ ${command.replace(path.extname(command), ''
 module.exports = commands => `
 Usage
   $ browserless <command> <url> [flags]
+
 Commands
-  ${gray(commands.map(printCommand).join(EOL + '  '))}
-  `
+  ${gray(commands.map(printCommand).join(EOL + '  '))}`
