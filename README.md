@@ -1,7 +1,4 @@
-<h1 align="center">
-  <img style="width: 500px; margin:3rem 0 1.5rem;" src="/static/logo-banner.png" alt="browserless">
-  <br>
-</h1>
+![](/static/logo-banner.png)
 
 ![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
 [![Build Status](https://img.shields.io/travis/microlinkhq/browserless/master.svg?style=flat-square)](https://travis-ci.org/microlinkhq/browserless)
@@ -9,45 +6,50 @@
 [![Dev Dependencies Status](https://img.shields.io/david/dev/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> A [puppeteer](https://github.com/GoogleChrome/puppeteer)-like Node.js library for interacting with Headless production scenarios.
+> Headless Chrom[e|ium] driver for Node.js.
 
-## Why
+**browserless** is a headless Chrome/Chromium driver built on top of [puppeteer](https://github.com/GoogleChrome/puppeteer), created to handle resources efficiently and satisfy the most desired production scenarios.
 
-Although you can think [puppeteer](https://github.com/GoogleChrome/puppeteer) could be enough, there is a set of use cases that make sense built on top of puppeteer and they are necessary to support into robust production scenario, like:
+## Highlights
 
-- Perform browser action (such as [text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)) with the best perfomance possible.
-- Run browser tasks (such as HTTP headers, viewport, cookies, CSS features,...) on parallel.
-- Abort 3rd party advertisement requests using a built-in [adblocker powered by Cliqz](#gotopage-options).
-- Simple [Google Lighthouse](#lighthouse) integration for getting perfomance metrics reports.
-- Create your own [pool of instances](#pool-of-instances) with variable size.
+- Puppeteer-like API for common tasks ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
+- Automatic 3rd party requests cancellation via [adblocker](#gotopage-options).
+- Simple [Google Lighthouse](#lighthouse) integration.
+- Configurable [pooling](#pool-of-instances) support.
 
-## Install
+## Installation
 
-**browserless** is built on top of puppeteer, so you need to install it as well.
-
+You can install it via npm:
+ 
 ```bash
-$ npm install puppeteer browserless --save
+$ npm install browserless puppeteer --save
 ```
 
-You can use **browserless** together with [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) or [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox).
+**browserless** has a puppeteer-like API and it uses puppeteer under the hood. 
 
-Internally, the library is divided into different packages based on the functionality
+You can use it with [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) or [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox), interchangeably.
 
 ## Usage
 
-The **browserless** API is like puppeteer, but doing more things under the hood (not too much, I promise).
-
-For example, if you want to take an [`screenshot`](#screenshoturl-options), just do:
+**browserless** has the same API is than [puppeteer](https://github.com/GoogleChrome/puppeteer):
 
 ```js
 const browserless = require('browserless')()
+const termImg = require('term-img')
 
-browserless.screenshot('http://example.com', { device: 'iPhone 6' }).then(buffer => {
-  console.log('your screenshot is here!')
-})
+async function main() {
+  const buffer = await browserless.screenshot('http://example.com', {
+    device: 'iPhone 6',
+  })
+
+  console.log(termImg(buffer))
+}
 ```
 
-You can see more common recipes at [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples).
+If you're already using puppeteer, you can upgrade to use **browserless** instead almost with no effort.
+
+
+Additionally, you can use some specific [packages](#packages) in your codebase, interacting with them from puppeteer.
 
 ## Basic
 
@@ -307,10 +309,9 @@ You can configure the overlay specifying:
 
 - **browser**: It sets the browser image overlay to use, being `light` and `dark` supported values.
 - **background**: It sets the background to use, being supported to pass:
-
-      	- An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
-      	- A [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
-      	- An image url, eg. `https://source.unsplash.com/random/1920x1080`.
+  - An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
+  - A [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
+  - An image url, eg. `https://source.unsplash.com/random/1920x1080`.
 
 ```js
 ;(async () => {
@@ -461,7 +462,16 @@ Click the DOM element matching the given [CSS selector](https://developer.mozill
 type: `string`</br>
 default: `'macbook pro 13'`
 
-It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`
+It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`.
+
+##### evasions
+
+type: `string[]`</br>
+default: `undefined`
+
+It enables some evasions techniques used to make Headless Chrome execution undetectable.
+
+![](/static/evasions.png)
 
 ##### headers
 
@@ -664,6 +674,20 @@ const browserless = require('browserless')
 })()
 ```
 
+## Command Line Interface
+
+You can perform any **browserless** from CLI installing [`@browserless/cli`](https://npm.im/@browserless/cli) globally:
+
+![](/static/cli.png)
+
+Additionally, can do it under demand using [`npx`](https://npm.im/npx):
+
+```
+npx @browserless/cli --help
+```
+
+That's useful when you want to do under CI/CD scenarios.
+
 ## Pool of Instances
 
 **browserless** uses internally a singleton browser instance.
@@ -805,11 +829,11 @@ Includes only the specified categories in the final report.
 
 ![](/static/bench.png)
 
-For testing different approach, we included a tiny benchmark tool called [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark).
+For testing different approaches, we included a tiny benchmark tool called [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark).
 
 ## FAQ
 
-**Q: Why use browserless over Puppeteer?**
+**Q: Why use `browserless` over `puppeteer`?**
 
 **browserless** not replace puppeteer, it complements. It's just a syntactic sugar layer over official Headless Chrome oriented for production scenarios.
 
@@ -831,7 +855,7 @@ DEBUG=browserless node index.js
 
 Consider open an [issue](https://github.com/microlinkhq/browserless/issues/new) with the debug trace.
 
-**Q: Can I use browserless with my AWS Lambda like project?**
+**Q: I want to use `browserless` with my AWS Lambda like project**
 
 Yes, check [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) to setup AWS Lambda with a binary compatible.
 

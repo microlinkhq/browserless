@@ -987,7 +987,7 @@ body {
   line-height: 1.5rem;
   margin: 1.2em 0;
   overflow: auto;
-  padding: 0 1.4rem;
+  padding: 0 .7rem;
   position: relative;
   word-wrap: normal;
 }
@@ -1005,7 +1005,7 @@ body {
   margin: 0 2px;
   max-width: inherit;
   overflow: inherit;
-  padding: 2.2em 5px;
+  padding: 1.25em 5px;
   white-space: inherit;
 }
 
