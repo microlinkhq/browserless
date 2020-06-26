@@ -6,13 +6,19 @@ const lighthouse = require('..')
 
 test('passing custom configuration', async t => {
   const url = 'https://kikobeats.com'
-  const report = await lighthouse(url, { onlyAudits: ['accessibility'], device: 'mobile' })
+  const report = await lighthouse(url, {
+    onlyAudits: ['accessibility'],
+    device: 'mobile'
+  })
   t.is(report.configSettings.emulatedFormFactor, 'mobile')
 })
 
 test('passing a different serializer', async t => {
   const url = 'https://kikobeats.com'
-  const report = await lighthouse(url, { onlyAudits: ['accessibility'], output: 'html' })
+  const report = await lighthouse(url, {
+    onlyAudits: ['accessibility'],
+    output: 'html'
+  })
   t.true(report.startsWith('<!--'))
 })
 
