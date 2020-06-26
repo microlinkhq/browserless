@@ -37,9 +37,9 @@ You can use it with [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`pu
 const browserless = require('browserless')()
 const termImg = require('term-img')
 
-async function main() {
+async function main () {
   const buffer = await browserless.screenshot('http://example.com', {
-    device: 'iPhone 6',
+    device: 'iPhone 6'
   })
 
   console.log(termImg(buffer))
