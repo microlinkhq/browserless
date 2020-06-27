@@ -5,11 +5,11 @@ const test = require('ava')
 const createBrowserless = require('browserless')
 const path = require('path')
 
-const evasions = require('../../src/evasions')
+const evasions = require('../../../src/evasions')
 
 const browserless = createBrowserless()
 
-const fileUrl = `file://${path.join(__dirname, '../fixtures/dummy.html')}`
+const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
 test('randomize user agent', async t => {
   const page = await browserless.page()
