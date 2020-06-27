@@ -31,7 +31,7 @@ test('set extra HTTP headers', async t => {
 })
 
 test('set `uset agent` header', async t => {
-  const browserless = createBrowserless()
+  const browserless = createBrowserless({ evasions: false })
   const ping = createPing(browserless)
 
   const { userAgent, body, request } = await ping('https://httpbin.org/headers', {
