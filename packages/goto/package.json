@@ -45,7 +45,6 @@
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
-    "is-ci": "latest",
     "puppeteer": "latest",
     "ua-string": "latest"
   },
@@ -56,14 +55,15 @@
     "scripts",
     "src"
   ],
-  "ava": {
-    "files": [
-      "!test/fixtures"
-    ]
-  },
   "scripts": {
     "postinstall": "node scripts/postinstall",
     "test": "ava"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "ava": {
+    "files": [
+      "!test/fixtures"
+    ],
+    "timeout": "2m"
+  }
 }

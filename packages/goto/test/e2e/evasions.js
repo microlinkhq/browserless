@@ -4,11 +4,10 @@ const test = require('ava')
 
 const createBrowserless = require('browserless')
 const userAgent = require('ua-string')
-const isCI = require('is-ci')
 
 const { evasions } = require('../..')
 
-;(isCI ? test.skip : test)('arh.antoinevastel.com/bots/areyouheadless', async t => {
+test('arh.antoinevastel.com/bots/areyouheadless', async t => {
   const browserless = createBrowserless()
   const content = await browserless.text('https://arh.antoinevastel.com/bots/areyouheadless')
   t.true(content.includes('You are not Chrome headless'))
