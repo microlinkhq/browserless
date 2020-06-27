@@ -1,3 +1,5 @@
+'use strict'
+
 module.exports = page =>
   page.evaluateOnNewDocument(() =>
     // eslint-disable-next-line
