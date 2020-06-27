@@ -34,8 +34,10 @@
     "img-diff-js": "latest",
     "is-ci": "latest",
     "lodash": "latest",
+    "micri": "latest",
     "pdf-parse": "latest",
-    "temperment": "latest"
+    "temperment": "latest",
+    "test-listen": "latest"
   },
   "engines": {
     "node": ">= 10"
