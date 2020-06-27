@@ -6,7 +6,7 @@
 [![Dev Dependencies Status](https://img.shields.io/david/dev/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless#info=devDependencies)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> Headless Chrom[e|ium] driver for Node.js.
+> The Headless Chrom[e|ium] driver for Node.js.
 
 **browserless** is a headless Chrome/Chromium driver built on top of [puppeteer](https://github.com/GoogleChrome/puppeteer), created to handle resources efficiently and satisfy the most desired production scenarios.
 
