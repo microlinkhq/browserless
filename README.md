@@ -696,6 +696,7 @@ If you want to keep multiple browsers open, you can use [`@browserless/pool`](ht
 
 ```js
 const createBrowserless = require('@browserless/pool')
+const onExit = require('signal-exit')
 
 const browserlessPool = createBrowserless({
   max: 2, // max browsers to keep open
@@ -703,9 +704,7 @@ const browserlessPool = createBrowserless({
 })
 
 // pool shutdown gracefully on process exit.
-process.on('exit', () => {
-  browserlessPool.drain().then(() => browserlessPool.clear())
-})
+onExit(() => browserlessPool.drain().then(() => browserlessPool.clear()))
 ```
 
 You can still pass specific puppeteer options as second argument:

@@ -47,6 +47,7 @@
     "browserless": "latest",
     "is-ci": "latest",
     "puppeteer": "latest",
+    "signal-exit": "latest",
     "ua-string": "latest"
   },
   "engines": {

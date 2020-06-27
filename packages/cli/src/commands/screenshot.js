@@ -5,8 +5,6 @@ const createBrowserless = require('browserless')
 const { set } = require('lodash')
 const termImg = require('term-img')
 
-const browserless = createBrowserless()
-
 const BACKGROUNDS = [
   'linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)',
   'linear-gradient(225deg, #A445B2 0%, #D41872 52%, #FF0066 100%)',
@@ -30,6 +28,8 @@ const BACKGROUNDS = [
 const randBackground = uniqueRandomArray(BACKGROUNDS)
 
 module.exports = async (url, opts) => {
+  const browserless = createBrowserless()
+
   if (opts.background === 'unsplash') {
     set(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
   }
@@ -43,5 +43,7 @@ module.exports = async (url, opts) => {
   }
 
   const screenshot = await browserless.screenshot(url, opts)
+
+  await browserless.destroy()
   return termImg(screenshot, { width: '50%' })
 }

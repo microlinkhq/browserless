@@ -3,13 +3,16 @@
 const test = require('ava')
 
 const createBrowserless = require('browserless')
+const onExit = require('signal-exit')
 const path = require('path')
 
 const evasions = require('../../../src/evasions')
 
-const browserless = createBrowserless()
-
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
+
+const browserless = createBrowserless({ evasions: false })
+
+onExit(browserless.destroy)
 
 test('randomize user agent', async t => {
   const page = await browserless.page()
@@ -95,8 +98,10 @@ test('mock navigator.plugins', async t => {
 
 test('ensure navigator.languages is present', async t => {
   const page = await browserless.page()
+
   const languages = () => page.evaluate(() => window.navigator.languages)
   t.deepEqual(await languages(), ['en-US'])
+
   await page.close()
 })
 
@@ -184,8 +189,10 @@ test('console.debug is defined', async t => {
 
 test('navigator.vendor is defined', async t => {
   const page = await browserless.page()
+
   const vendor = () => page.evaluate(() => window.navigator.vendor)
   t.is(await vendor(), 'Google Inc.')
+
   await page.close()
 })
 

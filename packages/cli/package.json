@@ -38,8 +38,8 @@
     "ora": "~4.0.4",
     "pretty-bytes": "~5.3.0",
     "process-stats": "~3.4.3",
-    "process-top": "~1.1.0",
     "puppeteer": "~4.0.1",
+    "signal-exit": "~3.0.3",
     "simple-average": "~2.0.0",
     "term-img": "~5.0.0",
     "unique-random-array": "~2.0.0"

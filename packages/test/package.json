@@ -33,9 +33,9 @@
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "is-ci": "latest",
-    "lodash": "latest",
     "micri": "latest",
     "pdf-parse": "latest",
+    "signal-exit": "latest",
     "temperment": "latest",
     "test-listen": "latest"
   },

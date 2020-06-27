@@ -1,15 +1,14 @@
 'use strict'
 
 const createBrowserlessPool = require('@browserless/pool')
+const onExit = require('signal-exit')
 
 const browserlessPool = createBrowserlessPool({
   max: 2, // max browsers to keep open
   timeout: 30000 // max time a browser is consiedered fresh
 })
 
-process.on('exit', () => {
-  browserlessPool.drain().then(() => browserlessPool.clear())
-})
+onExit(() => browserlessPool.drain().then(() => browserlessPool.clear()))
 
 module.exports = async (url, opts) => {
   return browserlessPool(async browserless => {

@@ -3,6 +3,11 @@
 const test = require('ava')
 
 const createBrowserless = require('browserless')
+const onExit = require('signal-exit')
+
+const browserless = createBrowserless({ evasions: false })
+
+onExit(browserless.destroy)
 
 const createPing = browserless =>
   browserless.evaluate(async (page, response) => {
@@ -14,7 +19,6 @@ const createPing = browserless =>
   })
 
 test('set extra HTTP headers', async t => {
-  const browserless = createBrowserless()
   const ping = createPing(browserless)
 
   const { body, request } = await ping('https://httpbin.org/headers', {
@@ -31,7 +35,6 @@ test('set extra HTTP headers', async t => {
 })
 
 test('set `uset agent` header', async t => {
-  const browserless = createBrowserless({ evasions: false })
   const ping = createPing(browserless)
 
   const { userAgent, body, request } = await ping('https://httpbin.org/headers', {
@@ -49,7 +52,6 @@ test('set `uset agent` header', async t => {
 })
 
 test('set `cookie` header', async t => {
-  const browserless = createBrowserless()
   const ping = createPing(browserless)
 
   const { cookies, body, request } = await ping('https://httpbin.org/headers', {

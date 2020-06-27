@@ -4,19 +4,22 @@ const test = require('ava')
 
 const createBrowserless = require('browserless')
 const userAgent = require('ua-string')
+const onExit = require('signal-exit')
 const isCI = require('is-ci')
+
+const browserless = createBrowserless()
+
+onExit(browserless.destroy)
 
 const { evasions } = require('../..')
 
 ;(isCI ? test.skip : test)('arh.antoinevastel.com/bots/areyouheadless', async t => {
-  const browserless = createBrowserless()
   const content = await browserless.text('https://arh.antoinevastel.com/bots/areyouheadless')
   t.true(content.includes('You are not Chrome headless'))
 })
 
 // See https://antoinevastel.com/bot%20detection/2018/11/13/fp-scanner-library-demo.html
 test('antoinevastel.com/bots/fpstructured', async t => {
-  const browserless = createBrowserless()
   const fpCollect = browserless.evaluate((page, response) =>
     page.evaluate(() => {
       const fp = JSON.parse(document.getElementById('fp').innerText)
@@ -40,6 +43,7 @@ test('device-info.fr/are_you_a_bot', async t => {
   const browserless = createBrowserless({
     evasions: evasions.filter(evasion => evasion !== 'randomizeUserAgent')
   })
+
   const content = await browserless.text('https://device-info.fr/are_you_a_bot', {
     headers: {
       // the test false/positive under some popular user agents
@@ -48,11 +52,11 @@ test('device-info.fr/are_you_a_bot', async t => {
     }
   })
   t.true(content.includes('You are human!'))
+
+  await browserless.destroy()
 })
 
 test('bot.sannysoft.com', async t => {
-  const browserless = createBrowserless()
-
   const getReport = browserless.evaluate(page =>
     page.evaluate(() => {
       return {
@@ -95,14 +99,11 @@ test('bot.sannysoft.com', async t => {
 })
 
 test('amiunique.org/fp', async t => {
-  const browserless = createBrowserless({ evasions })
   const content = await browserless.text('https://amiunique.org/fp')
   t.false(content.includes('You can be tracked'))
 })
 
 test('browserleaks.com/webgl', async t => {
-  const browserless = createBrowserless({ evasions })
-
   const getGpuInfo = browserless.evaluate(page =>
     page.evaluate(() => {
       return {

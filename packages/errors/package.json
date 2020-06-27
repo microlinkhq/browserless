@@ -30,9 +30,7 @@
     "whoops": "~4.1.0"
   },
   "devDependencies": {
-    "ava": "latest",
-    "coveralls": "latest",
-    "nyc": "latest"
+    "ava": "latest"
   },
   "engines": {
     "node": ">= 10"
@@ -41,8 +39,10 @@
     "index.js"
   ],
   "scripts": {
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc ava"
+    "test": "ava"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "ava": {
+    "timeout": "2m"
+  }
 }

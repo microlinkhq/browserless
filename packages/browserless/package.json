@@ -45,8 +45,6 @@
   "devDependencies": {
     "@browserless/test": "latest",
     "ava": "latest",
-    "coveralls": "latest",
-    "nyc": "latest",
     "puppeteer": "latest"
   },
   "engines": {
@@ -56,8 +54,10 @@
     "src"
   ],
   "scripts": {
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc ava"
+    "test": "ava"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "ava": {
+    "timeout": "2m"
+  }
 }

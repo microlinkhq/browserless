@@ -36,8 +36,6 @@
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
-    "coveralls": "latest",
-    "nyc": "latest",
     "puppeteer": "latest"
   },
   "engines": {
@@ -46,12 +44,11 @@
   "files": [
     "src"
   ],
+  "scripts": {
+    "test": "ava"
+  },
+  "license": "MIT",
   "ava": {
     "timeout": "2m"
-  },
-  "scripts": {
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc ava"
-  },
-  "license": "MIT"
+  }
 }
