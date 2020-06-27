@@ -168,7 +168,12 @@ const run = async ({ fn, debug: props }) => {
   return result
 }
 
-module.exports = ({ evasions = [], defaultDevice = 'Macbook Pro 13', timeout, ...deviceOpts }) => {
+module.exports = ({
+  evasions = ALL_EVASIONS_KEYS,
+  defaultDevice = 'Macbook Pro 13',
+  timeout,
+  ...deviceOpts
+}) => {
   const gotoTimeout = timeout * (1 / 2)
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
