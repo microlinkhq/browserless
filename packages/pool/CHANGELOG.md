@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [7.6.0](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v7.6.0-beta.3...v7.6.0) (2020-06-27)
+
+**Note:** Version bump only for package @browserless/pool
+
+
+
+
+
 ## [7.4.1](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v7.4.0...v7.4.1) (2020-05-16)
 
 **Note:** Version bump only for package @browserless/pool
