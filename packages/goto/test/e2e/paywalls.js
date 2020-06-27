@@ -7,7 +7,7 @@ const { getDomain } = require('tldts')
 const isCI = require('is-ci')
 
 ;[
-  'https://www.washingtonpost.com/nation/2020/06/25/coronavirus-live-updates-us/',
+  !isCI && 'https://www.washingtonpost.com/nation/2020/06/25/coronavirus-live-updates-us/',
   'https://www.wsj.com/articles/unilever-to-halt-u-s-ads-on-facebook-and-twitter-for-rest-of-2020-11593187230',
   'https://www.thestar.com/news/gta/2020/06/26/judgment-in-dafonte-miller-beating-case-to-be-streamed-live-friday-morning.html',
   'https://medium.com/@rakyll/things-i-wished-more-developers-knew-about-databases-2d0178464f78',
