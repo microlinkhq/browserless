@@ -15,7 +15,9 @@ const path = require('path')
 const fs = require('fs')
 
 const EVASIONS = require('./evasions')
-const ALL_EVASIONS = Object.keys(EVASIONS)
+const paywalls = require('./paywalls')
+
+const ALL_EVASIONS_KEYS = Object.keys(EVASIONS)
 
 const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
@@ -197,11 +199,12 @@ module.exports = ({ evasions = [], defaultDevice = 'Macbook Pro 13', timeout, ..
       ...args
     }
   ) => {
+    const domain = getDomain(url)
     const isWaitUntilAuto = waitUntil === 'auto'
+    const paywall = paywalls[domain]
 
-    if (isWaitUntilAuto) {
-      waitUntil = 'load'
-    }
+    if (isWaitUntilAuto) waitUntil = 'load'
+    if (paywall) adblock = false
 
     const prePromises = []
 
@@ -289,6 +292,8 @@ module.exports = ({ evasions = [], defaultDevice = 'Macbook Pro 13', timeout, ..
       fn: pTimeout(page.goto(url, args), gotoTimeout),
       debug: 'goto'
     })
+
+    if (paywall) await page.evaluate(paywall)
 
     if (isFulfilled) {
       const postPromises = []
@@ -378,4 +383,4 @@ module.exports = ({ evasions = [], defaultDevice = 'Macbook Pro 13', timeout, ..
 module.exports.parseCookies = parseCookies
 module.exports.injectScripts = injectScripts
 module.exports.injectStyles = injectStyles
-module.exports.evasions = ALL_EVASIONS
+module.exports.evasions = ALL_EVASIONS_KEYS
