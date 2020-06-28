@@ -5,15 +5,14 @@ const test = require('ava')
 const createBrowserless = require('browserless')
 const userAgent = require('ua-string')
 const onExit = require('signal-exit')
-const isCI = require('is-ci')
 
-const browserless = createBrowserless()
+const browserless = createBrowserless({ timeout: 300000 })
 
 onExit(browserless.destroy)
 
 const { evasions } = require('../..')
 
-;(isCI ? test.skip : test)('arh.antoinevastel.com/bots/areyouheadless', async t => {
+test('arh.antoinevastel.com/bots/areyouheadless', async t => {
   const content = await browserless.text('https://arh.antoinevastel.com/bots/areyouheadless')
   t.true(content.includes('You are not Chrome headless'))
 })
