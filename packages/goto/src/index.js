@@ -15,7 +15,6 @@ const path = require('path')
 const fs = require('fs')
 
 const EVASIONS = require('./evasions')
-const paywalls = require('./paywalls')
 
 const ALL_EVASIONS_KEYS = Object.keys(EVASIONS)
 
@@ -204,12 +203,8 @@ module.exports = ({
       ...args
     }
   ) => {
-    const domain = getDomain(url)
     const isWaitUntilAuto = waitUntil === 'auto'
-    const paywall = paywalls[domain]
-
     if (isWaitUntilAuto) waitUntil = 'load'
-    if (paywall) adblock = false
 
     const prePromises = []
 
@@ -297,8 +292,6 @@ module.exports = ({
       fn: pTimeout(page.goto(url, args), gotoTimeout),
       debug: 'goto'
     })
-
-    if (paywall) await page.evaluate(paywall)
 
     if (isFulfilled) {
       const postPromises = []
