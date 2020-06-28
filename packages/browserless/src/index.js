@@ -1,9 +1,10 @@
 'use strict'
 
+const createScreenshot = require('@browserless/screenshot')
 const { browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
-const importLazy = require('import-lazy')
+const createPdf = require('@browserless/pdf')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -79,12 +80,6 @@ module.exports = ({
       return fn(page, response)
     })
 
-  const pdf = wrapError(page => importLazy(require('@browserless/pdf')({ goto }))(page))
-
-  const screenshot = wrapError(page =>
-    importLazy(require('@browserless/screenshot')({ goto }))(page)
-  )
-
   return {
     // low level methods
     browser,
@@ -96,8 +91,8 @@ module.exports = ({
     goto,
     html: evaluate(page => page.content()),
     page: createPage,
-    pdf,
-    screenshot,
+    pdf: wrapError(createPdf({ goto })),
+    screenshot: wrapError(createScreenshot({ goto })),
     text: evaluate(page => page.evaluate(() => document.body.innerText)),
     getDevice: goto.getDevice
   }
