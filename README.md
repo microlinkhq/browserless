@@ -4,9 +4,7 @@
 </h1>
 
 ![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
-[![Build Status](https://img.shields.io/travis/microlinkhq/browserless/master.svg?style=flat-square)](https://travis-ci.org/microlinkhq/browserless)
-[![Dependency status](https://img.shields.io/david/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless)
-[![Dev Dependencies Status](https://img.shields.io/david/dev/microlinkhq/browserless.svg?style=flat-square)](https://david-dm.org/microlinkhq/browserless#info=devDependencies)
+[![Build Status](https://img.shields.io/travis/microlinkhq/browserless/master.svg?style=flat-square)](https://travis-ci.com/microlinkhq/browserless)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
 > The Headless Chrom[e|ium] driver for Node.js.
