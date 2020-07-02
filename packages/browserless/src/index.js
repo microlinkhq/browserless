@@ -4,6 +4,7 @@ const createScreenshot = require('@browserless/screenshot')
 const { browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
+const requireOneOf = require('require-one-of')
 const createPdf = require('@browserless/pdf')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -12,7 +13,7 @@ const pRetry = require('p-retry')
 const driver = require('./driver')
 
 module.exports = ({
-  puppeteer = require('require-one-of')(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
   retries = 5,

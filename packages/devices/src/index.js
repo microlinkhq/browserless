@@ -1,14 +1,12 @@
 'use strict'
 
 const { default: didyoumean } = require('didyoumean3')
+const requireOneOf = require('require-one-of')
+
 const customDevices = require('./devices.json')
 
 module.exports = ({
-  puppeteerDevices = require('require-one-of')([
-    'puppeteer/DeviceDescriptors',
-    'puppeteer-core/DeviceDescriptors',
-    'puppeteer-firefox/DeviceDescriptors'
-  ]),
+  puppeteerDevices = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']).devices,
   lossyDeviceName = false
 } = {}) => {
   const devices = { ...puppeteerDevices.devicesMap, ...customDevices }
@@ -29,13 +27,13 @@ module.exports = ({
 
     return device
       ? {
-        userAgent: device.userAgent || headers['user-agent'],
-        viewport: { ...device.viewport, ...viewport }
-      }
+          userAgent: device.userAgent || headers['user-agent'],
+          viewport: { ...device.viewport, ...viewport }
+        }
       : {
-        userAgent: headers['user-agent'],
-        viewport
-      }
+          userAgent: headers['user-agent'],
+          viewport
+        }
   }
 
   getDevices.devices = devices
