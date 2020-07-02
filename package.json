@@ -72,7 +72,7 @@
     "coverage": "lerna exec npm run coverage --parallel",
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
-    "install": "lerna bootstrap --no-ci --force-local",
+    "install": "lerna bootstrap --force-local --no-ci",
     "lint": "standard-markdown README.md && standard",
     "prerelease": "npm run update:check && npm run contributors",
     "pretest": "npm run lint",
