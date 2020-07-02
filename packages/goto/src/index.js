@@ -192,6 +192,7 @@ module.exports = ({
       hide,
       javascript = true,
       mediaType,
+      timezone,
       modules,
       remove,
       scripts,
@@ -271,6 +272,15 @@ module.exports = ({
         run({
           fn: page.emulateMediaType(mediaType),
           debug: { mediaType }
+        })
+      )
+    }
+
+    if (timezone) {
+      prePromises.push(
+        run({
+          fn: page.emulateTimezone(timezone),
+          debug: { timezone }
         })
       )
     }
