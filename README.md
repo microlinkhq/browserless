@@ -628,6 +628,12 @@ It can accept:
 })()
 ```
 
+##### timezone 
+
+type: `string`
+
+It changes the [timezone](https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2Fchromium%2Fsrc%2Fthird_party%2Ficu%2Fsource%2Fdata%2Fmisc%2FmetaZones.txt) of the page.
+
 ##### url
 
 type: `string`
