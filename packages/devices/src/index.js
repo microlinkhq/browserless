@@ -6,10 +6,11 @@ const requireOneOf = require('require-one-of')
 const customDevices = require('./devices.json')
 
 module.exports = ({
-  puppeteerDevices = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']).devices,
+  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   lossyDeviceName = false
 } = {}) => {
-  const devices = { ...puppeteerDevices.devicesMap, ...customDevices }
+  const { devices: puppeteerDevices } = puppeteer
+  const devices = { ...puppeteerDevices, ...customDevices }
   const deviceDescriptors = Object.keys(devices)
 
   const findDevice = (deviceDescriptor, lossyEnabled) => {
@@ -27,13 +28,13 @@ module.exports = ({
 
     return device
       ? {
-        userAgent: device.userAgent || headers['user-agent'],
-        viewport: { ...device.viewport, ...viewport }
-      }
+          userAgent: device.userAgent || headers['user-agent'],
+          viewport: { ...device.viewport, ...viewport }
+        }
       : {
-        userAgent: headers['user-agent'],
-        viewport
-      }
+          userAgent: headers['user-agent'],
+          viewport
+        }
   }
 
   getDevices.devices = devices
