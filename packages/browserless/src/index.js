@@ -19,7 +19,7 @@ module.exports = ({
   retries = 5,
   ...launchOpts
 } = {}) => {
-  const goto = createGoto({ timeout, ...launchOpts })
+  const goto = createGoto({ puppeteer, timeout, ...launchOpts })
 
   let browser = driver.spawn(puppeteer, { defaultViewport: goto.defaultViewport, ...launchOpts })
 

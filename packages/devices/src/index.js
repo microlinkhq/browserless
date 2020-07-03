@@ -28,13 +28,13 @@ module.exports = ({
 
     return device
       ? {
-          userAgent: device.userAgent || headers['user-agent'],
-          viewport: { ...device.viewport, ...viewport }
-        }
+        userAgent: device.userAgent || headers['user-agent'],
+        viewport: { ...device.viewport, ...viewport }
+      }
       : {
-          userAgent: headers['user-agent'],
-          viewport
-        }
+        userAgent: headers['user-agent'],
+        viewport
+      }
   }
 
   getDevices.devices = devices
