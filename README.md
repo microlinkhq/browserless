@@ -468,9 +468,36 @@ It specifies the [device](#devices) descriptor to use in order to retrieve `user
 ##### evasions
 
 type: `string[]`</br>
-default: `undefined`
+default: `require('@browserless/goto').evasions`
 
-It enables some evasions techniques used to make Headless Chrome execution undetectable.
+It makes your Headless undetectable, preventing to being blocked.
+
+These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access
+
+Evasions techniques implemented are:
+
+| Evasion                                                                                                                            | Description                                                                                                    |
+|------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| [chromeRuntime](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/chrome-runtime.js)               | It creates the `window.chrome` object associated to any Chrome browser                                         |
+| [consoleDebug](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/console-debug.js)                 | Ensure [`console.debug`](https://developer.mozilla.org/en-US/docs/Web/API/Console/debug#:~:text=The%20console%20method%20debug(),is%20available%20in%20Web%20Workers.) exists. |
+| [errorStackTrace](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/error-stack-trace.js)          | Prevent detect Puppeteer via variable name. |
+| [iframeContentWindow](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/iframe-content-window.js)  | Ensure [`contentWindow`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/contentWindow) is equal to [`window`](https://developer.mozilla.org/en-US/docs/Web/API/Window) for iframes. |
+| [mediaCodecs](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/media-codecs.js)                   | Ensure media codedcs are defined. |
+| [navigatorPermissions](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-permissions.js) | Mock over [`Notification.permissions`](https://developer.mozilla.org/en-US/docs/Web/API/Notification/permission). |
+| [navigatorPlugins](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-plugins.js)         | Ensure your browser has [`NavigatorPlugins`](https://developer.mozilla.org/en-US/docs/Web/API/NavigatorPlugins) defined. |
+| [navigatorWebdriver](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-webdriver.js)     | Ensure [`Navigator.webdriver`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/webdriver) exists. |
+| [randomizeUserAgent](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/randomize-user-agent.js)    | Use a different [`User-Agent`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) every time. |
+| [webglVendor](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/webgl-vendor.js)                   | Ensure [`WebGLRenderingContext`](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext) & [`WebGL2RenderingContext`](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext) returns browser-like information. |
+
+All the evasions techinques are enabled by default.
+
+```js
+const evasions = require('@browserless/goto').evasions.filter(
+  evasion => evasion !== 'randomizeUserAgent'
+)
+
+const browserless = require('browserless')({ evasions })
+```
 
 ![](/static/evasions.png)
 
