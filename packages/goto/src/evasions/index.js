@@ -4,7 +4,6 @@ module.exports = {
   chromeRuntime: require('./chrome-runtime'),
   consoleDebug: require('./console-debug'),
   errorStackTrace: require('./error-stack-trace'),
-  iframeContentWindow: require('./iframe-content-window'),
   mediaCodecs: require('./media-codecs'),
   navigatorPermissions: require('./navigator-permissions'),
   navigatorPlugins: require('./navigator-plugins'),
