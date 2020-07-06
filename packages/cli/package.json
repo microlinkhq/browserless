@@ -2,7 +2,7 @@
   "name": "@browserless/cli",
   "description": "CLI to interact with Browserless capabilities",
   "homepage": "https://browserless.js.org",
-  "version": "8.0.2",
+  "version": "8.0.3",
   "bin": {
     "browserless": "src/index.js"
   },
