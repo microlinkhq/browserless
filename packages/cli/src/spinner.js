@@ -1,22 +1,17 @@
 'use strict'
 
 const createProcStats = require('process-stats')
-const simpleAverage = require('simple-average')
 const prettyBytes = require('pretty-bytes')
 const { gray } = require('kleur')
 const ora = require('ora')
 
 const TICK_INTERVAL = 100
 const procStats = createProcStats({ tick: TICK_INTERVAL })
-const aggregator = simpleAverage()
 
 const stats = () => {
-  const { cpu: cpuProfiling, uptime, memUsed } = procStats()
-  // TODO: Move as part of `process-stats`
-  const cpuUsage = `${aggregator.add(cpuProfiling.replace('%', '')).avg.toFixed(0)}%`
-
+  const { cpu: cpuUsage, uptime, memUsed } = procStats()
   const time = `time${gray(`=${uptime.pretty}`)}`
-  const cpu = `cpu${gray(`=${cpuUsage}`)}`
+  const cpu = `cpu${gray(`=${cpuUsage.pretty}`)}`
   const memory = `memory${gray(`=${memUsed.pretty}`)}`
 
   return `${time} ${cpu} ${memory}`
