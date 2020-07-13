@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.0.6](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v8.0.5...v8.0.6) (2020-07-13)
+
+**Note:** Version bump only for package @browserless/devices
+
+
+
+
+
 # [8.0.0](https://github.com/kikobeats/browserless/tree/master/packages/devices/compare/v7.6.4...v8.0.0) (2020-07-03)
 
 
