@@ -38,8 +38,8 @@
     "pretty-ms": "~7.0.0",
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
-    "tldts": "~5.6.42",
-    "top-user-agents": "~1.0.11",
+    "tldts": "~5.6.43",
+    "top-user-agents": "~1.0.12",
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {

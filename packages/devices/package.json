@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "didyoumean3": "~1.2.3",
-    "puppeteer-core": "~5.2.0",
+    "puppeteer-core": "~5.2.1",
     "require-one-of": "~1.0.13"
   },
   "devDependencies": {
