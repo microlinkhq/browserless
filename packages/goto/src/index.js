@@ -170,10 +170,10 @@ const run = async ({ fn, debug: props }) => {
 module.exports = ({
   evasions = ALL_EVASIONS_KEYS,
   defaultDevice = 'Macbook Pro 13',
-  timeout,
+  timeout: globalTimeout,
   ...deviceOpts
 }) => {
-  const gotoTimeout = timeout * (1 / 2)
+  const baseTimeout = globalTimeout * (1 / 2)
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
@@ -192,6 +192,7 @@ module.exports = ({
       hide,
       javascript = true,
       mediaType,
+      timeout = baseTimeout,
       timezone,
       modules,
       remove,
@@ -299,7 +300,7 @@ module.exports = ({
     await Promise.all(prePromises.concat(applyEvasions.map(fn => fn(page))))
 
     const { isFulfilled, value: response } = await run({
-      fn: pTimeout(page.goto(url, args), gotoTimeout),
+      fn: pTimeout(page.goto(url, args), timeout),
       debug: 'goto'
     })
 
@@ -313,7 +314,7 @@ module.exports = ({
               page.waitForNavigation({ waitUntil: 'networkidle2' }),
               page.evaluate(() => window.history.pushState(null, null, '#'))
             ]),
-            gotoTimeout * (1 / 3)
+            timeout * (1 / 3)
           ),
           debug: { isWaitUntilAuto }
         })
