@@ -311,25 +311,3 @@ test('remove puppeteer from stack traces', async t => {
 
   await page.close()
 })
-
-test('iframe', async t => {
-  const page = await browserless.page()
-
-  const iframeChrome = () =>
-    page.evaluate(() => {
-      const iframe = document.createElement('iframe')
-      iframe.srcdoc = 'blank page'
-      document.body.appendChild(iframe)
-      return typeof iframe.contentWindow.chrome
-    })
-
-  t.true((await iframeChrome()) === 'undefined')
-
-  await evasions.chromeRuntime(page)
-  await evasions.iframeContentWindow(page)
-  await page.goto(fileUrl)
-
-  t.true((await iframeChrome()) !== 'undefined')
-
-  await page.close()
-})
