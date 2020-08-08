@@ -35,7 +35,7 @@
     "browserless": "^8.0.8",
     "kleur": "~4.0.3",
     "meow": "~7.0.1",
-    "ora": "~4.1.0",
+    "ora": "~5.0.0",
     "pretty-bytes": "~5.3.0",
     "process-stats": "~3.5.0",
     "puppeteer": "~5.2.1",
