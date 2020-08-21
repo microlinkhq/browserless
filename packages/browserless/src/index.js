@@ -21,7 +21,11 @@ module.exports = ({
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
 
-  let browser = driver.spawn(puppeteer, { defaultViewport: goto.defaultViewport, ...launchOpts })
+  let browser = driver.spawn(puppeteer, {
+    defaultViewport: goto.defaultViewport,
+    timeout: 0,
+    ...launchOpts
+  })
 
   const respawn = async () => {
     await driver.destroy(await browser)
@@ -47,13 +51,10 @@ module.exports = ({
     const closePage = () => (page ? pReflect(page.close()) : undefined)
 
     const run = async () => {
-      try {
-        page = await createPage()
-        const value = await fn(page)(...args)
-        return value
-      } finally {
-        await closePage()
-      }
+      const { isFulfilled, value, reason } = await pReflect(fn(await createPage())(...args))
+      await closePage()
+      if (isFulfilled) return value
+      throw reason
     }
 
     const task = () =>
