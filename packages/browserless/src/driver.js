@@ -13,53 +13,56 @@ const fkill = pids =>
     } catch (_) {}
   })
 
-const args = [
-  // base
-  '--disable-cloud-import',
-  '--disable-gesture-typing',
-  '--disable-infobars',
-  '--disable-notifications',
-  '--disable-offer-store-unmasked-wallet-cards',
-  '--disable-offer-upload-credit-cards',
-  '--disable-print-preview',
-  '--disable-speech-api',
-  '--disable-tab-for-desktop-share',
-  '--disable-translate',
-  '--disable-voice-input',
-  '--disable-wake-on-wifi',
-  '--enable-async-dns',
-  '--enable-simple-cache-backend',
-  '--enable-tcp-fast-open',
-  '--enable-webgl',
-  '--hide-scrollbars',
-  '--ignore-gpu-blacklist',
-  '--mute-audio',
-  '--no-default-browser-check',
-  '--no-pings',
-  '--no-zygote',
-  '--prerender-from-omnibox=disabled',
-  '--use-gl=swiftshader',
-  '--no-sandbox',
-  // extra
-  '--disable-web-security',
-  '--font-render-hinting=none', // could be 'none', 'medium'
-  '--enable-font-antialiasing',
-  // perf
-  os.cpus().length === 1 ? '--single-process' : false
-  // '--memory-pressure-off'
-].filter(Boolean)
+const args = ({ proxy }) =>
+  [
+    // base
+    '--disable-cloud-import',
+    '--disable-gesture-typing',
+    '--disable-infobars',
+    '--disable-notifications',
+    '--disable-offer-store-unmasked-wallet-cards',
+    '--disable-offer-upload-credit-cards',
+    '--disable-print-preview',
+    '--disable-speech-api',
+    '--disable-tab-for-desktop-share',
+    '--disable-translate',
+    '--disable-voice-input',
+    '--disable-wake-on-wifi',
+    '--enable-async-dns',
+    '--enable-simple-cache-backend',
+    '--enable-tcp-fast-open',
+    '--enable-webgl',
+    '--hide-scrollbars',
+    '--ignore-gpu-blacklist',
+    '--mute-audio',
+    '--no-default-browser-check',
+    '--no-pings',
+    '--no-zygote',
+    '--prerender-from-omnibox=disabled',
+    '--use-gl=swiftshader',
+    '--no-sandbox',
+    // extra
+    '--disable-web-security',
+    '--font-render-hinting=none', // could be 'none', 'medium'
+    '--enable-font-antialiasing',
+    // perf
+    os.cpus().length === 1 && '--single-process',
+    // '--memory-pressure-off'
+    // others
+    proxy && `--proxy-server=http://${proxy.host}:${proxy.port}`
+  ].filter(Boolean)
 
-const spawn = (puppeteer, launchOpts) =>
+const spawn = (puppeteer, { proxy, ...launchOpts }) =>
   puppeteer.launch({
     ignoreHTTPSErrors: true,
     // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
     // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
     // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
-    args,
+    args: args({ proxy }),
     ...launchOpts
   })
 
-const destroy = async (browser, opts) => {
+const destroy = async browser => {
   const { pid } = browser.process()
   const { value: pids = [] } = await pReflect(pidtree(pid, { root: true }))
   fkill(pids)
