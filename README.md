@@ -542,7 +542,11 @@ Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.o
 })()
 ```
 
-This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
+##### html
+
+type: `string` </br>
+
+In case you provide HTML markup, a [page.setContent](https://github.com/puppeteer/puppeteer/blob/v5.2.1/docs/api.md#pagesetcontenthtml-options) avoiding fetch the content from the target URL.
 
 ##### javascript
 
