@@ -542,6 +542,8 @@ Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.o
 })()
 ```
 
+This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
+
 ##### html
 
 type: `string` </br>
