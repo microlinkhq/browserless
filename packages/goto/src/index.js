@@ -190,15 +190,16 @@ module.exports = ({
       colorScheme,
       headers = {},
       hide,
+      html,
       javascript = true,
       mediaType,
-      timeout = baseTimeout,
-      timezone,
       modules,
       remove,
       scripts,
       scroll,
       styles,
+      timeout = baseTimeout,
+      timezone,
       url,
       waitFor = 0,
       waitUntil = 'auto',
@@ -299,9 +300,9 @@ module.exports = ({
 
     await Promise.all(prePromises.concat(applyEvasions.map(fn => fn(page))))
 
-    const { isFulfilled, value: response } = await run({
-      fn: pTimeout(page.goto(url, args), timeout),
-      debug: 'goto'
+    const { isFulfilled, value } = await run({
+      fn: pTimeout(html ? page.setContent(html, args) : page.goto(url, args), timeout),
+      debug: 'goto:html'
     })
 
     if (isFulfilled) {
@@ -377,7 +378,7 @@ module.exports = ({
       }
     }
 
-    return { response, device }
+    return { response: value, device }
   }
 
   goto.getDevice = getDevice
