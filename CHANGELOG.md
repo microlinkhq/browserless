@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [8.1.0](https://github.com/microlinkhq/browserless/compare/v8.0.12...v8.1.0) (2020-08-24)
+
+
+### Features
+
+* add proxy support ([#202](https://github.com/microlinkhq/browserless/issues/202)) ([ee79027](https://github.com/microlinkhq/browserless/commit/ee79027a8637749acced19c48e841f69f67c94e6)), closes [#136](https://github.com/microlinkhq/browserless/issues/136)
+
+
+
+
+
 ## [8.0.12](https://github.com/microlinkhq/browserless/compare/v8.0.11...v8.0.12) (2020-08-24)
 
 **Note:** Version bump only for package browserless
