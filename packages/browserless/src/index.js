@@ -8,6 +8,7 @@ const requireOneOf = require('require-one-of')
 const createPdf = require('@browserless/pdf')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
+const parseUri = require('parse-uri')
 const pRetry = require('p-retry')
 
 const driver = require('./driver')
@@ -16,14 +17,20 @@ module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
   timeout = 30000,
+  proxy: proxyUrl,
   retries = 5,
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
 
+  const proxy = parseUri(proxyUrl)
+
+  const authentication = proxy ? { username: proxy.user, password: proxy.password } : undefined
+
   let browser = driver.spawn(puppeteer, {
     defaultViewport: goto.defaultViewport,
     timeout: 0,
+    proxy,
     ...launchOpts
   })
 
@@ -36,10 +43,13 @@ module.exports = ({
     const _browser = await browser
     const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
     const page = await context.newPage()
+    if (authentication) await page.authenticate(authentication)
+
     debug('new page', {
       pid: _browser.process().pid,
       incognito,
-      pages: (await _browser.pages()).length - 1
+      pages: (await _browser.pages()).length - 1,
+      proxy: !!authentication
     })
     return page
   }

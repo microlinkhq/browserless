@@ -125,6 +125,13 @@ default: `3`
 
 The number of retries that can be performed before considering a navigation as failed.
 
+##### proxy
+
+type: `string`</br>
+default: `undefined`
+
+It will setup a proxy to be used to communicate between the browser and the target URL.
+
 ##### puppeteer
 
 type: `Puppeteer`</br>
