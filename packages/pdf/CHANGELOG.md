@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.0.12](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v8.0.11...v8.0.12) (2020-08-24)
+
+**Note:** Version bump only for package @browserless/pdf
+
+
+
+
+
 ## [8.0.10](https://github.com/kikobeats/browserless/tree/master/packages/pool/compare/v8.0.9...v8.0.10) (2020-08-18)
 
 **Note:** Version bump only for package @browserless/pdf
