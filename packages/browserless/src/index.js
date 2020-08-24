@@ -13,6 +13,11 @@ const pRetry = require('p-retry')
 
 const driver = require('./driver')
 
+const getProxy = uri => {
+  const proxy = parseUri(uri)
+  return proxy.host !== 'undefined' ? proxy : undefined
+}
+
 module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   incognito = false,
@@ -23,8 +28,7 @@ module.exports = ({
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
 
-  const proxy = parseUri(proxyUrl)
-
+  const proxy = getProxy(proxyUrl)
   const authentication = proxy ? { username: proxy.user, password: proxy.password } : undefined
 
   let browser = driver.spawn(puppeteer, {
