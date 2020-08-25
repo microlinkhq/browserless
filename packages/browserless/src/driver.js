@@ -13,6 +13,9 @@ const fkill = pids =>
     } catch (_) {}
   })
 
+// flags explained: https://peter.sh/experiments/chromium-command-line-switches/
+// default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
+// AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
 const args = ({ proxy }) =>
   [
     // base
@@ -48,7 +51,7 @@ const args = ({ proxy }) =>
     // perf
     '--single-process',
     // '--memory-pressure-off',
-    proxy && `--proxy-server=${proxy.protocol}//${proxy.hostname}:${proxy.port}`
+    proxy && `--proxy-server=${proxy.protocol}://${proxy.hostname}:${proxy.port}`
   ].filter(Boolean)
 
 const spawn = (puppeteer, { proxy, ...launchOpts }) =>
