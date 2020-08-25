@@ -49,7 +49,7 @@ const args = ({ proxy }) =>
     os.cpus().length === 1 && '--single-process',
     // '--memory-pressure-off'
     // others
-    proxy && `--proxy-server=http://${proxy.host}:${proxy.port}`
+    proxy && `--proxy-server=${proxy.protocol}//${proxy.hostname}:${proxy.port}`
   ].filter(Boolean)
 
 const spawn = (puppeteer, { proxy, ...launchOpts }) =>

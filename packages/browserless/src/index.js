@@ -6,9 +6,9 @@ const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const requireOneOf = require('require-one-of')
 const createPdf = require('@browserless/pdf')
+const parseProxy = require('parse-proxy-uri')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
-const parseUri = require('parse-uri')
 const pRetry = require('p-retry')
 
 const driver = require('./driver')
@@ -22,9 +22,7 @@ module.exports = ({
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
-
-  const proxy = parseUri(proxyUrl)
-  const authentication = proxy ? { username: proxy.user, password: proxy.password } : undefined
+  const proxy = parseProxy(proxyUrl)
 
   let browser = driver.spawn(puppeteer, {
     defaultViewport: goto.defaultViewport,
@@ -42,13 +40,14 @@ module.exports = ({
     const _browser = await browser
     const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
     const page = await context.newPage()
-    if (authentication) await page.authenticate(authentication)
+
+    if (proxy) await page.authenticate(proxy)
 
     debug('new page', {
       pid: _browser.process().pid,
       incognito,
       pages: (await _browser.pages()).length - 1,
-      proxy: !!authentication
+      proxy: !!proxy
     })
     return page
   }
