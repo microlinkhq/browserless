@@ -44,11 +44,10 @@ const args = ({ proxy }) =>
     // extra
     '--disable-web-security',
     '--font-render-hinting=none', // could be 'none', 'medium'
-    '--enable-font-antialiasing',
+    // '--enable-font-antialiasing'
     // perf
-    os.cpus().length === 1 && '--single-process',
-    // '--memory-pressure-off'
-    // others
+    '--single-process',
+    // '--memory-pressure-off',
     proxy && `--proxy-server=${proxy.protocol}//${proxy.hostname}:${proxy.port}`
   ].filter(Boolean)
 
