@@ -302,7 +302,7 @@ module.exports = ({
 
     const { isFulfilled, value } = await run({
       fn: pTimeout(html ? page.setContent(html, args) : page.goto(url, args), timeout),
-      debug: `goto:${html ? 'html' : 'url'}`
+      debug: html ? 'html' : 'url'
     })
 
     if (isFulfilled) {
