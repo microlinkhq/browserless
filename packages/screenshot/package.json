@@ -38,7 +38,7 @@
     "p-reflect": "~2.1.0",
     "pretty-ms": "~7.0.0",
     "prism-themes": "~1.4.0",
-    "sharp": "~0.25.4",
+    "sharp": "~0.26.0",
     "svg-gradient": "~1.0.2",
     "time-span": "~4.0.0"
   },
