@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.10](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v8.1.9...v8.1.10) (2020-08-31)
+
+
+### Bug Fixes
+
+* linter ([74f1048](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/74f1048d46b071251598c9d72a7a5a7ae971f9ab))
+
+
+
+
+
 ## [8.1.9](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v8.1.8...v8.1.9) (2020-08-31)
 
 **Note:** Version bump only for package browserless
