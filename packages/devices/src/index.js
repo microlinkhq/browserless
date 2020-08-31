@@ -2,6 +2,7 @@
 
 const { default: didyoumean } = require('didyoumean3')
 const requireOneOf = require('require-one-of')
+const memoizeOne = require('memoize-one')
 
 const customDevices = require('./devices.json')
 
@@ -13,7 +14,7 @@ module.exports = ({
   const devices = { ...puppeteerDevices, ...customDevices }
   const deviceDescriptors = Object.keys(devices)
 
-  const findDevice = (deviceDescriptor, lossyEnabled) => {
+  const findDevice = memoizeOne((deviceDescriptor, lossyEnabled) => {
     if (!deviceDescriptor) return undefined
     if (!lossyEnabled) return devices[deviceDescriptor]
 
@@ -21,7 +22,7 @@ module.exports = ({
     if (!result) return undefined
 
     return devices[result.winner]
-  }
+  })
 
   const getDevices = ({ headers = {}, device: deviceDescriptor, viewport } = {}) => {
     const device = findDevice(deviceDescriptor, lossyDeviceName)
