@@ -3,7 +3,6 @@
 const debug = require('debug-logfmt')('browserless')
 const pReflect = require('p-reflect')
 const pidtree = require('pidtree')
-const os = require('os')
 
 // TODO: Use https://github.com/sindresorhus/fkill/pull/34
 const fkill = pids =>
