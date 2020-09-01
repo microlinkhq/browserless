@@ -4,9 +4,7 @@ const createBrowserless = require('browserless')
 
 const main = async () => {
   const browserless = await createBrowserless()
-  await browserless.screenshot('https://example.com', {
-    waitUntil: ['networkidle2', 'load']
-  })
+  await browserless.screenshot('https://example.com', { type: 'png' })
   await browserless.close()
 }
 

@@ -36,16 +36,16 @@
     "lodash": "latest",
     "measured": "latest",
     "meow": "latest",
+    "nanobench": "latest",
     "p-all": "latest",
     "percentile": "latest",
     "pretty-ms": "latest",
     "process-stats": "latest",
     "puppeteer": "latest",
     "puppeteer-firefox": "latest",
-    "time-span": "latest",
-    "nanobench": "latest",
     "sieve-of-eratosthenes": "latest",
-    "term-img": "latest"
+    "term-img": "latest",
+    "time-span": "latest"
   },
   "engines": {
     "node": ">= 10"
