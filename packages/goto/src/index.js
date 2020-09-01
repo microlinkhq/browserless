@@ -308,6 +308,7 @@ module.exports = ({
     if (isFulfilled) {
       const postPromises = []
 
+      // related https://github.com/puppeteer/puppeteer/issues/1353
       if (isWaitUntilAuto) {
         await run({
           fn: pTimeout(
@@ -315,7 +316,7 @@ module.exports = ({
               page.waitForNavigation({ waitUntil: 'networkidle2' }),
               page.evaluate(() => window.history.pushState(null, null, '#'))
             ]),
-            timeout * (1 / 3)
+            timeout * (1 / 8)
           ),
           debug: { isWaitUntilAuto }
         })
