@@ -27,10 +27,6 @@
     "perf",
     "puppeteer"
   ],
-  "dependencies": {
-    "nanobench": "~2.1.1",
-    "sieve-of-eratosthenes": "0.0.3"
-  },
   "devDependencies": {
     "@browserless/pool": "latest",
     "asciichart": "latest",
@@ -46,7 +42,10 @@
     "process-stats": "latest",
     "puppeteer": "latest",
     "puppeteer-firefox": "latest",
-    "time-span": "latest"
+    "time-span": "latest",
+    "nanobench": "latest",
+    "sieve-of-eratosthenes": "latest",
+    "term-img": "latest"
   },
   "engines": {
     "node": ">= 10"
