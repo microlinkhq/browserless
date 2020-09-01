@@ -34,9 +34,7 @@ module.exports = gotoOpts => {
       const contentType = getContentType(headers)
 
       if (PRETTY_CONTENT_TYPES.includes(contentType)) {
-        const timePretty = timeSpan()
         await pReflect(pretty(page, response, { codeScheme, contentType, ...opts }))
-        debug('pretty', { duration: prettyMs(timePretty()) })
       }
     }
 
