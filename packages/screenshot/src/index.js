@@ -1,15 +1,15 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless:screenshot')
-
+const createGoto = require('@browserless/goto')
 const { extension } = require('mime-types')
 const prettyMs = require('pretty-ms')
 const timeSpan = require('time-span')
 const pReflect = require('p-reflect')
 
-const pretty = require('./pretty')
-const createGoto = require('./goto')
+const isWhiteScreenshot = require('./is-white-screenshot')
 const overlay = require('./overlay')
+const pretty = require('./pretty')
 
 const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
 
@@ -18,15 +18,50 @@ const getContentType = headers => {
   return contentType === 'txt' ? 'text' : contentType
 }
 
-module.exports = gotoOpts => {
-  const goto = createGoto(gotoOpts)
+const getBoundingClientRect = element => {
+  const { top, left, height, width, x, y } = element.getBoundingClientRect()
+  return { top, left, height, width, x, y }
+}
+
+module.exports = ({ goto, ...gotoOpts }) => {
+  goto = goto || createGoto(gotoOpts)
 
   return page => async (
     url,
-    { codeScheme = 'atom-dark', overlay: overlayOpts = {}, ...opts } = {}
+    { element, codeScheme = 'atom-dark', overlay: overlayOpts = {}, ...opts } = {}
   ) => {
     const timeGoto = timeSpan()
-    const [screenshotOpts, response] = await goto(page, url, opts)
+
+    let screenshot
+
+    const waitUntilAuto = async (page, opts) => {
+      const screenshotOpts = {}
+
+      if (element) {
+        await page.waitForSelector(element, { visible: true })
+        screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
+        screenshotOpts.fullPage = false
+      }
+
+      const timeScreenshot = timeSpan()
+
+      screenshot = await page.screenshot(opts)
+
+      const isWhite = await isWhiteScreenshot(screenshot)
+
+      if (!isWhite) {
+        debug('screenshot', { isWhite, duration: prettyMs(timeScreenshot()) })
+        return
+      }
+
+      await createGoto.waitUntilAuto(page, opts)
+      screenshot = await page.screenshot(opts)
+
+      debug('screenshot', { isWhite, duration: prettyMs(timeScreenshot()) })
+    }
+
+    const { response } = await goto(page, { ...opts, url, waitUntilAuto })
+
     debug('goto', { duration: prettyMs(timeGoto()) })
 
     if (codeScheme && response) {
@@ -37,13 +72,6 @@ module.exports = gotoOpts => {
         await pReflect(pretty(page, response, { codeScheme, contentType, ...opts }))
       }
     }
-
-    const timeScreenshot = timeSpan()
-    const screenshot = await page.screenshot({
-      ...opts,
-      ...screenshotOpts
-    })
-    debug('screenshot', { duration: prettyMs(timeScreenshot()) })
 
     return Object.keys(overlayOpts).length === 0
       ? screenshot

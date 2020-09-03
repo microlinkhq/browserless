@@ -167,6 +167,19 @@ const run = async ({ fn, debug: props }) => {
   return result
 }
 
+// related https://github.com/puppeteer/puppeteer/issues/1353
+const autoFn = (page, { timeout }) =>
+  run({
+    fn: pTimeout(
+      Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2' }),
+        page.evaluate(() => window.history.pushState(null, null, '#'))
+      ]),
+      timeout * (1 / 8)
+    ),
+    debug: { isWaitUntilAuto: true }
+  })
+
 module.exports = ({
   evasions = ALL_EVASIONS_KEYS,
   defaultDevice = 'Macbook Pro 13',
@@ -203,6 +216,7 @@ module.exports = ({
       url,
       waitFor = 0,
       waitUntil = 'auto',
+      waitUntilAuto = autoFn,
       ...args
     }
   ) => {
@@ -308,19 +322,7 @@ module.exports = ({
     if (isFulfilled) {
       const postPromises = []
 
-      // related https://github.com/puppeteer/puppeteer/issues/1353
-      if (isWaitUntilAuto) {
-        await run({
-          fn: pTimeout(
-            Promise.all([
-              page.waitForNavigation({ waitUntil: 'networkidle2' }),
-              page.evaluate(() => window.history.pushState(null, null, '#'))
-            ]),
-            timeout * (1 / 8)
-          ),
-          debug: { isWaitUntilAuto }
-        })
-      }
+      if (isWaitUntilAuto) await waitUntilAuto(page, { timeout })
 
       if (waitFor) {
         await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
@@ -395,3 +397,4 @@ module.exports.parseCookies = parseCookies
 module.exports.injectScripts = injectScripts
 module.exports.injectStyles = injectStyles
 module.exports.evasions = ALL_EVASIONS_KEYS
+module.exports.waitUntilAuto = autoFn
