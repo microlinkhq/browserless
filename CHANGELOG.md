@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.13](https://github.com/microlinkhq/browserless/compare/v8.1.12...v8.1.13) (2020-09-06)
+
+
+### Bug Fixes
+
+* pass waitUntilAuto props ([8915c9b](https://github.com/microlinkhq/browserless/commit/8915c9bb2532193338ad7788ea764ea483f1014d))
+
+
+
+
+
 ## [8.1.12](https://github.com/microlinkhq/browserless/compare/v8.1.11...v8.1.12) (2020-09-06)
 
 
