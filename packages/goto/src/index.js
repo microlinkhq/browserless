@@ -322,7 +322,7 @@ module.exports = ({
     if (isFulfilled) {
       const postPromises = []
 
-      if (isWaitUntilAuto) await waitUntilAuto(page, { timeout })
+      if (isWaitUntilAuto) await waitUntilAuto(page, { timeout, ...args })
 
       if (waitFor) {
         await run({ fn: page.waitFor(waitFor), debug: { waitFor } })

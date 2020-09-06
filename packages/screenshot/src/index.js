@@ -34,9 +34,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
     let screenshot
 
-    const waitUntilAuto = async (page, opts) => {
-      const screenshotOpts = {}
-
+    const waitUntilAuto = async (page, screenshotOpts) => {
       if (element) {
         await page.waitForSelector(element, { visible: true })
         screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
@@ -45,7 +43,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const timeScreenshot = timeSpan()
 
-      screenshot = await page.screenshot(opts)
+      screenshot = await page.screenshot(screenshotOpts)
 
       const isWhite = await isWhiteScreenshot(screenshot)
 
@@ -55,7 +53,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
       }
 
       await createGoto.waitUntilAuto(page, opts)
-      screenshot = await page.screenshot(opts)
+      screenshot = await page.screenshot(screenshotOpts)
 
       debug('screenshot', { isWhite, duration: prettyMs(timeScreenshot()) })
     }
