@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.12](https://github.com/microlinkhq/browserless/compare/v8.1.11...v8.1.12) (2020-09-06)
+
+
+### Bug Fixes
+
+* linter ([f0270d2](https://github.com/microlinkhq/browserless/commit/f0270d24edb767989a92b301a9d90dd1c61dbee3))
+
+
+
+
+
 ## [8.1.11](https://github.com/microlinkhq/browserless/compare/v8.1.10...v8.1.11) (2020-09-01)
 
 **Note:** Version bump only for package browserless
