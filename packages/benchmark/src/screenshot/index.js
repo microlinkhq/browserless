@@ -13,7 +13,8 @@ const URLS = [
   'https://static.fun/',
   'https://static-fun-7fhcrqaql.now.sh/',
   'https://polymer.now-examples.now.sh/',
-  'https://stencil.now-examples.now.sh/'
+  'https://stencil.now-examples.now.sh/',
+  'https://testnow-dufar18r5.now.sh'
 ]
 
 const createBrowserless = require('browserless')

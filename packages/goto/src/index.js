@@ -314,70 +314,68 @@ module.exports = ({
 
     await Promise.all(prePromises.concat(applyEvasions.map(fn => fn(page))))
 
-    const { isFulfilled, value } = await run({
+    const { value } = await run({
       fn: pTimeout(html ? page.setContent(html, args) : page.goto(url, args), timeout),
       debug: html ? 'html' : 'url'
     })
 
-    if (isFulfilled) {
-      const postPromises = []
+    const postPromises = []
 
-      if (isWaitUntilAuto) await waitUntilAuto(page, { timeout, ...args })
+    if (isWaitUntilAuto) await waitUntilAuto(page, { timeout, ...args })
 
-      if (waitFor) {
-        await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
+    if (waitFor) {
+      await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
+    }
+
+    if (animations === false) {
+      postPromises.push(injectCSS(page, disableAnimations))
+    }
+
+    const hideOrRemove = [
+      hide && injectCSS(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
+      remove && injectCSS(page, `${castArray(remove).join(', ')} { display: none !important; }`)
+    ].filter(Boolean)
+
+    if (hideOrRemove.length > 0) {
+      postPromises.push(
+        run({
+          fn: Promise.all(hideOrRemove),
+          debug: { hideOrRemove: hideOrRemove.length }
+        })
+      )
+    }
+
+    const injections = [
+      modules && injectScripts(page, modules, { type: 'modules' }),
+      scripts && injectScripts(page, scripts),
+      styles && injectStyles(page, styles)
+    ].filter(Boolean)
+
+    if (injections.length > 0) {
+      postPromises.push(
+        run({
+          fn: Promise.all(injections),
+          debug: { injections: injections.length }
+        })
+      )
+    }
+
+    await Promise.all(postPromises)
+
+    if (click) {
+      for (const selector of castArray(click)) {
+        await run({ fn: page.click(selector), debug: { click: selector } })
       }
+    }
 
-      if (animations === false) {
-        postPromises.push(injectCSS(page, disableAnimations))
-      }
-
-      const hideOrRemove = [
-        hide && injectCSS(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
-        remove && injectCSS(page, `${castArray(remove).join(', ')} { display: none !important; }`)
-      ].filter(Boolean)
-
-      if (hideOrRemove.length > 0) {
-        postPromises.push(
-          run({
-            fn: Promise.all(hideOrRemove),
-            debug: { hideOrRemove: hideOrRemove.length }
-          })
-        )
-      }
-
-      const injections = [
-        modules && injectScripts(page, modules, { type: 'modules' }),
-        scripts && injectScripts(page, scripts),
-        styles && injectStyles(page, styles)
-      ].filter(Boolean)
-
-      if (injections.length > 0) {
-        postPromises.push(
-          run({
-            fn: Promise.all(injections),
-            debug: { injections: injections.length }
-          })
-        )
-      }
-
-      await Promise.all(postPromises)
-
-      if (click) {
-        for (const selector of castArray(click)) {
-          await run({ fn: page.click(selector), debug: { click: selector } })
-        }
-      }
-
-      if (scroll) {
-        if (typeof scroll === 'object') {
-          await run({
-            fn: page.$eval(scroll.element, scrollTo, scroll),
-            debug: { scroll }
-          })
-        } else {
-          await run({ fn: page.$eval(scroll, scrollTo), debug: { scroll } })
-        }
+    if (scroll) {
+      if (typeof scroll === 'object') {
+        await run({
+          fn: page.$eval(scroll.element, scrollTo, scroll),
+          debug: { scroll }
+        })
+      } else {
+        await run({ fn: page.$eval(scroll, scrollTo), debug: { scroll } })
       }
     }
 
