@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.15](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v8.1.14...v8.1.15) (2020-09-09)
+
+
+### Bug Fixes
+
+* handle when waitUntil isnt auto ([0e25729](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/0e25729781bd0504621576c0317a71b908b10a7f))
+
+
+
+
+
 ## [8.1.14](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v8.1.13...v8.1.14) (2020-09-07)
 
 **Note:** Version bump only for package @browserless/screenshot
