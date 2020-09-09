@@ -28,39 +28,46 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
   return page => async (
     url,
-    { element, codeScheme = 'atom-dark', overlay: overlayOpts = {}, ...opts } = {}
+    {
+      element,
+      codeScheme = 'atom-dark',
+      overlay: overlayOpts = {},
+      waitUntil = 'auto',
+      ...opts
+    } = {}
   ) => {
     const timeGoto = timeSpan()
 
+    let screenshotOpts
     let screenshot
+    let response
 
-    const waitUntilAuto = async (page, screenshotOpts) => {
-      if (element) {
-        await page.waitForSelector(element, { visible: true })
-        screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
-        screenshotOpts.fullPage = false
-      }
-
-      const timeScreenshot = timeSpan()
-
-      screenshot = await page.screenshot(screenshotOpts)
-
-      const isWhite = await isWhiteScreenshot(screenshot)
-
-      if (!isWhite) {
-        debug('screenshot', { isWhite, duration: prettyMs(timeScreenshot()) })
-        return
-      }
-
-      await createGoto.waitUntilAuto(page, opts)
-      screenshot = await page.screenshot(screenshotOpts)
-
-      debug('screenshot', { isWhite, duration: prettyMs(timeScreenshot()) })
+    if (element) {
+      await page.waitForSelector(element, { visible: true })
+      screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
+      screenshotOpts.fullPage = false
     }
 
-    const { response } = await goto(page, { ...opts, url, waitUntilAuto })
+    if (waitUntil !== 'auto') {
+      const timeScreenshot = timeSpan()
+      ;({ response } = await goto(page, { ...opts, waitUntil, url }))
+      screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
+      debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
+    } else {
+      const waitUntilAuto = async (page, screenshotOpts) => {
+        screenshot = await page.screenshot(screenshotOpts)
+        const isWhite = await isWhiteScreenshot(screenshot)
 
-    debug('goto', { duration: prettyMs(timeGoto()) })
+        if (isWhite) {
+          await createGoto.waitUntilAuto(page, opts)
+          screenshot = await page.screenshot(screenshotOpts)
+        }
+        debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
+      }
+      const timeScreenshot = timeSpan()
+      ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
+      debug('goto', { duration: prettyMs(timeGoto()) })
+    }
 
     if (codeScheme && response) {
       const headers = response.headers()
