@@ -36,8 +36,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
       ...opts
     } = {}
   ) => {
-    const timeGoto = timeSpan()
-
     let screenshotOpts
     let screenshot
     let response
@@ -48,8 +46,9 @@ module.exports = ({ goto, ...gotoOpts }) => {
       screenshotOpts.fullPage = false
     }
 
+    const timeScreenshot = timeSpan()
+
     if (waitUntil !== 'auto') {
-      const timeScreenshot = timeSpan()
       ;({ response } = await goto(page, { ...opts, waitUntil, url }))
       screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
       debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
@@ -62,11 +61,13 @@ module.exports = ({ goto, ...gotoOpts }) => {
           await createGoto.waitUntilAuto(page, opts)
           screenshot = await page.screenshot(screenshotOpts)
         }
-        debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
+        debug('screenshot', {
+          waitUntil,
+          isWhite,
+          duration: prettyMs(timeScreenshot())
+        })
       }
-      const timeScreenshot = timeSpan()
       ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
-      debug('goto', { duration: prettyMs(timeGoto()) })
     }
 
     if (codeScheme && response) {
