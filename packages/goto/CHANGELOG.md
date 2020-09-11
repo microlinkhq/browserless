@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.18](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.17...v8.1.18) (2020-09-11)
+
+
+### Bug Fixes
+
+* wait for element after goto ([2188209](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/2188209727d6b7d1f89f12175cc394aa807c09a5))
+
+
+
+
+
 ## [8.1.17](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.16...v8.1.17) (2020-09-11)
 
 **Note:** Version bump only for package @browserless/goto
