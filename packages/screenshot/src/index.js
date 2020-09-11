@@ -23,6 +23,19 @@ const getBoundingClientRect = element => {
   return { top, left, height, width, x, y }
 }
 
+const waitForElement = async (page, element) => {
+  const screenshotOpts = {}
+
+  if (element) {
+    await page.waitForSelector(element, { visible: true })
+    screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
+    screenshotOpts.fullPage = false
+    return screenshotOpts
+  }
+
+  return screenshotOpts
+}
+
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
@@ -36,37 +49,35 @@ module.exports = ({ goto, ...gotoOpts }) => {
       ...opts
     } = {}
   ) => {
-    let screenshotOpts
     let screenshot
     let response
-
-    if (element) {
-      await page.waitForSelector(element, { visible: true })
-      screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
-      screenshotOpts.fullPage = false
-    }
 
     const timeScreenshot = timeSpan()
 
     if (waitUntil !== 'auto') {
-      ;({ response } = await goto(page, { ...opts, waitUntil, url }))
+      ;({ response } = await goto(page, { ...opts, url, waitUntil }))
+      const screenshotOpts = await waitForElement(page, element)
       screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
       debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
     } else {
-      const waitUntilAuto = async (page, screenshotOpts) => {
-        screenshot = await page.screenshot(screenshotOpts)
+      const waitUntilAuto = async () => {
+        const screenshotOpts = await waitForElement(page, element)
+        screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
+
         const isWhite = await isWhiteScreenshot(screenshot)
 
         if (isWhite) {
           await createGoto.waitUntilAuto(page, opts)
-          screenshot = await page.screenshot(screenshotOpts)
+          screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
         }
+
         debug('screenshot', {
           waitUntil,
           isWhite,
           duration: prettyMs(timeScreenshot())
         })
       }
+
       ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
     }
 
