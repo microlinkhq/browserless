@@ -38,7 +38,7 @@
     "ora": "~5.1.0",
     "pretty-bytes": "~5.4.1",
     "process-stats": "~3.5.2",
-    "puppeteer": "~5.2.1",
+    "puppeteer": "~5.3.0",
     "signal-exit": "~3.0.3",
     "simple-average": "~2.0.0",
     "term-img": "~5.0.0",
