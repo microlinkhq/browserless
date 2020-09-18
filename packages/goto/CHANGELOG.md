@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.20](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.19...v8.1.20) (2020-09-18)
+
+
+### Bug Fixes
+
+* ensure to remove no valid array elements ([41dbb19](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/41dbb19e413b789ea4ad55a2b17bc532b73209cc))
+
+
+
+
+
 ## [8.1.19](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.18...v8.1.19) (2020-09-12)
 
 **Note:** Version bump only for package @browserless/goto
