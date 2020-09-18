@@ -27,7 +27,7 @@ engine.on('request-redirected', ({ url }) => debugAdblock('redirect', url))
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
-const castArray = value => [].concat(value)
+const castArray = value => [].concat(value).filter(Boolean)
 
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
