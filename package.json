@@ -79,7 +79,7 @@
     "release": "lerna publish --yes --sort --conventional-commits -m \"chore(release): %s\" --create-release github",
     "test": "lerna exec npm run test",
     "update": "lerna exec ncu -- -u",
-    "update:check": "ncu -- --error-level 2"
+    "update:check": "ncu -- --errorLevel 2"
   },
   "private": true,
   "license": "MIT",
