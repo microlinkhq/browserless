@@ -35,7 +35,7 @@ const args = ({ proxy }) =>
     '--enable-tcp-fast-open',
     '--enable-webgl',
     '--hide-scrollbars',
-    '--ignore-gpu-blacklist',
+    '--ignore-gpu-blocklist',
     '--mute-audio',
     '--no-default-browser-check',
     '--no-pings',
