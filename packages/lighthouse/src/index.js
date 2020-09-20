@@ -45,7 +45,7 @@ module.exports = async (
     retries = 5,
     timeout = 30000,
     ...opts
-  }
+  } = {}
 ) => {
   const browserless = await getBrowserless()
   const browser = await browserless.browser

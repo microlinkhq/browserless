@@ -4,6 +4,12 @@ const test = require('ava')
 
 const lighthouse = require('..')
 
+test('default configuration', async t => {
+  const url = 'https://example.com'
+  const report = await lighthouse(url)
+  t.true(report.audits['screenshot-thumbnails'].details.items.length > 0)
+})
+
 test('passing custom configuration', async t => {
   const url = 'https://kikobeats.com'
   const report = await lighthouse(url, {
