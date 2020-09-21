@@ -7,6 +7,7 @@ const createGoto = require('@browserless/goto')
 const requireOneOf = require('require-one-of')
 const createPdf = require('@browserless/pdf')
 const parseProxy = require('parse-proxy-uri')
+const ensureError = require('ensure-error')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -62,14 +63,13 @@ module.exports = ({
       const { isFulfilled, value, reason } = await pReflect(fn(await createPage())(...args))
       await closePage()
       if (isFulfilled) return value
-      throw reason
+      throw ensureError('error' in reason ? reason.error : reason)
     }
 
     const task = () =>
       pRetry(run, {
         retries,
         onFailedAttempt: async error => {
-          if (!(error instanceof Error) && 'error' in error) error = error.error
           if (error.name === 'AbortError') throw error
           if (isRejected) throw new pRetry.AbortError()
           const { message, attemptNumber, retriesLeft } = error

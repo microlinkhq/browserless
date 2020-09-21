@@ -35,6 +35,7 @@
     "@browserless/pdf": "^8.1.22",
     "@browserless/screenshot": "^8.1.22",
     "debug-logfmt": "~1.0.4",
+    "ensure-error": "~3.0.1",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.2.0",
     "p-timeout": "~3.2.0",
