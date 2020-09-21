@@ -7,7 +7,6 @@ const createGoto = require('@browserless/goto')
 const requireOneOf = require('require-one-of')
 const createPdf = require('@browserless/pdf')
 const parseProxy = require('parse-proxy-uri')
-const ensureError = require('ensure-error')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -25,19 +24,20 @@ module.exports = ({
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
   const proxy = parseProxy(proxyUrl)
 
-  let browser = driver.spawn(puppeteer, {
-    defaultViewport: goto.defaultViewport,
-    timeout: 0,
-    proxy,
-    ...launchOpts
-  })
+  const spawn = () =>
+    driver.spawn(puppeteer, {
+      defaultViewport: goto.defaultViewport,
+      timeout: 0,
+      proxy,
+      ...launchOpts
+    })
+
+  let browser = spawn()
 
   const respawn = async () => {
-    const _browser = await browser
-    if (_browser) {
-      await driver.destroy(_browser)
-      browser = driver.spawn(puppeteer, launchOpts)
-    }
+    const { value } = await pReflect(browser)
+    await driver.destroy(value)
+    browser = spawn()
   }
 
   const createPage = async () => {
@@ -62,11 +62,15 @@ module.exports = ({
 
     const closePage = () => (page ? pReflect(page.close()) : undefined)
 
-    const run = async () => {
-      const { isFulfilled, value, reason } = await pReflect(fn(await createPage())(...args))
-      await closePage()
-      if (isFulfilled) return value
-      throw ensureError('error' in reason ? reason.error : reason)
+    async function run () {
+      try {
+        const value = fn(await createPage())(...args)
+        return value
+      } catch (error) {
+        throw 'error' in error ? error.error : error
+      } finally {
+        await closePage()
+      }
     }
 
     const task = () =>
@@ -75,9 +79,9 @@ module.exports = ({
         onFailedAttempt: async error => {
           if (error.name === 'AbortError') throw error
           if (isRejected) throw new pRetry.AbortError()
+          await respawn()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
-          await respawn()
         }
       })
 
