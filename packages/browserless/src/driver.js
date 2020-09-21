@@ -64,6 +64,7 @@ const spawn = (puppeteer, { proxy, ...launchOpts }) =>
   })
 
 const destroy = async browser => {
+  if (!browser) return
   const { pid } = browser.process()
   const { value: pids = [] } = await pReflect(pidtree(pid, { root: true }))
   fkill(pids)
