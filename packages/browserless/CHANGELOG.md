@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.26](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v8.1.25...v8.1.26) (2020-09-21)
+
+
+### Bug Fixes
+
+* only close page when under success ([f739d33](https://github.com/kikobeats/browserless/tree/master/packages/browserless/commit/f739d33d40b22290c56ccc4a9514c6cfa5f474bd))
+
+
+
+
+
 ## [8.1.25](https://github.com/kikobeats/browserless/tree/master/packages/browserless/compare/v8.1.24...v8.1.25) (2020-09-21)
 
 **Note:** Version bump only for package browserless
