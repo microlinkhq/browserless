@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.25](https://github.com/microlinkhq/browserless/compare/v8.1.24...v8.1.25) (2020-09-21)
+
+
+### Bug Fixes
+
+* execute waitUntilAuto at the end ([a88f6cb](https://github.com/microlinkhq/browserless/commit/a88f6cb556da9fb8bf7df9f338e9a77fa60c18e6))
+
+
+
+
+
 ## [8.1.24](https://github.com/microlinkhq/browserless/compare/v8.1.23...v8.1.24) (2020-09-21)
 
 

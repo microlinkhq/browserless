@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.25](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.24...v8.1.25) (2020-09-21)
+
+
+### Bug Fixes
+
+* execute waitUntilAuto at the end ([a88f6cb](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/a88f6cb556da9fb8bf7df9f338e9a77fa60c18e6))
+
+
+
+
+
 ## [8.1.22](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.21...v8.1.22) (2020-09-20)
 
 **Note:** Version bump only for package @browserless/goto
