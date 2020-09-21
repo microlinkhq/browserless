@@ -33,8 +33,11 @@ module.exports = ({
   })
 
   const respawn = async () => {
-    await driver.destroy(await browser)
-    browser = driver.spawn(puppeteer, launchOpts)
+    const _browser = await browser
+    if (_browser) {
+      await driver.destroy(_browser)
+      browser = driver.spawn(puppeteer, launchOpts)
+    }
   }
 
   const createPage = async () => {
