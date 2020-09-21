@@ -321,8 +321,6 @@ module.exports = ({
 
     const postPromises = []
 
-    if (isWaitUntilAuto) await waitUntilAuto(page, { timeout })
-
     if (waitFor) {
       await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
     }
@@ -378,6 +376,8 @@ module.exports = ({
         await run({ fn: page.$eval(scroll, scrollTo), debug: { scroll } })
       }
     }
+
+    if (isWaitUntilAuto) await waitUntilAuto(page, { timeout })
 
     return { response: value, device }
   }
