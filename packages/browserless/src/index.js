@@ -53,23 +53,25 @@ module.exports = ({
       pages: (await _browser.pages()).length - 1,
       proxy: !!proxy
     })
+
     return page
   }
 
+  const closePage = page => page && pReflect(page.close())
+
   const wrapError = fn => async (...args) => {
     let isRejected = false
-    let page
-
-    const closePage = () => (page ? pReflect(page.close()) : undefined)
 
     async function run () {
+      let page
       try {
-        const value = fn(await createPage())(...args)
+        page = await createPage()
+        const value = await fn(page)(...args)
         return value
       } catch (error) {
         throw 'error' in error ? error.error : error
       } finally {
-        await closePage()
+        await closePage(page)
       }
     }
 
