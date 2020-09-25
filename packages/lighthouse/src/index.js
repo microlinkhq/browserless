@@ -1,7 +1,7 @@
 'use strict'
 
+const { ensureError, browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless:lighthouse')
-const { browserTimeout } = require('@browserless/errors')
 const requireOneOf = require('require-one-of')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -11,8 +11,8 @@ const path = require('path')
 
 const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
-const getBrowser = async getBrowserless => {
-  const browserless = await getBrowserless()
+const getBrowser = async browserlessPromise => {
+  const browserless = await browserlessPromise
   const browser = await browserless.browser
   return browser
 }
@@ -59,22 +59,27 @@ module.exports = async (
     ...opts
   } = {}
 ) => {
+  const browserless = getBrowserless()
   const config = getConfig(opts)
 
   let isRejected = false
   let subprocess
 
   async function run () {
-    const browser = await getBrowser(getBrowserless)
-    const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
+    try {
+      const browser = await getBrowser(browserless)
+      const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-    subprocess = execa.node(lighthousePath)
-    subprocess.stderr.pipe(process.stderr)
+      subprocess = execa.node(lighthousePath)
+      subprocess.stderr.pipe(process.stderr)
 
-    debug('run', { pid: subprocess.pid })
-    subprocess.send({ url, flags, config })
+      debug('run', { pid: subprocess.pid })
+      subprocess.send({ url, flags, config })
 
-    return pEvent(subprocess, 'message')
+      return pEvent(subprocess, 'message')
+    } catch (error) {
+      throw ensureError(error)
+    }
   }
 
   const task = () =>
