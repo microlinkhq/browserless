@@ -22,3 +22,4 @@ error.browserTimeout = createBrowserlessError({
 error.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
 
 module.exports = error
+module.exports.ensureError = error => ('error' in error ? error.error : error)

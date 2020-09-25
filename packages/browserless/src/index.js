@@ -1,7 +1,7 @@
 'use strict'
 
+const { ensureError, browserTimeout } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
-const { browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const requireOneOf = require('require-one-of')
@@ -69,7 +69,7 @@ module.exports = ({
         const value = await fn(page)(...args)
         return value
       } catch (error) {
-        throw 'error' in error ? error.error : error
+        throw ensureError(error)
       } finally {
         await closePage(page)
       }
