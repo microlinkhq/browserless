@@ -29,8 +29,8 @@
   "dependencies": {
     "didyoumean3": "~1.2.3",
     "memoize-one": "~5.1.1",
-    "puppeteer-core": "~5.3.0",
-    "require-one-of": "~1.0.13"
+    "puppeteer-core": "~5.3.1",
+    "require-one-of": "~1.0.14"
   },
   "devDependencies": {
     "ava": "latest",
