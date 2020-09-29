@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.28](https://github.com/kikobeats/browserless/tree/master/packages/cli/compare/v8.1.27...v8.1.28) (2020-09-29)
+
+**Note:** Version bump only for package @browserless/cli
+
+
+
+
+
 ## [8.1.27](https://github.com/kikobeats/browserless/tree/master/packages/cli/compare/v8.1.26...v8.1.27) (2020-09-25)
 
 **Note:** Version bump only for package @browserless/cli
