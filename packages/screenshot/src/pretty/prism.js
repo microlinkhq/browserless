@@ -1,4 +1,4 @@
-/* PrismJS 1.21.0
+/* PrismJS 1.22.0
 https://prismjs.com/download.html#themes=prism&languages=clike+javascript */
 var _self =
     'undefined' != typeof window
@@ -408,7 +408,17 @@ Prism.languages.clike = {
     regex: {
       pattern: /((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)\/(?:\[(?:[^\]\\\r\n]|\\.)*]|\\.|[^/\\\[\r\n])+\/[gimyus]{0,6}(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/,
       lookbehind: !0,
-      greedy: !0
+      greedy: !0,
+      inside: {
+        'regex-source': {
+          pattern: /^(\/)[\s\S]+(?=\/[a-z]*$)/,
+          lookbehind: !0,
+          alias: 'language-regex',
+          inside: Prism.languages.regex
+        },
+        'regex-flags': /[a-z]+$/,
+        'regex-delimiter': /^\/|\/$/
+      }
     },
     'function-variable': {
       pattern: /#?[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*)\s*=>))/,
