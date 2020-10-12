@@ -32,7 +32,7 @@
     "debug-logfmt": "~1.0.4",
     "got": "~11.7.0",
     "is-html-content": "~1.0.0",
-    "is-url-http": "~2.1.2",
+    "is-url-http": "~2.2.0",
     "jimp": "~0.16.1",
     "map-values-deep": "~1.0.2",
     "mime-types": "~2.1.27",
