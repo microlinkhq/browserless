@@ -27,7 +27,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "didyoumean3": "~1.2.3",
+    "didyoumean3": "~1.2.5",
     "memoize-one": "~5.1.1",
     "puppeteer-core": "~5.3.1",
     "require-one-of": "~1.0.14"
