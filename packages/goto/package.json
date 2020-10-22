@@ -39,7 +39,7 @@
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
     "tldts": "~5.6.60",
-    "top-user-agents": "~1.0.14",
+    "top-user-agents": "~1.0.15",
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
