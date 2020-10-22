@@ -67,7 +67,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         const isWhite = await isWhiteScreenshot(screenshot)
 
         if (isWhite) {
-          await createGoto.waitUntilAuto(page, opts)
+          await goto.waitUntilAuto(page, opts)
           screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
         }
 

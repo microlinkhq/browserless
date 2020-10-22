@@ -13,7 +13,9 @@ const cli = require('meow')({
   help: require('./help')(commands)
 })
 
-const spinner = require('./spinner')
+const { verbose } = cli.flags
+
+const spinner = verbose ? require('./spinner') : { start: () => {}, stop: () => {} }
 
 const run = async () => {
   if (cli.input.length === 0) return cli.showHelp()
@@ -28,7 +30,7 @@ run()
   .then(result => {
     const stats = spinner.stop(result)
     if (result) console.log(result)
-    console.error(`\n${stats}`)
+    if (stats) console.error(`\n${stats}`)
     process.exit()
   })
   .catch(error => {

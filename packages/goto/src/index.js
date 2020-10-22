@@ -168,8 +168,10 @@ const run = async ({ fn, debug: props }) => {
 }
 
 // related https://github.com/puppeteer/puppeteer/issues/1353
-const autoFn = (page, { timeout }) =>
-  run({
+const createWaitUntilAuto = defaultOpts => (page, opts) => {
+  const { timeout } = { ...defaultOpts, ...opts }
+
+  return run({
     fn: pTimeout(
       Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle2' }),
@@ -179,6 +181,7 @@ const autoFn = (page, { timeout }) =>
     ),
     debug: { isWaitUntilAuto: true }
   })
+}
 
 module.exports = ({
   evasions = ALL_EVASIONS_KEYS,
@@ -193,6 +196,8 @@ module.exports = ({
   const applyEvasions = castArray(evasions)
     .filter(Boolean)
     .reduce((acc, key) => [...acc, EVASIONS[key]], [])
+
+  const _waitUntilAuto = createWaitUntilAuto({ timeout: baseTimeout })
 
   const goto = async (
     page,
@@ -216,7 +221,7 @@ module.exports = ({
       url,
       waitFor = 0,
       waitUntil = 'auto',
-      waitUntilAuto = autoFn,
+      waitUntilAuto = _waitUntilAuto,
       ...args
     }
   ) => {
@@ -387,6 +392,7 @@ module.exports = ({
   goto.findDevice = getDevice.findDevice
   goto.deviceDescriptors = getDevice.deviceDescriptors
   goto.defaultViewport = defaultViewport
+  goto.waitUntilAuto = _waitUntilAuto
 
   return goto
 }
@@ -395,4 +401,3 @@ module.exports.parseCookies = parseCookies
 module.exports.injectScripts = injectScripts
 module.exports.injectStyles = injectStyles
 module.exports.evasions = ALL_EVASIONS_KEYS
-module.exports.waitUntilAuto = autoFn
