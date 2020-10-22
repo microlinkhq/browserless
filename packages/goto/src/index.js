@@ -219,7 +219,10 @@ module.exports = ({
       timeout = baseTimeout,
       timezone,
       url,
-      waitFor = 0,
+      waitForSelector,
+      waitForTimeout,
+      waitForXPath,
+      waitForFunction,
       waitUntil = 'auto',
       waitUntilAuto = _waitUntilAuto,
       ...args
@@ -324,11 +327,16 @@ module.exports = ({
       debug: html ? 'html' : 'url'
     })
 
-    const postPromises = []
-
-    if (waitFor) {
-      await run({ fn: page.waitFor(waitFor), debug: { waitFor } })
+    for (const [key, value] of Object.entries({
+      waitForSelector,
+      waitForXPath,
+      waitForFunction,
+      waitForTimeout
+    })) {
+      if (value) await run({ fn: page[key](value), debug: { [key]: value } })
     }
+
+    const postPromises = []
 
     if (animations === false) {
       postPromises.push(injectCSS(page, disableAnimations))

@@ -683,12 +683,17 @@ The target URL.
 
 It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
-##### waitFor
+##### waitForSelector
 
-type:`string|function|number`</br>
-default: `0`
+type:`string`
 
-Wait a quantity of time, selector or function using [page.waitFor](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagewaitforselectororfunctionortimeout-options-args).
+Wait a quantity of time, selector or function using [page.waitForSelector](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#pagewaitforselectorselector-options).
+
+##### waitForTimeout
+
+type:`number`
+
+Wait a quantity of time, selector or function using [page.waitForTimeout](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#pagewaitfortimeoutmilliseconds).
 
 ##### waitUntil
 
