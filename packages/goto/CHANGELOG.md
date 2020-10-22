@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.33](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.32...v8.1.33) (2020-10-22)
+
+
+### Bug Fixes
+
+* handle waiters properly ([3ef41ba](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/3ef41ba475ea0f703219f1478e4fe63d87f5d10c))
+* pass timeout to waitUntilAuto ([#216](https://github.com/kikobeats/browserless/tree/master/packages/goto/issues/216)) ([638e031](https://github.com/kikobeats/browserless/tree/master/packages/goto/commit/638e031991b489f7b17ebb7f0b889c3f74e6c3cf))
+
+
+
+
+
 ## [8.1.32](https://github.com/kikobeats/browserless/tree/master/packages/goto/compare/v8.1.31...v8.1.32) (2020-10-21)
 
 **Note:** Version bump only for package @browserless/goto
