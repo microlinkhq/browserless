@@ -37,7 +37,7 @@
     "meow": "~8.0.0",
     "ora": "~5.1.0",
     "pretty-bytes": "~5.4.1",
-    "process-stats": "~3.5.3",
+    "process-stats": "~3.5.4",
     "puppeteer": "~5.4.1",
     "signal-exit": "~3.0.3",
     "simple-average": "~2.0.0",
