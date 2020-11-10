@@ -13,7 +13,7 @@ const fkill = pids =>
   })
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
-// default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
+// default flags: https://github.com/puppeteer/puppeteer/blob/main/src/node/Launcher.ts#L157
 // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
 const args = ({ proxy }) =>
   [
@@ -24,6 +24,10 @@ const args = ({ proxy }) =>
     '--disable-notifications',
     '--disable-offer-store-unmasked-wallet-cards',
     '--disable-offer-upload-credit-cards',
+    '--disable-features=TranslateUI,site-per-process',
+    '--ignore-certificate-errors',
+    '--allow-running-insecure-content',
+    '--force-webrtc-ip-handling-policy=default_public_interface_only',
     '--disable-print-preview',
     '--disable-speech-api',
     '--disable-tab-for-desktop-share',
@@ -44,6 +48,7 @@ const args = ({ proxy }) =>
     '--use-gl=swiftshader',
     '--no-sandbox',
     // extra
+    '--disable-gpu',
     '--disable-web-security',
     '--font-render-hinting=none', // could be 'none', 'medium'
     // '--enable-font-antialiasing'
