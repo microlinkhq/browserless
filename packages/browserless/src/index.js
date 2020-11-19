@@ -18,7 +18,7 @@ module.exports = ({
   incognito = false,
   timeout = 30000,
   proxy: proxyUrl,
-  retries = 5,
+  retry = 5,
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
@@ -77,7 +77,7 @@ module.exports = ({
 
     const task = () =>
       pRetry(run, {
-        retries,
+        retries: retry,
         onFailedAttempt: async error => {
           if (error.name === 'AbortError') throw error
           if (isRejected) throw new pRetry.AbortError()
