@@ -12,6 +12,13 @@ const error = message => {
       message: message.split(': ')[1]
     })
   }
+
+  if (message.startsWith('Evaluation failed')) {
+    const messages = message.split(': ')
+    return error.evaluationFailed({
+      message: messages[messages.length - 1]
+    })
+  }
 }
 
 error.browserTimeout = createBrowserlessError({
@@ -21,5 +28,11 @@ error.browserTimeout = createBrowserlessError({
 
 error.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
 
+error.evaluationFailed = createBrowserlessError({
+  code: 'EFAILEDEVAL',
+  message: 'Evaluation failed'
+})
+
+error.ensureError = error => ('error' in error ? error.error : error)
+
 module.exports = error
-module.exports.ensureError = error => ('error' in error ? error.error : error)
