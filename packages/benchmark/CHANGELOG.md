@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.38](https://github.com/kikobeats/browserless/tree/master/packages/benchmark/compare/v8.1.37...v8.1.38) (2020-11-19)
+
+
+### Bug Fixes
+
+* linter ([a4bca8e](https://github.com/kikobeats/browserless/tree/master/packages/benchmark/commit/a4bca8e52d4b6c79f6d8f9b56312b16415ac6470))
+
+
+
+
+
 ## [8.1.14](https://github.com/kikobeats/browserless/tree/master/packages/benchmark/compare/v8.1.13...v8.1.14) (2020-09-07)
 
 
