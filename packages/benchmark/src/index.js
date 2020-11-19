@@ -111,12 +111,12 @@ const main = async () => {
 
   const _createBrowserless = isPool
     ? () =>
-      createBrowserlessPool({
-        min: poolMin,
-        max: poolMax,
-        puppeteer,
-        ...opts
-      })
+        createBrowserlessPool({
+          min: poolMin,
+          max: poolMax,
+          puppeteer,
+          ...opts
+        })
     : () => createBrowserless({ puppeteer, ...opts })
 
   const { times, histogram } = await benchmark({

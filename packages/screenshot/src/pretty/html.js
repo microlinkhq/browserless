@@ -1,3 +1,7 @@
+/* eslint-disable prefer-regex-literals */
+
+'use strict'
+
 const mapValuesDeep = require('map-values-deep')
 const truncate = require('cli-truncate')
 
