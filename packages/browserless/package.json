@@ -40,7 +40,7 @@
     "p-timeout": "~3.2.0",
     "parse-proxy-uri": "~1.0.3",
     "pidtree": "~0.5.0",
-    "require-one-of": "~1.0.14"
+    "require-one-of": "~1.0.15"
   },
   "devDependencies": {
     "@browserless/test": "latest",

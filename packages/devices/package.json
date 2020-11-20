@@ -30,7 +30,7 @@
     "didyoumean3": "~1.2.5",
     "memoize-one": "~5.1.1",
     "puppeteer-core": "~5.5.0",
-    "require-one-of": "~1.0.14"
+    "require-one-of": "~1.0.15"
   },
   "devDependencies": {
     "ava": "latest",
