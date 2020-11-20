@@ -97,6 +97,7 @@ const scrollTo = (element, options) => {
   const parent = findScrollParent(element)
 
   if (parent !== undefined) {
+    parent.scrollIntoView(true)
     parent.scroll(offset.x, offset.y)
   }
 }
