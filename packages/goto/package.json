@@ -32,7 +32,7 @@
     "@cliqz/adblocker-puppeteer": "~1.18.8",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.0",
-    "is-url-http": "~2.2.1",
+    "is-url-http": "~2.2.2",
     "p-reflect": "~2.1.0",
     "p-timeout": "~3.2.0",
     "pretty-ms": "~7.0.1",
