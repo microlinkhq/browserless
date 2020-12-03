@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.43](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v8.1.42...v8.1.43) (2020-12-03)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
+
+
+
+
 ## [8.1.40](https://github.com/kikobeats/browserless/tree/master/packages/lighthouse/compare/v8.1.39...v8.1.40) (2020-11-20)
 
 **Note:** Version bump only for package @browserless/lighthouse
