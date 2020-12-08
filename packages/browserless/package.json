@@ -37,7 +37,7 @@
     "debug-logfmt": "~1.0.4",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.2.0",
-    "p-timeout": "~4.0.0",
+    "p-timeout": "~4.0.1",
     "parse-proxy-uri": "~1.0.3",
     "pidtree": "~0.5.0",
     "require-one-of": "~1.0.15"
