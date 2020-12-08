@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.44](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v8.1.43...v8.1.44) (2020-12-08)
+
+
+### Bug Fixes
+
+* close dialog before take the screenshot ([#220](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/220)) ([1312535](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/commit/1312535bd0aab58dff2c7b4af1d3cbcd378c8c3c)), closes [#issuecomment-723164059](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/issues/issuecomment-723164059)
+
+
+
+
+
 ## [8.1.43](https://github.com/kikobeats/browserless/tree/master/packages/screenshot/compare/v8.1.42...v8.1.43) (2020-12-03)
 
 **Note:** Version bump only for package @browserless/screenshot
