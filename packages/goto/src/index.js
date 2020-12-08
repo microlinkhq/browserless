@@ -176,7 +176,7 @@ const createWaitUntilAuto = defaultOpts => (page, opts) => {
     fn: pTimeout(
       Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle2' }),
-        page.evaluate(() => window.history.pushState(null, null, '#'))
+        page.evaluate(() => window.history.pushState(null, null, null))
       ]),
       timeout * (1 / 8)
     ),
