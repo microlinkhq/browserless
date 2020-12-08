@@ -11,10 +11,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kikobeats/browserless/tree/master/packages/screenshot"
+    "url": "https://github.com/microlinkhq/browserless/tree/master/packages/screenshot"
   },
   "bugs": {
-    "url": "https://github.com/Kikobeats/browserless/issues"
+    "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
     "browser",

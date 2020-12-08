@@ -1,7 +1,7 @@
 /* global codecopy */
 
 window.$docsify = {
-  repo: 'kikobeats/browserless',
+  repo: 'microlinkhq/browserless',
   maxLevel: 3,
   executeScript: true,
   auto2top: true,

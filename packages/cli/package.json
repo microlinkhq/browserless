@@ -13,10 +13,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kikobeats/browserless/tree/master/packages/cli"
+    "url": "https://github.com/microlinkhq/browserless/tree/master/packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/Kikobeats/browserless/issues"
+    "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
     "browser",

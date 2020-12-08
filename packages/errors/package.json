@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kikobeats/browserless/tree/master/packages/errors"
+    "url": "https://github.com/microlinkhq/browserless/tree/master/packages/errors"
   },
   "bugs": {
     "url": "https://github.com/microlinkhq/browserless"
