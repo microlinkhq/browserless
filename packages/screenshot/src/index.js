@@ -52,6 +52,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
     let screenshot
     let response
 
+    page.on('dialog', dialog => dialog.dismiss())
+
     const timeScreenshot = timeSpan()
 
     if (waitUntil !== 'auto') {
