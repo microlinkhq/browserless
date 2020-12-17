@@ -2,7 +2,7 @@
   "name": "@browserless/cli",
   "description": "CLI to interact with Browserless capabilities",
   "homepage": "https://browserless.js.org",
-  "version": "8.1.44",
+  "version": "8.1.45",
   "bin": {
     "browserless": "src/index.js"
   },
@@ -30,9 +30,9 @@
     "puppeteer"
   ],
   "dependencies": {
-    "@browserless/pool": "^8.0.9",
+    "@browserless/pool": "^8.1.45",
     "beauty-error": "~1.2.6",
-    "browserless": "^8.1.44",
+    "browserless": "^8.1.45",
     "kleur": "~4.1.3",
     "meow": "~8.0.0",
     "ora": "~5.1.0",
