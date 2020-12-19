@@ -52,43 +52,44 @@ module.exports = ({ goto, ...gotoOpts }) => {
     let screenshot
     let response
 
+    const prettify = async response => {
+      if (codeScheme && response) {
+        const headers = response.headers()
+        const contentType = getContentType(headers)
+
+        if (PRETTY_CONTENT_TYPES.includes(contentType)) {
+          await pReflect(pretty(page, response, { codeScheme, contentType, ...opts }))
+        }
+      }
+    }
+
+    const takeScreenshot = async opts => {
+      screenshot = await page.screenshot(opts)
+      const isWhite = await isWhiteScreenshot(screenshot)
+      if (isWhite) {
+        await goto.waitUntilAuto(page, opts)
+        screenshot = await page.screenshot(opts)
+      }
+      return { isWhite }
+    }
+
     page.on('dialog', dialog => dialog.dismiss())
 
     const timeScreenshot = timeSpan()
 
     if (waitUntil !== 'auto') {
       ;({ response } = await goto(page, { ...opts, url, waitUntil }))
+      await prettify(response)
       const screenshotOpts = await waitForElement(page, element)
       screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
       debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
     } else {
-      const waitUntilAuto = async () => {
-        const screenshotOpts = await waitForElement(page, element)
-        screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
-
-        const isWhite = await isWhiteScreenshot(screenshot)
-
-        if (isWhite) {
-          await goto.waitUntilAuto(page, opts)
-          screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
-        }
-
-        debug('screenshot', {
-          waitUntil,
-          isWhite,
-          duration: prettyMs(timeScreenshot())
-        })
-      }
-
       ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
-    }
-
-    if (codeScheme && response) {
-      const headers = response.headers()
-      const contentType = getContentType(headers)
-
-      if (PRETTY_CONTENT_TYPES.includes(contentType)) {
-        await pReflect(pretty(page, response, { codeScheme, contentType, ...opts }))
+      async function waitUntilAuto (page, { response }) {
+        await prettify(response)
+        const screenshotOpts = await waitForElement(page, element)
+        const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
+        debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
       }
     }
 

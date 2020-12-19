@@ -391,7 +391,7 @@ module.exports = ({
       }
     }
 
-    if (isWaitUntilAuto) await waitUntilAuto(page, { timeout })
+    if (isWaitUntilAuto) await waitUntilAuto(page, { response: value, timeout })
 
     return { response: value, device }
   }
