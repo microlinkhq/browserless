@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.1.46](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/compare/v8.1.45...v8.1.46) (2020-12-19)
+
+
+### Bug Fixes
+
+* apply pretty before take the screenshot ([#232](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/issues/232)) ([e28a94b](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/commit/e28a94b6a7689b08e3f0957f8ef46064fc455f15))
+
+
+
+
+
 ## [8.1.45](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/compare/v8.1.44...v8.1.45) (2020-12-17)
 
 **Note:** Version bump only for package @browserless/screenshot
