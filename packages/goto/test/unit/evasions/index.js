@@ -251,22 +251,6 @@ test('hide `webgl2` vendor', async t => {
   await page.close()
 })
 
-test('ensure window dimensions are defined', async t => {
-  const page = await browserless.page()
-
-  const windowOuterWidth = () => page.evaluate(() => window.outerWidth)
-  const windowOuterHeight = () => page.evaluate(() => window.outerHeight)
-  const windowInnerWidth = () => page.evaluate(() => window.innerWidth)
-  const windowInnerHeight = () => page.evaluate(() => window.innerHeight)
-
-  t.true((await windowOuterWidth()) > 0)
-  t.true((await windowOuterHeight()) > 0)
-  t.true((await windowInnerWidth()) > 0)
-  t.true((await windowInnerHeight()) > 0)
-
-  await page.close()
-})
-
 test('ensure broken images have dimensions', async t => {
   const page = await browserless.page()
 
