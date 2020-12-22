@@ -39,7 +39,7 @@ test('hide `navigator.webdriver`', async t => {
   await page.close()
 })
 
-test('ensure `navigator.hardwareConcurrency` is presnet', async t => {
+test('ensure `navigator.hardwareConcurrency` is present', async t => {
   const page = await browserless.page()
   const hardwareConcurrency = () => page.evaluate(() => window.navigator.hardwareConcurrency)
 
