@@ -38,7 +38,7 @@ test('antoinevastel.com/bots/fpstructured', async t => {
     })
 })
 
-test('device-info.fr/are_you_a_bot', async t => {
+test.skip('device-info.fr/are_you_a_bot', async t => {
   const browserless = createBrowserless({
     evasions: evasions.filter(evasion => evasion !== 'randomizeUserAgent')
   })
