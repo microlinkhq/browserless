@@ -173,24 +173,8 @@ test('ensure media codecs are present', async t => {
 test('ensure `console.debug` is defined', async t => {
   const page = await browserless.page()
 
-  const consoleDebug = () =>
-    page.evaluate(() => {
-      let gotYou = 0
-      const spooky = /./
-      spooky.toString = function () {
-        gotYou++
-        return 'spooky'
-      }
-      console.debug(spooky)
-      return gotYou
-    })
-
-  t.is(await consoleDebug(), 1)
-
-  await evasions.consoleDebug(page)
-  await page.goto(fileUrl)
-
-  t.is(await consoleDebug(), 0)
+  const consoleDebug = () => page.evaluate(() => !!console.debug)
+  t.is(await consoleDebug(), true)
 
   await page.close()
 })
