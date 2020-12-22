@@ -14,7 +14,7 @@ const browserless = createBrowserless({ evasions: false })
 
 onExit(browserless.destroy)
 
-test('randomize user agent', async t => {
+test('randomize `user-agent`', async t => {
   const page = await browserless.page()
   const userAgent = () => page.evaluate(() => window.navigator.userAgent)
 
@@ -27,7 +27,7 @@ test('randomize user agent', async t => {
   await page.close()
 })
 
-test('hide navigator.webdriver', async t => {
+test('hide `navigator.webdriver`', async t => {
   const page = await browserless.page()
   const webdriver = () => page.evaluate(() => window.navigator.webdriver)
   const javaEnabled = () => page.evaluate(() => navigator.javaEnabled())
@@ -35,6 +35,20 @@ test('hide navigator.webdriver', async t => {
   await page.goto(fileUrl)
   t.is(await webdriver(), undefined)
   t.is(await javaEnabled(), false)
+
+  await page.close()
+})
+
+test('ensure `navigator.hardwareConcurrency` is presnet', async t => {
+  const page = await browserless.page()
+  const hardwareConcurrency = () => page.evaluate(() => window.navigator.hardwareConcurrency)
+
+  await page.goto(fileUrl)
+
+  const n = await hardwareConcurrency()
+
+  t.true(typeof n === 'number')
+  t.true(n !== 0)
 
   await page.close()
 })
@@ -52,7 +66,7 @@ test('inject chrome runtime', async t => {
   await page.close()
 })
 
-test('override navigator.permissions', async t => {
+test('override `navigator.permissions`', async t => {
   const page = await browserless.page()
 
   const permissionStatusState = () =>
@@ -73,7 +87,7 @@ test('override navigator.permissions', async t => {
   await page.close()
 })
 
-test('mock navigator.plugins', async t => {
+test('mock `navigator.plugins`', async t => {
   const page = await browserless.page()
   const plugins = () => page.evaluate(() => window.navigator.plugins.length)
   const mimeTypes = () => page.evaluate(() => window.navigator.mimeTypes.length)
@@ -90,7 +104,7 @@ test('mock navigator.plugins', async t => {
   await page.close()
 })
 
-test('ensure navigator.languages is present', async t => {
+test('ensure `navigator.languages` is present', async t => {
   const page = await browserless.page()
 
   const languages = () => page.evaluate(() => window.navigator.languages)
@@ -156,7 +170,7 @@ test('ensure media codecs are present', async t => {
   await page.close()
 })
 
-test('console.debug is defined', async t => {
+test('ensure `console.debug` is defined', async t => {
   const page = await browserless.page()
 
   const consoleDebug = () =>
@@ -181,7 +195,7 @@ test('console.debug is defined', async t => {
   await page.close()
 })
 
-test('navigator.vendor is defined', async t => {
+test('ensure `navigator.vendor` is defined', async t => {
   const page = await browserless.page()
 
   const vendor = () => page.evaluate(() => window.navigator.vendor)
@@ -223,7 +237,7 @@ test('hide webgl vendor', async t => {
   await page.close()
 })
 
-test('hide webgl2 vendor', async t => {
+test('hide `webgl2` vendor', async t => {
   const page = await browserless.page()
 
   const webgl2 = () =>
@@ -253,7 +267,7 @@ test('hide webgl2 vendor', async t => {
   await page.close()
 })
 
-test('window dimensions are defined', async t => {
+test('ensure window dimensions are defined', async t => {
   const page = await browserless.page()
 
   const windowOuterWidth = () => page.evaluate(() => window.outerWidth)
@@ -269,7 +283,7 @@ test('window dimensions are defined', async t => {
   await page.close()
 })
 
-test('broken images have dimensions', async t => {
+test('ensure broken images have dimensions', async t => {
   const page = await browserless.page()
 
   const brokenImage = () =>
@@ -287,7 +301,7 @@ test('broken images have dimensions', async t => {
   await page.close()
 })
 
-test('remove puppeteer from stack traces', async t => {
+test('ensure to remove puppeteer from stack traces', async t => {
   const page = await browserless.page()
 
   const errorStackTrace = () =>
