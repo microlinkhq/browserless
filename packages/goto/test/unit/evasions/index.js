@@ -269,7 +269,7 @@ test('ensure broken images have dimensions', async t => {
   await page.close()
 })
 
-test('ensure to remove puppeteer from stack traces', async t => {
+test('sanetize stack traces', async t => {
   const page = await browserless.page()
 
   const errorStackTrace = () =>
@@ -280,7 +280,7 @@ test('ensure to remove puppeteer from stack traces', async t => {
 
   t.true((await errorStackTrace()).includes('puppeteer_evaluation_script'))
 
-  await evasions.errorStackTrace(page)
+  await evasions.stackTraces(page)
   await page.goto(fileUrl)
 
   t.false((await errorStackTrace()).includes('puppeteer_evaluation_script'))

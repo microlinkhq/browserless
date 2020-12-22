@@ -2,7 +2,7 @@
 
 module.exports = {
   chromeRuntime: require('./chrome-runtime'),
-  errorStackTrace: require('./error-stack-trace'),
+  stackTraces: require('./stack-traces'),
   mediaCodecs: require('./media-codecs'),
   navigatorPermissions: require('./navigator-permissions'),
   navigatorPlugins: require('./navigator-plugins'),
