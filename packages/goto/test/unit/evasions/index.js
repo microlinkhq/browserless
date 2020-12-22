@@ -33,14 +33,8 @@ test('hide navigator.webdriver', async t => {
   const javaEnabled = () => page.evaluate(() => navigator.javaEnabled())
 
   await page.goto(fileUrl)
-  t.false((await webdriver()) === undefined)
-  t.false((await javaEnabled()) === undefined)
-
-  await evasions.navigatorWebdriver(page)
-  await page.goto(fileUrl)
-
-  t.true((await webdriver()) === undefined)
-  t.false((await javaEnabled()) === undefined)
+  t.is(await webdriver(), undefined)
+  t.is(await javaEnabled(), false)
 
   await page.close()
 })

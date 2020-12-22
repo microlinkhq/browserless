@@ -43,6 +43,10 @@ const args = ({ proxy }) =>
     '--prerender-from-omnibox=disabled',
     '--use-gl=swiftshader',
     '--no-sandbox',
+    // disable navigator.webdriver
+    /// https://stackoverflow.com/a/60409220
+    // https://blog.m157q.tw/posts/2020/09/11/bypass-cloudflare-detection-while-using-selenium-with-chromedriver/
+    '--disable-blink-features=AutomationControlled',
     // extra
     '--disable-web-security',
     '--font-render-hinting=none', // could be 'none', 'medium'
