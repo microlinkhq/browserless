@@ -73,7 +73,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
       return { isWhite }
     }
 
-    page.on('dialog', dialog => dialog.dismiss())
+    page.on('dialog', dialog => pReflect(dialog.dismiss()))
 
     const timeScreenshot = timeSpan()
 
