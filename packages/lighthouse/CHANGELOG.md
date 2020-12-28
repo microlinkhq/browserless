@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.2.2](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse/compare/v8.2.1...v8.2.2) (2020-12-28)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
+
+
+
+
 ## [8.1.45](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse/compare/v8.1.44...v8.1.45) (2020-12-17)
 
 **Note:** Version bump only for package @browserless/lighthouse
