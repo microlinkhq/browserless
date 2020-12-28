@@ -30,7 +30,7 @@
     "lighthouse": "~6.5.0",
     "p-event": "~4.2.0",
     "p-retry": "~4.2.0",
-    "p-timeout": "~4.0.1",
+    "p-timeout": "~4.1.0",
     "require-one-of": "~1.0.15"
   },
   "devDependencies": {
