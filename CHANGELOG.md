@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.2.3](https://github.com/microlinkhq/browserless/compare/v8.2.2...v8.2.3) (2020-12-29)
+
+
+### Bug Fixes
+
+* ensure to handle page hang out ([#235](https://github.com/microlinkhq/browserless/issues/235)) ([0c62c88](https://github.com/microlinkhq/browserless/commit/0c62c8822731244195a201e347dcb6ffb2cefd63))
+
+
+
+
+
 ## [8.2.2](https://github.com/microlinkhq/browserless/compare/v8.2.1...v8.2.2) (2020-12-28)
 
 **Note:** Version bump only for package browserless
