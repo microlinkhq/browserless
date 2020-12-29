@@ -67,12 +67,21 @@ const spawn = (puppeteer, { proxy, ...launchOpts }) =>
     ...launchOpts
   })
 
+const getPids = async pid => {
+  const { value: pids = [] } = await pReflect(pidtree(pid))
+  if (!pids.includes(pid)) pids.push(pid)
+  return pids
+}
+
 const destroy = async browser => {
   if (!browser) return
+
   const { pid } = browser.process()
-  const { value: pids = [] } = await pReflect(pidtree(pid, { root: true }))
+  const pids = await getPids(pid)
+
   fkill(pids)
   debug('destroy', { pids })
+
   return { pids }
 }
 
