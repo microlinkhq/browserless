@@ -22,6 +22,7 @@ module.exports = ({
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
+  const pageTimeout = timeout / 2 / 8
   const proxy = parseProxy(proxyUrl)
 
   const spawn = () =>
@@ -43,7 +44,7 @@ module.exports = ({
   const createPage = async () => {
     const _browser = await browser
     const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
-    const page = await context.newPage()
+    const page = await pTimeout(context.newPage(), pageTimeout, 'page hang out')
 
     if (proxy) await page.authenticate(proxy)
 
