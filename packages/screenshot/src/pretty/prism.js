@@ -1,4 +1,4 @@
-/* PrismJS 1.22.0
+/* PrismJS 1.23.0
 https://prismjs.com/download.html#themes=prism&languages=clike+javascript */
 var _self =
     'undefined' != typeof window
@@ -9,13 +9,13 @@ var _self =
   Prism = (function (u) {
     var c = /\blang(?:uage)?-([\w-]+)\b/i,
       n = 0,
-      M = {
+      _ = {
         manual: u.Prism && u.Prism.manual,
         disableWorkerMessageHandler: u.Prism && u.Prism.disableWorkerMessageHandler,
         util: {
           encode: function e (n) {
-            return n instanceof W
-              ? new W(n.type, e(n.content), n.alias)
+            return n instanceof M
+              ? new M(n.type, e(n.content), n.alias)
               : Array.isArray(n)
               ? n.map(e)
               : n
@@ -31,14 +31,14 @@ var _self =
           },
           clone: function t (e, r) {
             var a, n
-            switch (((r = r || {}), M.util.type(e))) {
+            switch (((r = r || {}), _.util.type(e))) {
               case 'Object':
-                if (((n = M.util.objId(e)), r[n])) return r[n]
+                if (((n = _.util.objId(e)), r[n])) return r[n]
                 for (var i in ((a = {}), (r[n] = a), e)) e.hasOwnProperty(i) && (a[i] = t(e[i], r))
                 return a
               case 'Array':
                 return (
-                  (n = M.util.objId(e)),
+                  (n = _.util.objId(e)),
                   r[n]
                     ? r[n]
                     : ((a = []),
@@ -82,12 +82,12 @@ var _self =
         },
         languages: {
           extend: function (e, n) {
-            var t = M.util.clone(M.languages[e])
+            var t = _.util.clone(_.languages[e])
             for (var r in n) t[r] = n[r]
             return t
           },
           insertBefore: function (t, e, n, r) {
-            var a = (r = r || M.languages)[t],
+            var a = (r = r || _.languages)[t],
               i = {}
             for (var l in a)
               if (a.hasOwnProperty(l)) {
@@ -97,7 +97,7 @@ var _self =
             var s = r[t]
             return (
               (r[t] = i),
-              M.languages.DFS(M.languages, function (e, n) {
+              _.languages.DFS(_.languages, function (e, n) {
                 n === s && e != t && (this[e] = i)
               }),
               i
@@ -105,12 +105,12 @@ var _self =
           },
           DFS: function e (n, t, r, a) {
             a = a || {}
-            var i = M.util.objId
+            var i = _.util.objId
             for (var l in n)
               if (n.hasOwnProperty(l)) {
                 t.call(n, l, n[l], r || l)
                 var o = n[l],
-                  s = M.util.type(o)
+                  s = _.util.type(o)
                 'Object' !== s || a[i(o)]
                   ? 'Array' !== s || a[i(o)] || ((a[i(o)] = !0), e(o, t, l, a))
                   : ((a[i(o)] = !0), e(o, t, null, a))
@@ -119,7 +119,7 @@ var _self =
         },
         plugins: {},
         highlightAll: function (e, n) {
-          M.highlightAllUnder(document, e, n)
+          _.highlightAllUnder(document, e, n)
         },
         highlightAllUnder: function (e, n, t) {
           var r = {
@@ -128,14 +128,14 @@ var _self =
             selector:
               'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'
           }
-          M.hooks.run('before-highlightall', r),
+          _.hooks.run('before-highlightall', r),
             (r.elements = Array.prototype.slice.apply(r.container.querySelectorAll(r.selector))),
-            M.hooks.run('before-all-elements-highlight', r)
-          for (var a, i = 0; (a = r.elements[i++]); ) M.highlightElement(a, !0 === n, r.callback)
+            _.hooks.run('before-all-elements-highlight', r)
+          for (var a, i = 0; (a = r.elements[i++]); ) _.highlightElement(a, !0 === n, r.callback)
         },
         highlightElement: function (e, n, t) {
-          var r = M.util.getLanguage(e),
-            a = M.languages[r]
+          var r = _.util.getLanguage(e),
+            a = _.languages[r]
           e.className = e.className.replace(c, '').replace(/\s+/g, ' ') + ' language-' + r
           var i = e.parentElement
           i &&
@@ -144,33 +144,33 @@ var _self =
           var l = { element: e, language: r, grammar: a, code: e.textContent }
           function o (e) {
             ;(l.highlightedCode = e),
-              M.hooks.run('before-insert', l),
+              _.hooks.run('before-insert', l),
               (l.element.innerHTML = l.highlightedCode),
-              M.hooks.run('after-highlight', l),
-              M.hooks.run('complete', l),
+              _.hooks.run('after-highlight', l),
+              _.hooks.run('complete', l),
               t && t.call(l.element)
           }
-          if ((M.hooks.run('before-sanity-check', l), !l.code))
-            return M.hooks.run('complete', l), void (t && t.call(l.element))
-          if ((M.hooks.run('before-highlight', l), l.grammar))
+          if ((_.hooks.run('before-sanity-check', l), !l.code))
+            return _.hooks.run('complete', l), void (t && t.call(l.element))
+          if ((_.hooks.run('before-highlight', l), l.grammar))
             if (n && u.Worker) {
-              var s = new Worker(M.filename)
+              var s = new Worker(_.filename)
               ;(s.onmessage = function (e) {
                 o(e.data)
               }),
                 s.postMessage(
                   JSON.stringify({ language: l.language, code: l.code, immediateClose: !0 })
                 )
-            } else o(M.highlight(l.code, l.grammar, l.language))
-          else o(M.util.encode(l.code))
+            } else o(_.highlight(l.code, l.grammar, l.language))
+          else o(_.util.encode(l.code))
         },
         highlight: function (e, n, t) {
           var r = { code: e, grammar: n, language: t }
           return (
-            M.hooks.run('before-tokenize', r),
-            (r.tokens = M.tokenize(r.code, r.grammar)),
-            M.hooks.run('after-tokenize', r),
-            W.stringify(M.util.encode(r.tokens), r.language)
+            _.hooks.run('before-tokenize', r),
+            (r.tokens = _.tokenize(r.code, r.grammar)),
+            _.hooks.run('after-tokenize', r),
+            M.stringify(_.util.encode(r.tokens), r.language)
           )
         },
         tokenize: function (e, n) {
@@ -181,7 +181,7 @@ var _self =
           }
           var a = new i()
           return (
-            I(a, a.head, e),
+            z(a, a.head, e),
             (function e (n, t, r, a, i, l) {
               for (var o in r)
                 if (r.hasOwnProperty(o) && r[o]) {
@@ -193,57 +193,48 @@ var _self =
                       g = c.inside,
                       f = !!c.lookbehind,
                       h = !!c.greedy,
-                      d = 0,
-                      v = c.alias
+                      d = c.alias
                     if (h && !c.pattern.global) {
-                      var p = c.pattern.toString().match(/[imsuy]*$/)[0]
-                      c.pattern = RegExp(c.pattern.source, p + 'g')
+                      var v = c.pattern.toString().match(/[imsuy]*$/)[0]
+                      c.pattern = RegExp(c.pattern.source, v + 'g')
                     }
                     for (
-                      var m = c.pattern || c, y = a.next, k = i;
-                      y !== t.tail && !(l && k >= l.reach);
-                      k += y.value.length, y = y.next
+                      var p = c.pattern || c, m = a.next, y = i;
+                      m !== t.tail && !(l && y >= l.reach);
+                      y += m.value.length, m = m.next
                     ) {
-                      var b = y.value
+                      var k = m.value
                       if (t.length > n.length) return
-                      if (!(b instanceof W)) {
-                        var x = 1
-                        if (h && y != t.tail.prev) {
-                          m.lastIndex = k
-                          var w = m.exec(n)
-                          if (!w) break
-                          var A = w.index + (f && w[1] ? w[1].length : 0),
-                            P = w.index + w[0].length,
-                            S = k
-                          for (S += y.value.length; S <= A; ) (y = y.next), (S += y.value.length)
-                          if (((S -= y.value.length), (k = S), y.value instanceof W)) continue
+                      if (!(k instanceof M)) {
+                        var b,
+                          x = 1
+                        if (h) {
+                          if (!(b = W(p, y, n, f))) break
+                          var w = b.index,
+                            A = b.index + b[0].length,
+                            P = y
+                          for (P += m.value.length; P <= w; ) (m = m.next), (P += m.value.length)
+                          if (((P -= m.value.length), (y = P), m.value instanceof M)) continue
                           for (
-                            var E = y;
-                            E !== t.tail && (S < P || 'string' == typeof E.value);
-                            E = E.next
+                            var S = m;
+                            S !== t.tail && (P < A || 'string' == typeof S.value);
+                            S = S.next
                           )
-                            x++, (S += E.value.length)
-                          x--, (b = n.slice(k, S)), (w.index -= k)
-                        } else {
-                          m.lastIndex = 0
-                          var w = m.exec(b)
-                        }
-                        if (w) {
-                          f && (d = w[1] ? w[1].length : 0)
-                          var A = w.index + d,
-                            O = w[0].slice(d),
-                            P = A + O.length,
-                            L = b.slice(0, A),
-                            N = b.slice(P),
-                            j = k + b.length
-                          l && j > l.reach && (l.reach = j)
-                          var C = y.prev
-                          L && ((C = I(t, C, L)), (k += L.length)), z(t, C, x)
-                          var _ = new W(o, g ? M.tokenize(O, g) : O, v, O)
-                          ;(y = I(t, C, _)),
-                            N && I(t, y, N),
-                            1 < x && e(n, t, r, y.prev, k, { cause: o + ',' + u, reach: j })
-                        }
+                            x++, (P += S.value.length)
+                          x--, (k = n.slice(y, P)), (b.index -= y)
+                        } else if (!(b = W(p, 0, k, f))) continue
+                        var w = b.index,
+                          E = b[0],
+                          O = k.slice(0, w),
+                          L = k.slice(w + E.length),
+                          N = y + k.length
+                        l && N > l.reach && (l.reach = N)
+                        var j = m.prev
+                        O && ((j = z(t, j, O)), (y += O.length)), I(t, j, x)
+                        var C = new M(o, g ? _.tokenize(E, g) : E, d, E)
+                        ;(m = z(t, j, C)),
+                          L && z(t, m, L),
+                          1 < x && e(n, t, r, m.prev, y, { cause: o + ',' + u, reach: N })
                       }
                     }
                   }
@@ -260,36 +251,45 @@ var _self =
         hooks: {
           all: {},
           add: function (e, n) {
-            var t = M.hooks.all
+            var t = _.hooks.all
             ;(t[e] = t[e] || []), t[e].push(n)
           },
           run: function (e, n) {
-            var t = M.hooks.all[e]
+            var t = _.hooks.all[e]
             if (t && t.length) for (var r, a = 0; (r = t[a++]); ) r(n)
           }
         },
-        Token: W
+        Token: M
       }
-    function W (e, n, t, r) {
+    function M (e, n, t, r) {
       ;(this.type = e), (this.content = n), (this.alias = t), (this.length = 0 | (r || '').length)
+    }
+    function W (e, n, t, r) {
+      e.lastIndex = n
+      var a = e.exec(t)
+      if (a && r && a[1]) {
+        var i = a[1].length
+        ;(a.index += i), (a[0] = a[0].slice(i))
+      }
+      return a
     }
     function i () {
       var e = { value: null, prev: null, next: null },
         n = { value: null, prev: e, next: null }
       ;(e.next = n), (this.head = e), (this.tail = n), (this.length = 0)
     }
-    function I (e, n, t) {
+    function z (e, n, t) {
       var r = n.next,
         a = { value: t, prev: n, next: r }
       return (n.next = a), (r.prev = a), e.length++, a
     }
-    function z (e, n, t) {
+    function I (e, n, t) {
       for (var r = n.next, a = 0; a < t && r !== e.tail; a++) r = r.next
       ;((n.next = r).prev = n), (e.length -= a)
     }
     if (
-      ((u.Prism = M),
-      (W.stringify = function n (e, t) {
+      ((u.Prism = _),
+      (M.stringify = function n (e, t) {
         if ('string' == typeof e) return e
         if (Array.isArray(e)) {
           var r = ''
@@ -310,7 +310,7 @@ var _self =
           },
           i = e.alias
         i && (Array.isArray(i) ? Array.prototype.push.apply(a.classes, i) : a.classes.push(i)),
-          M.hooks.run('wrap', a)
+          _.hooks.run('wrap', a)
         var l = ''
         for (var o in a.attributes)
           l += ' ' + o + '="' + (a.attributes[o] || '').replace(/"/g, '&quot;') + '"'
@@ -332,7 +332,7 @@ var _self =
     )
       return (
         u.addEventListener &&
-          (M.disableWorkerMessageHandler ||
+          (_.disableWorkerMessageHandler ||
             u.addEventListener(
               'message',
               function (e) {
@@ -340,18 +340,18 @@ var _self =
                   t = n.language,
                   r = n.code,
                   a = n.immediateClose
-                u.postMessage(M.highlight(r, M.languages[t], t)), a && u.close()
+                u.postMessage(_.highlight(r, _.languages[t], t)), a && u.close()
               },
               !1
             )),
-        M
+        _
       )
-    var e = M.util.currentScript()
+    var e = _.util.currentScript()
     function t () {
-      M.manual || M.highlightAll()
+      _.manual || _.highlightAll()
     }
     if (
-      (e && ((M.filename = e.src), e.hasAttribute('data-manual') && (M.manual = !0)), !M.manual)
+      (e && ((_.filename = e.src), e.hasAttribute('data-manual') && (_.manual = !0)), !_.manual)
     ) {
       var r = document.readyState
       'loading' === r || ('interactive' === r && e && e.defer)
@@ -360,13 +360,13 @@ var _self =
         ? window.requestAnimationFrame(t)
         : window.setTimeout(t, 16)
     }
-    return M
+    return _
   })(_self)
 'undefined' != typeof module && module.exports && (module.exports = Prism),
   'undefined' != typeof global && (global.Prism = Prism)
 Prism.languages.clike = {
   comment: [
-    { pattern: /(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/, lookbehind: !0 },
+    { pattern: /(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/, lookbehind: !0, greedy: !0 },
     { pattern: /(^|[^\\:])\/\/.*/, lookbehind: !0, greedy: !0 }
   ],
   string: { pattern: /(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/, greedy: !0 },
@@ -378,7 +378,7 @@ Prism.languages.clike = {
   keyword: /\b(?:if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,
   boolean: /\b(?:true|false)\b/,
   function: /\w+(?=\()/,
-  number: /\b0x[\da-f]+\b|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?/i,
+  number: /\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,
   operator: /[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,
   punctuation: /[{}[\];(),.:]/
 }
@@ -386,7 +386,7 @@ Prism.languages.clike = {
   'class-name': [
     Prism.languages.clike['class-name'],
     {
-      pattern: /(^|[^$\w\xA0-\uFFFF])[_$A-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\.(?:prototype|constructor))/,
+      pattern: /(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:prototype|constructor))/,
       lookbehind: !0
     }
   ],
@@ -397,8 +397,8 @@ Prism.languages.clike = {
       lookbehind: !0
     }
   ],
+  function: /#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,
   number: /\b(?:(?:0[xX](?:[\dA-Fa-f](?:_[\dA-Fa-f])?)+|0[bB](?:[01](?:_[01])?)+|0[oO](?:[0-7](?:_[0-7])?)+)n?|(?:\d(?:_\d)?)+n|NaN|Infinity)\b|(?:\b(?:\d(?:_\d)?)+\.?(?:\d(?:_\d)?)*|\B\.(?:\d(?:_\d)?)+)(?:[Ee][+-]?(?:\d(?:_\d)?)+)?/,
-  function: /#?[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,
   operator: /--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/
 })),
   (Prism.languages.javascript[
@@ -421,26 +421,26 @@ Prism.languages.clike = {
       }
     },
     'function-variable': {
-      pattern: /#?[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*)\s*=>))/,
+      pattern: /#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,
       alias: 'function'
     },
     parameter: [
       {
-        pattern: /(function(?:\s+[_$A-Za-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*)?\s*\(\s*)(?!\s)(?:[^()]|\([^()]*\))+?(?=\s*\))/,
+        pattern: /(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,
         lookbehind: !0,
         inside: Prism.languages.javascript
       },
       {
-        pattern: /[_$a-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*=>)/i,
+        pattern: /(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,
         inside: Prism.languages.javascript
       },
       {
-        pattern: /(\(\s*)(?!\s)(?:[^()]|\([^()]*\))+?(?=\s*\)\s*=>)/,
+        pattern: /(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,
         lookbehind: !0,
         inside: Prism.languages.javascript
       },
       {
-        pattern: /((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:[_$A-Za-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()]|\([^()]*\))+?(?=\s*\)\s*\{)/,
+        pattern: /((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,
         lookbehind: !0,
         inside: Prism.languages.javascript
       }
