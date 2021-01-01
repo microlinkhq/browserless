@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [8.3.0](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/compare/v8.2.3...v8.3.0) (2021-01-01)
+
+**Note:** Version bump only for package browserless
+
+
+
+
+
 ## [8.2.3](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/compare/v8.2.2...v8.2.3) (2020-12-29)
 
 

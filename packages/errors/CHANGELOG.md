@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [8.3.0](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.2.3...v8.3.0) (2021-01-01)
+
+**Note:** Version bump only for package @browserless/errors
+
+
+
+
+
 ## [8.1.45](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.1.44...v8.1.45) (2020-12-17)
 
 **Note:** Version bump only for package @browserless/errors
