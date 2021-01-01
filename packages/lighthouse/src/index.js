@@ -73,7 +73,7 @@ module.exports = async (
       subprocess = execa.node(lighthousePath)
       subprocess.stderr.pipe(process.stderr)
 
-      debug('run', { pid: subprocess.pid })
+      debug('spawn', { pid: subprocess.pid })
       subprocess.send({ url, flags, config })
 
       return pEvent(subprocess, 'message')
@@ -88,10 +88,8 @@ module.exports = async (
       onFailedAttempt: async error => {
         if (error.name === 'AbortError') throw error
         if (isRejected) throw new pRetry.AbortError()
-
         destroySubprocess(subprocess, { reason: 'retry' })
-        await browserless.respawn()
-
+        browserless.respawn()
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
       }

@@ -82,10 +82,10 @@ module.exports = ({
     const task = () =>
       pRetry(run, {
         retries: retry,
-        onFailedAttempt: async error => {
+        onFailedAttempt: error => {
           if (error.name === 'AbortError') throw error
           if (isRejected) throw new pRetry.AbortError()
-          await respawn()
+          respawn()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
         }
