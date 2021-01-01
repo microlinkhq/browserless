@@ -32,7 +32,12 @@ module.exports = ({
       proxy,
       ...launchOpts
     })
-    promise.then(browser => debug('spawn', { pid: browser.process().pid, ...spawnOpts }))
+
+    pReflect(promise).then(
+      ({ value: browser }) =>
+        browser && debug('spawn', { pid: browser.process().pid, ...spawnOpts })
+    )
+
     return promise
   }
 
