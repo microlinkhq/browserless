@@ -11,16 +11,10 @@ const path = require('path')
 
 const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
-const getBrowser = async browserlessPromise => {
-  const browserless = await browserlessPromise
-  const browser = await browserless.browser
-  return browser
-}
-
 const destroySubprocess = (subprocess, { reason }) => {
-  if (!subprocess) return
-  subprocess.kill()
-  debug(`destroy:${reason}`, { pid: subprocess.pid })
+  if (!subprocess || subprocess.killed) return
+  subprocess.kill('SIGKILL')
+  debug('destroy', { pid: subprocess.pid, reason })
 }
 
 const getConfig = ({
@@ -67,7 +61,7 @@ module.exports = async (
 
   async function run () {
     try {
-      const browser = await getBrowser(browserless)
+      const browser = await browserless.browser
       const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
       subprocess = execa.node(lighthousePath)
