@@ -26,6 +26,11 @@ error.browserTimeout = createBrowserlessError({
   message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
 })
 
+error.browserDisconnected = createBrowserlessError({
+  code: 'EBRWSRCONNRESET',
+  message: 'The browser is not connected'
+})
+
 error.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
 
 error.evaluationFailed = createBrowserlessError({

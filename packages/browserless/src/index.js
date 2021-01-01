@@ -1,6 +1,6 @@
 'use strict'
 
-const { ensureError, browserTimeout } = require('@browserless/errors')
+const { ensureError, browserTimeout, browserDisconnected } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -22,7 +22,6 @@ module.exports = ({
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
-  const pageTimeout = timeout / 2 / 8
   const proxy = parseProxy(proxyUrl)
 
   const spawn = (spawnOpts = {}) => {
@@ -51,8 +50,10 @@ module.exports = ({
 
   const createPage = async () => {
     const browser = await browserPromise
+    if (!browser.isConnected()) throw browserDisconnected()
+
     const context = incognito ? await browser.createIncognitoBrowserContext() : browser
-    const page = await pTimeout(context.newPage(), pageTimeout, 'page hang out')
+    const page = await context.newPage()
 
     if (proxy) await page.authenticate(proxy)
 
