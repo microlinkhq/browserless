@@ -1,6 +1,12 @@
 'use strict'
 
-const { ensureError, browserTimeout } = require('@browserless/errors')
+const {
+  getError,
+  browserDisconnected,
+  ensureError,
+  browserTimeout
+} = require('@browserless/errors')
+
 const debug = require('debug-logfmt')('browserless:lighthouse')
 const requireOneOf = require('require-one-of')
 const pTimeout = require('p-timeout')
@@ -62,15 +68,19 @@ module.exports = async (
   async function run () {
     try {
       const browser = await browserless.browser
+      if (!browser.isConnected()) throw browserDisconnected()
+
       const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
       subprocess = execa.node(lighthousePath)
       subprocess.stderr.pipe(process.stderr)
-
       debug('spawn', { pid: subprocess.pid })
+
       subprocess.send({ url, flags, config })
 
-      return pEvent(subprocess, 'message')
+      const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
+      if (isFulfilled) return value
+      throw getError(reason)
     } catch (error) {
       throw ensureError(error)
     }

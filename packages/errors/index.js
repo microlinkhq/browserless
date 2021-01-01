@@ -6,7 +6,30 @@ const ERROR_NAME = 'BrowserlessError'
 
 const createBrowserlessError = opts => whoops(ERROR_NAME, opts)
 
-const error = message => {
+const error = {}
+
+error.browserTimeout = createBrowserlessError({
+  code: 'EBRWSRTIMEOUT',
+  message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
+})
+
+error.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
+
+error.evaluationFailed = createBrowserlessError({
+  code: 'EFAILEDEVAL',
+  message: 'Evaluation failed'
+})
+
+error.ensureError = error => ('error' in error ? error.error : error)
+
+error.browserDisconnected = createBrowserlessError({
+  code: 'EBRWSRCONNRESET',
+  message: 'The browser is not connected.'
+})
+
+error.getError = ({ code, message, ...rawError }) => {
+  if (code === 'ECONNREFUSED') return error.browserDisconnected(rawError)
+
   if (message.startsWith('Protocol error')) {
     return error.protocolError({
       message: message.split(': ')[1]
@@ -19,25 +42,8 @@ const error = message => {
       message: messages[messages.length - 1]
     })
   }
+
+  return rawError
 }
-
-error.browserTimeout = createBrowserlessError({
-  code: 'EBRWSRTIMEOUT',
-  message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
-})
-
-error.browserDisconnected = createBrowserlessError({
-  code: 'EBRWSRCONNRESET',
-  message: 'The browser is not connected'
-})
-
-error.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
-
-error.evaluationFailed = createBrowserlessError({
-  code: 'EFAILEDEVAL',
-  message: 'Evaluation failed'
-})
-
-error.ensureError = error => ('error' in error ? error.error : error)
 
 module.exports = error
