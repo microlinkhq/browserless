@@ -25,33 +25,36 @@ module.exports = ({
   const pageTimeout = timeout / 2 / 8
   const proxy = parseProxy(proxyUrl)
 
-  const spawn = () =>
-    driver.spawn(puppeteer, {
+  const spawn = (spawnOpts = {}) => {
+    const promise = driver.spawn(puppeteer, {
       defaultViewport: goto.defaultViewport,
       timeout: 0,
       proxy,
       ...launchOpts
     })
+    promise.then(browser => debug('spawn', { pid: browser.process().pid, ...spawnOpts }))
+    return promise
+  }
 
-  let browser = spawn()
+  let browserPromise = spawn()
 
   const respawn = async () => {
-    const { value } = await pReflect(browser)
+    const { value } = await pReflect(browserPromise)
     await driver.destroy(value)
-    browser = spawn()
+    browserPromise = spawn({ respawn: true })
   }
 
   const createPage = async () => {
-    const _browser = await browser
-    const context = incognito ? await _browser.createIncognitoBrowserContext() : _browser
+    const browser = await browserPromise
+    const context = incognito ? await browser.createIncognitoBrowserContext() : browser
     const page = await pTimeout(context.newPage(), pageTimeout, 'page hang out')
 
     if (proxy) await page.authenticate(proxy)
 
-    debug('new page', {
-      pid: _browser.process().pid,
+    debug('createPage', {
+      pid: browser.process().pid,
       incognito,
-      pages: (await _browser.pages()).length - 1,
+      pages: (await browser.pages()).length - 1,
       proxy: !!proxy
     })
 
@@ -102,9 +105,9 @@ module.exports = ({
 
   return {
     // low level methods
-    browser,
-    close: async () => (await browser).close(),
-    destroy: async opts => driver.destroy(await browser, opts),
+    browser: browserPromise,
+    close: async () => (await browserPromise).close(),
+    destroy: async opts => driver.destroy(await browserPromise, opts),
     respawn,
     // high level methods
     evaluate,
