@@ -67,7 +67,7 @@ module.exports = async (
 
   async function run () {
     try {
-      const browser = await browserless.browser
+      const browser = await (await browserless).browser
       if (!browser.isConnected()) throw browserDisconnected()
 
       const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
