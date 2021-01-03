@@ -72,7 +72,7 @@ module.exports = async (
 
       const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-      subprocess = execa.node(lighthousePath)
+      subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
       subprocess.stderr.pipe(process.stderr)
       debug('spawn', { pid: subprocess.pid })
 
