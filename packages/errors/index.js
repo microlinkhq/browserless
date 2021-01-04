@@ -27,7 +27,7 @@ error.browserDisconnected = createBrowserlessError({
   message: 'The browser is not connected.'
 })
 
-error.getError = ({ code, message, ...rawError }) => {
+error.getError = ({ code, message = '', ...rawError }) => {
   if (code === 'ECONNREFUSED') return error.browserDisconnected(rawError)
 
   if (message.startsWith('Protocol error')) {
