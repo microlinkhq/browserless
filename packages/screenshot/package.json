@@ -35,7 +35,7 @@
     "is-url-http": "~2.2.2",
     "jimp": "~0.16.1",
     "map-values-deep": "~1.0.2",
-    "mime-types": "~2.1.27",
+    "mime-types": "~2.1.28",
     "p-reflect": "~2.1.0",
     "pretty-ms": "~7.0.1",
     "prism-themes": "~1.5.0",
