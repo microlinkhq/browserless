@@ -57,8 +57,8 @@ const args = ({ proxy }) =>
     proxy && `--proxy-server=${proxy.protocol}://${proxy.hostname}:${proxy.port}`
   ].filter(Boolean)
 
-const spawn = (puppeteer, { proxy, ...launchOpts }) =>
-  puppeteer.launch({
+const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
+  puppeteer[mode]({
     ignoreHTTPSErrors: true,
     // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
     // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
@@ -73,11 +73,20 @@ const getPids = async pid => {
   return pids
 }
 
-const destroy = async browser => {
-  if (!browser) return
+const process = browser => {
+  if (!browser) return {}
 
-  const { pid } = browser.process()
-  const pids = await getPids(pid)
+  const browserProcess = browser.process()
+  if (!browserProcess) return {}
+
+  return browserProcess
+}
+
+const destroy = async browser => {
+  const { pid } = process(browser)
+  if (!pid) return
+
+  const pids = await getPids()
 
   fkill(pids)
   debug('destroy', { pids })
@@ -85,4 +94,4 @@ const destroy = async browser => {
   return { pids }
 }
 
-module.exports = { spawn, destroy, args }
+module.exports = { process, spawn, destroy, args }

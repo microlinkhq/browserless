@@ -34,7 +34,11 @@ module.exports = ({
 
     pReflect(promise).then(
       ({ value: browser }) =>
-        browser && debug('spawn', { pid: browser.process().pid, ...spawnOpts })
+        browser &&
+        debug('spawn', {
+          pid: driver.process(browser).pid || launchOpts.mode,
+          ...spawnOpts
+        })
     )
 
     return promise
@@ -58,7 +62,7 @@ module.exports = ({
     if (proxy) await page.authenticate(proxy)
 
     debug('createPage', {
-      pid: browser.process().pid,
+      pid: driver.process(browser).pid || launchOpts.mode,
       incognito,
       pages: (await browser.pages()).length - 1,
       proxy: !!proxy

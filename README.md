@@ -111,6 +111,14 @@ browserless.getDevice({ device: 'macboo pro' })
 
 This setting is oriented for find the device even if the descriptor device name is not exactly the same.
 
+##### mode
+
+type: `string`</br>
+default: `launch`</br>
+values: `'launch'` | `'connect'`
+
+It defines if browser should be spawned using [puppeteer.launch](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerlaunchoptions) or [puppeteer.connect](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerconnectoptions)
+
 ##### timeout
 
 type: `number`</br>
