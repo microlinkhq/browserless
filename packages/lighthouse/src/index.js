@@ -8,7 +8,6 @@ const {
 } = require('@browserless/errors')
 
 const debug = require('debug-logfmt')('browserless:lighthouse')
-const requireOneOf = require('require-one-of')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 const pEvent = require('p-event')
@@ -51,7 +50,7 @@ module.exports = async (
   url,
   {
     disableStorageReset,
-    getBrowserless = requireOneOf(['browserless']),
+    getBrowserless = require('browserless'),
     logLevel,
     output,
     retries = 5,

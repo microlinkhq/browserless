@@ -821,7 +821,7 @@ Additionally, you can setup:
 ##### getBrowserless
 
 type: `function`</br>
-default: `requireOneOf(['browserless'])`
+default: `require('browserless')`
 
 The browserless instance to use for getting the browser.
 
