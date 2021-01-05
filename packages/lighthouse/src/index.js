@@ -92,7 +92,7 @@ module.exports = async (
         if (error.name === 'AbortError') throw error
         if (isRejected) throw new pRetry.AbortError()
         destroySubprocess(subprocess, { reason: 'retry' })
-        browserless.respawn()
+        browserless.then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
       }
