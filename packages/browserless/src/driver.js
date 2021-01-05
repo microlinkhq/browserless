@@ -69,18 +69,10 @@ const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
 
 const getPids = async pid => {
   const { value: pids = [] } = await pReflect(pidtree(pid))
-  if (!pids.includes(pid)) pids.push(pid)
-  return pids
+  return pids.includes(pid) ? pids : [...pids, pid]
 }
 
-const process = browser => {
-  if (!browser) return {}
-
-  const browserProcess = browser.process()
-  if (!browserProcess) return {}
-
-  return browserProcess
-}
+const process = browser => (!browser ? {} : browser.process() || {})
 
 const destroy = async browser => {
   const { pid } = process(browser)
