@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.4.4](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.4.3...v8.4.4) (2021-01-05)
+
+
+### Bug Fixes
+
+* ensure error code is a string ([7cb4e15](https://github.com/microlinkhq/browserless/tree/master/packages/errors/commit/7cb4e15a01595e052fa72ad1543b4ebc91476594))
+
+
+
+
+
 ## [8.4.1](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.4.0...v8.4.1) (2021-01-04)
 
 
