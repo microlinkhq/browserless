@@ -9,7 +9,9 @@ const fkill = pids =>
   pids.forEach(pid => {
     try {
       process.kill(pid, 'SIGKILL')
-    } catch (_) {}
+    } catch (error) {
+      debug('error', error.message || error)
+    }
   })
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
@@ -58,7 +60,7 @@ const args = ({ proxy }) =>
   ].filter(Boolean)
 
 const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
-  (mode === 'launch' ? puppeteer.launch : puppeteer.connect).call(puppeteer, {
+  puppeteer[mode]({
     ignoreHTTPSErrors: true,
     // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
     // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
@@ -72,10 +74,10 @@ const getPids = async pid => {
   return pids.includes(pid) ? pids : [...pids, pid]
 }
 
-const process = browser => (!browser ? {} : browser.process() || {})
+const get = browser => (!browser ? {} : browser.process() || {})
 
 const destroy = async browser => {
-  const { pid } = process(browser)
+  const { pid } = get(browser)
   if (!pid) return
 
   const pids = await getPids(pid)
@@ -86,4 +88,4 @@ const destroy = async browser => {
   return { pids }
 }
 
-module.exports = { process, spawn, destroy, args }
+module.exports = { get, spawn, destroy, args }
