@@ -31,7 +31,7 @@
   ],
   "dependencies": {
     "@browserless/pool": "^8.1.45",
-    "beauty-error": "~1.2.7",
+    "beauty-error": "~1.2.8",
     "browserless": "^8.4.3",
     "kleur": "~4.1.3",
     "meow": "~8.1.0",
