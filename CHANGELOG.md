@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.4.3](https://github.com/microlinkhq/browserless/compare/v8.4.2...v8.4.3) (2021-01-05)
+
+
+### Bug Fixes
+
+* get pids from parent ([a50f2ed](https://github.com/microlinkhq/browserless/commit/a50f2ed61c5c589b8153def279bfd66f40df33d4))
+
+
+
+
+
 ## [8.4.2](https://github.com/microlinkhq/browserless/compare/v8.4.1...v8.4.2) (2021-01-05)
 
 
