@@ -58,7 +58,7 @@ const args = ({ proxy }) =>
   ].filter(Boolean)
 
 const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
-  puppeteer[mode]({
+  (mode === 'launch' ? puppeteer.launch : puppeteer.connect)({
     ignoreHTTPSErrors: true,
     // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
     // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
