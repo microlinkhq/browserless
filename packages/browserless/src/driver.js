@@ -86,7 +86,7 @@ const destroy = async browser => {
   const { pid } = process(browser)
   if (!pid) return
 
-  const pids = await getPids()
+  const pids = await getPids(pid)
 
   fkill(pids)
   debug('destroy', { pids })
