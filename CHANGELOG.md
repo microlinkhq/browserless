@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.4.2](https://github.com/microlinkhq/browserless/compare/v8.4.1...v8.4.2) (2021-01-05)
+
+
+### Bug Fixes
+
+* wait promise before call it ([56d52b9](https://github.com/microlinkhq/browserless/commit/56d52b94950973e7e86b172d7a0b72ea45019612))
+
+
+
+
+
 ## [8.4.1](https://github.com/microlinkhq/browserless/compare/v8.4.0...v8.4.1) (2021-01-04)
 
 
