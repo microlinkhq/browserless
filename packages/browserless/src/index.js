@@ -46,6 +46,12 @@ module.exports = ({
 
   let browserPromise = spawn()
 
+  const getBrowser = async () => {
+    const browser = await browserPromise
+    if (!browser.isConnected()) throw browserDisconnected()
+    return browser
+  }
+
   const respawn = async () => {
     const { value } = await pReflect(browserPromise)
     await driver.destroy(value)
@@ -53,9 +59,7 @@ module.exports = ({
   }
 
   const createPage = async () => {
-    const browser = await browserPromise
-    if (!browser.isConnected()) throw browserDisconnected()
-
+    const browser = await getBrowser()
     const context = incognito ? await browser.createIncognitoBrowserContext() : browser
     const page = await context.newPage()
 
@@ -74,35 +78,24 @@ module.exports = ({
   const closePage = page => page && pReflect(page.close())
 
   const wrapError = fn => async (...args) => {
-    let isRejected = false
-
     async function run () {
-      let page
-      try {
-        page = await createPage()
-        const value = await fn(page)(...args)
-        return value
-      } catch (error) {
-        throw ensureError(error)
-      } finally {
-        await closePage(page)
-      }
+      const page = await createPage()
+      const value = await fn(page)(...args)
+      await closePage(page)
+      return value
     }
 
     const task = () =>
       pRetry(run, {
         retries: retry,
         onFailedAttempt: error => {
-          if (error.name === 'AbortError') throw error
-          if (isRejected) throw new pRetry.AbortError()
           respawn()
-          const { message, attemptNumber, retriesLeft } = error
+          const { message, attemptNumber, retriesLeft } = ensureError(error)
           debug('retry', { attemptNumber, retriesLeft, message })
         }
       })
 
     return pTimeout(task(), timeout, () => {
-      isRejected = true
       throw browserTimeout({ timeout })
     })
   }
@@ -115,7 +108,7 @@ module.exports = ({
 
   return {
     // low level methods
-    browser: browserPromise,
+    browser: getBrowser,
     close: async () => (await browserPromise).close(),
     destroy: async opts => driver.destroy(await browserPromise, opts),
     respawn,

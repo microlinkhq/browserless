@@ -1,12 +1,6 @@
 'use strict'
 
-const {
-  getError,
-  browserDisconnected,
-  ensureError,
-  browserTimeout
-} = require('@browserless/errors')
-
+const { ensureError, browserDisconnected, browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless:lighthouse')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -18,8 +12,12 @@ const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
 const destroySubprocess = (subprocess, { reason }) => {
   if (!subprocess || subprocess.killed) return
-  subprocess.kill('SIGKILL')
-  debug('destroy', { pid: subprocess.pid, reason })
+  try {
+    subprocess.kill('SIGKILL')
+    debug('destroy', { pid: subprocess.pid, reason })
+  } catch (error) {
+    debug('error', { pid: subprocess.pid, reason, message: error.message || error })
+  }
 }
 
 const getConfig = ({
@@ -60,47 +58,34 @@ module.exports = async (
 ) => {
   const browserless = getBrowserless()
   const config = getConfig(opts)
-
-  let isRejected = false
   let subprocess
 
   async function run () {
-    try {
-      const browser = await (await browserless).browser
-      if (!browser.isConnected()) throw browserDisconnected()
+    const browser = await (await browserless).browser()
+    const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-      const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
+    subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
+    subprocess.stderr.pipe(process.stderr)
+    debug('spawn', { pid: subprocess.pid })
+    subprocess.send({ url, flags, config })
 
-      subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
-      subprocess.stderr.pipe(process.stderr)
-      debug('spawn', { pid: subprocess.pid })
-
-      subprocess.send({ url, flags, config })
-
-      const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
-      if (isFulfilled) return value
-      throw ensureError(reason)
-    } catch (error) {
-      throw ensureError(error)
-    }
+    const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
+    if (isFulfilled) return value
+    throw ensureError(reason)
   }
 
   const task = () =>
     pRetry(run, {
       retries,
       onFailedAttempt: async error => {
-        if (error.name === 'AbortError') throw error
-        if (isRejected) throw new pRetry.AbortError()
         destroySubprocess(subprocess, { reason: 'retry' })
         browserless.then(browserless => browserless.respawn())
-        const { message, attemptNumber, retriesLeft } = error
+        const { message, attemptNumber, retriesLeft } = ensureError(error)
         debug('retry', { attemptNumber, retriesLeft, message })
       }
     })
 
-  // main
   const result = await pTimeout(task(), timeout, () => {
-    isRejected = true
     destroySubprocess(subprocess, { reason: 'timeout' })
     throw browserTimeout({ timeout })
   })
