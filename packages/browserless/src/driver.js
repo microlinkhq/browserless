@@ -10,7 +10,7 @@ const fkill = pids =>
     try {
       process.kill(pid, 'SIGKILL')
     } catch (error) {
-      debug('error', error.message || error)
+      debug('error', { pid, message: error.message || error })
     }
   })
 
