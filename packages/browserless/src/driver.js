@@ -1,18 +1,6 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless')
-const pReflect = require('p-reflect')
-const pidtree = require('pidtree')
-
-// TODO: Use https://github.com/sindresorhus/fkill/pull/34
-const fkill = pids =>
-  pids.forEach(pid => {
-    try {
-      process.kill(pid, 'SIGKILL')
-    } catch (error) {
-      debug('error', { pid, message: error.message || error })
-    }
-  })
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
 // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
@@ -69,23 +57,22 @@ const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
     ...launchOpts
   })
 
-const getPids = async pid => {
-  const { value: pids = [] } = await pReflect(pidtree(pid))
-  return pids.includes(pid) ? pids : [...pids, pid]
-}
-
 const get = browser => (!browser ? {} : browser.process() || {})
 
-const destroy = async browser => {
-  const { pid } = get(browser)
+const destroy = async (browser, { signal = 'SIGKILL' } = {}) => {
+  const browserProcess = get(browser)
+
+  const { pid } = browserProcess
   if (!pid) return
 
-  const pids = await getPids(pid)
+  try {
+    browserProcess.kill(signal)
+    debug('destroy', { pid, signal })
+  } catch (error) {
+    debug('error', { pid, signal, message: error.message || error })
+  }
 
-  fkill(pids)
-  debug('destroy', { pids })
-
-  return { pids }
+  return { pid }
 }
 
 module.exports = { get, spawn, destroy, args }
