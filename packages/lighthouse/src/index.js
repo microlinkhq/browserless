@@ -79,7 +79,7 @@ module.exports = async (
 
       const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
       if (isFulfilled) return value
-      throw getError(reason)
+      throw ensureError(reason)
     } catch (error) {
       throw ensureError(error)
     }

@@ -4,7 +4,7 @@ const test = require('ava')
 const errors = require('..')
 
 test('protocolError', t => {
-  const parsedError = errors.getError({
+  const parsedError = errors.ensureError({
     message: 'Protocol error (Runtime.callFunctionOn): Target closed.'
   })
 
@@ -21,7 +21,7 @@ test('protocolError', t => {
 })
 
 test('browserDisconnected', t => {
-  const parsedError = errors.getError({ code: 'ECONNREFUSED' })
+  const parsedError = errors.ensureError({ code: 'ECONNREFUSED' })
 
   t.true(parsedError instanceof Error)
   t.is(parsedError.name, 'BrowserlessError')
@@ -45,7 +45,7 @@ test('browserTimeout', t => {
 })
 
 test('evaluationFailed', t => {
-  const parsedError = errors.getError({
+  const parsedError = errors.ensureError({
     message: "Evaluation failed: TypeError: Cannot read property 'bar' of undefined"
   })
 

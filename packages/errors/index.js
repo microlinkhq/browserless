@@ -6,44 +6,44 @@ const ERROR_NAME = 'BrowserlessError'
 
 const createBrowserlessError = opts => whoops(ERROR_NAME, opts)
 
-const error = {}
+const browserlessError = {}
 
-error.browserTimeout = createBrowserlessError({
+browserlessError.browserTimeout = createBrowserlessError({
   code: 'EBRWSRTIMEOUT',
   message: ({ timeout }) => `Promise timed out after ${timeout} milliseconds`
 })
 
-error.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
+browserlessError.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
 
-error.evaluationFailed = createBrowserlessError({
+browserlessError.evaluationFailed = createBrowserlessError({
   code: 'EFAILEDEVAL',
   message: 'Evaluation failed'
 })
 
-error.ensureError = error => ('error' in error ? error.error : error)
-
-error.browserDisconnected = createBrowserlessError({
+browserlessError.browserDisconnected = createBrowserlessError({
   code: 'EBRWSRCONNRESET',
   message: 'The browser is not connected.'
 })
 
-error.getError = ({ code = '', message = '', ...rawError } = {}) => {
-  if (code === 'ECONNREFUSED') return error.browserDisconnected(rawError)
+browserlessError.ensureError = rawError => {
+  const error = 'error' in rawError ? rawError.error : rawError
 
-  if (message.startsWith('Protocol error')) {
-    return error.protocolError({
-      message: message.split(': ')[1]
+  if (error.code === 'ECONNREFUSED') return browserlessError.browserDisconnected()
+
+  if (error.message.startsWith('Protocol error')) {
+    return browserlessError.protocolError({
+      message: error.message.split(': ')[1]
     })
   }
 
-  if (message.startsWith('Evaluation failed')) {
-    const messages = message.split(': ')
-    return error.evaluationFailed({
+  if (error.message.startsWith('Evaluation failed')) {
+    const messages = error.message.split(': ')
+    return browserlessError.evaluationFailed({
       message: messages[messages.length - 1]
     })
   }
 
-  return rawError
+  return error
 }
 
-module.exports = error
+module.exports = browserlessError
