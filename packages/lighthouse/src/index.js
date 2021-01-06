@@ -1,6 +1,6 @@
 'use strict'
 
-const { ensureError, browserDisconnected, browserTimeout } = require('@browserless/errors')
+const { ensureError, browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless:lighthouse')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
