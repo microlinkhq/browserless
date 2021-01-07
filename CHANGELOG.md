@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.5.2](https://github.com/microlinkhq/browserless/compare/v8.5.1...v8.5.2) (2021-01-07)
+
+
+### Bug Fixes
+
+* **lighthouse:** ensure exception is an error ([874dfbe](https://github.com/microlinkhq/browserless/commit/874dfbe18f483f6df2274e113e33ca9a574d13b2))
+
+
+
+
+
 ## [8.5.1](https://github.com/microlinkhq/browserless/compare/v8.5.0...v8.5.1) (2021-01-07)
 
 

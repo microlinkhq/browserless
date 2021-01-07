@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.5.2](https://github.com/microlinkhq/browserless/tree/master/packages/goto/compare/v8.5.1...v8.5.2) (2021-01-07)
+
+
+### Bug Fixes
+
+* **lighthouse:** ensure exception is an error ([874dfbe](https://github.com/microlinkhq/browserless/tree/master/packages/goto/commit/874dfbe18f483f6df2274e113e33ca9a574d13b2))
+
+
+
+
+
 ## [8.2.2](https://github.com/microlinkhq/browserless/tree/master/packages/goto/compare/v8.2.1...v8.2.2) (2020-12-28)
 
 **Note:** Version bump only for package @browserless/goto
