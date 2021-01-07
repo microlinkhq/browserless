@@ -79,10 +79,14 @@ module.exports = ({
 
   const wrapError = fn => async (...args) => {
     async function run () {
-      const page = await createPage()
-      const value = await fn(page)(...args)
-      await closePage(page)
-      return value
+      try {
+        const page = await createPage()
+        const value = await fn(page)(...args)
+        await closePage(page)
+        return value
+      } catch (error) {
+        throw ensureError(error)
+      }
     }
 
     const task = () =>
@@ -90,7 +94,7 @@ module.exports = ({
         retries: retry,
         onFailedAttempt: error => {
           respawn()
-          const { message, attemptNumber, retriesLeft } = ensureError(error)
+          const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
         }
       })
