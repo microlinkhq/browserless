@@ -1,7 +1,8 @@
 language: node_js
 
 node_js:
-  - 13
+  - lts/*
+  - node
 
 after_success: npm run coverage
 
