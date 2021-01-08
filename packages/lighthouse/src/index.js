@@ -2,6 +2,7 @@
 
 const { ensureError, browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless:lighthouse')
+const { driver } = require('browserless')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 const pEvent = require('p-event')
@@ -9,16 +10,6 @@ const execa = require('execa')
 const path = require('path')
 
 const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
-
-const destroySubprocess = (subprocess, { reason }) => {
-  if (!subprocess || subprocess.killed) return
-  try {
-    subprocess.kill('SIGKILL')
-    debug('destroy', { pid: subprocess.pid, reason })
-  } catch (error) {
-    debug('error', { pid: subprocess.pid, reason, message: error.message || error })
-  }
-}
 
 const getConfig = ({
   onlyCategories = ['performance', 'best-practices', 'accessibility', 'seo'],
@@ -78,7 +69,7 @@ module.exports = async (
     pRetry(run, {
       retries,
       onFailedAttempt: async error => {
-        destroySubprocess(subprocess, { reason: 'retry' })
+        driver.destroy(subprocess, { reason: 'lighthouse:retry' })
         browserless.then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = ensureError(error)
         debug('retry', { attemptNumber, retriesLeft, message })
@@ -86,11 +77,11 @@ module.exports = async (
     })
 
   const result = await pTimeout(task(), timeout, () => {
-    destroySubprocess(subprocess, { reason: 'timeout' })
+    driver.destroy(subprocess, { reason: 'lighthouse:timeout' })
     throw browserTimeout({ timeout })
   })
 
-  destroySubprocess(subprocess, { reason: 'done' })
+  driver.destroy(subprocess)
 
   return result
 }
