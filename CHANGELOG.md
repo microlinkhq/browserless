@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.5.5](https://github.com/microlinkhq/browserless/compare/v8.5.4...v8.5.5) (2021-01-08)
+
+
+### Bug Fixes
+
+* don't respawn after aborting by timeout ([ce21cb9](https://github.com/microlinkhq/browserless/commit/ce21cb98eba165755875cbc7814254b1afbbc856))
+
+
+
+
+
 ## [8.5.4](https://github.com/microlinkhq/browserless/compare/v8.5.3...v8.5.4) (2021-01-08)
 
 **Note:** Version bump only for package browserless
