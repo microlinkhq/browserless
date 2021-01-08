@@ -79,14 +79,19 @@ module.exports = ({
   const closePage = page => page && pReflect(page.close())
 
   const wrapError = fn => async (...args) => {
+    let isRejected = false
+
     async function run () {
+      let page
+
       try {
-        const page = await createPage(args)
+        page = await createPage(args)
         const value = await fn(page)(...args)
-        await closePage(page)
         return value
       } catch (error) {
         throw ensureError(error)
+      } finally {
+        closePage(page)
       }
     }
 
@@ -94,6 +99,7 @@ module.exports = ({
       pRetry(run, {
         retries: retry,
         onFailedAttempt: error => {
+          if (isRejected) throw new pRetry.AbortError()
           respawn()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
@@ -101,6 +107,7 @@ module.exports = ({
       })
 
     return pTimeout(task(), timeout, () => {
+      isRejected = true
       throw browserTimeout({ timeout })
     })
   }

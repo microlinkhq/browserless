@@ -49,6 +49,7 @@ module.exports = async (
 ) => {
   const browserless = getBrowserless()
   const config = getConfig(opts)
+  let isRejected = false
   let subprocess
 
   async function run () {
@@ -69,6 +70,7 @@ module.exports = async (
     pRetry(run, {
       retries,
       onFailedAttempt: async error => {
+        if (isRejected) throw new pRetry.AbortError()
         driver.destroy(subprocess, { reason: 'lighthouse:retry' })
         browserless.then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = ensureError(error)
@@ -77,6 +79,7 @@ module.exports = async (
     })
 
   const result = await pTimeout(task(), timeout, () => {
+    isRejected = true
     driver.destroy(subprocess, { reason: 'lighthouse:timeout' })
     throw browserTimeout({ timeout })
   })
