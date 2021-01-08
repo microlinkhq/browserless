@@ -36,7 +36,7 @@ module.exports = ({
       ({ value: browser }) =>
         browser &&
         debug('spawn', {
-          pid: driver.get(browser).pid || launchOpts.mode,
+          pid: driver.getPid(browser) || launchOpts.mode,
           ...spawnOpts
         })
     )
@@ -66,7 +66,7 @@ module.exports = ({
     if (proxy) await page.authenticate(proxy)
 
     debug('createPage', {
-      pid: driver.get(browser).pid || launchOpts.mode,
+      pid: driver.getPid(browser) || launchOpts.mode,
       incognito,
       pages: (await browser.pages()).length - 1,
       proxy: !!proxy

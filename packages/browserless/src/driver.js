@@ -1,6 +1,8 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless')
+const pReflect = require('p-reflect')
+const pidtree = require('pidtree')
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
 // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
@@ -57,22 +59,37 @@ const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
     ...launchOpts
   })
 
-const get = browser => (!browser ? {} : browser.process() || {})
-
-const destroy = async (browser, { signal = 'SIGKILL' } = {}) => {
-  const browserProcess = get(browser)
-
-  const { pid } = browserProcess
-  if (!pid) return
-
-  try {
-    browserProcess.kill(signal)
-    debug('destroy', { pid, signal })
-  } catch (error) {
-    debug('error', { pid, signal, message: error.message || error })
-  }
-
-  return { pid }
+const getPid = childProcess => {
+  if (!childProcess) return null
+  if (childProcess.pid) return childProcess.pid
+  const browserProcess = childProcess.process ? childProcess.process() : undefined
+  if (!browserProcess) return null
+  return browserProcess.pid
 }
 
-module.exports = { get, spawn, destroy, args }
+const getPids = async pid => {
+  const { value: pids = [] } = await pReflect(pidtree(pid))
+  return pids.includes(pid) ? pids : [...pids, pid]
+}
+
+const destroy = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
+  const pid = getPid(childProcess)
+  if (!pid) return
+
+  const pids = await getPids(pid)
+
+  // TODO: Use https://github.com/sindresorhus/fkill/pull/34
+  pids.forEach(pid => {
+    try {
+      process.kill(pid, signal)
+    } catch (error) {
+      debug('error', { pid, signal, ...debugOpts, message: error.message || error })
+    }
+  })
+
+  debug('destroy', { pids, signal, ...debugOpts })
+
+  return { pids }
+}
+
+module.exports = { getPid, spawn, destroy, args }
