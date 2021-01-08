@@ -58,7 +58,7 @@ module.exports = ({
     browserPromise = spawn({ respawn: true })
   }
 
-  const createPage = async () => {
+  const createPage = async args => {
     const browser = await getBrowser()
     const context = incognito ? await browser.createIncognitoBrowserContext() : browser
     const page = await context.newPage()
@@ -69,7 +69,8 @@ module.exports = ({
       pid: driver.getPid(browser) || launchOpts.mode,
       incognito,
       pages: (await browser.pages()).length - 1,
-      proxy: !!proxy
+      proxy: !!proxy,
+      ...args
     })
 
     return page
@@ -80,7 +81,7 @@ module.exports = ({
   const wrapError = fn => async (...args) => {
     async function run () {
       try {
-        const page = await createPage()
+        const page = await createPage(args)
         const value = await fn(page)(...args)
         await closePage(page)
         return value
