@@ -27,6 +27,7 @@
     "qualified"
   ],
   "dependencies": {
+    "debug-logfmt": "~1.0.4",
     "whoops": "~4.1.0"
   },
   "devDependencies": {

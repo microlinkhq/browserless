@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:error')
 const whoops = require('whoops')
 
 const ERROR_NAME = 'BrowserlessError'
@@ -26,6 +27,8 @@ browserlessError.browserDisconnected = createBrowserlessError({
 })
 
 browserlessError.ensureError = rawError => {
+  debug('ensureError', rawError)
+
   const error = 'error' in rawError ? rawError.error : rawError
 
   if (error.code === 'ECONNREFUSED') return browserlessError.browserDisconnected()
