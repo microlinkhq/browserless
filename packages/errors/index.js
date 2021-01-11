@@ -33,20 +33,22 @@ browserlessError.ensureError = rawError => {
 
   if (error.code === 'ECONNREFUSED') return browserlessError.browserDisconnected()
 
-  if (error.message.startsWith('Protocol error')) {
+  const { message: errorMessage = '' } = error
+
+  if (errorMessage.startsWith('Protocol error')) {
     return browserlessError.protocolError({
-      message: error.message.split(': ')[1]
+      message: errorMessage.split(': ')[1]
     })
   }
 
-  if (error.message.startsWith('Evaluation failed')) {
-    const messages = error.message.split(': ')
+  if (errorMessage.startsWith('Evaluation failed')) {
+    const messages = errorMessage.split(': ')
     return browserlessError.evaluationFailed({
       message: messages[messages.length - 1]
     })
   }
 
-  return error
+  return require('ensure-error')(error)
 }
 
 module.exports = browserlessError
