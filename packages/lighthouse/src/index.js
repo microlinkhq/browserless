@@ -65,7 +65,7 @@ module.exports = async (
 
       const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
       if (isFulfilled) return value
-      throw ensureError(reason)
+      throw reason
     } catch (error) {
       throw ensureError(error)
     } finally {
@@ -79,7 +79,7 @@ module.exports = async (
       onFailedAttempt: async error => {
         if (isRejected) throw new pRetry.AbortError()
         browserless.then(browserless => browserless.respawn())
-        const { message, attemptNumber, retriesLeft } = ensureError(error)
+        const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
       }
     })
