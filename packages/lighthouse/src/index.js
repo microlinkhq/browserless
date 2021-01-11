@@ -53,17 +53,21 @@ module.exports = async (
   let subprocess
 
   async function run () {
-    const browser = await (await browserless).browser()
-    const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
+    try {
+      const browser = await (await browserless).browser()
+      const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-    subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
-    subprocess.stderr.pipe(process.stderr)
-    debug('spawn', { pid: subprocess.pid })
-    subprocess.send({ url, flags, config })
+      subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
+      subprocess.stderr.pipe(process.stderr)
+      debug('spawn', { pid: subprocess.pid })
+      subprocess.send({ url, flags, config })
 
-    const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
-    if (isFulfilled) return value
-    throw ensureError(reason)
+      const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
+      if (isFulfilled) return value
+      throw ensureError(reason)
+    } catch (error) {
+      throw ensureError(error)
+    }
   }
 
   const task = () =>
