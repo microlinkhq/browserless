@@ -10,7 +10,7 @@ module.exports = async (url, opts) => {
 
   const report = await lighthouse(url, { getBrowserless, ...opts })
 
-  await browserless.destroy()
+  await browserless.close()
 
   return report
 }

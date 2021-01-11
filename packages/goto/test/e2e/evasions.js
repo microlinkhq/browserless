@@ -8,7 +8,7 @@ const onExit = require('signal-exit')
 
 const browserless = createBrowserless({ timeout: 300000 })
 
-onExit(browserless.destroy)
+onExit(browserless.close)
 
 const { evasions } = require('../..')
 
@@ -52,7 +52,7 @@ test.skip('device-info.fr/are_you_a_bot', async t => {
   })
   t.true(content.includes('You are human!'))
 
-  await browserless.destroy()
+  await browserless.close()
 })
 
 test('bot.sannysoft.com', async t => {

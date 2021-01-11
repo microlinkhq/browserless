@@ -12,7 +12,7 @@ const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
 const browserless = createBrowserless({ evasions: false })
 
-onExit(browserless.destroy)
+onExit(browserless.close)
 
 test('randomize `user-agent`', async t => {
   const page = await browserless.page()

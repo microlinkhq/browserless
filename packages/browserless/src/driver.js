@@ -72,13 +72,12 @@ const getPids = async pid => {
   return pids.includes(pid) ? pids : [...pids, pid]
 }
 
-const destroy = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
+const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
   const pid = getPid(childProcess)
   if (!pid) return
 
   const pids = await getPids(pid)
 
-  // TODO: Use https://github.com/sindresorhus/fkill/pull/34
   pids.forEach(pid => {
     try {
       process.kill(pid, signal)
@@ -87,9 +86,14 @@ const destroy = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) 
     }
   })
 
-  debug('destroy', { pids, signal, ...debugOpts })
+  // It's necessary to call `browser.close` for removing temporal files associated
+  // and remove listeners attached to the main process
+  // see https://github.com/puppeteer/puppeteer/blob/main/src/node/BrowserRunner.ts#L129
+  await childProcess.close()
+
+  debug('close', { pids, signal, ...debugOpts })
 
   return { pids }
 }
 
-module.exports = { getPid, spawn, destroy, args }
+module.exports = { getPid, spawn, close, args }

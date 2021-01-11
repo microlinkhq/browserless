@@ -7,6 +7,6 @@ module.exports = async (url, opts) => {
   const page = await browserless.page()
   const response = await page.goto(url, opts)
   const status = response.status()
-  await browserless.destroy()
+  await browserless.close()
   return status
 }

@@ -41,11 +41,11 @@ const createBench = ({ name, setup, teardown }) => {
 createBench({
   name: `with flag ${N} iterations`,
   setup: () => createGPUBenchmark({ withFlag: true }),
-  teardown: fn => fn.browserless.destroy()
+  teardown: fn => fn.browserless.close()
 })
 
 createBench({
   name: `without flag ${N} iterations`,
   setup: () => createGPUBenchmark({ withFlag: false }),
-  teardown: fn => fn.browserless.destroy()
+  teardown: fn => fn.browserless.close()
 })

@@ -36,12 +36,12 @@ module.exports = (opts, launchOpts) => {
       debug('create', { createdAt: browserless.createdAt })
       return browserless
     },
-    destroy: browserless => {
-      debug('destroy', {
+    close: browserless => {
+      debug('close', {
         createdAt: browserless.createdAt,
         lifespan: browserless.lifespan()
       })
-      return browserless.destroy()
+      return browserless.close()
     },
     validate: browserless => {
       const lifespan = browserless.lifespan()

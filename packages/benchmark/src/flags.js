@@ -47,13 +47,13 @@ const createBench = ({ name, setup, teardown }) => {
 createBench({
   name: 'base flags',
   setup: () => createBenchmark({ args }),
-  teardown: fn => fn.browserless.destroy()
+  teardown: fn => fn.browserless.close()
 })
 
 FLAGS.forEach(flag => {
   createBench({
     name: flag,
     setup: () => createBenchmark({ args: args.concat(flag) }),
-    teardown: fn => fn.browserless.destroy()
+    teardown: fn => fn.browserless.close()
   })
 })
