@@ -27,7 +27,7 @@ browserlessError.browserDisconnected = createBrowserlessError({
 })
 
 browserlessError.ensureError = rawError => {
-  debug('ensureError', rawError)
+  debug('ensureError', JSON.stringify(rawError))
 
   const error = 'error' in rawError ? rawError.error : rawError
 
