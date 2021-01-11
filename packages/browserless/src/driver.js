@@ -89,7 +89,7 @@ const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) =>
   // It's necessary to call `browser.close` for removing temporal files associated
   // and remove listeners attached to the main process
   // see https://github.com/puppeteer/puppeteer/blob/main/src/node/BrowserRunner.ts#L129
-  await childProcess.close()
+  if (childProcess.close) await childProcess.close()
 
   debug('close', { pids, signal, ...debugOpts })
 
