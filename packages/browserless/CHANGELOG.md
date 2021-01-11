@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.5.8](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/compare/v8.5.7...v8.5.8) (2021-01-11)
+
+
+### Bug Fixes
+
+* check .close method exists ([61238a6](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/commit/61238a63275cd845c7f8a03c430c64df3811d2fd))
+
+
+
+
+
 ## [8.5.7](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/compare/v8.5.6...v8.5.7) (2021-01-11)
 
 **Note:** Version bump only for package browserless
