@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.5.7](https://github.com/microlinkhq/browserless/tree/master/packages/goto/compare/v8.5.6...v8.5.7) (2021-01-11)
+
+
+### Bug Fixes
+
+* remove unnecessary code ([1512b8c](https://github.com/microlinkhq/browserless/tree/master/packages/goto/commit/1512b8c12e9027299ea40917a161c5eb0821b4c9))
+
+
+
+
+
 ## [8.5.2](https://github.com/microlinkhq/browserless/tree/master/packages/goto/compare/v8.5.1...v8.5.2) (2021-01-07)
 
 
