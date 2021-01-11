@@ -30,9 +30,9 @@ const takeScreenshot = async ({ index, url }) => {
   await browserless.screenshot(url)
   timer.screenshot = timer.screenshot()
 
-  timer.destroy = timeSpan()
-  await browserless.destroy()
-  timer.destroy = timer.destroy()
+  timer.close = timeSpan()
+  await browserless.close()
+  timer.close = timer.close()
 
   return timer
 }

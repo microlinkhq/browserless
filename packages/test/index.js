@@ -49,7 +49,7 @@ const getServerUrl = (() => {
   return () => Promise.resolve(initializedServer)
 })()
 
-module.exports = (browserless, teardown = browserless.destroy) => {
+module.exports = (browserless, teardown = browserless.close) => {
   onExit(teardown)
 
   test('.html', async t => {

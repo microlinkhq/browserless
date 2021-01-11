@@ -18,6 +18,6 @@ module.exports = async (url, opts) => {
   })
 
   const result = await ping(url, opts)
-  await browserless.destroy()
+  await browserless.close()
   return result
 }

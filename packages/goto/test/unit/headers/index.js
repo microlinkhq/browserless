@@ -7,7 +7,7 @@ const onExit = require('signal-exit')
 
 const browserless = createBrowserless({ evasions: false })
 
-onExit(browserless.destroy)
+onExit(browserless.close)
 
 const createPing = browserless =>
   browserless.evaluate(async (page, response) => {

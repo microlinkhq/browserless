@@ -23,6 +23,6 @@ require('@browserless/test')(browserless)
 
     t.is(pages.length, 1) // about:page is always open
 
-    await browserless.destroy()
+    await browserless.close()
   })
 })

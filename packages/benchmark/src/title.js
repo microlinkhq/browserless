@@ -35,5 +35,5 @@ const createBench = ({ name, setup, teardown }) => {
 createBench({
   name: `get page title ${N} iterations`,
   setup: () => createTitleBenchmark(),
-  teardown: fn => fn.browserless.destroy()
+  teardown: fn => fn.browserless.close()
 })

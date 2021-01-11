@@ -54,7 +54,7 @@ module.exports = ({
 
   const respawn = async () => {
     const { value } = await pReflect(browserPromise)
-    await driver.destroy(value)
+    await driver.close(value)
     browserPromise = spawn({ respawn: true })
   }
 
@@ -121,8 +121,7 @@ module.exports = ({
   return {
     // low level methods
     browser: getBrowser,
-    close: async () => (await browserPromise).close(),
-    destroy: async opts => driver.destroy(await browserPromise, opts),
+    close: async opts => driver.close(await browserPromise, opts),
     respawn,
     // high level methods
     evaluate,
