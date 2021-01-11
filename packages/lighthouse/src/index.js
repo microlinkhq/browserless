@@ -50,9 +50,10 @@ module.exports = async (
   const browserless = getBrowserless()
   const config = getConfig(opts)
   let isRejected = false
-  let subprocess
 
   async function run () {
+    let subprocess
+
     try {
       const browser = await (await browserless).browser()
       const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
@@ -67,6 +68,8 @@ module.exports = async (
       throw ensureError(reason)
     } catch (error) {
       throw ensureError(error)
+    } finally {
+      driver.close(subprocess)
     }
   }
 
@@ -75,7 +78,6 @@ module.exports = async (
       retries,
       onFailedAttempt: async error => {
         if (isRejected) throw new pRetry.AbortError()
-        driver.close(subprocess, { reason: 'lighthouse:retry' })
         browserless.then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = ensureError(error)
         debug('retry', { attemptNumber, retriesLeft, message })
@@ -84,11 +86,8 @@ module.exports = async (
 
   const result = await pTimeout(task(), timeout, () => {
     isRejected = true
-    driver.close(subprocess, { reason: 'lighthouse:timeout' })
     throw browserTimeout({ timeout })
   })
-
-  driver.close(subprocess)
 
   return result
 }
