@@ -11,6 +11,8 @@ const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 
+const { AbortError } = pRetry
+
 const driver = require('./driver')
 
 module.exports = ({
@@ -78,7 +80,7 @@ module.exports = ({
 
   const closePage = page => page && pReflect(page.close())
 
-  const wrapError = fn => async (...args) => {
+  const wrapError = (fn, { timeout: milliseconds = timeout } = {}) => async (...args) => {
     let isRejected = false
 
     async function run () {
@@ -99,24 +101,28 @@ module.exports = ({
       pRetry(run, {
         retries: retry,
         onFailedAttempt: error => {
-          if (isRejected) throw new pRetry.AbortError()
+          if (error.name === 'AbortError') throw error
+          if (isRejected) throw new AbortError()
           respawn()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
         }
       })
 
-    return pTimeout(task(), timeout, () => {
+    return pTimeout(task(), milliseconds, () => {
       isRejected = true
-      throw browserTimeout({ timeout })
+      throw browserTimeout({ timeout: milliseconds })
     })
   }
 
   const evaluate = (fn, gotoOpts) =>
-    wrapError(page => async (url, opts) => {
-      const { response } = await goto(page, { url, ...gotoOpts, ...opts })
-      return fn(page, response)
-    })
+    wrapError(
+      page => async (url, opts) => {
+        const { response } = await goto(page, { url, ...gotoOpts, ...opts })
+        return fn(page, response)
+      },
+      gotoOpts
+    )
 
   return {
     // low level methods

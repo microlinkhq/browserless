@@ -11,6 +11,8 @@ const path = require('path')
 
 const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
+const { AbortError } = pRetry
+
 const getConfig = ({
   onlyCategories = ['performance', 'best-practices', 'accessibility', 'seo'],
   device = 'desktop',
@@ -77,7 +79,8 @@ module.exports = async (
     pRetry(run, {
       retries,
       onFailedAttempt: async error => {
-        if (isRejected) throw new pRetry.AbortError()
+        if (error.name === 'AbortError') throw error
+        if (isRejected) throw new AbortError()
         browserless.then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
