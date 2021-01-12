@@ -11,6 +11,8 @@ const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 
+const { AbortError } = pRetry
+
 const driver = require('./driver')
 
 module.exports = ({
@@ -99,7 +101,8 @@ module.exports = ({
       pRetry(run, {
         retries: retry,
         onFailedAttempt: error => {
-          if (isRejected) throw new pRetry.AbortError()
+          if (error.name === 'AbortError') throw error
+          if (isRejected) throw new AbortError()
           respawn()
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
