@@ -80,7 +80,7 @@ module.exports = ({
 
   const closePage = page => page && pReflect(page.close())
 
-  const wrapError = fn => async (...args) => {
+  const wrapError = (fn, { timeout: milliseconds = timeout } = {}) => async (...args) => {
     let isRejected = false
 
     async function run () {
@@ -109,17 +109,20 @@ module.exports = ({
         }
       })
 
-    return pTimeout(task(), timeout, () => {
+    return pTimeout(task(), milliseconds, () => {
       isRejected = true
-      throw browserTimeout({ timeout })
+      throw browserTimeout({ timeout: milliseconds })
     })
   }
 
   const evaluate = (fn, gotoOpts) =>
-    wrapError(page => async (url, opts) => {
-      const { response } = await goto(page, { url, ...gotoOpts, ...opts })
-      return fn(page, response)
-    })
+    wrapError(
+      page => async (url, opts) => {
+        const { response } = await goto(page, { url, ...gotoOpts, ...opts })
+        return fn(page, response)
+      },
+      gotoOpts
+    )
 
   return {
     // low level methods
