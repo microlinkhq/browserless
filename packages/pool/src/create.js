@@ -36,7 +36,7 @@ module.exports = (opts, launchOpts) => {
       debug('create', { createdAt: browserless.createdAt })
       return browserless
     },
-    close: browserless => {
+    destroy: browserless => {
       debug('close', {
         createdAt: browserless.createdAt,
         lifespan: browserless.lifespan()

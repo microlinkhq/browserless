@@ -18,7 +18,7 @@ require('@browserless/test')(browserless)
     t.is(error.code, 'EBRWSRTIMEOUT')
     t.is(error.message, `EBRWSRTIMEOUT, Promise timed out after ${timeout} milliseconds`)
 
-    const browser = await browserless.browser
+    const browser = await browserless.browser()
     const pages = await browser.pages()
 
     t.is(pages.length, 1) // about:page is always open

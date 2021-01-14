@@ -2,26 +2,46 @@
 
 const debug = require('debug-logfmt')('browserless:screenshot')
 const createGoto = require('@browserless/goto')
-const { extension } = require('mime-types')
 const prettyMs = require('pretty-ms')
 const timeSpan = require('time-span')
 const pReflect = require('p-reflect')
+const pTimeout = require('p-timeout')
 
 const isWhiteScreenshot = require('./is-white-screenshot')
+const waitForPrism = require('./pretty')
 const overlay = require('./overlay')
-const pretty = require('./pretty')
-
-const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
-
-const getContentType = headers => {
-  const contentType = extension(headers['content-type'])
-  return contentType === 'txt' ? 'text' : contentType
-}
 
 const getBoundingClientRect = element => {
   const { top, left, height, width, x, y } = element.getBoundingClientRect()
   return { top, left, height, width, x, y }
 }
+
+/* eslint-disable */
+const waitForImagesOnViewport = page =>
+  page.$$eval('img[src]:not([aria-hidden="true"])', elements => {
+    const elementsOnViewport = elements.filter(
+      el => el.getBoundingClientRect().top <= window.innerHeight
+    )
+
+    return Promise.all(
+      elementsOnViewport.map(
+        el =>
+          new Promise((resolve, reject) => {
+            const img = new Image()
+            img.onload = () => {
+              img
+                .decode()
+                .then(resolve)
+                .catch(reject)
+            }
+
+            img.onerror = reject
+            img.src = el.src
+          })
+      )
+    )
+  })
+/* eslint-enable */
 
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
@@ -39,6 +59,8 @@ const waitForElement = async (page, element) => {
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
+  const timeout = goto.timeout * (1 / 8)
+
   return page => async (
     url,
     {
@@ -52,16 +74,13 @@ module.exports = ({ goto, ...gotoOpts }) => {
     let screenshot
     let response
 
-    const prettify = async response => {
-      if (codeScheme && response) {
-        const headers = response.headers()
-        const contentType = getContentType(headers)
-
-        if (PRETTY_CONTENT_TYPES.includes(contentType)) {
-          await pReflect(pretty(page, response, { codeScheme, contentType, ...opts }))
-        }
-      }
-    }
+    const beforeScreenshot = response =>
+      pReflect(
+        Promise.all([
+          waitForPrism(page, response, { codeScheme, ...opts }),
+          pTimeout(waitForImagesOnViewport(page, { timeout }), timeout)
+        ])
+      )
 
     const takeScreenshot = async opts => {
       screenshot = await page.screenshot(opts)
@@ -79,15 +98,19 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
     if (waitUntil !== 'auto') {
       ;({ response } = await goto(page, { ...opts, url, waitUntil }))
-      await prettify(response)
-      const screenshotOpts = await waitForElement(page, element)
+      const [screenshotOpts] = await Promise.all([
+        waitForElement(page, element),
+        beforeScreenshot(response)
+      ])
       screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
       debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
     } else {
       ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
       async function waitUntilAuto (page, { response }) {
-        await prettify(response)
-        const screenshotOpts = await waitForElement(page, element)
+        const [screenshotOpts] = await Promise.all([
+          waitForElement(page, element),
+          beforeScreenshot(response)
+        ])
         const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
         debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
       }
