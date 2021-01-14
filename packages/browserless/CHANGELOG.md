@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [8.6.0](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/compare/v8.5.11...v8.6.0) (2021-01-14)
+
+
+### Features
+
+* **screenshots:** ensure images on viewport are ready ([#240](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/issues/240)) ([ad3d389](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/commit/ad3d389fc68a52089dcb22c2b04a3eaea19a72e2))
+
+
+
+
+
 ## [8.5.11](https://github.com/microlinkhq/browserless/tree/master/packages/browserless/compare/v8.5.10...v8.5.11) (2021-01-12)
 
 **Note:** Version bump only for package browserless
