@@ -402,6 +402,7 @@ module.exports = ({
   goto.deviceDescriptors = getDevice.deviceDescriptors
   goto.defaultViewport = defaultViewport
   goto.waitUntilAuto = _waitUntilAuto
+  goto.timeout = baseTimeout
 
   return goto
 }
