@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [8.7.0](https://github.com/microlinkhq/browserless/compare/v8.6.1...v8.7.0) (2021-01-15)
+
+
+### Bug Fixes
+
+* ensure promise is resolved ([a30f1de](https://github.com/microlinkhq/browserless/commit/a30f1de65cb0daf2c7e47df2c3cf0e8c802509c3))
+* pass settings ([7e6b289](https://github.com/microlinkhq/browserless/commit/7e6b2896e93cd50bbe5bdb3f2b6a17906a0584e8))
+* retries → retry ([d47a132](https://github.com/microlinkhq/browserless/commit/d47a132e7e6ed0e197357e52443bd94caeb2c380))
+
+
+### Features
+
+* use lighthouse v7 ([d1271e4](https://github.com/microlinkhq/browserless/commit/d1271e4f302c8355811a550adf0e430f69e2986f))
+
+
+
+
+
 ## [8.6.1](https://github.com/microlinkhq/browserless/compare/v8.6.0...v8.6.1) (2021-01-15)
 
 **Note:** Version bump only for package browserless
