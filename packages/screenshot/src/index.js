@@ -18,29 +18,13 @@ const getBoundingClientRect = element => {
 
 /* eslint-disable */
 const waitForImagesOnViewport = page =>
-  page.$$eval('img[src]:not([aria-hidden="true"])', elements => {
-    const elementsOnViewport = elements.filter(
-      el => el.getBoundingClientRect().top <= window.innerHeight
+  page.$$eval('img[src]:not([aria-hidden="true"])', elements =>
+    Promise.all(
+      elements
+        .filter(el => el.getBoundingClientRect().top <= window.innerHeight)
+        .map(el => el.decode())
     )
-
-    return Promise.all(
-      elementsOnViewport.map(
-        el =>
-          new Promise((resolve, reject) => {
-            const img = new Image()
-            img.onload = () => {
-              img
-                .decode()
-                .then(resolve)
-                .catch(reject)
-            }
-
-            img.onerror = reject
-            img.src = el.src
-          })
-      )
-    )
-  })
+  )
 /* eslint-enable */
 
 const waitForElement = async (page, element) => {
