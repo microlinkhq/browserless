@@ -13,18 +13,7 @@ const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
 const { AbortError } = pRetry
 
-const getConfig = ({
-  onlyCategories = ['performance', 'best-practices', 'accessibility', 'seo'],
-  device = 'desktop',
-  ...props
-}) => ({
-  extends: 'lighthouse:default',
-  settings: {
-    onlyCategories,
-    emulatedFormFactor: device,
-    ...props
-  }
-})
+const getConfig = settings => ({ extends: 'lighthouse:default', settings })
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const getFlags = (
@@ -44,7 +33,7 @@ module.exports = async (
     getBrowserless = require('browserless'),
     logLevel,
     output,
-    retries = 5,
+    retry = 5,
     timeout = 30000,
     ...opts
   } = {}
@@ -77,11 +66,11 @@ module.exports = async (
 
   const task = () =>
     pRetry(run, {
-      retries,
+      retry,
       onFailedAttempt: async error => {
         if (error.name === 'AbortError') throw error
         if (isRejected) throw new AbortError()
-        browserless.then(browserless => browserless.respawn())
+        Promise.resolve(browserless).then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
       }
