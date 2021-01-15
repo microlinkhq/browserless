@@ -33,7 +33,7 @@ module.exports = async (
     getBrowserless = require('browserless'),
     logLevel,
     output,
-    retries = 5,
+    retry = 5,
     timeout = 30000,
     ...opts
   } = {}
@@ -66,7 +66,7 @@ module.exports = async (
 
   const task = () =>
     pRetry(run, {
-      retries,
+      retry,
       onFailedAttempt: async error => {
         if (error.name === 'AbortError') throw error
         if (isRejected) throw new AbortError()
