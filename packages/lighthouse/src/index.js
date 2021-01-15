@@ -13,18 +13,7 @@ const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
 const { AbortError } = pRetry
 
-const getConfig = ({
-  onlyCategories = ['performance', 'best-practices', 'accessibility', 'seo'],
-  device = 'desktop',
-  ...props
-}) => ({
-  extends: 'lighthouse:default',
-  settings: {
-    onlyCategories,
-    emulatedFormFactor: device,
-    ...props
-  }
-})
+const getConfig = settings => ({ extends: 'lighthouse:default', ...settings })
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const getFlags = (
