@@ -33,7 +33,7 @@
     "@browserless/pool": "^8.6.0",
     "beauty-error": "~1.2.8",
     "browserless": "^8.7.1",
-    "kleur": "~4.1.3",
+    "kleur": "~4.1.4",
     "meow": "~9.0.0",
     "ora": "~5.3.0",
     "pretty-bytes": "~5.5.0",
