@@ -28,7 +28,7 @@ $ npm install browserless puppeteer --save
 
 **browserless** has a puppeteer-like API and it uses puppeteer under the hood. 
 
-You can use it with [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) or [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox), interchangeably.
+You can use it with [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox), interchangeably.
 
 ## Usage
 
