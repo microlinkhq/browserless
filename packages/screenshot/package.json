@@ -48,7 +48,7 @@
     "express": "~4.17.1"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 12"
   },
   "files": [
     "scripts",

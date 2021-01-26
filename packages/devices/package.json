@@ -37,7 +37,7 @@
     "puppeteer": "latest"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 12"
   },
   "files": [
     "src"

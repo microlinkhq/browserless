@@ -35,7 +35,7 @@
     "ava": "latest"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 12"
   },
   "files": [
     "index.js"
