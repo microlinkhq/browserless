@@ -1,13 +1,10 @@
 language: node_js
 
 node_js:
-  - lts/*
   - node
 
-after_success: npm run coverage
-
 stages:
-  - Test
+  # - Test
   - name: Release
     if: branch = master AND commit_message !~ /(release|no-release)/
 
@@ -19,8 +16,8 @@ jobs:
   include:
     - stage: Release
       before_deploy:
-        - git config user.email ${GITHUB_EMAIL:-"travis@travis-ci.org"}
-        - git config user.name ${GITHUB_USER:-"Travis CI"}
+        - git config --global user.email ${GITHUB_EMAIL}
+        - git config --global user.name ${GITHUB_USER}
         - git remote set-url origin https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
         - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> $HOME/.npmrc 2> /dev/null
         - git checkout master
