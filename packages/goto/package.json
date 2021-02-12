@@ -38,14 +38,13 @@
     "pretty-ms": "~7.0.1",
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
-    "tldts": "~5.7.2",
-    "top-user-agents": "~1.0.19",
+    "tldts": "~5.7.5",
+    "top-user-agents": "~1.0.21",
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
-    "is-ci": "latest",
     "puppeteer": "latest",
     "signal-exit": "latest",
     "ua-string": "latest"

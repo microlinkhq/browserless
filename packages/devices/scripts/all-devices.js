@@ -1,6 +1,6 @@
 'use strict'
 
-const { devices } = require('browserless')
+const { devices } = require('..')()
 const { chain } = require('lodash')
 
 const HEADER = {
@@ -16,18 +16,8 @@ const ROW = {
 
     return `| \`${name}\` | ${width} | ${height} | ${deviceScaleFactor} | ${isMobile} | ${hasTouch} | ${isLandscape} |`
   },
-  jsx: (name, viewport) => {
-    const { width, height, deviceScaleFactor, isMobile, hasTouch, isLandscape } = viewport
-
-    return `<Row>
-  <BoldCell>${name.toLowerCase()}</BoldCell>
-  <Cell>${width}</Cell>
-  <Cell>${height}</Cell>
-  <Cell>${deviceScaleFactor}</Cell>
-  <Cell>${isMobile}</Cell>
-  <Cell>${hasTouch}</Cell>
-  <Cell>${isLandscape}</Cell>
-</Row>`
+  doc: (name, viewport) => {
+    return name
   }
 }
 
