@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.7.5](https://github.com/microlinkhq/browserless/tree/master/packages/pool/compare/v8.7.4...v8.7.5) (2021-02-14)
+
+**Note:** Version bump only for package @browserless/pool
+
+
+
+
+
 ## [8.7.3](https://github.com/microlinkhq/browserless/tree/master/packages/pool/compare/v8.7.2...v8.7.3) (2021-01-26)
 
 **Note:** Version bump only for package @browserless/pool

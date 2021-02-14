@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.7.5](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse/compare/v8.7.4...v8.7.5) (2021-02-14)
+
+
+### Bug Fixes
+
+* test ([2b1f7ea](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse/commit/2b1f7ea416dbe1d8e70d08a8a9938d5c051446f6))
+
+
+
+
+
 ## [8.7.4](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse/compare/v8.7.3...v8.7.4) (2021-01-30)
 
 **Note:** Version bump only for package @browserless/lighthouse
