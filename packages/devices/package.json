@@ -32,9 +32,9 @@
     "require-one-of": "~1.0.15"
   },
   "devDependencies": {
-    "puppeteer": "latest",
+    "ava": "latest",
     "lodash": "latest",
-    "ava": "latest"
+    "puppeteer": "latest"
   },
   "engines": {
     "node": ">= 12"
