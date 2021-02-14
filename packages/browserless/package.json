@@ -43,6 +43,7 @@
     "require-one-of": "~1.0.15"
   },
   "devDependencies": {
+    "puppeteer": "latest",
     "@browserless/test": "latest",
     "ava": "latest"
   },

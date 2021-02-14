@@ -32,6 +32,7 @@
     "require-one-of": "~1.0.15"
   },
   "devDependencies": {
+    "puppeteer": "latest",
     "lodash": "latest",
     "ava": "latest"
   },
