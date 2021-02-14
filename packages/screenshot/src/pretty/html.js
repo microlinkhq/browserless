@@ -73,9 +73,15 @@ module.exports = (payload, { contentType, prism, theme }) => {
   const lang = language(contentType)
   const code = content(payload, contentType)
 
-  return `<html>
-  <head>${css}</head>
-  <body id="screenshot"><pre><code class="${lang}">${code}</code></pre></body>
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  ${css}
+</head>
+<body id="screenshot">
+  <pre><code class="${lang}">${code}</code></pre>
   <script>${prism}</script>
-</html>`
+</body>
+</html>`.trim()
 }
