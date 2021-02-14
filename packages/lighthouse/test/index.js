@@ -12,11 +12,8 @@ test('default configuration', async t => {
 
 test('passing custom configuration', async t => {
   const url = 'https://kikobeats.com'
-  const report = await lighthouse(url, {
-    onlyAudits: ['accessibility'],
-    device: 'mobile'
-  })
-  t.is(report.configSettings.emulatedFormFactor, 'mobile')
+  const report = await lighthouse(url, { onlyAudits: ['accessibility'] })
+  t.deepEqual(report.configSettings.onlyAudits, ['accessibility'])
 })
 
 test('passing a different serializer', async t => {
