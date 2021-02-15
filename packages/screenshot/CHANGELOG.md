@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.7.7](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/compare/v8.7.5...v8.7.7) (2021-02-15)
+
+
+### Bug Fixes
+
+* html markup ([#255](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/issues/255)) ([de4aaba](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/commit/de4aabae16e8f61d2625f37290071d088c3fc8ba))
+
+
+
+
+
 ## [8.7.6](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot/compare/v8.7.5...v8.7.6) (2021-02-15)
 
 
