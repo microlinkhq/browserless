@@ -83,5 +83,5 @@ module.exports = (payload, { contentType, prism, theme }) => {
   <pre><code class="${lang}">${code}</code></pre>
   <script>${prism}</script>
 </body>
-</html>`.trim()
+</html>`
 }
