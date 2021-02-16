@@ -36,7 +36,7 @@
     "@browserless/screenshot": "^8.7.7",
     "debug-logfmt": "~1.0.4",
     "p-reflect": "~2.1.0",
-    "p-retry": "~4.3.0",
+    "p-retry": "~4.4.0",
     "p-timeout": "~4.1.0",
     "parse-proxy-uri": "~1.0.3",
     "pidtree": "~0.5.0",
