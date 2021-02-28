@@ -29,9 +29,9 @@
   ],
   "dependencies": {
     "@browserless/devices": "^8.7.5",
-    "@cliqz/adblocker-puppeteer": "~1.20.2",
+    "@cliqz/adblocker-puppeteer": "~1.20.3",
     "debug-logfmt": "~1.0.4",
-    "got": "~11.8.1",
+    "got": "~11.8.2",
     "is-url-http": "~2.2.3",
     "p-reflect": "~2.1.0",
     "p-timeout": "~4.1.0",

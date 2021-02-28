@@ -30,7 +30,7 @@
     "@browserless/goto": "^8.7.10",
     "cli-truncate": "~2.1.0",
     "debug-logfmt": "~1.0.4",
-    "got": "~11.8.1",
+    "got": "~11.8.2",
     "is-html-content": "~1.0.0",
     "is-url-http": "~2.2.3",
     "jimp": "~0.16.1",
