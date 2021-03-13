@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.7.12](https://github.com/microlinkhq/browserless/tree/master/packages/goto/compare/v8.7.11...v8.7.12) (2021-03-13)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
 ## [8.7.11](https://github.com/microlinkhq/browserless/tree/master/packages/goto/compare/v8.7.10...v8.7.11) (2021-02-28)
 
 **Note:** Version bump only for package @browserless/goto

@@ -2,7 +2,7 @@
   "name": "@browserless/pdf",
   "description": "Sensible good defaults for exporting a website as PDF",
   "homepage": "https://browserless.js.org/#/?id=pdfurl-options",
-  "version": "8.7.11",
+  "version": "8.7.12",
   "main": "src",
   "repository": {
     "type": "git",
@@ -23,7 +23,7 @@
     "screen"
   ],
   "dependencies": {
-    "@browserless/goto": "^8.7.11"
+    "@browserless/goto": "^8.7.12"
   },
   "engines": {
     "node": ">= 12"
