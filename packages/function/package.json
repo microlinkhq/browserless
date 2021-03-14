@@ -1,0 +1,55 @@
+{
+  "name": "@browserless/function",
+  "description": "Run abritrary JavaScript inside a browser sandbox",
+  "homepage": "https://browserless.js.org",
+  "version": "0.0.0",
+  "main": "src/index.js",
+  "author": {
+    "email": "josefrancisco.verdu@gmail.com",
+    "name": "Kiko Beats",
+    "url": "https://kikobeats.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microlinkhq/browserless/tree/master/packages/function"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless/issues"
+  },
+  "keywords": [
+    "browser",
+    "browserless",
+    "chrome",
+    "chromeless",
+    "core",
+    "function",
+    "headless",
+    "puppeteer",
+    "serverless"
+  ],
+  "dependencies": {
+    "debug-logfmt": "~1.0.4",
+    "execa": "~5.0.0",
+    "p-event": "~4.2.0",
+    "p-reflect": "~2.1.0",
+    "p-retry": "~4.4.0",
+    "p-timeout": "~4.1.0",
+    "require-one-of": "~1.0.15",
+    "vm2": "~3.9.2"
+  },
+  "devDependencies": {
+    "ava": "latest",
+    "browserless": "latest",
+    "puppeteer": "latest"
+  },
+  "engines": {
+    "node": ">= 12"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "ava test/vm.js"
+  },
+  "license": "MIT"
+}
