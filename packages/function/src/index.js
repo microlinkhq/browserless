@@ -14,6 +14,8 @@ const { AbortError } = pRetry
 
 const execPath = path.resolve(__dirname, 'function.js')
 
+const normalizeQuery = query => ({ ...query, code: query.code.toString() })
+
 module.exports = async (
   query,
   { getBrowserless = requireOneOf(['browserless']), retry = 5, timeout = 30000, ...opts } = {}
@@ -30,10 +32,9 @@ module.exports = async (
 
       subprocess = execa.node(execPath, { killSignal: 'SIGKILL' })
       subprocess.stderr.pipe(process.stderr)
-      subprocess.stdout.pipe(process.stdout)
 
       debug('spawn', { pid: subprocess.pid })
-      subprocess.send({ query, browserWSEndpoint, ...opts })
+      subprocess.send({ query: normalizeQuery(query), browserWSEndpoint, ...opts })
 
       const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
       if (isFulfilled) return value
