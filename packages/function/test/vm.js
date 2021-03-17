@@ -78,6 +78,7 @@ test('passing a function.toString', async t => {
 
 test('passing a string as function', async t => {
   const vm = createVm()
+  // eslint-disable-next-line
   const fn = vm('({ name }) => `greetings ${name}`')
 
   t.deepEqual(await fn({ name: 'kiko' }), {
