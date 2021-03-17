@@ -22,21 +22,21 @@ const vmOpts = {
 }
 
 test('access to query', async t => {
-  const code = '({ query }) => query.url'
-  const query = { code, url: 'https://example.com ' }
+  const code = ({ query }) => query.foo
+  const myFn = browserlessFunction(code, { vmOpts })
 
-  t.deepEqual(await browserlessFunction(query, { vmOpts }), {
+  t.deepEqual(await myFn('https://example.com', { foo: 'bar' }), {
     isFulfilled: true,
     isRejected: false,
-    value: query.url
+    value: 'bar'
   })
 })
 
 test('access to response', async t => {
-  const code = '({ response }) => response.status()'
-  const query = { code, url: 'https://example.com ' }
+  const code = ({ response }) => response.status()
+  const myFn = browserlessFunction(code, { vmOpts })
 
-  t.deepEqual(await browserlessFunction(query, { vmOpts }), {
+  t.deepEqual(await myFn('https://example.com'), {
     isFulfilled: true,
     isRejected: false,
     value: 200
@@ -44,10 +44,10 @@ test('access to response', async t => {
 })
 
 test('access to page', async t => {
-  const code = '({ page }) => page.title()'
-  const query = { code, url: 'https://example.com ' }
+  const code = ({ page }) => page.title()
+  const myFn = browserlessFunction(code, { vmOpts })
 
-  t.deepEqual(await browserlessFunction(query, { vmOpts }), {
+  t.deepEqual(await myFn('https://example.com'), {
     isFulfilled: true,
     isRejected: false,
     value: 'Example Domain'
@@ -61,9 +61,9 @@ test('interact with a page', async t => {
     return page.title()
   }
 
-  const query = { code, url: 'https://kikobeats.com ' }
+  const myFn = browserlessFunction(code, { vmOpts })
 
-  t.deepEqual(await browserlessFunction(query, { vmOpts }), {
+  t.deepEqual(await myFn('https://example.com'), {
     isFulfilled: true,
     isRejected: false,
     value: 'Speed is the feature | Kikobeats'

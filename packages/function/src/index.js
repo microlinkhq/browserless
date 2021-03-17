@@ -14,55 +14,62 @@ const { AbortError } = pRetry
 
 const execPath = path.resolve(__dirname, 'function.js')
 
-const normalizeQuery = query => ({ ...query, code: query.code.toString() })
-
-module.exports = async (
-  query,
-  { getBrowserless = requireOneOf(['browserless']), retry = 5, timeout = 30000, ...opts } = {}
+module.exports = (
+  fn,
+  { getBrowserless = requireOneOf(['browserless']), retry = 5, timeout = 30000, ...opts }
 ) => {
-  const browserless = getBrowserless()
-  let isRejected = false
+  return async (url, query) => {
+    const browserless = getBrowserless()
+    let isRejected = false
 
-  async function run () {
-    let subprocess
+    async function run () {
+      let subprocess
 
-    try {
-      const browser = await (await browserless).browser()
-      const browserWSEndpoint = browser.wsEndpoint()
+      try {
+        const browser = await (await browserless).browser()
+        const browserWSEndpoint = browser.wsEndpoint()
 
-      subprocess = execa.node(execPath, { killSignal: 'SIGKILL' })
-      subprocess.stderr.pipe(process.stderr)
+        subprocess = execa.node(execPath, { killSignal: 'SIGKILL' })
+        subprocess.stderr.pipe(process.stderr)
 
-      debug('spawn', { pid: subprocess.pid })
-      subprocess.send({ query: normalizeQuery(query), browserWSEndpoint, ...opts })
+        debug('spawn', { pid: subprocess.pid })
 
-      const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
-      if (isFulfilled) return value
-      throw reason
-    } catch (error) {
-      throw ensureError(error)
-    } finally {
-      driver.close(subprocess)
-    }
-  }
+        subprocess.send({
+          url,
+          code: fn.toString(),
+          query,
+          browserWSEndpoint,
+          ...opts
+        })
 
-  const task = () =>
-    pRetry(run, {
-      retry,
-      onFailedAttempt: async error => {
-        if (error.name === 'AbortError') throw error
-        if (isRejected) throw new AbortError()
-        Promise.resolve(browserless).then(browserless => browserless.respawn())
-        const { message, attemptNumber, retriesLeft } = error
-        debug('retry', { attemptNumber, retriesLeft, message })
+        const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
+        if (isFulfilled) return value
+        throw reason
+      } catch (error) {
+        throw ensureError(error)
+      } finally {
+        driver.close(subprocess)
       }
+    }
+
+    const task = () =>
+      pRetry(run, {
+        retry,
+        onFailedAttempt: async error => {
+          if (error.name === 'AbortError') throw error
+          if (isRejected) throw new AbortError()
+          Promise.resolve(browserless).then(browserless => browserless.respawn())
+          const { message, attemptNumber, retriesLeft } = error
+          debug('retry', { attemptNumber, retriesLeft, message })
+        }
+      })
+
+    // main
+    const result = await pTimeout(task(), timeout, () => {
+      isRejected = true
+      throw browserTimeout({ timeout })
     })
 
-  // main
-  const result = await pTimeout(task(), timeout, () => {
-    isRejected = true
-    throw browserTimeout({ timeout })
-  })
-
-  return result
+    return result
+  }
 }

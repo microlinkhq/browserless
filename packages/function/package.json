@@ -50,7 +50,7 @@
     "src"
   ],
   "scripts": {
-    "test": "ava test/vm.js"
+    "test": "ava"
   },
   "license": "MIT"
 }
