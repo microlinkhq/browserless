@@ -56,9 +56,14 @@ test('access to page', async t => {
 
 test('interact with a page', async t => {
   const code = async ({ page }) => {
-    await page.click('a[href="/blog"')
-    await page.click('a[href="/speed-the-feature/"')
-    return page.title()
+    const navigationPromise = page.waitForNavigation()
+
+    await page.waitForSelector('body > div > p > a')
+    await page.click('body > div > p > a')
+    await navigationPromise
+
+    const title = await page.title()
+    return title
   }
 
   const myFn = browserlessFunction(code, { vmOpts })
@@ -66,6 +71,6 @@ test('interact with a page', async t => {
   t.deepEqual(await myFn('https://example.com'), {
     isFulfilled: true,
     isRejected: false,
-    value: 'Speed is the feature | Kikobeats'
+    value: 'IANA — IANA-managed Reserved Domains'
   })
 })
