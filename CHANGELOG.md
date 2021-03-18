@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [8.8.0](https://github.com/microlinkhq/browserless/compare/v8.7.13...v8.8.0) (2021-03-18)
+
+
+### Bug Fixes
+
+* coverage report ([#263](https://github.com/microlinkhq/browserless/issues/263)) ([785b5fa](https://github.com/microlinkhq/browserless/commit/785b5fa7ed27f2498fcc5ac1c7c9c101d8fd3f13))
+* linter ([2e453a6](https://github.com/microlinkhq/browserless/commit/2e453a673392fa460b9a738e2c192ff5f92b1909))
+
+
+### Features
+
+* add functions package ([#261](https://github.com/microlinkhq/browserless/issues/261)) ([36677bd](https://github.com/microlinkhq/browserless/commit/36677bd55a88785f6613d1e768c2a260420c877e))
+
+
+
+
+
 ## [8.7.13](https://github.com/microlinkhq/browserless/compare/v8.7.12...v8.7.13) (2021-03-15)
 
 **Note:** Version bump only for package browserless
