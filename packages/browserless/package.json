@@ -45,7 +45,6 @@
   "devDependencies": {
     "@browserless/test": "latest",
     "ava": "latest",
-    "nyc": "latest",
     "puppeteer": "latest"
   },
   "engines": {
@@ -55,7 +54,7 @@
     "src"
   ],
   "scripts": {
-    "test": "NODE_ENV=test nyc --silent --no-clean --temp-dir ../../.nyc_output ava"
+    "test": "ava"
   },
   "license": "MIT",
   "ava": {

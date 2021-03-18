@@ -44,7 +44,6 @@
   },
   "devDependencies": {
     "ava": "latest",
-    "nyc": "latest",
     "browserless": "latest",
     "puppeteer": "latest",
     "signal-exit": "latest"
@@ -58,7 +57,7 @@
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall",
-    "test": "NODE_ENV=test nyc --silent --no-clean --temp-dir ../../.nyc_output ava"
+    "test": "ava"
   },
   "license": "MIT",
   "ava": {

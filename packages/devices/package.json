@@ -33,7 +33,6 @@
   },
   "devDependencies": {
     "ava": "latest",
-    "nyc": "latest",
     "lodash": "latest",
     "puppeteer": "latest"
   },
@@ -44,7 +43,7 @@
     "src"
   ],
   "scripts": {
-    "test": "NODE_ENV=test nyc --silent --no-clean --temp-dir ../../.nyc_output ava"
+    "test": "ava"
   },
   "license": "MIT",
   "ava": {
