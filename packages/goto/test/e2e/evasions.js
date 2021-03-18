@@ -3,14 +3,11 @@
 const test = require('ava')
 
 const createBrowserless = require('browserless')
-const userAgent = require('ua-string')
 const onExit = require('signal-exit')
 
 const browserless = createBrowserless({ timeout: 300000 })
 
 onExit(browserless.close)
-
-const { evasions } = require('../..')
 
 test('arh.antoinevastel.com/bots/areyouheadless', async t => {
   const content = await browserless.text('https://arh.antoinevastel.com/bots/areyouheadless')
@@ -19,7 +16,7 @@ test('arh.antoinevastel.com/bots/areyouheadless', async t => {
 
 // See https://antoinevastel.com/bot%20detection/2018/11/13/fp-scanner-library-demo.html
 test('antoinevastel.com/bots/fpstructured', async t => {
-  const fpCollect = browserless.evaluate((page, response) =>
+  const fpCollect = browserless.evaluate(page =>
     page.evaluate(() => {
       const fp = JSON.parse(document.getElementById('fp').innerText)
       const scanner = JSON.parse(document.getElementById('scanner').innerText)
@@ -28,31 +25,17 @@ test('antoinevastel.com/bots/fpstructured', async t => {
   )
 
   const { scanner } = await fpCollect('https://antoinevastel.com/bots/fpstructured')
-  Object.keys(scanner)
-    // looks it isn't accurate,
-    // see https://github.com/antoinevastel/fpscanner/issues/9
-    .filter(key => key !== 'CHR_MEMORY')
-    .forEach(scannerKey => {
-      const scannerValue = scanner[scannerKey]
-      t.true(scannerValue.consistent === 3, `${scannerKey} is inconsistent`)
-    })
-})
 
-test.skip('device-info.fr/are_you_a_bot', async t => {
-  const browserless = createBrowserless({
-    evasions: evasions.filter(evasion => evasion !== 'randomizeUserAgent')
+  // looks it isn't accurate,
+  // see https://github.com/antoinevastel/fpscanner/issues/9
+  const scannerProps = Object.keys(scanner).filter(key => key !== 'CHR_MEMORY')
+
+  const scannerDetections = Object.keys(scannerProps).filter(key => {
+    const value = scanner[key]
+    return value && value.consistent !== 3
   })
 
-  const content = await browserless.text('https://device-info.fr/are_you_a_bot', {
-    headers: {
-      // the test false/positive under some popular user agents
-      // so we setup a fixed value
-      'user-agent': userAgent
-    }
-  })
-  t.true(content.includes('You are human!'))
-
-  await browserless.close()
+  t.is(scannerDetections.length, 0, scannerDetections.toString())
 })
 
 test('bot.sannysoft.com', async t => {

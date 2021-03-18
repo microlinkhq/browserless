@@ -46,8 +46,7 @@
     "ava": "latest",
     "browserless": "latest",
     "puppeteer": "latest",
-    "signal-exit": "latest",
-    "ua-string": "latest"
+    "signal-exit": "latest"
   },
   "engines": {
     "node": ">= 12"
