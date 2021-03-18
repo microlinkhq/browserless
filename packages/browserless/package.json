@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microlinkhq/browserless.git#master"
+    "url": "https://github.com/microlinkhq/browserless/tree/master/packages/browserless"
   },
   "bugs": {
     "url": "https://github.com/microlinkhq/browserless/issues"
