@@ -10,8 +10,9 @@
     "url": "https://kikobeats.com"
   },
   "repository": {
+    "directory": "packages/errors",
     "type": "git",
-    "url": "https://github.com/microlinkhq/browserless/tree/master/packages/errors"
+    "url": "git+https://github.com/microlinkhq/browserless.git#master"
   },
   "bugs": {
     "url": "https://github.com/microlinkhq/browserless"
