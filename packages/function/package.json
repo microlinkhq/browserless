@@ -2,7 +2,7 @@
   "name": "@browserless/function",
   "description": "Run abritrary JavaScript inside a browser sandbox",
   "homepage": "https://browserless.js.org",
-  "version": "8.8.0",
+  "version": "8.8.2",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -29,7 +29,7 @@
     "serverless"
   ],
   "dependencies": {
-    "@browserless/errors": "^8.7.3",
+    "@browserless/errors": "^8.8.2",
     "debug-logfmt": "~1.0.4",
     "execa": "~5.0.0",
     "p-event": "~4.2.0",

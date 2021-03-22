@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.2](https://github.com/microlinkhq/browserless/compare/v8.8.1...v8.8.2) (2021-03-22)
+
+
+### Bug Fixes
+
+* ensure query is an object ([008e2d9](https://github.com/microlinkhq/browserless/commit/008e2d97d7f89182a25439d07dfb0a55adbc17cc))
+
+
+
+
+
 ## [8.8.1](https://github.com/microlinkhq/browserless/compare/v8.8.0...v8.8.1) (2021-03-19)
 
 **Note:** Version bump only for package browserless

@@ -2,7 +2,7 @@
   "name": "@browserless/pool",
   "description": "Pooling support for browserless",
   "homepage": "https://browserless.js.org/#/?id=pool-of-instances",
-  "version": "8.7.11",
+  "version": "8.8.2",
   "main": "src",
   "repository": {
     "directory": "packages/pool",
