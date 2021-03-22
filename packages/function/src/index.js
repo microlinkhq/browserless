@@ -18,7 +18,7 @@ module.exports = (
   fn,
   { getBrowserless = requireOneOf(['browserless']), retry = 5, timeout = 30000, ...opts }
 ) => {
-  return async (url, query) => {
+  return async (url, query = {}) => {
     const browserless = getBrowserless()
     let isRejected = false
 
