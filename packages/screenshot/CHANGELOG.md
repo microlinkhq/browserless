@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.3](https://github.com/microlinkhq/browserless/compare/v8.8.2...v8.8.3) (2021-03-23)
+
+
+### Bug Fixes
+
+* prism-themes folder ([477d1f4](https://github.com/microlinkhq/browserless/commit/477d1f43f2ef3f4baba8221cb21d4c96767f54c0))
+
+
+
+
+
 ## [8.8.2](https://github.com/microlinkhq/browserless/compare/v8.8.1...v8.8.2) (2021-03-22)
 
 **Note:** Version bump only for package @browserless/screenshot
