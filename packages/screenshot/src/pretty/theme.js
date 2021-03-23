@@ -6,7 +6,7 @@ const path = require('path')
 
 const CACHE = Object.create(null)
 
-const GET_THEME_PATH = () => path.resolve(require.resolve('prism-themes'), '../themes')
+const GET_THEME_PATH = () => path.resolve(__dirname, '../../node_modules/prism-themes/themes')
 
 const THEME_PATH = () => CACHE.root || (CACHE.root = GET_THEME_PATH())
 
