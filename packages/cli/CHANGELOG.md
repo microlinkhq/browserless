@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.5](https://github.com/microlinkhq/browserless/compare/v8.8.4...v8.8.5) (2021-03-25)
+
+**Note:** Version bump only for package @browserless/cli
+
+
+
+
+
 ## [8.8.4](https://github.com/microlinkhq/browserless/compare/v8.8.3...v8.8.4) (2021-03-25)
 
 **Note:** Version bump only for package @browserless/cli

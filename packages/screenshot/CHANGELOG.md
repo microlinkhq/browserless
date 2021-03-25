@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.5](https://github.com/microlinkhq/browserless/compare/v8.8.4...v8.8.5) (2021-03-25)
+
+
+### Bug Fixes
+
+* **screenshot:** theme directory path ([b30bd44](https://github.com/microlinkhq/browserless/commit/b30bd44a780247aea488c41a618b738ced29c20d))
+
+
+
+
+
 ## [8.8.4](https://github.com/microlinkhq/browserless/compare/v8.8.3...v8.8.4) (2021-03-25)
 
 **Note:** Version bump only for package @browserless/screenshot
