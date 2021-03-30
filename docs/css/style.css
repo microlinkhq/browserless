@@ -24,6 +24,9 @@
   --gray27: #000000;
   --gray28: #000000;
   --gray29: #000000;
+  --blue: #067df7;
+  --green: #42b983;
+  --red: #f66;
 
   /* theme */
   --primary-color: var(--base);
@@ -37,10 +40,10 @@
   --sans-serif-font: 'Nunito', sans-serif;
   --code-font: Nitti, 'Microsoft YaHei', 'Roboto Mono', 微软雅黑, monospace;
   --codebox-border-color: var(--gray2);
-  --codebox-color: var(--base);
+  --codebox-color: var(--gray8);
   --codebox-token-var-color: var(--base);
   --codebox-token-string-color: var(--indigo8);
-  --codebox-bg: #f7f7f7;
+  --codebox-bg: #fff;
 }
 
 ::selection {
@@ -94,7 +97,6 @@ div#app:empty::before {
 }
 
 .progress {
-  background-color: #42b983;
   background-color: var(--primary-color);
   height: 2px;
   left: 0;
@@ -108,7 +110,6 @@ div#app:empty::before {
 
 .search .search-keyword,
 .search a:hover {
-  color: #42b983;
   color: var(--primary-color);
 }
 
@@ -266,7 +267,6 @@ li input[type='checkbox'] {
 
 .github-corner svg {
   color: #fff;
-  fill: #42b983;
   fill: var(--primary-color);
   height: 80px;
   width: 80px;
@@ -399,7 +399,6 @@ main {
 }
 
 .sidebar-toggle span {
-  background-color: #42b983;
   background-color: var(--primary-color);
   display: block;
   margin-bottom: 4px;
@@ -475,7 +474,7 @@ body.sticky .sidebar-toggle {
 
 .markdown-section p.tip {
   border-bottom-right-radius: 2px;
-  border-left: 4px solid #f66;
+  border-left: 4px solid var(--red);
   border-top-right-radius: 2px;
   margin: 2em 0;
   padding: 12px 24px 12px 30px;
@@ -491,7 +490,7 @@ body.sticky .sidebar-toggle {
 }
 
 .markdown-section p.tip::before {
-  background-color: #f66;
+  background-color: var(--red);
   border-radius: 100%;
   color: #fff;
   content: '!';
@@ -749,11 +748,11 @@ section.cover ul {
 }
 
 section.cover .cover-main>p:last-child a {
-  border-color: #42b983;
+  border-color: var(--green);
   border: 1px solid var(--primary-color);
   border-radius: 2rem;
   box-sizing: border-box;
-  color: #42b983;
+  color: var(--green);
   color: var(--primary-color);
   display: inline-block;
   font-size: 1.05rem;
@@ -768,7 +767,6 @@ section.cover .cover-main>p:last-child a {
 }
 
 section.cover .cover-main>p:last-child a:last-child {
-  background-color: #42b983;
   background-color: var(--primary-color);
   color: #fff;
   margin-right: 0;
@@ -784,13 +782,11 @@ section.cover .cover-main>p:last-child a:hover {
 }
 
 section.cover blockquote>p>a {
-  border-bottom: 2px solid #42b983;
   border-bottom: 2px solid var(--primary-color);
   transition: color 0.3s;
 }
 
 section.cover blockquote>p>a:hover {
-  color: #42b983;
   color: var(--primary-color);
 }
 
@@ -877,7 +873,7 @@ body {
 .markdown-section p a,
 .markdown-section li a {
   text-decoration: none;
-  color: #067df7;
+  color: var(--blue);
 }
 
 .markdown-section a:hover {
@@ -958,6 +954,7 @@ body {
 .markdown-section p code,
 .markdown-section li code {
   color: var(--codebox-token-var-color);
+  border: 1px solid var(--codebox-border-color);
   background: var(--codebox-bg);
   font-size: 0.75rem;
   padding: 3px 10px;
@@ -978,6 +975,7 @@ body {
 .markdown-section pre {
   border-radius: 5px;
   background-color: var(--codebox-bg);
+  border: 1px solid var(--codebox-border-color);
 }
 
 .markdown-section code,
@@ -1001,7 +999,7 @@ body {
   -webkit-font-smoothing: initial;
   background-color: var(--codebox-bg);
   border-radius: 2px;
-  color: var(--codebox-color);
+  color: var(--base);
   display: block;
   font-family: var(--code-font);
   font-size: 0.8rem;
@@ -1019,11 +1017,40 @@ body {
   letter-spacing: 0.05rem;
 }
 
-code .token {
-  -moz-osx-font-smoothing: initial;
-  -webkit-font-smoothing: initial;
-  min-height: 24px;
-  min-height: 1.5rem;
+/* Prism theme */
+
+.token.keyword {
+  color: #ff0078;
+  font-weight: bolder;
+}
+
+.token.function,
+.token.tag,
+.token.class-name,
+.token.number,
+.token.tag
+.token.punctuation {
+  color: var(--blue);
+}
+
+.token.string,
+.token.attr-value {
+  color: #028265;
+}
+
+.token.url,
+.token.symbol,
+.token.boolean,
+.token.variable,
+.token.constant {
+  color: var(--red);
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--gray7);
 }
 
 pre::after {

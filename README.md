@@ -164,11 +164,9 @@ It serializes the content from the target `url` into HTML.
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const url = 'https://example.com'
-  const html = await browserless.html(url)
-  console.log(html)
-})()
+const url = 'https://example.com'
+const html = await browserless.html(url)
+console.log(html)
 ```
 
 #### options
@@ -182,11 +180,9 @@ It serializes the content from the target `url` into plain text.
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const url = 'https://example.com'
-  const text = await browserless.text(url)
-  console.log(text)
-})()
+const url = 'https://example.com'
+const text = await browserless.text(url)
+console.log(text)
 ```
 
 #### options
@@ -200,11 +196,9 @@ It generates the PDF version of a website behind an `url`.
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const url = 'https://example.com'
-  const buffer = await browserless.pdf(url)
-  console.log('PDF generated!')
-})()
+const url = 'https://example.com'
+const buffer = await browserless.pdf(url)
+console.log('PDF generated!')
 ```
 
 #### options
@@ -240,26 +234,22 @@ It sets paper margins. All possible units are:
 You can pass an `object` object specifing each corner side of the paper:
 
 ```js
-;(async () => {
-  const buffer = await browserless.pdf(url.toString(), {
-    margin: {
-      top: '0.35cm',
-      bottom: '0.35cm',
-      left: '0.35cm',
-      right: '0.35cm'
-    }
-  })
-})()
+const buffer = await browserless.pdf(url.toString(), {
+  margin: {
+    top: '0.35cm',
+    bottom: '0.35cm',
+    left: '0.35cm',
+    right: '0.35cm'
+  }
+})
 ```
 
 Or, in case you pass an `string`, it will be used for all the sides:
 
 ```js
-;(async () => {
-  const buffer = await browserless.pdf(url.toString(), {
-    margin: '0.35cm'
-  })
-})()
+const buffer = await browserless.pdf(url.toString(), {
+  margin: '0.35cm'
+})
 ```
 
 ### .screenshot(url, options)
@@ -269,11 +259,9 @@ It takes a screenshot from the target `url`.
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const url = 'https://example.com'
-  const buffer = await browserless.screenshot(url)
-  console.log('Screenshot taken!')
-})()
+const url = 'https://example.com'
+const buffer = await browserless.screenshot(url)
+console.log('Screenshot taken!')
 ```
 
 #### options
@@ -329,16 +317,14 @@ You can configure the overlay specifying:
   - An image url, eg. `https://source.unsplash.com/random/1920x1080`.
 
 ```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    hide: ['.crisp-client', '#cookies-policy'],
-    overlay: {
-      browser: 'dark',
-      background:
-        'linear-gradient(45deg, rgba(255,18,223,1) 0%, rgba(69,59,128,1) 66%, rgba(69,59,128,1) 100%)'
-    }
-  })
-})()
+const buffer = await browserless.screenshot(url.toString(), {
+  hide: ['.crisp-client', '#cookies-policy'],
+  overlay: {
+    browser: 'dark',
+    background:
+      'linear-gradient(45deg, rgba(255,18,223,1) 0%, rgba(69,59,128,1) 66%, rgba(69,59,128,1) 100%)'
+  }
+})
 ```
 
 ### .devices
@@ -381,9 +367,7 @@ It returns the internal [browser](https://github.com/GoogleChrome/puppeteer/blob
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const browserInstance = await browserless.browser
-})()
+const browserInstance = await browserless.browser
 ```
 
 ### .evaluate(fn, gotoOpts)
@@ -401,17 +385,15 @@ const getUrlInfo = browserless.evaluate((page, response) => ({
   redirectUrls: response.request().redirectChain()
 }))
 
-;(async () => {
-  const url = 'https://example.com'
-  const info = await getUrlInfo(url)
+const url = 'https://example.com'
+const info = await getUrlInfo(url)
 
-  console.log(info)
-  // {
-  //   "statusCode": 200,
-  //   "url": "https://example.com/",
-  //   "redirectUrls": []
-  // }
-})()
+console.log(info)
+// {
+//   "statusCode": 200,
+//   "url": "https://example.com/",
+//   "redirectUrls": []
+// }
 ```
 
 Note you don't need to close the page; It will be done under the hood.
@@ -425,12 +407,10 @@ const getText = browserless.evaluate(page => page.evaluate(() => document.body.i
   waitUntil: 'domcontentloaded'
 })
 
-;(async () => {
-  const url = 'https://example.com'
-  const text = await getText(url)
+const url = 'https://example.com'
+const text = await getText(url)
 
-  console.log(text)
-})()
+console.log(text)
 ```
 
 ### .goto(page, options)
@@ -440,10 +420,8 @@ It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/m
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const page = await browserless.page()
-  const { response, device } = await browserless.goto(page, { url: 'http://example.com' })
-})()
+const page = await browserless.page()
+const { response, device } = await browserless.goto(page, { url: 'http://example.com' })
 ```
 
 #### options
@@ -523,16 +501,14 @@ An object containing additional HTTP headers to be sent with every request.
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const page = await browserless.page()
-  await browserless.goto(page, {
-    url: 'http://example.com',
-    headers: {
-      'user-agent': 'googlebot',
-      cookie: 'foo=bar; hello=world'
-    }
-  })
-})()
+const page = await browserless.page()
+await browserless.goto(page, {
+  url: 'http://example.com',
+  headers: {
+    'user-agent': 'googlebot',
+    cookie: 'foo=bar; hello=world'
+  }
+})
 ```
 
 ##### hide
@@ -542,11 +518,9 @@ type: `string` | `string[]`</br>
 Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
 ```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    hide: ['.crisp-client', '#cookies-policy']
-  })
-})()
+const buffer = await browserless.screenshot(url.toString(), {
+  hide: ['.crisp-client', '#cookies-policy']
+})
 ```
 
 This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
@@ -584,15 +558,13 @@ It can accept:
 - Inline code (e.g., `"document.body.style.backgroundColor = 'red'"`).
 
 ```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    modules: [
-      'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js',
-      'local-file.js',
-      "document.body.style.backgroundColor = 'red'"
-    ]
-  })
-})()
+const buffer = await browserless.screenshot(url.toString(), {
+  modules: [
+    'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js',
+    'local-file.js',
+    "document.body.style.backgroundColor = 'red'"
+  ]
+})
 ```
 
 ##### remove
@@ -602,11 +574,9 @@ type: `string` | `string[]`</br>
 Remove DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
 ```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    remove: ['.crisp-client', '#cookies-policy']
-  })
-})()
+const buffer = await browserless.screenshot(url.toString(), {
+  remove: ['.crisp-client', '#cookies-policy']
+})
 ```
 
 This sets [`display: none`](https://stackoverflow.com/a/133064/64949) on the matched elements, so it could potentially break the website layout.
@@ -631,15 +601,13 @@ It can accept:
 - Inline code (e.g., `"document.body.style.backgroundColor = 'red'"`).
 
 ```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    scripts: [
-      'https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js',
-      'local-file.js',
-      "document.body.style.backgroundColor = 'red'"
-    ]
-  })
-})()
+const buffer = await browserless.screenshot(url.toString(), {
+  scripts: [
+    'https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js',
+    'local-file.js',
+    "document.body.style.backgroundColor = 'red'"
+  ]
+})
 ```
 
 Prefer to use [modules](#modules) whenever possible.
@@ -663,15 +631,13 @@ It can accept:
 - Inline code (e.g., `"body { background: red; }"`).
 
 ```js
-;(async () => {
-  const buffer = await browserless.screenshot(url.toString(), {
-    styles: [
-      'https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css',
-      'local-file.css',
-      'body { background: red; }'
-    ]
-  })
-})()
+const buffer = await browserless.screenshot(url.toString(), {
+  styles: [
+    'https://cdn.jsdelivr.net/npm/hack@0.8.1/dist/dark.css',
+    'local-file.css',
+    'body { background: red; }'
+  ]
+})
 ```
 
 ##### timezone 
@@ -727,9 +693,7 @@ It returns a standalone [browser new page](https://github.com/GoogleChrome/puppe
 ```js
 const browserless = require('browserless')
 
-;(async () => {
-  const page = await browserless.page()
-})()
+const page = await browserless.page()
 ```
 
 ## Command Line Interface
