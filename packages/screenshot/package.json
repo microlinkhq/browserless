@@ -38,7 +38,7 @@
     "map-values-deep": "~1.0.2",
     "mime-types": "~2.1.29",
     "p-reflect": "~2.1.0",
-    "p-timeout": "~4.1.0",
+    "p-timeout": "~5.0.0",
     "pretty-ms": "~7.0.1",
     "prism-themes": "github:kikobeats/prism-themes#main",
     "sharp": "~0.28.0",
