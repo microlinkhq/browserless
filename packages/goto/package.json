@@ -34,7 +34,7 @@
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.2",
     "is-url-http": "~2.2.3",
-    "p-reflect": "~2.1.0",
+    "p-reflect": "~3.0.0",
     "p-timeout": "~4.1.0",
     "pretty-ms": "~7.0.1",
     "shallow-equal": "~1.2.1",

@@ -33,7 +33,7 @@
     "debug-logfmt": "~1.0.4",
     "execa": "~5.0.0",
     "p-event": "~4.2.0",
-    "p-reflect": "~2.1.0",
+    "p-reflect": "~3.0.0",
     "p-retry": "~4.5.0",
     "p-timeout": "~4.1.0",
     "require-one-of": "~1.0.15",

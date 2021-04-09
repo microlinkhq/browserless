@@ -36,7 +36,7 @@
     "@browserless/pdf": "^8.8.3",
     "@browserless/screenshot": "^8.8.6",
     "debug-logfmt": "~1.0.4",
-    "p-reflect": "~2.1.0",
+    "p-reflect": "~3.0.0",
     "p-retry": "~4.5.0",
     "p-timeout": "~4.1.0",
     "parse-proxy-uri": "~1.0.3",
