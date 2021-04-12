@@ -42,7 +42,7 @@
     "process-stats": "~3.5.6",
     "signal-exit": "~3.0.3",
     "term-img": "~5.0.0",
-    "unique-random-array": "~2.0.0"
+    "unique-random-array": "~3.0.0"
   },
   "engines": {
     "node": ">= 12"
