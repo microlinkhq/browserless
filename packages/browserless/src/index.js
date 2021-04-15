@@ -20,7 +20,7 @@ module.exports = ({
   incognito = false,
   timeout = 30000,
   proxy: proxyUrl,
-  retry = 5,
+  retry = 2,
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })

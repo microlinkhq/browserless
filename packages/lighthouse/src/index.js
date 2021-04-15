@@ -33,7 +33,7 @@ module.exports = async (
     getBrowserless = require('browserless'),
     logLevel,
     output,
-    retry = 5,
+    retry = 2,
     timeout = 30000,
     ...opts
   } = {}
