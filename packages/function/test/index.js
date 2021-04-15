@@ -21,6 +21,18 @@ const vmOpts = {
   }
 }
 
+test('handle errors', async t => {
+  const code = () => {
+    throw new Error('oh no')
+  }
+
+  const myFn = browserlessFunction(code, { vmOpts })
+  const result = await myFn('https://example.com')
+
+  t.true(result.isRejected)
+  t.is(result.reason.message, 'oh no')
+})
+
 test('access to query', async t => {
   const code = ({ query }) => query.foo
   const myFn = browserlessFunction(code, { vmOpts })
