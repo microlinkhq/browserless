@@ -40,16 +40,17 @@ test('passing a function', async t => {
 
 test('catch errors', async t => {
   const vm = createVm()
-  function template ({ name }) {
+
+  async function template () {
     throw new Error('oh no')
   }
-  const fn = vm(template)
 
-  t.deepEqual(await fn({ name: 'kiko' }), {
-    isFulfilled: false,
-    isRejected: true,
-    reason: new Error('oh no')
-  })
+  const fn = vm(template)
+  const result = await fn({ name: 'kiko' })
+
+  t.true(result.isRejected)
+  t.false(result.isFulfilled)
+  t.is(result.reason.message, 'oh no')
 })
 
 test('passing an arrow function', async t => {
