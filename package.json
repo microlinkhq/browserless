@@ -59,8 +59,7 @@
     "npm-check-updates": "latest",
     "prettier-standard": "latest",
     "simple-git-hooks": "latest",
-    "standard": "latest",
-    "standard-markdown": "latest"
+    "standard": "latest"
   },
   "engines": {
     "node": ">= 12"
@@ -73,7 +72,7 @@
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "install": "lerna bootstrap --force-local --no-ci",
-    "lint": "standard-markdown README.md && standard",
+    "lint": "standard",
     "prerelease": "npm run update:check && npm run contributors",
     "pretest": "npm run lint",
     "release": "lerna publish --yes --sort --conventional-commits -m \"chore(release): %s\" --create-release github",
@@ -91,9 +90,6 @@
   "lint-staged": {
     "*.js": [
       "prettier-standard"
-    ],
-    "*.md": [
-      "standard-markdown"
     ],
     "package.json": [
       "finepack"
