@@ -1,6 +1,7 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless:error')
+const { serializeError } = require('serialize-error')
 const whoops = require('whoops')
 
 const ERROR_NAME = 'BrowserlessError'
@@ -27,7 +28,7 @@ browserlessError.browserDisconnected = createBrowserlessError({
 })
 
 browserlessError.ensureError = rawError => {
-  debug('ensureError', JSON.stringify(rawError))
+  debug('ensureError', serializeError(rawError))
 
   const error = 'error' in rawError ? rawError.error : rawError
 

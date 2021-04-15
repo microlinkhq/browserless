@@ -1,5 +1,7 @@
 'use strict'
 
+const { serializeError } = require('serialize-error')
+const pReflect = require('p-reflect')
 const { NodeVM } = require('vm2')
 
 const createVm = opts =>
@@ -19,21 +21,10 @@ module.exports = opts => {
 
   return (fn, scriptPath) => {
     const run = compile(vm, fn, scriptPath)
-
-    return async (...args) => {
-      try {
-        return {
-          isFulfilled: true,
-          isRejected: false,
-          value: await run(...args)
-        }
-      } catch (error) {
-        return {
-          isFulfilled: false,
-          isRejected: true,
-          reason: error
-        }
-      }
-    }
+    return (...args) =>
+      pReflect(run(...args)).then(result => {
+        if (result.reason) result.reason = serializeError(result.reason)
+        return result
+      })
   }
 }
