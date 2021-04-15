@@ -38,7 +38,7 @@
     "p-timeout": "~4.1.0",
     "require-one-of": "~1.0.15",
     "serialize-error": "~8.0.1",
-    "vm2": "~3.9.2"
+    "vm2": "~3.9.3"
   },
   "devDependencies": {
     "ava": "latest",
