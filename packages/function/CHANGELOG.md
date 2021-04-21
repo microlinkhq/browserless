@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.9](https://github.com/microlinkhq/browserless/compare/v8.8.8...v8.8.9) (2021-04-21)
+
+
+### Bug Fixes
+
+* ensure function is natively created ([2fd8e2c](https://github.com/microlinkhq/browserless/commit/2fd8e2c891997ae5e40b194aa0efdb97fbd92965))
+
+
+
+
+
 ## [8.8.8](https://github.com/microlinkhq/browserless/compare/v8.8.7...v8.8.8) (2021-04-20)
 
 **Note:** Version bump only for package @browserless/function
