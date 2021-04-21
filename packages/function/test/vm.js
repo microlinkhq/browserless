@@ -118,15 +118,12 @@ test('run browserless code', async t => {
   const url = 'https://example.com'
   const scriptPath = path.resolve(__dirname, 'vm.js')
 
-  const code = `async (page, query) => {
-    const pageTitle = await page.title()
-    return pageTitle
-  }`
+  const code = `async (page) => page.title();`
 
   const template = `async ({ browserWSEndpoint, code, url, opts }) => {
     const getBrowserless = require('browserless')
     const browserless = getBrowserless({ mode: 'connect', browserWSEndpoint })
-    const browserFn = browserless.evaluate(${code})
+    const browserFn = browserless.evaluate(${eval(code)})
     const result = await browserFn(url, opts)
     return result
   }`

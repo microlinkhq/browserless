@@ -13,7 +13,7 @@ async ({ url, query, gotoOpts, browserWSEndpoint }) => {
   const browserless = getBrowserless({ mode: 'connect', browserWSEndpoint })
 
   const fnWrapper = fn => (page, response) => fn({ page, response, query })
-  const browserFn = browserless.evaluate(fnWrapper(${code}), gotoOpts)
+  const browserFn = browserless.evaluate(fnWrapper(${eval(code)}), gotoOpts)
 
   return browserFn(url)
 }`
