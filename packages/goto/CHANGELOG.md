@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.10](https://github.com/microlinkhq/browserless/compare/v8.8.9...v8.8.10) (2021-04-23)
+
+**Note:** Version bump only for package @browserless/goto
+
+
+
+
+
 ## [8.8.7](https://github.com/microlinkhq/browserless/compare/v8.8.6...v8.8.7) (2021-04-15)
 
 **Note:** Version bump only for package @browserless/goto
