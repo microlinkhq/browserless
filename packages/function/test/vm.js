@@ -1,3 +1,5 @@
+/* eslint-disable no-eval */
+
 'use strict'
 
 const getBrowserless = require('browserless')
@@ -118,7 +120,7 @@ test('run browserless code', async t => {
   const url = 'https://example.com'
   const scriptPath = path.resolve(__dirname, 'vm.js')
 
-  const code = `async (page) => page.title();`
+  const code = 'async (page) => page.title();'
 
   const template = `async ({ browserWSEndpoint, code, url, opts }) => {
     const getBrowserless = require('browserless')

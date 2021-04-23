@@ -1,3 +1,5 @@
+/* eslint-disable no-eval */
+
 'use strict'
 
 const pReflect = require('p-reflect')
