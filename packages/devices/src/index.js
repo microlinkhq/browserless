@@ -2,7 +2,7 @@
 
 const { default: didyoumean } = require('didyoumean3')
 const requireOneOf = require('require-one-of')
-const memoizeOne = require('memoize-one')
+const { memoizeOne } = require('memoize-one')
 
 const customDevices = require('./devices.json')
 
