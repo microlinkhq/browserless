@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "The Headless Chrome/Chromium perfomance driver for Node.js",
   "homepage": "https://browserless.js.org",
-  "version": "8.8.10",
+  "version": "8.8.11",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -32,9 +32,9 @@
   ],
   "dependencies": {
     "@browserless/errors": "^8.8.8",
-    "@browserless/goto": "^8.8.10",
-    "@browserless/pdf": "^8.8.10",
-    "@browserless/screenshot": "^8.8.10",
+    "@browserless/goto": "^8.8.11",
+    "@browserless/pdf": "^8.8.11",
+    "@browserless/screenshot": "^8.8.11",
     "debug-logfmt": "~1.0.4",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.5.0",
