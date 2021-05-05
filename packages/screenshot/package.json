@@ -40,9 +40,9 @@
     "p-reflect": "~2.1.0",
     "p-timeout": "~4.1.0",
     "pretty-ms": "~7.0.1",
-    "prism-themes": "github:PrismJS/prism-themes#master",
+    "prism-themes": "~1.7.0",
     "sharp": "~0.28.1",
-    "svg-gradient": "~1.0.2",
+    "svg-gradient": "~1.0.3",
     "time-span": "~4.0.0"
   },
   "devDependencies": {
