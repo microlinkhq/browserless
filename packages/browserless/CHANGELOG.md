@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.15](https://github.com/microlinkhq/browserless/compare/v8.8.14...v8.8.15) (2021-05-07)
+
+
+### Bug Fixes
+
+* ensure to close page ([ce76075](https://github.com/microlinkhq/browserless/commit/ce76075c859da3b9e4a105031b7e239adad80630))
+
+
+
+
+
 ## [8.8.14](https://github.com/microlinkhq/browserless/compare/v8.8.13...v8.8.14) (2021-05-05)
 
 **Note:** Version bump only for package browserless
