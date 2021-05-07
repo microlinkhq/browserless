@@ -93,7 +93,7 @@ module.exports = ({
       } catch (error) {
         throw ensureError(error)
       } finally {
-        await closePage(page)
+        closePage(page)
       }
     }
 
