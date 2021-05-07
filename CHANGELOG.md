@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.16](https://github.com/microlinkhq/browserless/compare/v8.8.15...v8.8.16) (2021-05-07)
+
+
+### Reverts
+
+* Revert "fix: ensure to close page" ([07017d8](https://github.com/microlinkhq/browserless/commit/07017d85676759a89d787fe0a65be2f3081c6953))
+
+
+
+
+
 ## [8.8.15](https://github.com/microlinkhq/browserless/compare/v8.8.14...v8.8.15) (2021-05-07)
 
 
