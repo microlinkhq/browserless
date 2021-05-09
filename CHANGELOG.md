@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [8.8.17](https://github.com/microlinkhq/browserless/compare/v8.8.16...v8.8.17) (2021-05-09)
+
+
+### Bug Fixes
+
+* ensure to resolve default args ([c8594c6](https://github.com/microlinkhq/browserless/commit/c8594c60aa5b692d09841aa931f5d0b72a2ed540))
+
+
+
+
+
 ## [8.8.16](https://github.com/microlinkhq/browserless/compare/v8.8.15...v8.8.16) (2021-05-07)
 
 
