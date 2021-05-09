@@ -7,7 +7,7 @@ const pidtree = require('pidtree')
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
 // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
 // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
-const args = ({ proxy }) =>
+const args = ({ proxy } = {}) =>
   [
     // base
     '--disable-cloud-import',
