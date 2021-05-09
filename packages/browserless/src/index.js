@@ -20,12 +20,14 @@ module.exports = ({
   incognito = false,
   timeout = 30000,
   proxy: proxyUrl,
-  retry = 2,
+  retry = 3,
+  reconnect,
   ...launchOpts
 } = {}) => {
   const goto = createGoto({ puppeteer, timeout, ...launchOpts })
   const proxy = parseProxy(proxyUrl)
 
+  // TODO: rename into `spawnOrConnect`
   const spawn = (spawnOpts = {}) => {
     const promise = driver.spawn(puppeteer, {
       defaultViewport: goto.defaultViewport,
@@ -54,10 +56,10 @@ module.exports = ({
     return browser
   }
 
-  const respawn = async () => {
+  const respawn = async browserPromise => {
     const { value } = await pReflect(browserPromise)
     await driver.close(value)
-    browserPromise = spawn({ respawn: true })
+    return spawn()
   }
 
   const createPage = async args => {
@@ -103,7 +105,9 @@ module.exports = ({
         onFailedAttempt: error => {
           if (error.name === 'AbortError') throw error
           if (isRejected) throw new AbortError()
-          respawn()
+          ;(reconnect || respawn)(browserPromise).then(
+            newBrowserPromise => (browserPromise = newBrowserPromise)
+          )
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
         }
@@ -128,7 +132,8 @@ module.exports = ({
     // low level methods
     browser: getBrowser,
     close: async opts => driver.close(await browserPromise, opts),
-    respawn,
+    respawn: () =>
+      respawn(browserPromise).then(newBrowserPromise => (browserPromise = newBrowserPromise)),
     // high level methods
     evaluate,
     goto,
