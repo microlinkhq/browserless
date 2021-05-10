@@ -68,9 +68,12 @@ module.exports = ({
     }
 
     const createPage = async args => {
-      // TODO: maybe browserProcessPromise instead?
       const browser = await browserPromise
-      if (!browser.isConnected()) throw browserDisconnected()
+
+      debug('keepalive', {
+        browerConnected: browser.isConnected(),
+        browserProcessConnected: (await browserProcessPromise).isConnected()
+      })
 
       const context = incognito ? await browser.createIncognitoBrowserContext() : browser
       const page = await context.newPage()
