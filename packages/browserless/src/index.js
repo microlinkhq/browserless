@@ -1,6 +1,6 @@
 'use strict'
 
-const { ensureError, browserTimeout } = require('@browserless/errors')
+const { ensureError, browserTimeout, browserDisconnected } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -71,6 +71,10 @@ module.exports = ({
 
     const createPage = async args => {
       const browser = await browserPromise
+
+      debug('keepalive', { isConnected: browser.isConnected() })
+      if (!browser.isConnected()) throw browserDisconnected()
+
       const context = incognito ? await browser.createIncognitoBrowserContext() : browser
       const page = await context.newPage()
 
