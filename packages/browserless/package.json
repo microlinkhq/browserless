@@ -36,6 +36,7 @@
     "@browserless/pdf": "^8.8.14",
     "@browserless/screenshot": "^8.8.14",
     "debug-logfmt": "~1.0.4",
+    "mutexify": "~1.3.1",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.5.0",
     "p-timeout": "~4.1.0",

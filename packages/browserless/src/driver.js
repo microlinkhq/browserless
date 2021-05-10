@@ -7,7 +7,7 @@ const pidtree = require('pidtree')
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
 // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
 // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
-const args = ({ proxy } = {}) =>
+const getArgs = ({ proxy } = {}) =>
   [
     // base
     '--disable-cloud-import',
@@ -49,15 +49,14 @@ const args = ({ proxy } = {}) =>
     proxy && `--proxy-server=${proxy.protocol}://${proxy.hostname}:${proxy.port}`
   ].filter(Boolean)
 
-const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
-  puppeteer[mode]({
-    ignoreHTTPSErrors: true,
-    // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
-    // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
-    // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
-    args: args({ proxy }),
-    ...launchOpts
-  })
+// The param `timeout` means here the maximum time in milliseconds
+// to wait for the browser instance to start
+const spawn = (puppeteer, launchOpts) => {
+  const args = launchOpts.args ? undefined : getArgs({ proxy: launchOpts.proxy })
+  return puppeteer.launch({ ignoreHTTPSErrors: true, timeout: 0, args, ...launchOpts })
+}
+
+const connect = (puppeteer, launchOpts) => puppeteer.connect(launchOpts)
 
 const getPid = childProcess => {
   if (!childProcess) return null
@@ -96,4 +95,4 @@ const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) =>
   return { pids }
 }
 
-module.exports = { getPid, spawn, close, args }
+module.exports = { spawn, connect, getPid, close, getArgs }
