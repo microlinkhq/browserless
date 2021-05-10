@@ -40,10 +40,9 @@ module.exports = ({
       ...launchOpts
     })
 
-    promise.then(async browser => {
-      const version = await browser.version()
-      debug('spawn', { pid: driver.getPid(browser), version })
-    })
+    promise.then(async browser =>
+      debug('spawn', { pid: driver.getPid(browser), version: await browser.version() })
+    )
 
     return promise
   }
