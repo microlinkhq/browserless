@@ -71,8 +71,7 @@ module.exports = async (
       onFailedAttempt: async error => {
         if (error.name === 'AbortError') throw error
         if (isRejected) throw new AbortError()
-        const browserless = await browserlessPromise
-        await browserless.respawn()
+        browserlessPromise.then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
       }
