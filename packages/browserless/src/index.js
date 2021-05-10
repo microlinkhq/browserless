@@ -100,7 +100,7 @@ module.exports = ({
         } catch (error) {
           throw ensureError(error)
         } finally {
-          await closePage(page)
+          closePage(page)
         }
       }
 
@@ -108,6 +108,7 @@ module.exports = ({
         pRetry(run, {
           retries: retry,
           onFailedAttempt: error => {
+            debug('onFailedAttempt', { name: error.name, isRejected })
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
             reconnect()
