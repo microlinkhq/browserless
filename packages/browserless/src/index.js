@@ -50,16 +50,18 @@ module.exports = ({
   let browserProcessPromise = spawn()
 
   const connect = async () => {
-    const browserProcess = await browserProcessPromise
     let browserPromise = driver.connect(puppeteer, {
-      browserWSEndpoint: browserProcess.wsEndpoint(),
+      browserWSEndpoint: (await browserProcessPromise).wsEndpoint(),
       defaultViewport,
       ...launchOpts
     })
 
-    const reconnect = async () => {
-      const { respawned } = await respawn()
-      if (respawned) return reconnect()
+    const reconnect = async ({ alreadyRespawned = false } = {}) => {
+      if (!alreadyRespawned) {
+        const { respawned } = await respawn()
+        if (respawned) return reconnect({ alreadyRespawned: true })
+      }
+
       browserPromise = driver.connect(puppeteer, {
         browserWSEndpoint: (await browserProcessPromise).wsEndpoint(),
         defaultViewport,
@@ -69,7 +71,6 @@ module.exports = ({
 
     const createPage = async args => {
       const browser = await browserPromise
-
       const context = incognito ? await browser.createIncognitoBrowserContext() : browser
       const page = await context.newPage()
 
