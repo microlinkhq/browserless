@@ -20,7 +20,6 @@ const lock = mutexify()
 
 module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
-  incognito = false,
   timeout = 30000,
   proxy: proxyUrl,
   retry = 3,
@@ -75,23 +74,28 @@ module.exports = ({
       debug('keepalive', { isConnected: browser.isConnected() })
       if (!browser.isConnected()) throw browserDisconnected()
 
-      const context = incognito ? await browser.createIncognitoBrowserContext() : browser
+      const context = await browser.createIncognitoBrowserContext()
       const page = await context.newPage()
 
       if (proxy) await page.authenticate(proxy)
 
       debug('createPage', {
         pid: driver.getPid(browser) || 'connect',
-        incognito,
         pages: (await browser.pages()).length - 1,
         proxy: !!proxy,
         ...args
       })
 
+      page.context = context
+
       return page
     }
 
-    const closePage = page => page && pReflect(page.close())
+    const closePage = page => {
+      if (!page) return
+      if (page.context) return pReflect(page.context.close())
+      return pReflect(page.close())
+    }
 
     const wrapError = (fn, { timeout: milliseconds = timeout } = {}) => async (...args) => {
       let isRejected = false
