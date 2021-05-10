@@ -58,19 +58,10 @@ module.exports = ({
     })
 
     const reconnect = async () => {
-      const release = await lock()
-      const browserProcess = await browserProcessPromise
-
-      if (!browserProcess.isConnected()) {
-        await respawn()
-        release()
-        return reconnect()
-      } else {
-        release()
-      }
-
+      const { respawned } = await respawn()
+      if (respawned) return reconnect()
       browserPromise = driver.connect(puppeteer, {
-        browserWSEndpoint: browserProcess.wsEndpoint(),
+        browserWSEndpoint: (await browserProcessPromise).wsEndpoint(),
         defaultViewport,
         ...launchOpts
       })
@@ -143,6 +134,7 @@ module.exports = ({
     const disconnect = () => browserPromise.then(browser => browser.disconnect())
 
     return {
+      respawn,
       browser: () => browserPromise,
       evaluate,
       goto,
@@ -156,11 +148,28 @@ module.exports = ({
     }
   }
 
-  const respawn = async () =>
-    Promise.all([browserProcessPromise.then(driver.close), (browserProcessPromise = spawn())])
+  const respawn = async () => {
+    const release = await lock()
+    const browserProcess = await browserProcessPromise
+
+    let respawned = false
+
+    if (!browserProcess.isConnected()) {
+      await Promise.all([
+        browserProcessPromise.then(driver.close),
+        (browserProcessPromise = spawn())
+      ])
+      respawned = true
+    }
+
+    release()
+
+    return { respawned }
+  }
 
   return {
     connect,
+    respawn,
     browser: () => browserProcessPromise,
     close: opts => browserProcessPromise.then(browser => driver.close(browser, opts))
   }
