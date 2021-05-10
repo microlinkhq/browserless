@@ -19,14 +19,15 @@ module.exports = (
   { getBrowserless = requireOneOf(['browserless']), retry = 5, timeout = 30000, ...opts }
 ) => {
   return async (url, query = {}) => {
-    const browserless = getBrowserless()
+    const browserlessPromise = getBrowserless()
     let isRejected = false
 
     async function run () {
       let subprocess
 
       try {
-        const browser = await (await browserless).browser()
+        const browserless = await browserlessPromise
+        const browser = await browserless.browser()
         const browserWSEndpoint = browser.wsEndpoint()
 
         subprocess = execa.node(execPath, { killSignal: 'SIGKILL' })
@@ -58,7 +59,7 @@ module.exports = (
         onFailedAttempt: async error => {
           if (error.name === 'AbortError') throw error
           if (isRejected) throw new AbortError()
-          Promise.resolve(browserless).then(browserless => browserless.respawn())
+          browserlessPromise.then(browserless => browserless.respawn())
           const { message, attemptNumber, retriesLeft } = error
           debug('retry', { attemptNumber, retriesLeft, message })
         }

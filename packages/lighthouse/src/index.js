@@ -38,7 +38,7 @@ module.exports = async (
     ...opts
   } = {}
 ) => {
-  const browserless = getBrowserless()
+  const browserlessPromise = getBrowserless()
   const config = getConfig(opts)
   let isRejected = false
 
@@ -46,7 +46,8 @@ module.exports = async (
     let subprocess
 
     try {
-      const browser = await (await browserless).browser()
+      const browserless = await browserlessPromise
+      const browser = await browserless.browser()
       const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
       subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
@@ -70,8 +71,7 @@ module.exports = async (
       onFailedAttempt: async error => {
         if (error.name === 'AbortError') throw error
         if (isRejected) throw new AbortError()
-        // TODO: avoid respawn?
-        // Promise.resolve(browserless).then(browserless => browserless.respawn())
+        browserlessPromise.then(browserless => browserless.respawn())
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
       }
