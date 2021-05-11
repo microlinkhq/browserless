@@ -51,7 +51,7 @@ const getArgs = ({ proxy } = {}) =>
 // to wait for the browser instance to start
 const spawn = (puppeteer, launchOpts) => {
   const args = launchOpts.args ? undefined : getArgs({ proxy: launchOpts.proxy })
-  return puppeteer.launch({ ignoreHTTPSErrors: true, timeout: 0, args, ...launchOpts })
+  return puppeteer.launch({ ignoreHTTPSErrors: true, timeout: 5000, args, ...launchOpts })
 }
 
 const connect = (puppeteer, launchOpts) => puppeteer.connect(launchOpts)
