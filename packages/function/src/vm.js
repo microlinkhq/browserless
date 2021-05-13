@@ -14,7 +14,7 @@ const DEFAULT_VM_OPTS = {
   }
 }
 
-const createVm = opts => new NodeVM(merge(DEFAULT_VM_OPTS, opts))
+const createVm = (opts = {}) => new NodeVM(merge(DEFAULT_VM_OPTS, opts))
 
 const compile = (vm, fn, scriptPath) => {
   const code = `'use strict'; module.exports = ${fn.toString()}`
