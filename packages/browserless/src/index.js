@@ -120,11 +120,11 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
         try {
           page = await createPage(args)
           const value = await fn(page)(...args)
+          await closePage(page)
           return value
         } catch (error) {
+          await closePage(page)
           throw ensureError(error)
-        } finally {
-          closePage(page)
         }
       }
 

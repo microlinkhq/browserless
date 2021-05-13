@@ -19,11 +19,11 @@ async ({ url, query, gotoOpts, browserWSEndpoint }) => {
 
   try {
     const value = await browserFn(url)
+    await browserless.destroyContext()
     return { isFulfilled: true, isRejected: false, value }
   } catch(error) {
-    return { isFulfilled: false, isRejected: true, reason: serializeError(error) }
-  } finally {
     await browserless.destroyContext()
+    return { isFulfilled: false, isRejected: true, reason: serializeError(error) }
   }
 }`
 
