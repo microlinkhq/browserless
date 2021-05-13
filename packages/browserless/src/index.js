@@ -40,13 +40,13 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     if (!browserProcess.isConnected()) {
       await Promise.all([
         browserProcessPromise.then(driver.close),
-        (browserProcessPromise = spawn())
+        (browserProcessPromise = spawn({ respawn: true }))
       ])
     }
     release()
   }
 
-  const spawn = () => {
+  const spawn = ({ respawn: isRespawn = false } = {}) => {
     const promise = driver.spawn({
       defaultViewport,
       proxy,
@@ -59,6 +59,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     promise.then(async browser => {
       browser.on('disconnected', respawn)
       debug('spawn', {
+        respawn: isRespawn,
         pid: driver.getPid(browser) || launchOpts.mode,
         version: await browser.version()
       })
