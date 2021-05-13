@@ -2,12 +2,10 @@
 
 const test = require('ava')
 
-const createBrowserless = require('browserless')
+const browserlessFactory = require('browserless')({ evasions: false })
 const onExit = require('signal-exit')
 
-const browserless = createBrowserless({ evasions: false })
-
-onExit(browserless.close)
+onExit(browserlessFactory.close)
 
 const createPing = browserless =>
   browserless.evaluate(async (page, response) => {
@@ -19,6 +17,7 @@ const createPing = browserless =>
   })
 
 test('set extra HTTP headers', async t => {
+  const browserless = await browserlessFactory.createContext()
   const ping = createPing(browserless)
 
   const { body, request } = await ping('https://httpbin.org/headers', {
@@ -32,9 +31,12 @@ test('set extra HTTP headers', async t => {
 
   t.is(headers['x-foo'], 'bar')
   t.is(content.headers['X-Foo'], 'bar')
+
+  await browserless.destroyContext()
 })
 
 test('set `uset agent` header', async t => {
+  const browserless = await browserlessFactory.createContext()
   const ping = createPing(browserless)
 
   const { userAgent, body, request } = await ping('https://httpbin.org/headers', {
@@ -49,9 +51,12 @@ test('set `uset agent` header', async t => {
   t.is(content.headers['User-Agent'], 'googlebot')
   t.is(headers['user-agent'], 'googlebot')
   t.is(userAgent, 'googlebot')
+
+  await browserless.destroyContext()
 })
 
 test('set `cookie` header', async t => {
+  const browserless = await browserlessFactory.createContext()
   const ping = createPing(browserless)
 
   const { cookies, body, request } = await ping('https://httpbin.org/headers', {
@@ -66,4 +71,6 @@ test('set `cookie` header', async t => {
   t.is(content.headers.Cookie, 'yummy_cookie=choco; tasty_cookie=strawberry')
   t.is(headers.cookie, 'yummy_cookie=choco; tasty_cookie=strawberry')
   t.is(cookies.length, 2)
+
+  await browserless.destroyContext()
 })

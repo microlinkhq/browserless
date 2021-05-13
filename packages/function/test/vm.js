@@ -124,7 +124,7 @@ test('run browserless code', async t => {
 
   const template = `async ({ browserWSEndpoint, code, url, opts }) => {
     const getBrowserless = require('browserless')
-    const browserless = getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
+    const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
     const browserFn = browserless.evaluate(${eval(code)})
     const result = await browserFn(url, opts)
     return result

@@ -3,13 +3,15 @@
 const test = require('ava')
 const createBrowserless = require('../src')
 
-const browserless = createBrowserless()
-
-require('@browserless/test')(browserless)
+require('@browserless/test')(createBrowserless())
+//
 ;['pdf', 'screenshot', 'html', 'text'].forEach(method => {
   test(`.${method} wrap errors`, async t => {
     const timeout = 50
-    const browserless = createBrowserless({ timeout })
+
+    const browserlessFactory = createBrowserless({ timeout })
+    const browserless = await browserlessFactory.createContext()
+
     const error = await t.throwsAsync(
       browserless[method]('https://example.com', { adblock: false, animations: true })
     )
@@ -23,6 +25,7 @@ require('@browserless/test')(browserless)
 
     t.is(pages.length, 1) // about:page is always open
 
-    await browserless.close()
+    await browserless.destroyContext()
+    await browserlessFactory.close()
   })
 })

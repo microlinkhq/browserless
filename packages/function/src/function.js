@@ -13,7 +13,7 @@ async ({ url, query, gotoOpts, browserWSEndpoint }) => {
   const { serializeError } = require('serialize-error')
 
   const getBrowserless = require('browserless')
-  const browserless = getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
+  const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
   const fnWrapper = fn => (page, response) => fn({ page, response, query })
   const browserFn = browserless.evaluate(fnWrapper(${eval(code)}), gotoOpts)
 
