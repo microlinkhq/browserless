@@ -105,7 +105,11 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
       return page
     }
 
-    const closePage = page => page && pReflect(page.close())
+    const closePage = async page => {
+      let info
+      if (page) info = await pReflect(page.close())
+      debug('closePage', { page: !!page, ...info })
+    }
 
     const wrapError = (fn, { timeout: milliseconds = timeout } = {}) => async (...args) => {
       let isRejected = false
