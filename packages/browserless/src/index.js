@@ -4,7 +4,6 @@ const { ensureError, browserTimeout, browserDisconnected } = require('@browserle
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
-const requireOneOf = require('require-one-of')
 const createPdf = require('@browserless/pdf')
 const parseProxy = require('parse-proxy-uri')
 const mutexify = require('mutexify/promise')
@@ -18,14 +17,8 @@ const driver = require('./driver')
 
 const lock = mutexify()
 
-module.exports = ({
-  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
-  timeout = 30000,
-  proxy: proxyUrl,
-  retry = 5,
-  ...launchOpts
-} = {}) => {
-  const goto = createGoto({ puppeteer, timeout, ...launchOpts })
+module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts } = {}) => {
+  const goto = createGoto({ timeout, ...launchOpts })
   const { defaultViewport } = goto
   const proxy = parseProxy(proxyUrl)
 
@@ -54,7 +47,7 @@ module.exports = ({
   }
 
   const spawn = () => {
-    const promise = driver.spawn(puppeteer, {
+    const promise = driver.spawn({
       defaultViewport,
       proxy,
       handleSIGINT: false,
@@ -65,7 +58,10 @@ module.exports = ({
 
     promise.then(async browser => {
       browser.on('disconnected', respawn)
-      debug('spawn', { pid: driver.getPid(browser), version: await browser.version() })
+      debug('spawn', {
+        pid: driver.getPid(browser) || launchOpts.mode,
+        version: await browser.version()
+      })
     })
 
     return promise
@@ -82,7 +78,7 @@ module.exports = ({
     return browserProcess
   }
 
-  const createContext = async () => {
+  const createContext = () => {
     let contextPromise = createBrowserContext()
 
     contextPromise.then(context => {

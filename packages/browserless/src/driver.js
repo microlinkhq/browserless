@@ -1,6 +1,7 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless')
+const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
 const pidtree = require('pidtree')
 
@@ -49,12 +50,14 @@ const getArgs = ({ proxy } = {}) =>
 
 // The param `timeout` means here the maximum time in milliseconds
 // to wait for the browser instance to start
-const spawn = (puppeteer, launchOpts) => {
+const spawn = ({
+  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  mode = 'launch',
+  ...launchOpts
+} = {}) => {
   const args = launchOpts.args ? undefined : getArgs({ proxy: launchOpts.proxy })
-  return puppeteer.launch({ ignoreHTTPSErrors: true, timeout: 5000, args, ...launchOpts })
+  return puppeteer[mode]({ ignoreHTTPSErrors: true, timeout: 5000, args, ...launchOpts })
 }
-
-const connect = (puppeteer, launchOpts) => puppeteer.connect(launchOpts)
 
 const getPid = childProcess => {
   if (!childProcess) return null
@@ -93,4 +96,4 @@ const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) =>
   return { pids }
 }
 
-module.exports = { spawn, connect, getPid, close, getArgs }
+module.exports = { spawn, getPid, close, getArgs }

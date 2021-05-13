@@ -16,7 +16,7 @@ const execPath = path.resolve(__dirname, 'function.js')
 
 module.exports = (
   fn,
-  { getBrowserless = requireOneOf(['browserless']), retry = 5, timeout = 30000, ...opts }
+  { getBrowserless = requireOneOf(['browserless']), retry = 2, timeout = 30000, ...opts }
 ) => {
   return async (url, query = {}) => {
     const browserlessPromise = getBrowserless()
