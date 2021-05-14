@@ -132,7 +132,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
         pRetry(run, {
           retries: retry,
           onFailedAttempt: async error => {
-            debug('onFailedAttempt', { name: error.name, isRejected })
+            debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
             await Promise.all([destroyContext(), respawn()])
