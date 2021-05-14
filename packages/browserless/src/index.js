@@ -1,6 +1,6 @@
 'use strict'
 
-const { ensureError, browserTimeout, browserDisconnected } = require('@browserless/errors')
+const { ensureError, browserTimeout } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -22,28 +22,19 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
   const { defaultViewport } = goto
   const proxy = parseProxy(proxyUrl)
 
-  let closed = false
+  let isClosed = false
 
-  const close = async opts => {
-    closed = true
-    const browserProcess = await browserProcessPromise
-    const result = await driver.close(browserProcess, opts)
-    return result
+  const close = opts => {
+    isClosed = true
+    return browserProcessPromise.then(browserProcess => driver.close(browserProcess, opts))
   }
 
-  const respawn = async ({ code } = {}) => {
-    if (closed) return
-    const release = await lock()
-    const browserProcess = await browserProcessPromise
-    const isDisconnected = !browserProcess.isConnected()
-    if (isDisconnected || code === 'EPROTOCOL') {
-      await Promise.all([
-        browserProcessPromise.then(driver.close),
-        (browserProcessPromise = spawn({ respawn: true }))
-      ])
-    }
-    release()
-  }
+  const respawn = () =>
+    !isClosed &&
+    Promise.all([
+      browserProcessPromise.then(driver.close),
+      (browserProcessPromise = spawn({ respawn: true }))
+    ])
 
   const spawn = ({ respawn: isRespawn = false } = {}) => {
     const promise = driver.spawn({
@@ -56,7 +47,6 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     })
 
     promise.then(async browser => {
-      browser.on('disconnected', respawn)
       debug('spawn', {
         respawn: isRespawn,
         pid: driver.getPid(browser) || launchOpts.mode,
@@ -69,13 +59,22 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
 
   let browserProcessPromise = spawn()
 
-  const createBrowserContext = async () =>
-    (await browserProcessPromise).createIncognitoBrowserContext()
+  const createBrowserContext = () =>
+    browser().then(browser => browser.createIncognitoBrowserContext())
 
   const browser = async () => {
+    const release = await lock()
     const browserProcess = await browserProcessPromise
-    if (!browserProcess.isConnected()) throw browserDisconnected()
-    return browserProcess
+
+    if (browserProcess.isConnected()) {
+      release()
+      return browserProcess
+    }
+
+    await respawn()
+    release()
+
+    return browser()
   }
 
   const createContext = () => {
@@ -84,12 +83,12 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     contextPromise.then(context => {
       const browserProcess = context.browser()
       browserProcess.on('disconnected', async () => {
-        await respawn()
+        await browser()
         contextPromise = createBrowserContext()
       })
     })
 
-    const createPage = async args => {
+    const createPage = async () => {
       const browserProcess = await browser()
       const page = await (await contextPromise).newPage()
 
@@ -128,11 +127,19 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
           retries: retry,
           onFailedAttempt: async error => {
             debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
-            const respawnPromise = respawn(error)
+            let isAlreadyRespawned = false
+
+            if (error.code === 'EPROTOCOL') {
+              isAlreadyRespawned = true
+              await respawn()
+            }
+
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
-            await Promise.all([destroyContext(), respawnPromise])
+
+            await Promise.all([destroyContext(), !isAlreadyRespawned && respawn()].filter(Boolean))
             contextPromise = createBrowserContext()
+
             const { message, attemptNumber, retriesLeft } = error
             debug('retry', { attemptNumber, retriesLeft, message })
           }
