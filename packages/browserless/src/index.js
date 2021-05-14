@@ -31,11 +31,12 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     return result
   }
 
-  const respawn = async () => {
+  const respawn = async ({ code } = {}) => {
     if (closed) return
     const release = await lock()
     const browserProcess = await browserProcessPromise
-    if (!browserProcess.isConnected()) {
+    const isDisconnected = !browserProcess.isConnected()
+    if (isDisconnected || code === 'EPROTOCOL') {
       await Promise.all([
         browserProcessPromise.then(driver.close),
         (browserProcessPromise = spawn({ respawn: true }))
@@ -127,9 +128,10 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
           retries: retry,
           onFailedAttempt: async error => {
             debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
+            const respawnPromise = respawn(error)
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
-            await Promise.all([destroyContext(), respawn()])
+            await Promise.all([destroyContext(), respawnPromise])
             contextPromise = createBrowserContext()
             const { message, attemptNumber, retriesLeft } = error
             debug('retry', { attemptNumber, retriesLeft, message })

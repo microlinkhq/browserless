@@ -32,7 +32,9 @@ browserlessError.ensureError = rawError => {
 
   const error = 'error' in rawError ? rawError.error : rawError
 
-  if (error.code === 'ECONNREFUSED') return browserlessError.browserDisconnected()
+  if (error.code === 'ECONNREFUSED') {
+    return browserlessError.browserDisconnected()
+  }
 
   const { message: errorMessage = '' } = error
 
