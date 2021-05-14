@@ -275,7 +275,7 @@ module.exports = ({
         prePromises.push(
           run({
             fn: page.setCookie(...cookies),
-            debug: ['cookies', ...cookies]
+            debug: ['cookies', ...cookies.map(({ name }) => name)]
           })
         )
       }
