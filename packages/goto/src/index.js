@@ -103,6 +103,7 @@ const scrollTo = (element, options) => {
 }
 
 const parseCookies = (url, str) => {
+  debug('cookies', { url, str })
   const domain = `.${getDomain(url)}`
   return str.split(';').reduce((acc, str) => {
     const [name, value] = str.split('=')
