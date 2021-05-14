@@ -151,7 +151,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
         gotoOpts
       )
 
-    const destroyContext = async () => (await contextPromise).close()
+    const destroyContext = async () => pReflect((await contextPromise).close())
 
     return {
       respawn,
