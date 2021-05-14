@@ -127,17 +127,11 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
           retries: retry,
           onFailedAttempt: async error => {
             debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
-            let isAlreadyRespawned = false
-
-            if (error.code === 'EPROTOCOL') {
-              isAlreadyRespawned = true
-              await respawn()
-            }
 
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
 
-            await Promise.all([destroyContext(), !isAlreadyRespawned && respawn()].filter(Boolean))
+            await Promise.all([destroyContext(), respawn()])
             contextPromise = createBrowserContext()
 
             const { message, attemptNumber, retriesLeft } = error
