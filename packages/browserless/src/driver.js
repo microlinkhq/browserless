@@ -77,13 +77,10 @@ const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) =>
   if (!pid) return
 
   const pids = await getPids(pid)
-
   pids.forEach(pid => {
     try {
       process.kill(pid, signal)
-    } catch (error) {
-      debug('error', { pid, signal, ...debugOpts, message: error.message || error })
-    }
+    } catch (_) {}
   })
 
   // It's necessary to call `browser.close` for removing temporal files associated

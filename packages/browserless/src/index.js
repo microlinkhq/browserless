@@ -47,6 +47,8 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     })
 
     promise.then(async browser => {
+      browser.on('disconnected', getBrowser)
+
       debug('spawn', {
         respawn: isRespawn,
         pid: driver.getPid(browser) || launchOpts.mode,
@@ -60,9 +62,9 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
   let browserProcessPromise = spawn()
 
   const createBrowserContext = () =>
-    browser().then(browser => browser.createIncognitoBrowserContext())
+    getBrowser().then(browser => browser.createIncognitoBrowserContext())
 
-  const browser = async () => {
+  const getBrowser = async () => {
     const release = await lock()
     const browserProcess = await browserProcessPromise
 
@@ -74,7 +76,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     await respawn()
     release()
 
-    return browser()
+    return getBrowser()
   }
 
   const createContext = () => {
@@ -83,13 +85,13 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     contextPromise.then(context => {
       const browserProcess = context.browser()
       browserProcess.on('disconnected', async () => {
-        await browser()
+        await getBrowser()
         contextPromise = createBrowserContext()
       })
     })
 
     const createPage = async () => {
-      const browserProcess = await browser()
+      const browserProcess = await getBrowser()
       const page = await (await contextPromise).newPage()
 
       if (proxy) await page.authenticate(proxy)
@@ -127,13 +129,8 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
           retries: retry,
           onFailedAttempt: async error => {
             debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
-
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
-
-            await Promise.all([destroyContext(), respawn()])
-            contextPromise = createBrowserContext()
-
             const { message, attemptNumber, retriesLeft } = error
             debug('retry', { attemptNumber, retriesLeft, message })
           }
@@ -154,12 +151,12 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
         gotoOpts
       )
 
-    const destroyContext = async () => pReflect((await contextPromise).close())
+    const destroyContext = () => pReflect(contextPromise.then(context => context.close()))
 
     return {
       respawn,
       context: () => contextPromise,
-      browser,
+      browser: getBrowser,
       evaluate,
       goto,
       html: evaluate(page => page.content()),
@@ -172,7 +169,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     }
   }
 
-  return { createContext, respawn, browser, close }
+  return { createContext, respawn, browser: getBrowser, close }
 }
 
 module.exports.driver = driver
