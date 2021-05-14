@@ -5,7 +5,7 @@ const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
 const { shallowEqualObjects } = require('shallow-equal')
 const createDevices = require('@browserless/devices')
-const { getDomain } = require('tldts')
+const { getHostname } = require('tldts')
 const prettyMs = require('pretty-ms')
 const pReflect = require('p-reflect')
 const timeSpan = require('time-span')
@@ -104,7 +104,7 @@ const scrollTo = (element, options) => {
 
 const parseCookies = (url, str) => {
   debug('cookies', { url, str })
-  const domain = `.${getDomain(url)}`
+  const domain = getHostname(url)
   return str.split(';').reduce((acc, str) => {
     const [name, value] = str.split('=')
     const cookie = {
