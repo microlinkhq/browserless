@@ -25,11 +25,9 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
   let closed = false
 
   const close = async opts => {
-    const release = await lock()
+    closed = true
     const browserProcess = await browserProcessPromise
     const result = await driver.close(browserProcess, opts)
-    closed = true
-    release()
     return result
   }
 
@@ -96,11 +94,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
 
       if (proxy) await page.authenticate(proxy)
 
-      debug('createPage', {
-        pid: driver.getPid(browserProcess),
-        proxy: !!proxy,
-        ...args
-      })
+      debug('createPage', { pid: driver.getPid(browserProcess), proxy: !!proxy })
 
       return page
     }
