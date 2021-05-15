@@ -65,6 +65,8 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     getBrowser().then(browser => browser.createIncognitoBrowserContext())
 
   const getBrowser = async () => {
+    if (isClosed) return browserProcessPromise
+
     const release = await lock()
     const browserProcess = await browserProcessPromise
 
