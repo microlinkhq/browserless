@@ -53,7 +53,12 @@
     "src"
   ],
   "scripts": {
-    "test": "ava"
+    "test": "NODE_ENV=test ava"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "ava": {
+
+    "verbose": true,
+    "timeout": "2m"
+  }
 }

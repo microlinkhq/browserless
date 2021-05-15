@@ -16,6 +16,8 @@ require('@browserless/test')(createBrowserless())
       browserless[method]('https://example.com', { adblock: false, animations: true })
     )
 
+    await browserless.destroyContext()
+
     t.is(error.name, 'BrowserlessError')
     t.is(error.code, 'EBRWSRTIMEOUT')
     t.is(error.message, `EBRWSRTIMEOUT, Promise timed out after ${timeout} milliseconds`)

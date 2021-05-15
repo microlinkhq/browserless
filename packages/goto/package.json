@@ -58,13 +58,15 @@
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall",
-    "test": "ava"
+    "test": "NODE_ENV=test ava"
   },
   "license": "MIT",
   "ava": {
     "files": [
       "!test/fixtures"
     ],
+
+    "verbose": true,
     "timeout": "2m"
   }
 }
