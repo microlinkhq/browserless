@@ -2,7 +2,7 @@
   "name": "@browserless/pool",
   "description": "Pooling support for browserless",
   "homepage": "https://browserless.js.org/#/?id=pool-of-instances",
-  "version": "9.0.0-alpha.13",
+  "version": "9.0.0-alpha.25",
   "main": "src",
   "repository": {
     "directory": "packages/pool",
@@ -45,7 +45,6 @@
   },
   "license": "MIT",
   "ava": {
-
     "verbose": true,
     "timeout": "2m"
   }

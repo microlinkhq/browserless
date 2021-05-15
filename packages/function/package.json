@@ -2,7 +2,7 @@
   "name": "@browserless/function",
   "description": "Run abritrary JavaScript inside a browser sandbox",
   "homepage": "https://browserless.js.org",
-  "version": "9.0.0-alpha.20",
+  "version": "9.0.0-alpha.25",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -29,7 +29,7 @@
     "serverless"
   ],
   "dependencies": {
-    "@browserless/errors": "^9.0.0-alpha.20",
+    "@browserless/errors": "^9.0.0-alpha.25",
     "debug-logfmt": "~1.0.4",
     "deepmerge": "~4.2.2",
     "execa": "~5.0.0",
@@ -57,7 +57,6 @@
   },
   "license": "MIT",
   "ava": {
-
     "verbose": true,
     "timeout": "2m"
   }

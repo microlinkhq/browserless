@@ -2,7 +2,7 @@
   "name": "@browserless/errors",
   "description": "A collection of qualified errors for Puppeteer",
   "homepage": "https://browserless.js.org",
-  "version": "9.0.0-alpha.20",
+  "version": "9.0.0-alpha.25",
   "main": "index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -47,7 +47,6 @@
   },
   "license": "MIT",
   "ava": {
-
     "verbose": true,
     "timeout": "2m"
   }
