@@ -1,10 +1,6 @@
 'use strict'
 
-const createBrowserless = require('browserless')
-
-module.exports = async (url, opts) => {
-  const browserless = createBrowserless()
-
+module.exports = async ({ url, browserless, opts }) => {
   const ping = browserless.evaluate(async (page, response) => {
     const redirectChain = response.request().redirectChain()
     return {
@@ -18,6 +14,6 @@ module.exports = async (url, opts) => {
   })
 
   const result = await ping(url, opts)
-  await browserless.close()
+
   return result
 }
