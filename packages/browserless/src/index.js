@@ -47,7 +47,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     })
 
     promise.then(async browser => {
-      browser.on('disconnected', getBrowser)
+      browser.once('disconnected', getBrowser)
 
       debug('spawn', {
         respawn: isRespawn,
@@ -86,7 +86,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
 
     contextPromise.then(context => {
       const browserProcess = context.browser()
-      browserProcess.on('disconnected', async () => {
+      browserProcess.once('disconnected', async () => {
         await getBrowser()
         contextPromise = createBrowserContext()
       })
