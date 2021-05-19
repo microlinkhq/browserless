@@ -56,7 +56,7 @@ const spawn = ({
   ...launchOpts
 } = {}) => {
   const args = launchOpts.args ? undefined : getArgs({ proxy: launchOpts.proxy })
-  return puppeteer[mode]({ ignoreHTTPSErrors: true, timeout: 10000, args, ...launchOpts })
+  return puppeteer[mode]({ ignoreHTTPSErrors: true, timeout: 5000, args, ...launchOpts })
 }
 
 const getPid = childProcess => {
