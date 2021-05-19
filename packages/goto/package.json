@@ -30,7 +30,7 @@
   ],
   "dependencies": {
     "@browserless/devices": "^9.0.0-alpha.25",
-    "@cliqz/adblocker-puppeteer": "~1.20.5",
+    "@cliqz/adblocker-puppeteer": "~1.20.6",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.2",
     "is-url-http": "~2.2.3",
@@ -39,7 +39,7 @@
     "pretty-ms": "~7.0.1",
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
-    "top-user-agents": "~1.0.25",
+    "top-user-agents": "~1.0.26",
     "tough-cookie": "~4.0.0",
     "unique-random-array": "~2.0.0"
   },
@@ -65,7 +65,7 @@
     "files": [
       "!test/fixtures"
     ],
-    "verbose": true,
-    "timeout": "2m"
+    "timeout": "2m",
+    "verbose": true
   }
 }
