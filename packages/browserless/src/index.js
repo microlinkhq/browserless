@@ -3,9 +3,9 @@
 const { ensureError, browserTimeout } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
+const { proxyRequest } = require('puppeteer-proxy')
 const createGoto = require('@browserless/goto')
 const createPdf = require('@browserless/pdf')
-const parseProxy = require('parse-proxy-uri')
 const mutexify = require('mutexify/promise')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -20,7 +20,6 @@ const lock = mutexify()
 module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts } = {}) => {
   const goto = createGoto({ timeout, ...launchOpts })
   const { defaultViewport } = goto
-  const proxy = parseProxy(proxyUrl)
 
   let isClosed = false
 
@@ -39,7 +38,6 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
   const spawn = ({ respawn: isRespawn = false } = {}) => {
     const promise = driver.spawn({
       defaultViewport,
-      proxy,
       handleSIGINT: false,
       handleSIGTERM: false,
       handleSIGHUP: false,
@@ -96,9 +94,19 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
       const browserProcess = await getBrowser()
       const page = await (await contextPromise).newPage()
 
-      if (proxy) await page.authenticate(proxy)
+      if (proxyUrl) {
+        await page.setRequestInterception(true)
 
-      debug('createPage', { pid: driver.getPid(browserProcess), proxy: !!proxy })
+        page.on('request', async request => {
+          await proxyRequest({
+            page,
+            proxyUrl,
+            request
+          })
+        })
+      }
+
+      debug('createPage', { pid: driver.getPid(browserProcess), proxy: !!proxyUrl })
 
       return page
     }
