@@ -17,7 +17,7 @@ const driver = require('./driver')
 
 const lock = mutexify()
 
-module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts } = {}) => {
+module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
   const goto = createGoto({ timeout, ...launchOpts })
   const { defaultViewport } = goto
 
@@ -79,7 +79,7 @@ module.exports = ({ timeout = 30000, proxy: proxyUrl, retry = 2, ...launchOpts }
     return getBrowser()
   }
 
-  const createContext = async () => {
+  const createContext = async ({ retry = 2, proxy: proxyUrl } = {}) => {
     let contextPromise = createBrowserContext()
 
     contextPromise.then(context => {
