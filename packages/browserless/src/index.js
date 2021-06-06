@@ -79,7 +79,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
     return getBrowser()
   }
 
-  const createContext = async ({ retry = 2, proxy: proxyUrl } = {}) => {
+  const createContext = async ({ retry = 2, agent } = {}) => {
     let contextPromise = createBrowserContext()
 
     contextPromise.then(context => {
@@ -94,19 +94,19 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
       const browserProcess = await getBrowser()
       const page = await (await contextPromise).newPage()
 
-      if (proxyUrl) {
+      if (agent) {
         await page.setRequestInterception(true)
 
         page.on('request', async request => {
           await proxyRequest({
             page,
-            proxyUrl,
+            agent,
             request
           })
         })
       }
 
-      debug('createPage', { pid: driver.getPid(browserProcess), proxy: !!proxyUrl })
+      debug('createPage', { pid: driver.getPid(browserProcess), agent: !!agent })
 
       return page
     }
