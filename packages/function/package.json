@@ -31,7 +31,7 @@
   "dependencies": {
     "@browserless/errors": "^8.8.8",
     "debug-logfmt": "~1.0.4",
-    "execa": "~5.0.0",
+    "execa": "~5.1.1",
     "p-event": "~4.2.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.5.0",
