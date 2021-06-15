@@ -41,7 +41,7 @@
     "p-retry": "~4.5.0",
     "p-timeout": "~4.1.0",
     "pidtree": "~0.5.0",
-    "puppeteer-proxy": "~2.1.1",
+    "puppeteer-proxy": "~2.1.2",
     "require-one-of": "~1.0.15"
   },
   "devDependencies": {
