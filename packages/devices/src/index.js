@@ -8,7 +8,7 @@ const customDevices = require('./devices.json')
 
 module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
-  lossyDeviceName = false
+  lossyDeviceName = true
 } = {}) => {
   const { devices: puppeteerDevices } = puppeteer
   const devices = { ...puppeteerDevices, ...customDevices }
@@ -24,7 +24,7 @@ module.exports = ({
     return devices[result.winner]
   })
 
-  const getDevices = ({ headers = {}, device: deviceDescriptor, viewport } = {}) => {
+  const getDevices = ({ device: deviceDescriptor, headers = {}, viewport } = {}) => {
     const device = findDevice(deviceDescriptor, lossyDeviceName)
 
     return device
