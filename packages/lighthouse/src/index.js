@@ -38,30 +38,24 @@ module.exports = async (
     ...opts
   } = {}
 ) => {
-  const browserless = getBrowserless()
+  const browserlessPromise = getBrowserless()
   const config = getConfig(opts)
   let isRejected = false
 
   async function run () {
-    let subprocess
+    const browserless = await browserlessPromise
+    const browser = await browserless.browser()
+    const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-    try {
-      const browser = await (await browserless).browser()
-      const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
+    const subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
+    subprocess.stderr.pipe(process.stderr)
+    debug('spawn', { pid: subprocess.pid })
+    subprocess.send({ url, flags, config })
 
-      subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
-      subprocess.stderr.pipe(process.stderr)
-      debug('spawn', { pid: subprocess.pid })
-      subprocess.send({ url, flags, config })
-
-      const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
-      if (isFulfilled) return value
-      throw reason
-    } catch (error) {
-      throw ensureError(error)
-    } finally {
-      driver.close(subprocess)
-    }
+    const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
+    await driver.close(subprocess)
+    if (isFulfilled) return value
+    throw ensureError(reason)
   }
 
   const task = () =>
@@ -70,7 +64,7 @@ module.exports = async (
       onFailedAttempt: async error => {
         if (error.name === 'AbortError') throw error
         if (isRejected) throw new AbortError()
-        Promise.resolve(browserless).then(browserless => browserless.respawn())
+        await (await browserlessPromise).respawn()
         const { message, attemptNumber, retriesLeft } = error
         debug('retry', { attemptNumber, retriesLeft, message })
       }

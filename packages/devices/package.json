@@ -2,7 +2,7 @@
   "name": "@browserless/devices",
   "description": "A collection of different devices for emulation purposes",
   "homepage": "https://browserless.js.org/#/?id=devices",
-  "version": "8.8.11",
+  "version": "9.0.0-alpha.31",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -44,10 +44,11 @@
     "src"
   ],
   "scripts": {
-    "test": "ava"
+    "test": "NODE_ENV=test ava"
   },
   "license": "MIT",
   "ava": {
+    "verbose": true,
     "timeout": "2m"
   }
 }

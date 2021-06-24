@@ -1,9 +1,8 @@
 'use strict'
 
 const uniqueRandomArray = require('unique-random-array')
-const createBrowserless = require('browserless')
-const { set } = require('lodash')
 const termImg = require('term-img')
+const { set } = require('lodash')
 
 const BACKGROUNDS = [
   'linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)',
@@ -27,9 +26,7 @@ const BACKGROUNDS = [
 
 const randBackground = uniqueRandomArray(BACKGROUNDS)
 
-module.exports = async (url, opts) => {
-  const browserless = createBrowserless()
-
+module.exports = async ({ url, browserless, opts }) => {
   if (opts.background === 'unsplash') {
     set(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
   }
@@ -44,6 +41,5 @@ module.exports = async (url, opts) => {
 
   const screenshot = await browserless.screenshot(url, opts)
 
-  await browserless.close()
   return termImg(screenshot, { width: '50%' })
 }

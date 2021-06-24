@@ -5,7 +5,7 @@ const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const debug = require('debug-logfmt')('browserless:goto')
 const { shallowEqualObjects } = require('shallow-equal')
 const createDevices = require('@browserless/devices')
-const { getDomain } = require('tldts')
+const toughCookie = require('tough-cookie')
 const prettyMs = require('pretty-ms')
 const pReflect = require('p-reflect')
 const timeSpan = require('time-span')
@@ -102,20 +102,25 @@ const scrollTo = (element, options) => {
   }
 }
 
-const parseCookies = (url, str) => {
-  const domain = `.${getDomain(url)}`
-  return str.split(';').reduce((acc, str) => {
-    const [name, value] = str.split('=')
-    const cookie = {
-      name: name.trim(),
-      value,
-      domain,
-      url,
-      path: '/'
+const parseCookies = (url, str) =>
+  str.split(';').reduce((acc, cookieStr) => {
+    const jar = new toughCookie.CookieJar(undefined, { rejectPublicSuffixes: false })
+    jar.setCookieSync(cookieStr.trim(), url)
+    const parsedCookie = jar.serializeSync().cookies[0]
+
+    // Use this instead of the above when the following issue is fixed:
+    // https://github.com/salesforce/tough-cookie/issues/149
+    // const ret = toughCookie.parse(cookie).serializeSync();
+
+    parsedCookie.name = parsedCookie.key
+    delete parsedCookie.key
+
+    if (parsedCookie.expires) {
+      parsedCookie.expires = Math.floor(new Date(parsedCookie.expires) / 1000)
     }
-    return [...acc, cookie]
+
+    return [...acc, parsedCookie]
   }, [])
-}
 
 const getMediaFeatures = ({ animations, colorScheme }) => {
   const prefers = []
@@ -270,7 +275,7 @@ module.exports = ({
         prePromises.push(
           run({
             fn: page.setCookie(...cookies),
-            debug: ['cookies', ...cookies]
+            debug: ['cookies', ...cookies.map(({ name }) => name)]
           })
         )
       }

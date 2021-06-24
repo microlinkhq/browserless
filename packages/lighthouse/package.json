@@ -2,7 +2,7 @@
   "name": "@browserless/lighthouse",
   "description": "Browserless Lighthouse integration using puppeteer.",
   "homepage": "https://browserless.js.org",
-  "version": "8.8.12",
+  "version": "9.0.0-rc.0",
   "main": "src",
   "repository": {
     "type": "git",
@@ -24,10 +24,10 @@
     "stats"
   ],
   "dependencies": {
-    "@browserless/errors": "^8.8.8",
+    "@browserless/errors": "^9.0.0-alpha.25",
     "debug-logfmt": "~1.0.4",
-    "execa": "~5.0.0",
-    "lighthouse": "~7.4.0",
+    "execa": "~5.1.1",
+    "lighthouse": "~8.0.0",
     "p-event": "~4.2.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.5.0",
@@ -44,10 +44,11 @@
     "src"
   ],
   "scripts": {
-    "test": "ava"
+    "test": "NODE_ENV=test ava"
   },
   "license": "MIT",
   "ava": {
+    "verbose": true,
     "timeout": "2m"
   }
 }

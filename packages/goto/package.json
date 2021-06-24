@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
-  "version": "8.8.14",
+  "version": "9.0.0-rc.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
@@ -29,8 +29,8 @@
     "puppeteer"
   ],
   "dependencies": {
-    "@browserless/devices": "^8.8.11",
-    "@cliqz/adblocker-puppeteer": "~1.22.0",
+    "@browserless/devices": "^9.0.0-alpha.31",
+    "@cliqz/adblocker-puppeteer": "~1.22.2",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.2",
     "is-url-http": "~2.2.3",
@@ -39,8 +39,8 @@
     "pretty-ms": "~7.0.1",
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
-    "tldts": "~5.7.33",
-    "top-user-agents": "~1.0.25",
+    "top-user-agents": "~1.0.26",
+    "tough-cookie": "~4.0.0",
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
@@ -58,13 +58,14 @@
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall",
-    "test": "ava"
+    "test": "NODE_ENV=test ava"
   },
   "license": "MIT",
   "ava": {
     "files": [
       "!test/fixtures"
     ],
-    "timeout": "2m"
+    "timeout": "2m",
+    "verbose": true
   }
 }

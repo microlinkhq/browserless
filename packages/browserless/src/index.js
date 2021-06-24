@@ -1,12 +1,12 @@
 'use strict'
 
-const { ensureError, browserTimeout, browserDisconnected } = require('@browserless/errors')
+const { ensureError, browserTimeout } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
+const { proxyRequest } = require('puppeteer-proxy')
 const createGoto = require('@browserless/goto')
-const requireOneOf = require('require-one-of')
 const createPdf = require('@browserless/pdf')
-const parseProxy = require('parse-proxy-uri')
+const mutexify = require('mutexify/promise')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -15,130 +15,171 @@ const { AbortError } = pRetry
 
 const driver = require('./driver')
 
-module.exports = ({
-  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
-  incognito = false,
-  timeout = 30000,
-  proxy: proxyUrl,
-  retry = 2,
-  ...launchOpts
-} = {}) => {
-  const goto = createGoto({ puppeteer, timeout, ...launchOpts })
-  const proxy = parseProxy(proxyUrl)
+const lock = mutexify()
 
-  const spawn = (spawnOpts = {}) => {
-    const promise = driver.spawn(puppeteer, {
-      defaultViewport: goto.defaultViewport,
-      timeout: 0,
-      proxy,
+module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
+  const goto = createGoto({ timeout, ...launchOpts })
+  const { defaultViewport } = goto
+
+  let isClosed = false
+
+  const close = opts => {
+    isClosed = true
+    return browserProcessPromise.then(browserProcess => driver.close(browserProcess, opts))
+  }
+
+  const respawn = () =>
+    !isClosed &&
+    Promise.all([
+      browserProcessPromise.then(driver.close),
+      (browserProcessPromise = spawn({ respawn: true }))
+    ])
+
+  const spawn = ({ respawn: isRespawn = false } = {}) => {
+    const promise = driver.spawn({
+      defaultViewport,
+      handleSIGINT: false,
+      handleSIGTERM: false,
+      handleSIGHUP: false,
       ...launchOpts
     })
 
-    pReflect(promise).then(
-      ({ value: browser }) =>
-        browser &&
-        debug('spawn', {
-          pid: driver.getPid(browser) || launchOpts.mode,
-          ...spawnOpts
-        })
-    )
+    promise.then(async browser => {
+      browser.once('disconnected', getBrowser)
+
+      debug('spawn', {
+        respawn: isRespawn,
+        pid: driver.getPid(browser) || launchOpts.mode,
+        version: await browser.version()
+      })
+    })
 
     return promise
   }
 
-  let browserPromise = spawn()
+  let browserProcessPromise = spawn()
+
+  const createBrowserContext = () =>
+    getBrowser().then(browser => browser.createIncognitoBrowserContext())
 
   const getBrowser = async () => {
-    const browser = await browserPromise
-    if (!browser.isConnected()) throw browserDisconnected()
-    return browser
-  }
+    if (isClosed) return browserProcessPromise
 
-  const respawn = async () => {
-    const { value } = await pReflect(browserPromise)
-    await driver.close(value)
-    browserPromise = spawn({ respawn: true })
-  }
+    const release = await lock()
+    const browserProcess = await browserProcessPromise
 
-  const createPage = async args => {
-    const browser = await getBrowser()
-    const context = incognito ? await browser.createIncognitoBrowserContext() : browser
-    const page = await context.newPage()
-
-    if (proxy) await page.authenticate(proxy)
-
-    debug('createPage', {
-      pid: driver.getPid(browser) || launchOpts.mode,
-      incognito,
-      pages: (await browser.pages()).length - 1,
-      proxy: !!proxy,
-      ...args
-    })
-
-    return page
-  }
-
-  const closePage = page => page && pReflect(page.close())
-
-  const wrapError = (fn, { timeout: milliseconds = timeout } = {}) => async (...args) => {
-    let isRejected = false
-
-    async function run () {
-      let page
-
-      try {
-        page = await createPage(args)
-        const value = await fn(page)(...args)
-        return value
-      } catch (error) {
-        throw ensureError(error)
-      } finally {
-        closePage(page)
-      }
+    if (browserProcess.isConnected()) {
+      release()
+      return browserProcess
     }
 
-    const task = () =>
-      pRetry(run, {
-        retries: retry,
-        onFailedAttempt: error => {
-          if (error.name === 'AbortError') throw error
-          if (isRejected) throw new AbortError()
-          respawn()
-          const { message, attemptNumber, retriesLeft } = error
-          debug('retry', { attemptNumber, retriesLeft, message })
-        }
+    await respawn()
+    release()
+
+    return getBrowser()
+  }
+
+  const createContext = async ({ retry = 2, agent } = {}) => {
+    let contextPromise = createBrowserContext()
+
+    contextPromise.then(context => {
+      const browserProcess = context.browser()
+      browserProcess.once('disconnected', async () => {
+        await getBrowser()
+        contextPromise = createBrowserContext()
       })
-
-    return pTimeout(task(), milliseconds, () => {
-      isRejected = true
-      throw browserTimeout({ timeout: milliseconds })
     })
+
+    const createPage = async () => {
+      const browserProcess = await getBrowser()
+      const page = await (await contextPromise).newPage()
+
+      if (agent) {
+        await page.setRequestInterception(true)
+
+        page.on('request', async request => {
+          await proxyRequest({
+            page,
+            agent,
+            request
+          })
+        })
+      }
+
+      debug('createPage', { pid: driver.getPid(browserProcess), agent: !!agent })
+
+      return page
+    }
+
+    const closePage = async page => {
+      let info
+      if (page) info = await pReflect(page.close())
+      debug('closePage', { page: !!page, ...info })
+    }
+
+    const wrapError = (fn, { timeout: milliseconds = timeout } = {}) => async (...args) => {
+      let isRejected = false
+
+      async function run () {
+        let page
+
+        try {
+          page = await createPage(args)
+          const value = await fn(page)(...args)
+          await closePage(page)
+          return value
+        } catch (error) {
+          await closePage(page)
+          throw ensureError(error)
+        }
+      }
+
+      const task = () =>
+        pRetry(run, {
+          retries: retry,
+          onFailedAttempt: async error => {
+            debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
+            if (error.name === 'AbortError') throw error
+            if (isRejected) throw new AbortError()
+            const { message, attemptNumber, retriesLeft } = error
+            debug('retry', { attemptNumber, retriesLeft, message })
+          }
+        })
+
+      return pTimeout(task(), milliseconds, () => {
+        isRejected = true
+        throw browserTimeout({ timeout: milliseconds })
+      })
+    }
+
+    const evaluate = (fn, gotoOpts) =>
+      wrapError(
+        page => async (url, opts) => {
+          const { response } = await goto(page, { url, ...gotoOpts, ...opts })
+          return fn(page, response)
+        },
+        gotoOpts
+      )
+
+    const destroyContext = () => pReflect(contextPromise.then(context => context.close()))
+
+    return {
+      respawn,
+      context: () => contextPromise,
+      browser: getBrowser,
+      evaluate,
+      goto,
+      html: evaluate(page => page.content()),
+      page: createPage,
+      pdf: wrapError(createPdf({ goto })),
+      screenshot: wrapError(createScreenshot({ goto })),
+      text: evaluate(page => page.evaluate(() => document.body.innerText)),
+      getDevice: goto.getDevice,
+      destroyContext
+    }
   }
 
-  const evaluate = (fn, gotoOpts) =>
-    wrapError(
-      page => async (url, opts) => {
-        const { response } = await goto(page, { url, ...gotoOpts, ...opts })
-        return fn(page, response)
-      },
-      gotoOpts
-    )
-
-  return {
-    // low level methods
-    browser: getBrowser,
-    close: async opts => driver.close(await browserPromise, opts),
-    respawn,
-    // high level methods
-    evaluate,
-    goto,
-    html: evaluate(page => page.content()),
-    page: createPage,
-    pdf: wrapError(createPdf({ goto })),
-    screenshot: wrapError(createScreenshot({ goto })),
-    text: evaluate(page => page.evaluate(() => document.body.innerText)),
-    getDevice: goto.getDevice
-  }
+  return { createContext, respawn, browser: getBrowser, close }
 }
 
 module.exports.driver = driver

@@ -1,10 +1,6 @@
 'use strict'
 
-const createBrowserless = require('browserless')
-
-module.exports = async (url, opts) => {
-  const browserless = createBrowserless()
+module.exports = async ({ url, browserless, opts }) => {
   const result = await browserless.pdf(url, opts)
-  await browserless.close()
   return result
 }

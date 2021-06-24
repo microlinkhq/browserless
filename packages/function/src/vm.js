@@ -1,15 +1,20 @@
 'use strict'
 
-const { serializeError } = require('serialize-error')
 const pReflect = require('p-reflect')
 const { NodeVM } = require('vm2')
+const merge = require('deepmerge')
 
-const createVm = opts =>
-  new NodeVM({
-    console: 'off',
-    sandbox: {},
-    ...opts
-  })
+const DEFAULT_VM_OPTS = {
+  console: 'off',
+  sandbox: {},
+  require: {
+    external: {
+      modules: ['serialize-error', 'browserless']
+    }
+  }
+}
+
+const createVm = (opts = {}) => new NodeVM(merge(DEFAULT_VM_OPTS, opts))
 
 const compile = (vm, fn, scriptPath) => {
   const code = `'use strict'; module.exports = ${fn.toString()}`
@@ -21,10 +26,6 @@ module.exports = opts => {
 
   return (fn, scriptPath) => {
     const run = compile(vm, fn, scriptPath)
-    return (...args) =>
-      pReflect(run(...args)).then(result => {
-        if (result.reason) result.reason = serializeError(result.reason)
-        return result
-      })
+    return (...args) => pReflect(run(...args))
   }
 }

@@ -1,63 +1,61 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless')
+const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
 const pidtree = require('pidtree')
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
 // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
 // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
-const args = ({ proxy } = {}) =>
-  [
-    // base
-    '--disable-cloud-import',
-    '--disable-gesture-typing',
-    '--disable-infobars',
-    '--disable-notifications',
-    '--disable-offer-store-unmasked-wallet-cards',
-    '--disable-offer-upload-credit-cards',
-    '--disable-print-preview',
-    '--disable-speech-api',
-    '--disable-tab-for-desktop-share',
-    '--disable-translate',
-    '--disable-voice-input',
-    '--disable-wake-on-wifi',
-    '--enable-async-dns',
-    '--enable-simple-cache-backend',
-    '--enable-tcp-fast-open',
-    '--enable-webgl',
-    '--hide-scrollbars',
-    '--ignore-gpu-blocklist',
-    '--mute-audio',
-    '--no-default-browser-check',
-    '--no-pings',
-    '--no-zygote',
-    '--prerender-from-omnibox=disabled',
-    '--use-gl=swiftshader',
-    '--no-sandbox',
-    // disable navigator.webdriver
-    /// https://stackoverflow.com/a/60409220
-    // https://blog.m157q.tw/posts/2020/09/11/bypass-cloudflare-detection-while-using-selenium-with-chromedriver/
-    '--disable-blink-features=AutomationControlled',
-    // extra
-    '--disable-web-security',
-    '--font-render-hinting=none', // could be 'none', 'medium'
-    // '--enable-font-antialiasing'
-    // perf
-    // '--single-process',
-    // '--memory-pressure-off',
-    proxy && `--proxy-server=${proxy.protocol}://${proxy.hostname}:${proxy.port}`
-  ].filter(Boolean)
+const defaultArgs = [
+  // base
+  '--disable-cloud-import',
+  '--disable-gesture-typing',
+  '--disable-infobars',
+  '--disable-notifications',
+  '--disable-offer-store-unmasked-wallet-cards',
+  '--disable-offer-upload-credit-cards',
+  '--disable-print-preview',
+  '--disable-speech-api',
+  '--disable-tab-for-desktop-share',
+  '--disable-translate',
+  '--disable-voice-input',
+  '--disable-wake-on-wifi',
+  '--enable-async-dns',
+  '--enable-simple-cache-backend',
+  '--enable-tcp-fast-open',
+  '--enable-webgl',
+  '--ignore-gpu-blocklist',
+  '--no-default-browser-check',
+  '--no-pings',
+  '--no-zygote',
+  '--prerender-from-omnibox=disabled',
+  '--use-gl=swiftshader',
+  '--no-sandbox',
+  // disable navigator.webdriver
+  /// https://stackoverflow.com/a/60409220
+  // https://blog.m157q.tw/posts/2020/09/11/bypass-cloudflare-detection-while-using-selenium-with-chromedriver/
+  '--disable-blink-features=AutomationControlled',
+  // extra
+  '--disable-web-security',
+  '--font-render-hinting=none' // could be 'none', 'medium'
+  // '--enable-font-antialiasing'
+  // perf
+  // '--single-process',
+  // '--memory-pressure-off',
+]
 
-const spawn = (puppeteer, { mode = 'launch', proxy, ...launchOpts }) =>
-  puppeteer[mode]({
-    ignoreHTTPSErrors: true,
-    // flags explained: https://peter.sh/experiments/chromium-command-line-switches/
-    // default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
-    // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
-    args: args({ proxy }),
-    ...launchOpts
-  })
+// The param `timeout` means here the maximum time in milliseconds
+// to wait for the browser instance to start
+const spawn = ({
+  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  mode = 'launch',
+  ...launchOpts
+} = {}) => {
+  const args = launchOpts.args ? undefined : defaultArgs
+  return puppeteer[mode]({ ignoreHTTPSErrors: true, timeout: 5000, args, ...launchOpts })
+}
 
 const getPid = childProcess => {
   if (!childProcess) return null
@@ -77,18 +75,15 @@ const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) =>
   if (!pid) return
 
   const pids = await getPids(pid)
-
   pids.forEach(pid => {
     try {
       process.kill(pid, signal)
-    } catch (error) {
-      debug('error', { pid, signal, ...debugOpts, message: error.message || error })
-    }
+    } catch (_) {}
   })
 
   // It's necessary to call `browser.close` for removing temporal files associated
   // and remove listeners attached to the main process
-  // see https://github.com/puppeteer/puppeteer/blob/main/src/node/BrowserRunner.ts#L129
+  // see https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
   if (childProcess.close) await childProcess.close()
 
   debug('close', { pids, signal, ...debugOpts })
@@ -96,4 +91,4 @@ const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) =>
   return { pids }
 }
 
-module.exports = { getPid, spawn, close, args }
+module.exports = { spawn, getPid, close, defaultArgs }

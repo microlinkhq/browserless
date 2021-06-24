@@ -124,7 +124,7 @@ test('run browserless code', async t => {
 
   const template = `async ({ browserWSEndpoint, code, url, opts }) => {
     const getBrowserless = require('browserless')
-    const browserless = getBrowserless({ mode: 'connect', browserWSEndpoint })
+    const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
     const browserFn = browserless.evaluate(${eval(code)})
     const result = await browserFn(url, opts)
     return result
@@ -133,16 +133,7 @@ test('run browserless code', async t => {
   const vm = createVm({
     require: {
       external: {
-        builtin: ['path', 'url'],
-        modules: [
-          'p-reflect',
-          'p-retry',
-          'browserless',
-          'metascraper',
-          'metascraper-',
-          '@metascraper',
-          'lodash'
-        ]
+        modules: ['p-reflect', 'p-retry', 'metascraper', 'metascraper-', '@metascraper', 'lodash']
       }
     }
   })

@@ -2,6 +2,7 @@
 
 'use strict'
 
+const createBrowserless = require('browserless')
 const beautyError = require('beauty-error')
 const path = require('path')
 const fs = require('fs')
@@ -23,7 +24,16 @@ const run = async () => {
   const [command, rawUrl] = cli.input
   const url = new URL(rawUrl).toString()
   const fn = require(`./commands/${command}`)
-  return fn(url, cli.flags)
+
+  const browserlessFactory = createBrowserless()
+  const browserless = await browserlessFactory.createContext()
+
+  const result = await fn({ url, browserless, opts: cli.flags })
+
+  await browserless.destroyContext()
+  await browserlessFactory.close()
+
+  return result
 }
 
 run()

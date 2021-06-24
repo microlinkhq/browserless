@@ -6,16 +6,21 @@
 ![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> The Headless Chrom[e|ium] driver for Node.js.
 
-**browserless** is a headless Chrome/Chromium driver built on top of [puppeteer](https://github.com/GoogleChrome/puppeteer), created to handle resources efficiently and satisfy the most desired production scenarios.
+> **browserless** is an efficient driver for controlling headless browsers built on top of [puppeteer](https://github.com/GoogleChrome/puppeteer) developed for scenarios where performance matters.
+
 
 ## Highlights
 
 - Puppeteer-like API for common tasks ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
-- Automatic 3rd party requests cancellation via [adblocker](#gotopage-options).
-- Simple [Google Lighthouse](#lighthouse) integration.
+- Built-in [evasions](#evasions) technniques for preventing be blocked.
+- Built-in [adblocker](#adblock) for canceling unnecessary requests.
+- Support for proxy (HTTP/HTTPS/SOCKs) per page.
+- Shell interaction via [Browserless CLI](command-line-interface).
+- Easy [Google Lighthouse](#lighthouse) integration.
+- Automatic retry & error handling.
 - Configurable [pooling](#pool-of-instances) support.
+- Sensible good defaults.
 
 ## Installation
 
@@ -25,59 +30,77 @@ You can install it via npm:
 $ npm install browserless puppeteer --save
 ```
 
-**browserless** has a puppeteer-like API and it uses puppeteer under the hood. 
+**browserless** is backed by [puppeteer](https://github.com/GoogleChrome/puppeteer), so you need to install it as well.
 
-You can use it with [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox), interchangeably.
+You can use it next to [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) or [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox), interchangeably.
 
 ## Usage
 
-**browserless** has the same API is than [puppeteer](https://github.com/GoogleChrome/puppeteer):
+This is a full example for showcase all the **browserless** capabilities:
 
 ```js
-const browserless = require('browserless')()
+const createBrowserless = require('browserless')
 const termImg = require('term-img')
 
-async function main () {
-  const buffer = await browserless.screenshot('http://example.com', {
-    device: 'iPhone 6'
-  })
+// First, create a browserless factory 
+// that it will keep a singleton process running
+const browserlessFactory = createBrowserless()
 
-  console.log(termImg(buffer))
-}
+// After that, you can create as many browser context
+// as you need. The browser contexts won't share cookies/cache 
+// with other browser contexts.
+const browserless = await browserlessFactory.createContext()
+
+// Perform the action you want, e.g., getting the HTML markup
+const buffer = await browserless.screenshot('http://example.com', {
+  device: 'iPhone 6'
+})
+
+console.log(termImg(buffer))
+
+// After your task is done, destroy your browser context
+await browserless.destroyContext()
+
+// At the end, gracefully shutdown the browser process
+await browserless.close()
 ```
+
+As you can see, **browserless** is implemented using a single browser process and creating/destroying specific browser contexts.
+
+You can read more about that at [technical details](/) section.
 
 If you're already using puppeteer, you can upgrade to use **browserless** instead almost with no effort.
 
-
 Additionally, you can use some specific [packages](#packages) in your codebase, interacting with them from puppeteer.
 
-## Basic
+## Initialization
 
 All methods follow the same interface:
 
 - `<url>`: The target URL. It's required.
 - `[options]`: Specific settings for the method. It's optional.
 
-The methods returns a Promise or a Node.js callback if pass an additional function as the last parameter.
+The methods follows an async interface, returning a `Promise`.
 
 ### .constructor(options)
 
-It creates the `browser` instance, using [puppeter.launch](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions) method.
+It initializes a singleton browserless process, returning a factory that will be used for creating browser contexts:
 
 ```js
-// Creating a simple instance
-const browserless = require('browserless')()
-```
+const browserlessFactory = require('browserless')
 
-or passing specific launchers options:
-
-```js
-// Creating an instance for running it at AWS Lambda
-const browserless = require('browserless')({
-  ignoreHTTPSErrors: true,
-  args: ['--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox', '--hide-scrollbars']
+const { createContext } = browserlessFactory({
+  timeout: 25000,
+  lossyDeviceName: true,
+  ignoreHTTPSErrors: true 
 })
+
+// Now every time you call `createContext` 
+// it will be create a browser context.
+const browserless = await createContext({ retry: 2 })
 ```
+
+They are some propetary browserless options; The rest of options will be passed to [puppeter.launch](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
 
 #### options
 
@@ -125,18 +148,6 @@ default: `30000`
 
 This setting will change the default maximum navigation time.
 
-##### retry
-
-type: `number`</br>
-default: `5`
-
-The number of retries that can be performed before considering a navigation as failed.
-
-##### proxy
-
-type: `string`</br>
-default: `undefined`
-
 It will setup a proxy to be used to communicate between the browser and the target URL.
 
 ##### puppeteer
@@ -146,26 +157,95 @@ default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
 
 It's automatically detected based on your `dependencies` being supported [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox).
 
-Alternatively, you can pass it.
+### .createContext(options)
 
-##### incognito
+Now you have your browserless factory instanciated, you can create browser contexts on demand:
 
-type: `boolean`</br>
-default: `false`
+```js
+const browserless = browserlessFactory.createContext({ 
+  retry: 2 
+})
+```
 
-Every time a new page is created, it will be an incognito page.
+Every browser context is isolated. They won't share cookies/cache with other browser contexts. They also can contain specific options.
 
-An incognito page will not share cookies/cache with other browser pages.
+#### options
+
+##### retry
+
+type: `number`</br>
+default: `2`
+
+The number of retries that can be performed before considering a navigation as failed.
+
+##### agent
+
+type: `object`</br>
+default: `undefined`
+
+In case you want you can setup a proxy agent at page level to be used powered by [puppeteer-proxy](https://github.com/gajus/puppeteer-proxy).
+
+```js
+const { SocksProxyAgent } = require('socks-proxy-agent')
+
+const browserless = await browserlessFactory.createContext({
+  agent: new SocksProxyAgent({
+    host: 'br41.nordvpn.com',
+    username: 'your-name@gmail.com',
+    password: 'abcdef12345124'
+  })
+})
+```
+
+### .browser
+
+It returns the [Browser](https://github.com/puppeteer/puppeteer/blob/v10.0.0/docs/api.md#class-browser) instance associated with your browserless factory.
+
+```js
+const browser = await browserlessFactory.browser()
+console.log('My browser PID is', browser.proces().pid)
+```
+
+### .respawn
+
+It will respawn the singleton browser associated with your browserless factory.
+
+```js
+const getPID = promise => (await promise).process().pid
+
+console.log('Process PID:', await getPID(browserlessFactory.browser()))
+
+await browserlessFactory.respawn()
+
+console.log('Process PID:', await getPID(browserlessFactory.browser()))
+```
+
+This method is am implementation detail, normally you don't need to call it.
+
+### .close
+
+It will close the singleton browser associated with your browserless factory.
+
+```js
+const onExit = require('signal-exit')
+
+onExit(async (code, signal) => {
+  console.log('shutting down all the things')
+  await browserlessFactory.close()
+  console.log(`exit with code ${code} (${signal})`)
+})
+```
+
+It should be used to gracefully shutdown your resources.
+
+## Methods
 
 ### .html(url, options)
 
 It serializes the content from the target `url` into HTML.
 
 ```js
-const browserless = require('browserless')
-
-const url = 'https://example.com'
-const html = await browserless.html(url)
+const html = await browserless.html('https://example.com')
 console.log(html)
 ```
 
@@ -178,10 +258,7 @@ See [browserless.goto](/#gotopage-options) to know all the options and values su
 It serializes the content from the target `url` into plain text.
 
 ```js
-const browserless = require('browserless')
-
-const url = 'https://example.com'
-const text = await browserless.text(url)
+const text = await browserless.text('https://example.com')
 console.log(text)
 ```
 
@@ -194,11 +271,8 @@ See [browserless.goto](/#gotopage-options) to know all the options and values su
 It generates the PDF version of a website behind an `url`.
 
 ```js
-const browserless = require('browserless')
-
-const url = 'https://example.com'
-const buffer = await browserless.pdf(url)
-console.log('PDF generated!')
+const buffer = await browserless.pdf('https://example.com')
+console.log(`PDF generated in ${buffer.byteLength()} bytes`)
 ```
 
 #### options
@@ -257,11 +331,8 @@ const buffer = await browserless.pdf(url.toString(), {
 It takes a screenshot from the target `url`.
 
 ```js
-const browserless = require('browserless')
-
-const url = 'https://example.com'
-const buffer = await browserless.screenshot(url)
-console.log('Screenshot taken!')
+const buffer = await browserless.screenshot('https://example.com')
+console.log(`Screenshot taken in ${buffer.byteLength()} bytes`)
 ```
 
 #### options
@@ -327,21 +398,23 @@ const buffer = await browserless.screenshot(url.toString(), {
 })
 ```
 
-### .devices
+### .destroyContext
 
-It has all the devices presets available, being possible to load viewport and user agents settings based on a device descriptor.
-
-These devices are used for emulation purposes. It extends from [puppeteer.devices](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#puppeteerdevices).
-
-#### .getDevice({ device, viewport, headers })
-
-Get a specific device descriptor settings by descriptor name.
-
-It doesn't matter if device name is lower/upper case.
+It will destroy the current browser context 
 
 ```js
-const browserless = require('browserless')
+const browserless = await browserlessFactory.createContext({ retry: 0 })
 
+const content = await browserless.html('https://example.com')
+
+await browserless.destroyContext()
+```
+
+### .getDevice(options)
+
+Giving a specific device descriptons, this method will be the devices settings for it.
+
+```js
 browserless.getDevice({ device: 'Macbook Pro 15' })
 // {
 //   userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36',
@@ -356,18 +429,46 @@ browserless.getDevice({ device: 'Macbook Pro 15' })
 // }
 ```
 
-## Advanced
+It extends from [puppeteer.devices](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#puppeteerdevices), adding some missing devices there.
 
-The following methods are exposed to be used in scenarios where you need more granularity control and less magic.
+#### options
 
-### .browser
+##### device
 
-It returns the internal [browser](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#class-browser) instance used as singleton.
+type: `string` </br>
+
+The device descriptor name. It's used to find the rest presets associated with it.
+
+When [lossyDeviceName](#lossydevicename) is enabled, a fuzzy search rather than a strict search will be performed in order to maximize getting a result back.
+
+##### viewport
+
+type: `object` </br>
+
+An extra of viewport settings that will be merged with the device presets.
 
 ```js
-const browserless = require('browserless')
+browserless.getDevice({ 
+  device: 'iPad', 
+  viewport: {
+    isLandscape: true
+  } 
+})
+```
 
-const browserInstance = await browserless.browser
+##### headers
+
+type: `object` </br>
+
+An extra of headers that will be merged with the device presets.
+
+```js
+browserless.getDevice({ 
+  device: 'iPad', 
+  headers: {
+    'user-agent': 'googlebot'
+  } 
+})
 ```
 
 ### .evaluate(fn, gotoOpts)
@@ -377,18 +478,13 @@ It exposes an interface for creating your own evaluate function, passing you the
 The `fn` will receive `page` and `response` as arguments:
 
 ```js
-const browserless = require('browserless')()
-
-const getUrlInfo = browserless.evaluate((page, response) => ({
+const ping = browserless.evaluate((page, response) => ({
   statusCode: response.status(),
   url: response.url(),
   redirectUrls: response.request().redirectChain()
 }))
 
-const url = 'https://example.com'
-const info = await getUrlInfo(url)
-
-console.log(info)
+await ping('https://example.com')
 // {
 //   "statusCode": 200,
 //   "url": "https://example.com/",
@@ -396,26 +492,23 @@ console.log(info)
 // }
 ```
 
-Note you don't need to close the page; It will be done under the hood.
+You don't need to close the page; It will be closed automatically.
 
 Internally, the method performs a [browserless.goto](#gotopage-options), being possible to pass extra arguments as second parameter:
 
 ```js
-const browserless = require('browserless')()
-
-const getText = browserless.evaluate(page => page.evaluate(() => document.body.innerText), {
+const serialize = browserless.evaluate(
+  page => page.evaluate(() => document.body.innerText), {
   waitUntil: 'domcontentloaded'
 })
 
-const url = 'https://example.com'
-const text = await getText(url)
-
-console.log(text)
+await serialize('https://example.com')
+// '<!DOCTYPE html><html><div>…'
 ```
 
 ### .goto(page, options)
 
-It performs a smart [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options), using a builtin [adblocker by Cliqz](https://www.npmjs.com/package/@cliqz/adblocker).
+It performs a [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options) with a lot of extra capabilities
 
 ```js
 const browserless = require('browserless')
@@ -435,7 +528,7 @@ Additionally, you can setup:
 type: `boolean`</br>
 default: `true`
 
-It will be abort requests detected as ads.
+It enabled the builtin [adblocker by Cliqz](https://www.npmjs.com/package/@cliqz/adblocker) that aborts unnecessary third party requests associated with ads services.
 
 ##### animations
 
@@ -464,33 +557,32 @@ default: `require('@browserless/goto').evasions`
 
 It makes your Headless undetectable, preventing to being blocked.
 
-These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access
+![](/static/evasions.png)
 
-Evasions techniques implemented are:
+These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access. All the evasions techniques implemented are:
 
 | Evasion                                                                                                                            | Description                                                                                                    |
 |------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| [chromeRuntime](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/chrome-runtime.js)               | It creates the `window.chrome` object associated to any Chrome browser                                         |
-| [consoleDebug](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/console-debug.js)                 | Ensure [`console.debug`](https://developer.mozilla.org/en-US/docs/Web/API/Console/debug#:~:text=The%20console%20method%20debug(),is%20available%20in%20Web%20Workers.) exists. |
-| [errorStackTrace](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/error-stack-trace.js)          | Prevent detect Puppeteer via variable name. |
-| [mediaCodecs](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/media-codecs.js)                   | Ensure media codedcs are defined. |
-| [navigatorPermissions](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-permissions.js) | Mock over [`Notification.permissions`](https://developer.mozilla.org/en-US/docs/Web/API/Notification/permission). |
-| [navigatorPlugins](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-plugins.js)         | Ensure your browser has [`NavigatorPlugins`](https://developer.mozilla.org/en-US/docs/Web/API/NavigatorPlugins) defined. |
-| [navigatorWebdriver](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-webdriver.js)     | Ensure [`Navigator.webdriver`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/webdriver) exists. |
-| [randomizeUserAgent](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/randomize-user-agent.js)    | Use a different [`User-Agent`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) every time. |
-| [webglVendor](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/webgl-vendor.js)                   | Ensure [`WebGLRenderingContext`](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext) & [`WebGL2RenderingContext`](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext) returns browser-like information. |
+| [`chromeRuntime`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/chrome-runtime.js)               | Ensure `window.chrome` is defined.                                         |
+| [`stackTraces`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/error-stack-trace.js)          | Prevent detect Puppeteer via variable name. |
+| [`mediaCodecs`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/media-codecs.js)                   | Ensure media codedcs are defined. |
+| [`navigatorPermissions`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-permissions.js) | Mock over [`Notification.permissions`](https://developer.mozilla.org/en-US/docs/Web/API/Notification/permission). |
+| [`navigatorPlugins`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-plugins.js)         | Ensure your browser has [`NavigatorPlugins`](https://developer.mozilla.org/en-US/docs/Web/API/NavigatorPlugins) defined. |
+| [`navigatorWebdriver`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-webdriver.js)     | Ensure [`Navigator.webdriver`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/webdriver) exists. |
+| [`randomizeUserAgent`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/randomize-user-agent.js)    | Use a different [`User-Agent`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) every time. |
+| [`webglVendor`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/webgl-vendor.js)                   | Ensure [`WebGLRenderingContext`](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext) & [`WebGL2RenderingContext`](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext) are defined. |
 
-All the evasions techinques are enabled by default.
+The evasion techniques are enabled by default. You can omit techniques just filtering them:
 
 ```js
+const createBrowserless = require('browserless')
+
 const evasions = require('@browserless/goto').evasions.filter(
-  evasion => evasion !== 'randomizeUserAgent'
+  (evasion) => evasion !== 'randomizeUserAgent'
 )
 
-const browserless = require('browserless')({ evasions })
+const browserlessFactory = createBrowserless({ evasions });
 ```
-
-![](/static/evasions.png)
 
 ##### headers
 
@@ -686,21 +778,39 @@ Events can be either:
 - `'networkidle0'`: Consider navigation to be finished when there are no more than 0 network connections for at least 500 ms.
 - `'networkidle2'`: Consider navigation to be finished when there are no more than 2 network connections for at least 500 ms.
 
-### .page()
+### .context
 
-It returns a standalone [browser new page](https://github.com/GoogleChrome/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#browsernewpage).
+It returns the [BrowserContext](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#class-browsercontext) associated with your instance.
+
 
 ```js
-const browserless = require('browserless')
+const browserContext = await browserless.context()
 
+console.log({ isIncognito: browserContext.isIncognito() })
+// => { isIncognito: true }
+```
+
+### .page
+
+It returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#class-page) associated with the current browser context.
+
+```js
 const page = await browserless.page()
+await page.content()
+// => '<html><head></head><body></body></html'
 ```
 
 ## Command Line Interface
 
-You can perform any **browserless** from CLI installing [`@browserless/cli`](https://npm.im/@browserless/cli) globally:
+You can perform any **browserless** action from your terminal.
 
 ![](/static/cli.png)
+
+Just you need to install [`@browserless/cli`](https://npm.im/@browserless/cli) globally:
+
+```
+npm install @browserless/cli --global
+```
 
 Additionally, can do it under demand using [`npx`](https://npm.im/npx):
 
@@ -708,13 +818,11 @@ Additionally, can do it under demand using [`npx`](https://npm.im/npx):
 npx @browserless/cli --help
 ```
 
-That's useful when you want to do under CI/CD scenarios.
+That's the preferred way to interact with the CLI under CI/CD scenarios.
 
 ## Pool of Instances
 
-**browserless** uses internally a singleton browser instance.
-
-If you want to keep multiple browsers open, you can use [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool) package.
+If you want to keep multiple browsers open, use [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool) package:
 
 ```js
 const createBrowserless = require('@browserless/pool')
@@ -722,14 +830,14 @@ const onExit = require('signal-exit')
 
 const browserlessPool = createBrowserless({
   max: 2, // max browsers to keep open
-  timeout: 30000 // max time a browser is consiedered fresh
+  timeout: 30000 // max time a browser is considered fresh
 })
 
 // pool shutdown gracefully on process exit.
 onExit(() => browserlessPool.drain().then(() => browserlessPool.clear()))
 ```
 
-You can still pass specific puppeteer options as second argument:
+You can still pass specific puppeteer options as the second argument:
 
 ```js
 const createBrowserless = require('@browserless/pool')
@@ -740,41 +848,47 @@ const browserlessPool = createBrowserless(
     timeout: 30000 // max time a browser is consiedered fresh
   },
   {
-    ignoreHTTPSErrors: true,
-    args: ['--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox', '--hide-scrollbars']
+    ignoreHTTPSErrors: true
   }
 )
 ```
 
-After that, the API is the same than **browserless**:
+So now the pool is initialized, you can interact with the pool in the same way that you have done so far:
 
 ```js
-browserlessPool.screenshot('http://example.com', { device: 'iPhone 6' }).then(buffer => {
-  console.log('your screenshot is here!')
+const termImg = require('term-img')
+
+const browserless = await browserlessPool.createContext()
+
+const buffer = await browserless.screenshot('http://example.com', {
+  device: 'iPhone 6'
 })
+
+console.log(termImg(buffer))
+
+await browserless.destroyContext()
 ```
 
-Every time you call the pool, it handles acquire and release a new browser instance from the pool ✨.
+Every time you call the pool, it auto handle the acquire and release.
 
 ## Lighthouse
 
-**browserless** has a [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that uses Puppeteer under the hood.
+**browserless** has a [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that connects to a [Puppeteer](https://github.com/GoogleChrome/puppeteer) instance in a simple way.
 
 ```js
 const lighthouse = require('@browserless/lighthouse')
+const { writeFile } = require('fs/promises')
 
-lighthouse('https://browserless.js.org').then(report => {
-  console.log(JSON.stringify(report, null, 2))
-})
+const report = await lighthouse('https://example.com')
+
+await writeFile('report.json', JSON.stringify(report, null, 2))
 ```
 
-### .lighthouse(url, options)
+The report will be generated `url`, extending from `lighthouse:default` settings, being these settings the same than Google Chrome Audits reports on Developer Tools.
 
-It generates a report from the target `url`, extending from `lighthouse:default` settings, being these settings the same than Google Chrome Audits reports on Developer Tools.
+### options
 
-#### options
-
-The following options are used by default:
+The second argument can contain lighthouse specific settings The following options are used by default:
 
 ```js
 {
@@ -789,14 +903,14 @@ See [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/m
 
 Additionally, you can setup:
 
-##### getBrowserless
+#### getBrowserless
 
 type: `function`</br>
 default: `require('browserless')`
 
 The browserless instance to use for getting the browser.
 
-##### logLevel
+#### logLevel
 
 type: `string`</br>
 default: `'error'`</br>
@@ -804,7 +918,7 @@ values: `'silent'` | `'error'` | `'info'` | `'verbose'` </br>
 
 The level of logging to enable.
 
-##### output
+#### output
 
 type: `string` | `string[]`</br>
 default: `'json'`</br>
@@ -812,7 +926,7 @@ values: `'json'` | `'csv'` | `'html'`
 
 The type(s) of report output to be produced.
 
-##### device
+#### device
 
 type: `string`</br>
 default: `'desktop'`</br>
@@ -820,7 +934,7 @@ values: `'desktop'` | `'mobile'` | `'none'` </br>
 
 How emulation (useragent, device screen metrics, touch) should be applied. `'none'` indicates Lighthouse should leave the host browser as-is.
 
-##### onlyCategories
+#### onlyCategories
 
 type: `string[]` | `null`</br>
 default: `['performance', 'best-practices', 'accessibility', 'seo']`</br>
@@ -830,28 +944,22 @@ Includes only the specified categories in the final report.
 
 ## Packages
 
-**browserless** is internally divided into multiple packages for ensuring just use the mininum quantity of code necessary for your user case.
+**browserless** is internally divided into multiple packages for ensuring just use the mininum quantity of code necessary for your use case.
 
-| Package                                                                                                 | Version                                                                                                                                     | Dependencies                                                                                                                                                                                            |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`browserless`](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/browserless&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/browserless)            |
-| [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/benchmark&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/benchmark)   |
-| [`@browserless/cli`](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/cli&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/cli)               |
-| [`@browserless/devices`](https://github.com/microlinkhq/browserless/tree/master/packages/devices)       | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices)       | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/devices&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/devices)       |
-| [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples)     | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples)     | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/examples&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/examples)     |
-| [`@browserless/errors`](https://github.com/microlinkhq/browserless/tree/master/packages/errors)         | [![npm](https://img.shields.io/npm/v/@browserless/errors.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/errors)         | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/errors&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/errors)         |
-| [`@browserless/function`](https://github.com/microlinkhq/browserless/tree/master/packages/function)         | [![npm](https://img.shields.io/npm/v/@browserless/function.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/function)         | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/function&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/function)         |
-| [`@browserless/goto`](https://github.com/microlinkhq/browserless/tree/master/packages/goto)             | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto)             | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/goto&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/goto)             |
-| [`@browserless/pdf`](https://github.com/microlinkhq/browserless/tree/master/packages/pdf)               | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf)               | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pdf&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pdf)               |
-| [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool)             | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool)             | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/pool&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/pool)             |
-| [`@browserless/screenshot`](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/screenshot&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/screenshot) |
-| [`@browserless/lighthouse`](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse) | [![npm](https://img.shields.io/npm/v/@browserless/lighthouse.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/lighthouse) | [![Dependency Status](https://david-dm.org/microlinkhq/browserless.svg?path=packages/lighthouse&style=flat-square)](https://david-dm.org/microlinkhq/browserless?path=packages/@browserless/lighthouse) |
-
-## Benchmark
-
-![](/static/bench.png)
-
-For testing different approaches, we included a tiny benchmark tool called [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark).
+| Package | Version |
+| ------- | ------- |
+| [`browserless`](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         |
+| [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   |
+| [`@browserless/cli`](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               |
+| [`@browserless/devices`](https://github.com/microlinkhq/browserless/tree/master/packages/devices)       | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices)       |
+| [`@browserless/examples`](https://github.com/microlinkhq/browserless/tree/master/packages/examples)     | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples)     |
+| [`@browserless/errors`](https://github.com/microlinkhq/browserless/tree/master/packages/errors)         | [![npm](https://img.shields.io/npm/v/@browserless/errors.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/errors)         |
+| [`@browserless/function`](https://github.com/microlinkhq/browserless/tree/master/packages/function)         | [![npm](https://img.shields.io/npm/v/@browserless/function.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/function) |
+| [`@browserless/goto`](https://github.com/microlinkhq/browserless/tree/master/packages/goto)             | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto)             |
+| [`@browserless/pdf`](https://github.com/microlinkhq/browserless/tree/master/packages/pdf)               | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf)               |
+| [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool)             | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool)             |
+| [`@browserless/screenshot`](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) |
+| [`@browserless/lighthouse`](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse) | [![npm](https://img.shields.io/npm/v/@browserless/lighthouse.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/lighthouse) |
 
 ## FAQ
 
@@ -870,10 +978,6 @@ In order to speed up the process, we block ads scripts by default because they a
 Probably **browserless** was too smart and it blocked a request that you need.
 
 You can active debug mode using `DEBUG=browserless` environment variable in order to see what is happening behind the code:
-
-```
-DEBUG=browserless node index.js
-```
 
 Consider open an [issue](https://github.com/microlinkhq/browserless/issues/new) with the debug trace.
 
