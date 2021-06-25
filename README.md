@@ -13,7 +13,7 @@
 ## Highlights
 
 - Puppeteer-like API for common tasks ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
-- Built-in [evasions](#evasions) technniques for preventing be blocked.
+- Built-in [evasions](#evasions) technniques to prevent being blocked.
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
 - Support for proxy (HTTP/HTTPS/SOCKs) per page.
 - Shell interaction via [Browserless CLI](command-line-interface).
