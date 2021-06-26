@@ -45,7 +45,7 @@
   },
   "license": "MIT",
   "ava": {
-    "verbose": true,
-    "timeout": "2m"
+    "timeout": "2m",
+    "verbose": true
   }
 }
