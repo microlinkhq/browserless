@@ -1,11 +1,25 @@
 'use strict'
 
+const { serializeError } = require('serialize-error')
 const lighthouse = require('lighthouse')
-const pReflect = require('p-reflect')
 
 const runLighthouse = async ({ url, flags, config }) => {
-  const { lhr, report } = await lighthouse(url, flags, config)
-  return flags.output === 'json' ? lhr : report
+  try {
+    const { lhr, report } = await lighthouse(url, flags, config)
+    const value = flags.output === 'json' ? lhr : report
+
+    return {
+      isFulfilled: true,
+      isRejected: false,
+      value
+    }
+  } catch (error) {
+    return {
+      isFulfilled: false,
+      isRejected: true,
+      reason: serializeError(error)
+    }
+  }
 }
 
-process.on('message', async opts => process.send(await pReflect(runLighthouse(opts))))
+process.on('message', async opts => process.send(await runLighthouse(opts)))
