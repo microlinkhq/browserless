@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.0.1](https://github.com/microlinkhq/browserless/compare/v9.0.0...v9.0.1) (2021-06-26)
+
+
+### Bug Fixes
+
+* p-retry retry value is called retries ([78c1a1e](https://github.com/microlinkhq/browserless/commit/78c1a1e3f6e7b9a92f723125acbad9bd8c18b7f5))
+
+
+
+
+
 ## [8.8.10](https://github.com/microlinkhq/browserless/compare/v8.8.9...v8.8.10) (2021-04-23)
 
 
