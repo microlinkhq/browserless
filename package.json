@@ -4,11 +4,15 @@
   "homepage": "https://browserless.js.org",
   "version": "",
   "author": {
-    "email": "josefrancisco.verdu@gmail.com",
-    "name": "Kiko Beats",
-    "url": "https://kikobeats.com"
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
   },
   "contributors": [
+    {
+      "name": "Kiko Beats",
+      "email": "josefrancisco.verdu@gmail.com"
+    },
     {
       "name": "pierresaid",
       "email": "said.pierre.emler@gmail.com"
