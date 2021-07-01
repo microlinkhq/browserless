@@ -9,7 +9,7 @@ Describe your issue here.
 
 ### Steps to reproduce
 
-> **Note**: You can reproduce the code using [interactive Node.js shell by Runkit](https://npm.runkit.com/metascraper).
+> **Note**: You can reproduce the code using [interactive Node.js shell by Runkit](https://npm.runkit.com/browserless).
 
 Tell us how to reproduce this issue.
 
