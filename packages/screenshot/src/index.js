@@ -61,6 +61,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
     const beforeScreenshot = response =>
       pReflect(
         Promise.all([
+          page.evaluate(() => document.fonts.ready),
           waitForPrism(page, response, { codeScheme, ...opts }),
           pTimeout(waitForImagesOnViewport(page, { timeout }), timeout)
         ])
