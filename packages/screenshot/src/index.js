@@ -57,7 +57,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
   ) => {
     let screenshot
     let response
-
     const beforeScreenshot = response =>
       pReflect(
         Promise.all([
@@ -103,6 +102,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
     return Object.keys(overlayOpts).length === 0
       ? screenshot
-      : overlay(screenshot, { ...opts, ...overlayOpts })
+      : overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
   }
 }

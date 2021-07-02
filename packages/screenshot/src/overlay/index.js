@@ -6,16 +6,33 @@ const sharp = require('sharp')
 const path = require('path')
 const got = require('got')
 
-const createSvgBackground = css => svgGradient(css, { width: '2776px', height: '1910px' })
+const toPx = str => `${str}px`
 
-const getBackground = async (bg = 'transparent') => {
+const toPercentage = input => {
+  if (typeof input === 'number') return input
+  if (input.includes('%')) return input.replace('%', '') / 100
+  return input
+}
+
+const getBackground = async (bg = 'transparent', { margin = 0.2, viewport }) => {
   if (isHttpUrl(bg)) return got(bg).buffer()
 
   if (!bg.includes('gradient')) {
     bg = `linear-gradient(45deg, ${bg} 0%, ${bg} 100%)`
   }
 
-  return Buffer.from(createSvgBackground(bg))
+  const { width, height, deviceScaleFactor = 1 } = viewport
+
+  const totalWidth = width * deviceScaleFactor
+  const totalHeight = height * deviceScaleFactor
+  const marginPercentage = toPercentage(margin)
+
+  const overlayViewport = {
+    width: toPx(totalWidth + (totalWidth * marginPercentage) / 2),
+    height: toPx(totalHeight + totalHeight * marginPercentage)
+  }
+
+  return Buffer.from(svgGradient(bg, overlayViewport))
 }
 
 const BROWSER_THEMES = {
@@ -23,14 +40,14 @@ const BROWSER_THEMES = {
   light: path.resolve(__dirname, 'light.png')
 }
 
-module.exports = async (screenshot, { browser: theme, background, path }) => {
+module.exports = async (screenshot, { browser: theme, background, margin, path, viewport }) => {
   const browserOverlay = BROWSER_THEMES[theme]
 
   const inputs = browserOverlay
     ? [{ input: browserOverlay }, { input: screenshot }]
     : [{ input: screenshot }]
 
-  const bg = await getBackground(background)
+  const bg = await getBackground(background, { margin, viewport })
   const image = sharp(bg).composite(inputs)
 
   return path ? image.toFile(path) : image.toBuffer()
