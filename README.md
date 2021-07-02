@@ -706,7 +706,7 @@ Prefer to use [modules](#modules) whenever possible.
 
 ##### scroll
 
-type: `string` | `object`
+type: `string`
 
 Scroll to the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 

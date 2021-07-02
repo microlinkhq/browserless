@@ -39,69 +39,6 @@ const injectCSS = (page, css) =>
     })
   )
 
-const scrollTo = (element, options) => {
-  const isOverflown = element => {
-    return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
-  }
-
-  const findScrollParent = element => {
-    if (element === undefined) {
-      return
-    }
-
-    if (isOverflown(element)) {
-      return element
-    }
-
-    return findScrollParent(element.parentElement)
-  }
-
-  const calculateOffset = (rect, options) => {
-    if (options === undefined) {
-      return {
-        x: rect.left,
-        y: rect.top
-      }
-    }
-
-    const offset = options.offset || 0
-
-    switch (options.offsetFrom) {
-      case 'top':
-        return {
-          x: rect.left,
-          y: rect.top + offset
-        }
-      case 'right':
-        return {
-          x: rect.left - offset,
-          y: rect.top
-        }
-      case 'bottom':
-        return {
-          x: rect.left,
-          y: rect.top - offset
-        }
-      case 'left':
-        return {
-          x: rect.left + offset,
-          y: rect.top
-        }
-      default:
-        throw new Error('Invalid `scroll.offsetFrom` value')
-    }
-  }
-
-  const rect = element.getBoundingClientRect()
-  const offset = calculateOffset(rect, options)
-  const parent = findScrollParent(element)
-
-  if (parent !== undefined) {
-    parent.scrollIntoView(true)
-    parent.scroll(offset.x, offset.y)
-  }
-}
-
 const parseCookies = (url, str) =>
   str.split(';').reduce((acc, cookieStr) => {
     const jar = new toughCookie.CookieJar(undefined, { rejectPublicSuffixes: false })
@@ -386,14 +323,10 @@ module.exports = ({
     }
 
     if (scroll) {
-      if (typeof scroll === 'object') {
-        await run({
-          fn: page.$eval(scroll.element, scrollTo, scroll),
-          debug: { scroll }
-        })
-      } else {
-        await run({ fn: page.$eval(scroll, scrollTo), debug: { scroll } })
-      }
+      await run({
+        fn: page.$eval(scroll, el => el.scrollIntoView()),
+        debug: { scroll }
+      })
     }
 
     if (isWaitUntilAuto) await waitUntilAuto(page, { response: value, timeout })
