@@ -47,13 +47,25 @@
       "isLandscape": false
     }
   },
-  "iMac 21 4k": {
-    "name": "iMac 21 4k",
+  "iMac 21 4K": {
+    "name": "iMac 21 4K",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 2048,
       "height": 1152,
       "deviceScaleFactor": 2,
+      "isMobile": false,
+      "hasTouch": false,
+      "isLandscape": false
+    }
+  },
+  "iMac 24 4.5K": {
+    "name": "iMac 24 4.5K",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
+    "viewport": {
+      "width": 4480,
+      "height": 2520,
+      "deviceScaleFactor": 1,
       "isMobile": false,
       "hasTouch": false,
       "isLandscape": false
