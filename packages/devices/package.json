@@ -2,7 +2,7 @@
   "name": "@browserless/devices",
   "description": "A collection of different devices for emulation purposes",
   "homepage": "https://browserless.js.org/#/?id=devices",
-  "version": "9.0.1",
+  "version": "9.0.3",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
