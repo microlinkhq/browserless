@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.1.0](https://github.com/microlinkhq/browserless/compare/v9.0.4...v9.1.0) (2021-07-03)
+
+
+### Features
+
+* simplify scrolling ([6da9c7b](https://github.com/microlinkhq/browserless/commit/6da9c7b1304068dc9424e16d8a0b97070c8f3c39))
+
+
+
+
+
 ## [9.0.4](https://github.com/microlinkhq/browserless/compare/v9.0.3...v9.0.4) (2021-07-02)
 
 
