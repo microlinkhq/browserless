@@ -4,6 +4,7 @@
 </h1>
 
 ![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
+[![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
 
