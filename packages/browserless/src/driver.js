@@ -54,7 +54,7 @@ const spawn = ({
   ...launchOpts
 } = {}) => {
   const args = launchOpts.args ? undefined : defaultArgs
-  return puppeteer[mode]({ ignoreHTTPSErrors: true, timeout: 5000, args, ...launchOpts })
+  return puppeteer[mode]({ ignoreHTTPSErrors: true, timeout: 10000, args, ...launchOpts })
 }
 
 const getPid = childProcess => {
