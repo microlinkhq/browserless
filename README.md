@@ -14,7 +14,7 @@
 ## Highlights
 
 - Puppeteer-like API for common tasks ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
-- Built-in [evasions](#evasions) technniques to prevent being blocked.
+- Built-in [evasion](#evasions) techniques to prevent being blocked.
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
 - Support for proxy (HTTP/HTTPS/SOCKs) per page.
 - Shell interaction via [Browserless CLI](command-line-interface).
@@ -160,7 +160,7 @@ It's automatically detected based on your `dependencies` being supported [puppet
 
 ### .createContext(options)
 
-Now you have your browserless factory instanciated, you can create browser contexts on demand:
+Now you have your browserless factory instantiated, you can create browser contexts on demand:
 
 ```js
 const browserless = browserlessFactory.createContext({ 
@@ -306,7 +306,7 @@ It sets paper margins. All possible units are:
 - `cm` for centimeters.
 - `mm` for millimeters.
 
-You can pass an `object` object specifing each corner side of the paper:
+You can pass an `object` object specifying each corner side of the paper:
 
 ```js
 const buffer = await browserless.pdf(url.toString(), {
@@ -560,7 +560,7 @@ It makes your Headless undetectable, preventing to being blocked.
 
 ![](/static/evasions.png)
 
-These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access. All the evasions techniques implemented are:
+These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access. All the evasion techniques implemented are:
 
 | Evasion                                                                                                                            | Description                                                                                                    |
 |------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
@@ -798,7 +798,7 @@ It returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59
 ```js
 const page = await browserless.page()
 await page.content()
-// => '<html><head></head><body></body></html'
+// => '<html><head></head><body></body></html>'
 ```
 
 ## Command Line Interface
@@ -846,7 +846,7 @@ const createBrowserless = require('@browserless/pool')
 const browserlessPool = createBrowserless(
   {
     max: 2, // max browsers to keep open
-    timeout: 30000 // max time a browser is consiedered fresh
+    timeout: 30000 // max time a browser is considered fresh
   },
   {
     ignoreHTTPSErrors: true
@@ -945,7 +945,7 @@ Includes only the specified categories in the final report.
 
 ## Packages
 
-**browserless** is internally divided into multiple packages for ensuring just use the mininum quantity of code necessary for your use case.
+**browserless** is internally divided into multiple packages for ensuring just use the minimum quantity of code necessary for your use case.
 
 | Package | Version |
 | ------- | ------- |
