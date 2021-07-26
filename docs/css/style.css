@@ -206,8 +206,11 @@ main {
   background: hsla(0, 0%, 53%, 0.1);
 }
 
+body.close .sidebar {
+  transform: translateX(-300px);
+}
+
 .sidebar-toggle {
-  background-color: transparent;
   background-color: var(--bg-color);
   border: 0;
   outline: none;
@@ -217,9 +220,9 @@ main {
   position: absolute;
   text-align: center;
   transition: opacity 0.3s;
-  width: 30px;
   width: 284px;
   z-index: 4;
+  cursor:pointer;
 }
 
 .sidebar-toggle .sidebar-toggle-button:hover {
