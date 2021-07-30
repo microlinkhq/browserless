@@ -34,7 +34,8 @@
     "whoops": "~4.1.0"
   },
   "devDependencies": {
-    "ava": "latest"
+    "ava": "latest",
+    "nyc": "latest"
   },
   "engines": {
     "node": ">= 12"
@@ -43,7 +44,7 @@
     "index.js"
   ],
   "scripts": {
-    "test": "NODE_ENV=test ava"
+    "test": "NODE_ENV=test nyc ava"
   },
   "license": "MIT",
   "ava": {
