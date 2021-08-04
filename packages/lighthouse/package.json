@@ -35,8 +35,8 @@
   },
   "devDependencies": {
     "ava": "latest",
-    "nyc": "latest",
-    "browserless": "latest"
+    "browserless": "latest",
+    "nyc": "latest"
   },
   "engines": {
     "node": ">= 12"

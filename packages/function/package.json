@@ -43,8 +43,8 @@
   },
   "devDependencies": {
     "ava": "latest",
-    "nyc": "latest",
     "browserless": "latest",
+    "nyc": "latest",
     "puppeteer": "latest"
   },
   "engines": {
