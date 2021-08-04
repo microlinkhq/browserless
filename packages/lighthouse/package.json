@@ -27,7 +27,7 @@
     "@browserless/errors": "^9.0.3",
     "debug-logfmt": "~1.0.4",
     "execa": "~5.1.1",
-    "lighthouse": "~8.1.0",
+    "lighthouse": "~8.2.0",
     "p-event": "~4.2.0",
     "p-retry": "~4.6.0",
     "p-timeout": "~4.1.0",
