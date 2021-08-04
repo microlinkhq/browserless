@@ -27,7 +27,7 @@ module.exports = (
       const browser = await browserless.browser()
       const browserWSEndpoint = browser.wsEndpoint()
 
-      const subprocess = execa.node(execPath, { killSignal: 'SIGKILL' })
+      const subprocess = execa.node(execPath, { killSignal: 'SIGKILL', timeout })
       subprocess.stderr.pipe(process.stderr)
 
       debug('spawn', { pid: subprocess.pid })
