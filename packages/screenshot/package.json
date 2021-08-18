@@ -41,7 +41,7 @@
     "p-timeout": "~4.1.0",
     "pretty-ms": "~7.0.1",
     "prism-themes": "~1.8.0",
-    "sharp": "~0.28.3",
+    "sharp": "~0.29.0",
     "svg-gradient": "~1.0.3",
     "time-span": "~4.0.0"
   },
