@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.1.10](https://github.com/microlinkhq/browserless/compare/v9.1.9...v9.1.10) (2021-08-19)
+
+
+### Bug Fixes
+
+* **lighthouse:** less agressive way to timeout subprocess ([a2d08aa](https://github.com/microlinkhq/browserless/commit/a2d08aaf0a61dc7a448ae494f8250d79cd1fbdde))
+
+
+
+
+
 ## [9.1.9](https://github.com/microlinkhq/browserless/compare/v9.1.8...v9.1.9) (2021-08-18)
 
 **Note:** Version bump only for package @browserless/lighthouse
