@@ -47,13 +47,15 @@ module.exports = async (
     const browser = await browserless.browser()
     const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-    const subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL', timeout })
+    const subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL' })
+    const timeoutId = setTimeout(driver.close, timeout, subprocess)
     subprocess.stderr.pipe(process.stderr)
     debug('spawn', { pid: subprocess.pid })
     subprocess.send({ url, flags, config })
 
     const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
     await driver.close(subprocess)
+    clearTimeout(timeoutId)
     if (isFulfilled) return value
     throw ensureError(reason)
   }
