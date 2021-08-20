@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.1.11](https://github.com/microlinkhq/browserless/compare/v9.1.10...v9.1.11) (2021-08-20)
+
+
+### Bug Fixes
+
+* **html:** don't disable animations ([1a13dc0](https://github.com/microlinkhq/browserless/commit/1a13dc040886ea4c8f1d49c3bac13a6dc2d3250b))
+
+
+
+
+
 ## [9.1.9](https://github.com/microlinkhq/browserless/compare/v9.1.8...v9.1.9) (2021-08-18)
 
 **Note:** Version bump only for package browserless
