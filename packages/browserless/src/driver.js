@@ -46,16 +46,12 @@ const defaultArgs = [
   // '--memory-pressure-off',
 ]
 
-// The param `timeout` means here the maximum time in milliseconds
-// to wait for the browser instance to start
 const spawn = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   mode = 'launch',
+  args = defaultArgs,
   ...launchOpts
-} = {}) => {
-  const args = launchOpts.args ? undefined : defaultArgs
-  return puppeteer[mode]({ ignoreHTTPSErrors: true, timeout: 10000, args, ...launchOpts })
-}
+} = {}) => puppeteer[mode]({ ignoreHTTPSErrors: true, args, ...launchOpts })
 
 const getPid = childProcess => {
   if (!childProcess) return null

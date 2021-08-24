@@ -60,6 +60,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
       handleSIGINT: false,
       handleSIGTERM: false,
       handleSIGHUP: false,
+      timeout,
       ...launchOpts
     })
 
