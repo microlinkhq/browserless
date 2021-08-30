@@ -29,7 +29,7 @@
   ],
   "dependencies": {
     "debug-logfmt": "~1.0.4",
-    "ensure-error": "~3.0.1",
+    "ensure-error": "~4.0.0",
     "serialize-error": "~8.1.0",
     "whoops": "~4.1.0"
   },
