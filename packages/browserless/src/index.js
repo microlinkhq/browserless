@@ -18,22 +18,25 @@ const driver = require('./driver')
 const lock = mutexify()
 
 const proxyRequest = async (request, opts) => {
-  const response = await got(request.url(), {
-    https: { rejectUnauthorized: false },
-    body: request.postData(),
-    followRedirect: false,
-    headers: request.headers(),
-    method: request.method(),
-    responseType: 'buffer',
-    retry: 0,
-    ...opts
-  })
+  try {
+    const response = await got(request.url(), {
+      body: request.postData(),
+      headers: request.headers(),
+      method: request.method(),
+      responseType: 'buffer',
+      followRedirect: false,
+      https: { rejectUnauthorized: false },
+      ...opts
+    })
 
-  return request.respond({
-    body: response.body,
-    headers: response.headers,
-    status: response.statusCode
-  })
+    await request.respond({
+      body: response.body,
+      headers: response.headers,
+      status: response.statusCode
+    })
+  } catch (err) {
+    await request.abort()
+  }
 }
 
 module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
@@ -116,7 +119,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
 
       if (agent) {
         await page.setRequestInterception(true)
-        page.on('request', request => proxyRequest(request, { agent }))
+        page.on('request', request => proxyRequest(request, { retry, agent }))
       }
 
       debug('createPage', { pid: driver.getPid(browserProcess), agent: !!agent })
