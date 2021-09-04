@@ -1,7 +1,6 @@
 'use strict'
 
 const { ensureError, browserTimeout } = require('@browserless/errors')
-const debugAgent = require('debug-logfmt')('browserless:agent')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
