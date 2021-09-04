@@ -145,6 +145,7 @@ module.exports = ({
   const goto = async (
     page,
     {
+      abortTypes = [],
       adblock = true,
       animations = false,
       click,
@@ -162,10 +163,10 @@ module.exports = ({
       timeout = baseTimeout,
       timezone,
       url,
+      waitForFunction,
       waitForSelector,
       waitForTimeout,
       waitForXPath,
-      waitForFunction,
       waitUntil = 'auto',
       waitUntilAuto = _waitUntilAuto,
       ...args
@@ -264,6 +265,15 @@ module.exports = ({
     }
 
     await Promise.all(prePromises.concat(applyEvasions.map(fn => fn(page))))
+
+    if (abortTypes.length > 0) {
+      page.on('request', req => {
+        const resourceType = req.resourceType()
+        if (!abortTypes.includes(resourceType)) return req.continue()
+        debug('abort', { url: req.url(), resourceType })
+        return req.abort('blockedbyclient')
+      })
+    }
 
     const { value } = await run({
       fn: pTimeout(html ? page.setContent(html, args) : page.goto(url, args), timeout),

@@ -524,6 +524,13 @@ Any option passed here will bypass to [page.goto](https://github.com/GoogleChrom
 
 Additionally, you can setup:
 
+##### abortTypes
+
+type: `array`</br>
+default: `[]`
+
+It sets the ability to abort requests based on the resource type.
+
 ##### adblock
 
 type: `boolean`</br>

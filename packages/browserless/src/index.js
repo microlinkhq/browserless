@@ -1,6 +1,7 @@
 'use strict'
 
 const { ensureError, browserTimeout } = require('@browserless/errors')
+const debugAgent = require('debug-logfmt')('browserless:agent')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -117,10 +118,8 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
       const browserProcess = await getBrowser()
       const page = await (await contextPromise).newPage()
 
-      if (agent) {
-        await page.setRequestInterception(true)
-        page.on('request', request => proxyRequest(request, { retry, agent }))
-      }
+      await page.setRequestInterception(true)
+      if (agent) page.on('request', req => proxyRequest(req, { retry, agent }))
 
       debug('createPage', { pid: driver.getPid(browserProcess), agent: !!agent })
 
