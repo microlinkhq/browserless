@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.2.0](https://github.com/microlinkhq/browserless/compare/v9.1.14...v9.2.0) (2021-09-04)
+
+
+### Features
+
+* abort request based on resource type ([52cdbfb](https://github.com/microlinkhq/browserless/commit/52cdbfb4f7eacad6f4bdba52287162ec1bc0b936))
+
+
+
+
+
 ## [9.1.6](https://github.com/microlinkhq/browserless/compare/v9.1.5...v9.1.6) (2021-08-04)
 
 **Note:** Version bump only for package @browserless/goto
