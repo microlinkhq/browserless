@@ -9,35 +9,12 @@ const mutexify = require('mutexify/promise')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
-const got = require('got')
 
 const { AbortError } = pRetry
 
 const driver = require('./driver')
 
 const lock = mutexify()
-
-const proxyRequest = async (request, opts) => {
-  try {
-    const response = await got(request.url(), {
-      body: request.postData(),
-      headers: request.headers(),
-      method: request.method(),
-      responseType: 'buffer',
-      followRedirect: false,
-      https: { rejectUnauthorized: false },
-      ...opts
-    })
-
-    await request.respond({
-      body: response.body,
-      headers: response.headers,
-      status: response.statusCode
-    })
-  } catch (err) {
-    await request.abort()
-  }
-}
 
 module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
   const goto = createGoto({ timeout, ...launchOpts })
@@ -102,7 +79,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
     return getBrowser()
   }
 
-  const createContext = async ({ retry = 2, agent } = {}) => {
+  const createContext = async ({ retry = 2 } = {}) => {
     let contextPromise = createBrowserContext()
 
     contextPromise.then(context => {
@@ -116,12 +93,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
     const createPage = async () => {
       const browserProcess = await getBrowser()
       const page = await (await contextPromise).newPage()
-
-      await page.setRequestInterception(true)
-      if (agent) page.on('request', req => proxyRequest(req, { retry, agent }))
-
-      debug('createPage', { pid: driver.getPid(browserProcess), agent: !!agent })
-
+      debug('createPage', { pid: driver.getPid(browserProcess) })
       return page
     }
 

@@ -267,6 +267,7 @@ module.exports = ({
     await Promise.all(prePromises.concat(applyEvasions.map(fn => fn(page))))
 
     if (abortTypes.length > 0) {
+      await page.setRequestInterception(true)
       page.on('request', req => {
         const resourceType = req.resourceType()
         if (!abortTypes.includes(resourceType)) return req.continue()

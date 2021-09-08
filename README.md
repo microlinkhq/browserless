@@ -179,25 +179,6 @@ default: `2`
 
 The number of retries that can be performed before considering a navigation as failed.
 
-##### agent
-
-type: `object`</br>
-default: `undefined`
-
-In case you want you can setup a proxy agent at page level to be used powered by [puppeteer-proxy](https://github.com/gajus/puppeteer-proxy).
-
-```js
-const { SocksProxyAgent } = require('socks-proxy-agent')
-
-const browserless = await browserlessFactory.createContext({
-  agent: new SocksProxyAgent({
-    host: 'br41.nordvpn.com',
-    username: 'your-name@gmail.com',
-    password: 'abcdef12345124'
-  })
-})
-```
-
 ### .browser
 
 It returns the [Browser](https://github.com/puppeteer/puppeteer/blob/v10.0.0/docs/api.md#class-browser) instance associated with your browserless factory.
