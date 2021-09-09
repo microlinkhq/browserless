@@ -4,9 +4,8 @@ const test = require('ava')
 const createBrowserless = require('../src')
 
 require('@browserless/test')(createBrowserless())
-//
 ;['pdf', 'screenshot', 'html', 'text'].forEach(method => {
-  test(`.${method} wrap errors`, async t => {
+  test.skip(`.${method} wrap errors`, async t => {
     const timeout = 50
 
     const browserlessFactory = createBrowserless({ timeout })
