@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.2.1](https://github.com/microlinkhq/browserless/compare/v9.2.0...v9.2.1) (2021-09-09)
+
+
+### Bug Fixes
+
+* linter ([8a48d0c](https://github.com/microlinkhq/browserless/commit/8a48d0c2b90e9a49226a219e05cad186767dfd8b))
+
+
+
+
+
 # [9.2.0](https://github.com/microlinkhq/browserless/compare/v9.1.14...v9.2.0) (2021-09-04)
 
 
