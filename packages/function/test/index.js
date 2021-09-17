@@ -66,6 +66,41 @@ test('access to page', async t => {
   })
 })
 
+test('access to page (with inline code)', async t => {
+  const myFn = browserlessFunction('({ page }) => page.title()', { vmOpts })
+
+  t.deepEqual(await myFn('https://example.com'), {
+    isFulfilled: true,
+    isRejected: false,
+    value: 'Example Domain'
+  })
+})
+
+test('access to page (with semicolon)', async t => {
+  const myFn = browserlessFunction('({ page }) => page.title();', { vmOpts })
+
+  t.deepEqual(await myFn('https://example.com'), {
+    isFulfilled: true,
+    isRejected: false,
+    value: 'Example Domain'
+  })
+})
+
+test('access to page (with semicolon and break lines)', async t => {
+  const myFn = browserlessFunction(
+    `({ page }) => {
+    return page.title()
+    ; }`,
+    { vmOpts }
+  )
+
+  t.deepEqual(await myFn('https://example.com'), {
+    isFulfilled: true,
+    isRejected: false,
+    value: 'Example Domain'
+  })
+})
+
 test('interact with a page', async t => {
   const code = async ({ page }) => {
     const navigationPromise = page.waitForNavigation()
