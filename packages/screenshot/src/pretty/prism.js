@@ -1,4 +1,4 @@
-/* PrismJS 1.24.0
+/* PrismJS 1.25.0
 https://prismjs.com/download.html#themes=prism&languages=clike+javascript */
 var _self =
     'undefined' != typeof window
@@ -63,7 +63,7 @@ var _self =
             try {
               throw new Error()
             } catch (e) {
-              var n = (/at [^(\r\n]*\((.*):.+:.+\)$/i.exec(e.stack) || [])[1]
+              var n = (/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(e.stack) || [])[1]
               if (n) {
                 var t = document.getElementsByTagName('script')
                 for (var r in t) if (t[r].src == n) return t[r]
