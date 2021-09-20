@@ -29,7 +29,6 @@
   ],
   "dependencies": {
     "@browserless/goto": "^9.2.1",
-    "cli-truncate": "~2.1.0",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.2",
     "is-html-content": "~1.0.0",

@@ -3,7 +3,6 @@
 'use strict'
 
 const mapValuesDeep = require('map-values-deep')
-const truncate = require('cli-truncate')
 
 const resetCSS = `<style>
   * {
@@ -39,14 +38,20 @@ const resetCSS = `<style>
 const JSON_MAX_LENGTH = 80 * 0.5
 const TEXT_MAX_LENGTH = 100 * 0.6
 
+const truncate = (input, maxLength) => {
+  let text = input.slice(0, maxLength)
+  if (text.length < input.length) text = text.trim() + '…'
+  return text
+}
+
 const compactJSON = payload => {
   const sanetized = mapValuesDeep(payload, value => {
     if (typeof value !== 'string') return value
-    return truncate(value, JSON_MAX_LENGTH, { position: 'end' }).trim()
+    return truncate(value, JSON_MAX_LENGTH)
   })
 
   return (
-    JSON.stringify(sanetized, null, 2)
+    JSON.stringify(sanetized, null, 4)
       // compact objects '},\n  {' → '}, {'
       .replace(new RegExp('},\\n  {', 'g'), '}, {')
       // compact array object start '[,\n  {' → '[{'
@@ -59,7 +64,7 @@ const compactJSON = payload => {
 const compactText = payload => {
   return payload
     .split('\n')
-    .map(str => truncate(str, TEXT_MAX_LENGTH, { position: 'end' }).trim())
+    .map(str => truncate(str, TEXT_MAX_LENGTH))
     .join('\n')
 }
 
