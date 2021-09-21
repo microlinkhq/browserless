@@ -35,8 +35,8 @@ const resetCSS = `<style>
   }
 </style>`
 
-const JSON_MAX_LENGTH = 80 * 0.5
-const TEXT_MAX_LENGTH = 100 * 0.6
+const JSON_MAX_LENGTH = 76 * 0.5
+const TEXT_MAX_LENGTH = 96 * 0.6
 
 const truncate = (input, maxLength) => {
   let text = input.slice(0, maxLength)
