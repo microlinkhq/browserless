@@ -16,7 +16,6 @@
 - Puppeteer-like API for common tasks ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
 - Built-in [evasion](#evasions) techniques to prevent being blocked.
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
-- Support for proxy (HTTP/HTTPS/SOCKs) per page.
 - Shell interaction via [Browserless CLI](command-line-interface).
 - Easy [Google Lighthouse](#lighthouse) integration.
 - Automatic retry & error handling.
@@ -148,8 +147,6 @@ type: `number`</br>
 default: `30000`
 
 This setting will change the default maximum navigation time.
-
-It will setup a proxy to be used to communicate between the browser and the target URL.
 
 ##### puppeteer
 
