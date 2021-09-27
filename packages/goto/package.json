@@ -30,7 +30,7 @@
   ],
   "dependencies": {
     "@browserless/devices": "^9.1.6",
-    "@cliqz/adblocker-puppeteer": "~1.22.2",
+    "@cliqz/adblocker-puppeteer": "~1.22.7",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.2",
     "is-url-http": "~2.2.4",
@@ -39,7 +39,7 @@
     "pretty-ms": "~7.0.1",
     "shallow-equal": "~1.2.1",
     "time-span": "~4.0.0",
-    "top-user-agents": "~1.0.29",
+    "top-user-agents": "~1.0.38",
     "tough-cookie": "~4.0.0",
     "unique-random-array": "~2.0.0"
   },
