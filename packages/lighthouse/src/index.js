@@ -13,7 +13,13 @@ const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
 const { AbortError } = pRetry
 
-const getConfig = settings => ({ extends: 'lighthouse:default', settings })
+const getConfig = ({ preset: presetName, ...settings }) => {
+  const baseConfig = presetName
+    ? require(`lighthouse/lighthouse-core/config/${presetName}-config.js`)
+    : { extends: 'lighthouse:default' }
+
+  return { ...baseConfig, settings: { ...baseConfig.settings, ...settings } }
+}
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const getFlags = (
