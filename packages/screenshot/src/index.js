@@ -57,13 +57,14 @@ module.exports = ({ goto, ...gotoOpts }) => {
   ) => {
     let screenshot
     let response
+
     const beforeScreenshot = response =>
-      pReflect(
-        Promise.all([
-          page.evaluate(() => document.fonts.ready),
+      Promise.all(
+        [
+          page.evaluate('document.fonts.ready'),
           waitForPrism(page, response, { codeScheme, ...opts }),
-          pTimeout(waitForImagesOnViewport(page, { timeout }), timeout)
-        ])
+          waitForImagesOnViewport(page)
+        ].map(fn => pReflect(pTimeout(fn, timeout)))
       )
 
     const takeScreenshot = async opts => {
