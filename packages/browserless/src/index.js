@@ -16,8 +16,8 @@ const driver = require('./driver')
 
 const lock = mutexify()
 
-module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
-  const goto = createGoto({ timeout, ...launchOpts })
+module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
+  const goto = createGoto({ timeout: globalTimeout, ...launchOpts })
   const { defaultViewport } = goto
 
   let isClosed = false
@@ -40,7 +40,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
       handleSIGINT: false,
       handleSIGTERM: false,
       handleSIGHUP: false,
-      timeout,
+      timeout: globalTimeout,
       ...launchOpts
     })
 
@@ -79,7 +79,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
     return getBrowser()
   }
 
-  const createContext = async ({ retry = 2 } = {}) => {
+  const createContext = async ({ retry = 2, timeout: contextTimeout } = {}) => {
     let contextPromise = createBrowserContext()
 
     contextPromise.then(context => {
@@ -103,7 +103,7 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
       debug('closePage', { page: !!page, ...info })
     }
 
-    const wrapError = (fn, { timeout: milliseconds = timeout } = {}) => async (...args) => {
+    const wrapError = (fn, { timeout: evaluateTimeout } = {}) => async (...args) => {
       let isRejected = false
 
       async function run () {
@@ -132,9 +132,11 @@ module.exports = ({ timeout = 30000, ...launchOpts } = {}) => {
           }
         })
 
-      return pTimeout(task(), milliseconds, () => {
+      const timeout = evaluateTimeout || contextTimeout || globalTimeout
+
+      return pTimeout(task(), timeout, () => {
         isRejected = true
-        throw browserTimeout({ timeout: milliseconds })
+        throw browserTimeout({ timeout })
       })
     }
 

@@ -6,7 +6,6 @@ const percentile = require('percentile')
 const timeSpan = require('time-span')
 const prettyMs = require('pretty-ms')
 
-const BROWSERLESS_TIMEOUT = 15000
 const HEADLESS = true
 // const TMP_FOLDER = '/tmp'
 
@@ -14,7 +13,7 @@ const createBrowserless = id =>
   browserlessFactory({
     headless: HEADLESS,
     lossyDeviceName: true,
-    timeout: BROWSERLESS_TIMEOUT
+    timeout: 15000
     // executablePath: CHROME_EXECUTABLE_PATH,
     // userDataDir: path.join(TMP_FOLDER, 'puppeteer', id)
   })
