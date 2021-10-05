@@ -47,13 +47,14 @@ module.exports = async (
   const browserlessPromise = getBrowserless()
   const config = getConfig(opts)
   let isRejected = false
+  let subprocess
 
   async function run () {
     const browserless = await browserlessPromise
     const browser = await browserless.browser()
     const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-    const subprocess = execa.node(lighthousePath, { killSignal: 'SIGKILL', reject: false, timeout })
+    subprocess = execa.node(lighthousePath)
     subprocess.stderr.pipe(process.stderr)
     debug('spawn', { pid: subprocess.pid })
     subprocess.send({ url, flags, config })
@@ -78,6 +79,7 @@ module.exports = async (
 
   const result = await pTimeout(task(), timeout, () => {
     isRejected = true
+    subprocess.kill('SIGKILL')
     throw browserTimeout({ timeout })
   })
 

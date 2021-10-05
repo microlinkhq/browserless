@@ -21,13 +21,14 @@ module.exports = (
   return async (url, query = {}) => {
     const browserlessPromise = getBrowserless()
     let isRejected = false
+    let subprocess
 
     async function run () {
       const browserless = await browserlessPromise
       const browser = await browserless.browser()
       const browserWSEndpoint = browser.wsEndpoint()
 
-      const subprocess = execa.node(execPath, { killSignal: 'SIGKILL', reject: false, timeout })
+      subprocess = execa.node(execPath)
       subprocess.stderr.pipe(process.stderr)
 
       debug('spawn', { pid: subprocess.pid })
@@ -61,6 +62,7 @@ module.exports = (
     // main
     const result = await pTimeout(task(), timeout, () => {
       isRejected = true
+      subprocess.kill('SIGKILL')
       throw browserTimeout({ timeout })
     })
 
