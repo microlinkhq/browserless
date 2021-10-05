@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.2.11](https://github.com/microlinkhq/browserless/compare/v9.2.10...v9.2.11) (2021-10-05)
+
+
+### Bug Fixes
+
+* kill process after timeout ([2648659](https://github.com/microlinkhq/browserless/commit/2648659b1b450ec2b8cbd25fecc0bfd9f15afe26))
+
+
+
+
+
 ## [9.2.10](https://github.com/microlinkhq/browserless/compare/v9.2.9...v9.2.10) (2021-10-04)
 
 **Note:** Version bump only for package browserless
