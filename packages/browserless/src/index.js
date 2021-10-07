@@ -116,7 +116,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           return value
         } catch (error) {
           await closePage(page)
-          throw ensureError(error)
+          if (!isRejected) throw ensureError(error)
         }
       }
 
