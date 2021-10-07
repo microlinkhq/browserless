@@ -98,7 +98,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const closePage = async page => {
-      if (!page.isClosed()) {
+      if (page && !page.isClosed()) {
         debug('closePage', await pReflect(page.close()))
       }
     }
