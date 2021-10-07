@@ -98,9 +98,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const closePage = async page => {
-      let info
-      if (page) info = await pReflect(page.close())
-      debug('closePage', { page: !!page, ...info })
+      if (!page.isClosed()) {
+        debug('closePage', await pReflect(page.close()))
+      }
     }
 
     const wrapError = (fn, { timeout: evaluateTimeout } = {}) => async (...args) => {
@@ -111,6 +111,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
         try {
           page = await createPage(args)
+          setTimeout(() => closePage(page), timeout)
           const value = await fn(page)(...args)
           await closePage(page)
           return value
