@@ -27,6 +27,11 @@ browserlessError.browserDisconnected = createBrowserlessError({
   message: 'The browser is not connected.'
 })
 
+browserlessError.contextDisconnected = createBrowserlessError({
+  code: 'EBRWSRCONTEXTCONNRESET',
+  message: 'The browser is not connected.'
+})
+
 browserlessError.ensureError = rawError => {
   debug('ensureError', serializeError(rawError))
 
@@ -37,6 +42,10 @@ browserlessError.ensureError = rawError => {
   }
 
   const { message: errorMessage = '' } = error
+
+  if (errorMessage === 'Protocol error (Target.createTarget): browserContextId') {
+    return browserlessError.contextDisconnected()
+  }
 
   if (errorMessage.startsWith('Protocol error')) {
     return browserlessError.protocolError({
