@@ -29,7 +29,7 @@ browserlessError.browserDisconnected = createBrowserlessError({
 
 browserlessError.contextDisconnected = createBrowserlessError({
   code: 'EBRWSRCONTEXTCONNRESET',
-  message: 'The browser is not connected.'
+  message: 'The browser context is not connected.'
 })
 
 browserlessError.ensureError = rawError => {
