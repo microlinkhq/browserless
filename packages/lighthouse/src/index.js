@@ -79,7 +79,7 @@ module.exports = async (
 
   const result = await pTimeout(task(), timeout, () => {
     isRejected = true
-    subprocess.kill('SIGKILL')
+    if (subprocess) subprocess.kill('SIGKILL')
     throw browserTimeout({ timeout })
   })
 

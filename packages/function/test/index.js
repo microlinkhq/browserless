@@ -104,20 +104,16 @@ test('access to page (with semicolon and break lines)', async t => {
 test('interact with a page', async t => {
   const code = async ({ page }) => {
     const navigationPromise = page.waitForNavigation()
-
-    await page.waitForSelector('body > div > p > a')
-    await page.click('body > div > p > a')
-    await navigationPromise
-
+    const link = 'body > div > p > a'
+    await Promise.all([page.waitForSelector(link).then(() => page.click(link)), navigationPromise])
     const title = await page.title()
     return title
   }
 
-  const myFn = browserlessFunction(code, { vmOpts })
+  const fn = browserlessFunction(code, { vmOpts })
+  const { isFulfilled, isRejected, value } = await fn('https://example.com')
 
-  t.deepEqual(await myFn('https://example.com'), {
-    isFulfilled: true,
-    isRejected: false,
-    value: 'IANA — IANA-managed Reserved Domains'
-  })
+  t.true(isFulfilled)
+  t.false(isRejected)
+  t.true(value.startsWith('IANA'))
 })

@@ -1,13 +1,15 @@
 'use strict'
 
 const pReflect = require('p-reflect')
-const { NodeVM } = require('vm2')
 const merge = require('deepmerge')
+const { NodeVM } = require('vm2')
+const path = require('path')
 
 const DEFAULT_VM_OPTS = {
   console: 'off',
   sandbox: {},
   require: {
+    resolve: pkgName => path.resolve(process.cwd(), 'node_modules', pkgName),
     external: {
       modules: ['serialize-error', 'browserless']
     }
