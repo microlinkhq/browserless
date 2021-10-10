@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.2.16](https://github.com/microlinkhq/browserless/compare/v9.2.15...v9.2.16) (2021-10-10)
+
+
+### Bug Fixes
+
+* **function:** resolve requires relative to process ([#316](https://github.com/microlinkhq/browserless/issues/316)) ([c171d82](https://github.com/microlinkhq/browserless/commit/c171d82814f4a2bbac1ae75b20c046f6c53a0a58))
+
+
+
+
+
 ## [9.2.15](https://github.com/microlinkhq/browserless/compare/v9.2.14...v9.2.15) (2021-10-10)
 
 **Note:** Version bump only for package @browserless/function
