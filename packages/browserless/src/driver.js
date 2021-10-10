@@ -5,19 +5,25 @@ const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
 const pidtree = require('pidtree')
 
-// flags explained: https://peter.sh/experiments/chromium-command-line-switches/
-// default flags: https://github.com/puppeteer/puppeteer/blob/master/lib/Launcher.js#L269
-// AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/10feb8d162626d34aad2ee1e657f20956f53fe11/source/index.js
+// flags explained: https://peter.sh/experiments/chromium-command-line-switches
+// default flags: https://github.com/puppeteer/puppeteer/blob/edb01972b9606d8b05b979a588eda0d622315981/src/node/Launcher.ts#L183
+// AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/78fdbf1b9b9a439883dc2fe747171a765b835031/source/index.ts#L94
 const defaultArgs = [
-  // base
+  '--autoplay-policy=user-gesture-required', // https://source.chromium.org/search?q=lang:cpp+symbol:kAutoplayPolicy&ss=chromium
+  '--disable-blink-features=AutomationControlled', // https://blog.m157q.tw/posts/2020/09/11/bypass-cloudflare-detection-while-using-selenium-with-chromedriver/
   '--disable-cloud-import',
+  '--disable-component-update', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableComponentUpdate&ss=chromium
+  '--disable-domain-reliability', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableDomainReliability&ss=chromium
+  '--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process', // https://source.chromium.org/search?q=file:content_features.cc&ss=chromium
   '--disable-gesture-typing',
   '--disable-infobars',
   '--disable-notifications',
   '--disable-offer-store-unmasked-wallet-cards',
   '--disable-offer-upload-credit-cards',
-  '--disable-print-preview',
-  '--disable-speech-api',
+  '--disable-print-preview', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisablePrintPreview&ss=chromium
+  '--disable-setuid-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSetuidSandbox&ss=chromium
+  '--disable-site-isolation-trials', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSiteIsolation&ss=chromium
+  '--disable-speech-api', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSpeechAPI&ss=chromium
   '--disable-tab-for-desktop-share',
   '--disable-translate',
   '--disable-voice-input',
@@ -26,24 +32,15 @@ const defaultArgs = [
   '--enable-simple-cache-backend',
   '--enable-tcp-fast-open',
   '--enable-webgl',
-  '--ignore-gpu-blocklist',
-  '--no-default-browser-check',
-  '--no-pings',
-  '--no-zygote',
+  '--force-webrtc-ip-handling-policy=default_public_interface_only',
+  '--ignore-gpu-blocklist', // https://source.chromium.org/search?q=lang:cpp+symbol:kIgnoreGpuBlocklist&ss=chromium
+  '--in-process-gpu', // https://source.chromium.org/search?q=lang:cpp+symbol:kInProcessGPU&ss=chromium
+  '--no-default-browser-check', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoDefaultBrowserCheck&ss=chromium
+  '--no-pings', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoPings&ss=chromium
+  '--no-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoSandbox&ss=chromium
+  '--no-zygote', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium
   '--prerender-from-omnibox=disabled',
-  '--use-gl=swiftshader',
-  '--no-sandbox',
-  // disable navigator.webdriver
-  /// https://stackoverflow.com/a/60409220
-  // https://blog.m157q.tw/posts/2020/09/11/bypass-cloudflare-detection-while-using-selenium-with-chromedriver/
-  '--disable-blink-features=AutomationControlled',
-  // extra
-  '--disable-web-security',
-  '--font-render-hinting=none' // could be 'none', 'medium'
-  // '--enable-font-antialiasing'
-  // perf
-  // '--single-process',
-  // '--memory-pressure-off',
+  '--use-gl=swiftshader' // https://source.chromium.org/search?q=lang:cpp+symbol:kUseGl&ss=chromium
 ]
 
 const spawn = ({
