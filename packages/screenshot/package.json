@@ -2,7 +2,7 @@
   "name": "@browserless/screenshot",
   "description": "Take clean screenshot of any website",
   "homepage": "https://browserless.js.org/#/?id=screenshoturl-options",
-  "version": "9.2.9",
+  "version": "9.2.17",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
