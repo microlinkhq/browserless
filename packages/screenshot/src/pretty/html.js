@@ -50,12 +50,15 @@ const compactJSON = payload => {
     return truncate(value, JSON_MAX_LENGTH)
   })
 
+  const SPACE = 2
+  const SPACE_IDENTATION = ' '.repeat(SPACE)
+
   return (
-    JSON.stringify(sanetized, null, 4)
+    JSON.stringify(sanetized, null, SPACE)
       // compact objects '},\n  {' → '}, {'
-      .replace(new RegExp('},\\n  {', 'g'), '}, {')
+      .replace(new RegExp(`},\\n${SPACE_IDENTATION}{`, 'g'), '}, {')
       // compact array object start '[,\n  {' → '[{'
-      .replace(new RegExp('\\[\\n  {', 'g'), '[{')
+      .replace(new RegExp(`\\[\\n${SPACE_IDENTATION}{`, 'g'), '[{')
       // compact array object end '},\n  ]' → '}]'
       .replace(new RegExp(' {2}\\}\\n]', 'g'), '}]')
   )
