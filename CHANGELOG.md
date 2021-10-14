@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.2.18](https://github.com/microlinkhq/browserless/compare/v9.2.17...v9.2.18) (2021-10-14)
+
+
+### Bug Fixes
+
+* lock vm2 version ([956a6fa](https://github.com/microlinkhq/browserless/commit/956a6faaf62abbc9310c49c9c8eda1e029698243))
+
+
+
+
+
 ## [9.2.17](https://github.com/microlinkhq/browserless/compare/v9.2.16...v9.2.17) (2021-10-12)
 
 **Note:** Version bump only for package browserless
