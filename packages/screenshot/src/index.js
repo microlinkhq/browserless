@@ -5,7 +5,6 @@ const createGoto = require('@browserless/goto')
 const prettyMs = require('pretty-ms')
 const timeSpan = require('time-span')
 const pReflect = require('p-reflect')
-const pTimeout = require('p-timeout')
 
 const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
@@ -43,8 +42,6 @@ const waitForElement = async (page, element) => {
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
-  const timeout = goto.timeout * (1 / 8)
-
   return page => async (
     url,
     {
@@ -61,10 +58,16 @@ module.exports = ({ goto, ...gotoOpts }) => {
     const beforeScreenshot = response =>
       Promise.all(
         [
-          page.evaluate('document.fonts.ready'),
-          waitForPrism(page, response, { codeScheme, ...opts }),
-          waitForImagesOnViewport(page)
-        ].map(fn => pReflect(pTimeout(fn, timeout)))
+          { fn: () => page.evaluate('document.fonts.ready'), debug: 'beforeScreenshot:fontsReady' },
+          {
+            fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
+            debug: 'beforeScreenshot:waitForPrism'
+          },
+          {
+            fn: () => waitForImagesOnViewport(page),
+            debug: 'beforeScreenshot:waitForImagesOnViewport'
+          }
+        ].map(({ fn, ...opts }) => goto.run({ fn: fn(), timeout: goto.actionTimeout, ...opts }))
       )
 
     const takeScreenshot = async opts => {
