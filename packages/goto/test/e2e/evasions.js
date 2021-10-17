@@ -2,7 +2,7 @@
 
 const test = require('ava')
 
-const browserlessFactory = require('browserless')({ timeout: 300000 })
+const browserlessFactory = require('browserless')()
 const onExit = require('signal-exit')
 
 onExit(browserlessFactory.close)

@@ -29,15 +29,14 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const castArray = value => [].concat(value).filter(Boolean)
 
-const getInjectKey = (ext, value) =>
-  isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
-
-const injectCSS = (page, css) =>
-  pReflect(
-    page.addStyleTag({
-      content: css
-    })
-  )
+const run = async ({ fn, timeout, debug: props }) => {
+  const debugProps = { duration: timeSpan() }
+  const result = await pReflect(pTimeout(fn, timeout))
+  debugProps.duration = prettyMs(debugProps.duration())
+  if (result.isRejected) debugProps.error = result.reason.message || result.reason
+  debug(props, debugProps)
+  return result
+}
 
 const parseCookies = (url, str) =>
   str.split(';').reduce((acc, cookieStr) => {
@@ -66,28 +65,19 @@ const getMediaFeatures = ({ animations, colorScheme }) => {
   return prefers
 }
 
-const injectScripts = (page, values, attributes) =>
-  Promise.all(
-    castArray(values).map(value =>
-      pReflect(
-        page.addScriptTag({
-          [getInjectKey('js', value)]: value,
-          ...attributes
-        })
-      )
-    )
-  )
+const injectScript = (page, value, attributes) =>
+  page.addScriptTag({
+    [getInjectKey('js', value)]: value,
+    ...attributes
+  })
 
-const injectStyles = (page, styles) =>
-  Promise.all(
-    castArray(styles).map(style =>
-      pReflect(
-        page.addStyleTag({
-          [getInjectKey('css', style)]: style
-        })
-      )
-    )
-  )
+const injectStyle = (page, style) =>
+  page.addStyleTag({
+    [getInjectKey('css', style)]: style
+  })
+
+const getInjectKey = (ext, value) =>
+  isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
 
 const disableAnimations = `
   *,
@@ -101,29 +91,22 @@ const disableAnimations = `
   }
 `.trim()
 
-const run = async ({ fn, debug: props }) => {
-  const debugProps = { duration: timeSpan() }
-  const result = await pReflect(fn)
-  debugProps.duration = prettyMs(debugProps.duration())
-  if (result.isRejected) debugProps.error = result.reason.message || result.reason
-  debug(props, debugProps)
-  return result
-}
-
 // related https://github.com/puppeteer/puppeteer/issues/1353
 const createWaitUntilAuto = defaultOpts => (page, opts) => {
   const { timeout } = { ...defaultOpts, ...opts }
 
-  return run({
-    fn: pTimeout(
-      Promise.all([
-        page.waitForNavigation({ waitUntil: 'networkidle2' }),
-        page.evaluate(() => window.history.pushState(null, null, null))
-      ]),
-      timeout * (1 / 8)
-    ),
-    debug: { isWaitUntilAuto: true }
-  })
+  return Promise.all(
+    [
+      {
+        fn: () => page.waitForNavigation({ waitUntil: 'networkidle2' }),
+        debug: 'waitUntilAuto:waitForNavigation'
+      },
+      {
+        fn: () => page.evaluate(() => window.history.pushState(null, null, null)),
+        debug: 'waitUntilAuto:pushState'
+      }
+    ].map(({ fn, ...opts }) => run({ fn: fn(), timeout, ...opts }))
+  )
 }
 
 module.exports = ({
@@ -133,14 +116,12 @@ module.exports = ({
   ...deviceOpts
 }) => {
   const baseTimeout = globalTimeout * (1 / 2)
+  const actionTimeout = baseTimeout * (1 / 8)
+
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
-  const applyEvasions = castArray(evasions)
-    .filter(Boolean)
-    .reduce((acc, key) => [...acc, EVASIONS[key]], [])
-
-  const _waitUntilAuto = createWaitUntilAuto({ timeout: baseTimeout })
+  const _waitUntilAuto = createWaitUntilAuto({ timeout: actionTimeout })
 
   const goto = async (
     page,
@@ -178,13 +159,20 @@ module.exports = ({
     const prePromises = []
 
     if (adblock) {
-      prePromises.push(engine.enableBlockingInPage(page))
+      prePromises.push(
+        run({
+          fn: engine.enableBlockingInPage(page),
+          timeout: actionTimeout,
+          debug: 'adblock'
+        })
+      )
     }
 
     if (javascript === false) {
       prePromises.push(
         run({
           fn: page.setJavaScriptEnabled(false),
+          timeout: actionTimeout,
           debug: { javascript }
         })
       )
@@ -200,6 +188,7 @@ module.exports = ({
       prePromises.push(
         run({
           fn: page.setViewport(device.viewport),
+          timeout: actionTimeout,
           debug: 'viewport'
         })
       )
@@ -213,6 +202,7 @@ module.exports = ({
         prePromises.push(
           run({
             fn: page.setCookie(...cookies),
+            timeout: actionTimeout,
             debug: ['cookies', ...cookies.map(({ name }) => name)]
           })
         )
@@ -222,6 +212,7 @@ module.exports = ({
         prePromises.push(
           run({
             fn: page.setUserAgent(headers['user-agent']),
+            timeout: actionTimeout,
             debug: { 'user-agent': headers['user-agent'] }
           })
         )
@@ -230,6 +221,7 @@ module.exports = ({
       prePromises.push(
         run({
           fn: page.setExtraHTTPHeaders(headers),
+          timeout: actionTimeout,
           debug: { headers: headersKeys }
         })
       )
@@ -239,6 +231,7 @@ module.exports = ({
       prePromises.push(
         run({
           fn: page.emulateMediaType(mediaType),
+          timeout: actionTimeout,
           debug: { mediaType }
         })
       )
@@ -248,6 +241,7 @@ module.exports = ({
       prePromises.push(
         run({
           fn: page.emulateTimezone(timezone),
+          timeout: actionTimeout,
           debug: { timezone }
         })
       )
@@ -259,12 +253,23 @@ module.exports = ({
       prePromises.push(
         run({
           fn: page.emulateMediaFeatures(mediaFeatures),
-          debug: { mediaFeatures: mediaFeatures.length }
+          timeout: actionTimeout,
+          debug: { mediaFeatures: mediaFeatures.map(({ name }) => name) }
         })
       )
     }
 
-    await Promise.all(prePromises.concat(applyEvasions.map(fn => fn(page))))
+    const applyEvasions = castArray(evasions)
+      .filter(Boolean)
+      .map(key =>
+        run({
+          fn: EVASIONS[key](page),
+          timeout: actionTimeout,
+          debug: key
+        })
+      )
+
+    await Promise.all(prePromises.concat(applyEvasions))
 
     if (abortTypes.length > 0) {
       await page.setRequestInterception(true)
@@ -277,7 +282,8 @@ module.exports = ({
     }
 
     const { value } = await run({
-      fn: pTimeout(html ? page.setContent(html, args) : page.goto(url, args), timeout),
+      fn: html ? page.setContent(html, args) : page.goto(url, args),
+      timeout,
       debug: html ? 'html' : 'url'
     })
 
@@ -287,40 +293,71 @@ module.exports = ({
       waitForFunction,
       waitForTimeout
     })) {
-      if (value) await run({ fn: page[key](value), debug: { [key]: value } })
+      if (value) {
+        await run({ fn: page[key](value), timeout: actionTimeout, debug: { [key]: value } })
+      }
     }
 
     const postPromises = []
 
     if (animations === false) {
-      postPromises.push(injectCSS(page, disableAnimations))
-    }
-
-    const hideOrRemove = [
-      hide && injectCSS(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
-      remove && injectCSS(page, `${castArray(remove).join(', ')} { display: none !important; }`)
-    ].filter(Boolean)
-
-    if (hideOrRemove.length > 0) {
       postPromises.push(
         run({
-          fn: Promise.all(hideOrRemove),
-          debug: { hideOrRemove: hideOrRemove.length }
+          fn: injectStyle(page, disableAnimations),
+          timeout: actionTimeout,
+          debug: 'disableAnimations'
         })
       )
     }
 
-    const injections = [
-      modules && injectScripts(page, modules, { type: 'modules' }),
-      scripts && injectScripts(page, scripts),
-      styles && injectStyles(page, styles)
-    ].filter(Boolean)
-
-    if (injections.length > 0) {
+    if (hide) {
       postPromises.push(
         run({
-          fn: Promise.all(injections),
-          debug: { injections: injections.length }
+          fn: injectStyle(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
+          timeout: actionTimeout,
+          debug: 'hide'
+        })
+      )
+    }
+
+    if (remove) {
+      postPromises.push(
+        run({
+          fn: injectStyle(page, `${castArray(remove).join(', ')} { display: none !important; }`),
+          timeout: actionTimeout,
+          debug: 'remove'
+        })
+      )
+    }
+
+    if (modules) {
+      postPromises.push(
+        run({
+          fn: Promise.all(
+            castArray(modules).map(value => injectScript(page, value, { type: 'modules' }))
+          ),
+          timeout: actionTimeout,
+          debug: 'modules'
+        })
+      )
+    }
+
+    if (scripts) {
+      postPromises.push(
+        run({
+          fn: Promise.all(castArray(scripts).map(value => injectScript(page, value))),
+          timeout: actionTimeout,
+          debug: 'scripts'
+        })
+      )
+    }
+
+    if (styles) {
+      postPromises.push(
+        run({
+          fn: Promise.all(castArray(styles).map(style => injectStyle(page, style))),
+          timeout: actionTimeout,
+          debug: 'styles'
         })
       )
     }
@@ -329,18 +366,21 @@ module.exports = ({
 
     if (click) {
       for (const selector of castArray(click)) {
-        await run({ fn: page.click(selector), debug: { click: selector } })
+        await run({ fn: page.click(selector), timeout: actionTimeout, debug: { click: selector } })
       }
     }
 
     if (scroll) {
       await run({
         fn: page.$eval(scroll, el => el.scrollIntoView()),
+        timeout: actionTimeout,
         debug: { scroll }
       })
     }
 
-    if (isWaitUntilAuto) await waitUntilAuto(page, { response: value, timeout })
+    if (isWaitUntilAuto) {
+      await waitUntilAuto(page, { response: value, timeout: actionTimeout * 2 })
+    }
 
     return { response: value, device }
   }
@@ -352,11 +392,13 @@ module.exports = ({
   goto.defaultViewport = defaultViewport
   goto.waitUntilAuto = _waitUntilAuto
   goto.timeout = baseTimeout
+  goto.actionTimeout = actionTimeout
+  goto.run = run
 
   return goto
 }
 
 module.exports.parseCookies = parseCookies
-module.exports.injectScripts = injectScripts
-module.exports.injectStyles = injectStyles
+module.exports.injectScript = injectScript
+module.exports.injectStyle = injectStyle
 module.exports.evasions = ALL_EVASIONS_KEYS
