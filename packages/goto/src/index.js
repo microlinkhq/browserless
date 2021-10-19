@@ -24,6 +24,7 @@ const engine = PuppeteerBlocker.deserialize(
 
 engine.on('request-blocked', ({ url }) => debugAdblock('block', url))
 engine.on('request-redirected', ({ url }) => debugAdblock('redirect', url))
+engine.setRequestInterceptionPriority(1)
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
@@ -158,6 +159,19 @@ module.exports = ({
 
     const prePromises = []
 
+    if (abortTypes.length > 0) {
+      await page.setRequestInterception(true)
+      page.on('request', req => {
+        const resourceType = req.resourceType()
+        if (!abortTypes.includes(resourceType)) {
+          debug('continue', { url: req.url(), resourceType })
+          return req.continue(req.continueRequestOverrides(), 2)
+        }
+        debug('abort', { url: req.url(), resourceType })
+        return req.abort('blockedbyclient', 2)
+      })
+    }
+
     if (adblock) {
       prePromises.push(
         run({
@@ -270,16 +284,6 @@ module.exports = ({
       )
 
     await Promise.all(prePromises.concat(applyEvasions))
-
-    if (abortTypes.length > 0) {
-      await page.setRequestInterception(true)
-      page.on('request', req => {
-        const resourceType = req.resourceType()
-        if (!abortTypes.includes(resourceType)) return req.continue()
-        debug('abort', { url: req.url(), resourceType })
-        return req.abort('blockedbyclient')
-      })
-    }
 
     const { value } = await run({
       fn: html ? page.setContent(html, args) : page.goto(url, args),
