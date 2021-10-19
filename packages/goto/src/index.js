@@ -161,7 +161,7 @@ module.exports = ({
     if (adblock) {
       prePromises.push(
         run({
-          fn: Promise.resolve(engine.setRequestInterceptionPriority(-1)).then(
+          fn: Promise.resolve(engine.setRequestInterceptionPriority(1)).then(
             engine.enableBlockingInPage(page)
           ),
           timeout: actionTimeout,
@@ -278,10 +278,10 @@ module.exports = ({
       page.on('request', req => {
         const resourceType = req.resourceType()
         if (!abortTypes.includes(resourceType)) {
-          return req.continue(req.continueRequestOverrides(), 0)
+          return req.continue(req.continueRequestOverrides(), 2)
         }
         debug('abort', { url: req.url(), resourceType })
-        return req.abort('blockedbyclient', 0)
+        return req.abort('blockedbyclient', 2)
       })
     }
 
