@@ -31,7 +31,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "beauty-error": "~1.2.8",
+    "beauty-error": "~1.2.9",
     "browserless": "^9.2.21",
     "dark-mode": "~3.0.0",
     "kleur": "~4.1.4",
