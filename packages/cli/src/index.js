@@ -10,13 +10,15 @@ const fs = require('fs')
 
 const commands = fs.readdirSync(path.resolve(__dirname, 'commands'))
 
+const { HEADLESS } = process.env
+
 const cli = require('meow')({
   pkg: require('../package.json'),
   help: require('./help')(commands),
   flags: {
     headless: {
       type: 'boolean',
-      default: process.env.HEADLESS !== undefined ? process.env.HEADLESS : true
+      default: HEADLESS !== undefined ? HEADLESS === 'true' : true
     },
     codeScheme: {
       type: 'string',
