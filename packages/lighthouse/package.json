@@ -28,7 +28,7 @@
     "debug-logfmt": "~1.0.4",
     "execa": "~5.1.1",
     "lighthouse": "~8.6.0",
-    "p-event": "~4.2.0",
+    "p-event": "~5.0.1",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
     "serialize-error": "~8.1.0"
