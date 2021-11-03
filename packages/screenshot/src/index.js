@@ -1,6 +1,5 @@
 'use strict'
 
-const { PuppeteerPendingRequests } = require('@agabhane/puppeteer-pending-requests')
 const debug = require('debug-logfmt')('browserless:screenshot')
 const createGoto = require('@browserless/goto')
 const prettyMs = require('pretty-ms')
@@ -94,13 +93,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
       screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
       debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
     } else {
-      const puppeteerPendingRequests = new PuppeteerPendingRequests(page)
       ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
       async function waitUntilAuto (page, { response }) {
         const [screenshotOpts] = await Promise.all([
           waitForElement(page, element),
-          beforeScreenshot(response),
-          puppeteerPendingRequests.waitForNetworkIdle(100)
+          beforeScreenshot(response)
         ])
         const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
         debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
