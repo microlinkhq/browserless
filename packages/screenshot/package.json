@@ -28,6 +28,7 @@
     "screenshot"
   ],
   "dependencies": {
+    "@agabhane/puppeteer-pending-requests": "~1.0.1",
     "@browserless/goto": "^9.2.22",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.2",
