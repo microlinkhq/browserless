@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.3.0-beta.1](https://github.com/microlinkhq/browserless/compare/v9.3.0-beta.0...v9.3.0-beta.1) (2021-11-03)
+
+
+### Reverts
+
+* Revert "chore(screenshot): check for idle time" ([e687a45](https://github.com/microlinkhq/browserless/commit/e687a45ceba7eac73ddf685c022843b9a2e01597))
+
+
+
+
+
 ## [9.2.22](https://github.com/microlinkhq/browserless/compare/v9.2.21...v9.2.22) (2021-10-26)
 
 **Note:** Version bump only for package @browserless/screenshot
