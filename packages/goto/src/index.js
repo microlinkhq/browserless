@@ -241,16 +241,6 @@ module.exports = ({
       )
     }
 
-    if (mediaType) {
-      prePromises.push(
-        run({
-          fn: page.emulateMediaType(mediaType),
-          timeout: actionTimeout,
-          debug: { mediaType }
-        })
-      )
-    }
-
     if (timezone) {
       prePromises.push(
         run({
@@ -303,6 +293,16 @@ module.exports = ({
     }
 
     const postPromises = []
+
+    if (mediaType) {
+      postPromises.push(
+        run({
+          fn: page.emulateMediaType(mediaType),
+          timeout: actionTimeout,
+          debug: { mediaType }
+        })
+      )
+    }
 
     if (animations === false) {
       postPromises.push(
