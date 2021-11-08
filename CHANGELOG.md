@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.3.0-beta.3](https://github.com/microlinkhq/browserless/compare/v9.3.0-beta.2...v9.3.0-beta.3) (2021-11-08)
+
+
+### Bug Fixes
+
+* **goto:** avoid to be stuck ([83d5c00](https://github.com/microlinkhq/browserless/commit/83d5c003a9b64cad7f2c772b51a498e022e31367))
+
+
+
+
+
 # [9.3.0-beta.2](https://github.com/microlinkhq/browserless/compare/v9.3.0-beta.1...v9.3.0-beta.2) (2021-11-06)
 
 
