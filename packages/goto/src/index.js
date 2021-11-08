@@ -277,7 +277,7 @@ module.exports = ({
 
     const { value } = await run({
       fn: html ? page.setContent(html, args) : page.goto(url, args),
-      timeout,
+      timeout: timeout * 0.95,
       debug: html ? 'html' : 'url'
     })
 
