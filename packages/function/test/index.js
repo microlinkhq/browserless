@@ -33,11 +33,11 @@ test('handle errors', async t => {
   t.is(result.reason.message, 'oh no')
 })
 
-test('access to query', async t => {
+test('provide a mechanism to pass things to the function ', async t => {
   const code = ({ query }) => query.foo
   const myFn = browserlessFunction(code, { vmOpts })
 
-  t.deepEqual(await myFn('https://example.com', { foo: 'bar' }), {
+  t.deepEqual(await myFn('https://example.com', { query: { foo: 'bar' } }), {
     isFulfilled: true,
     isRejected: false,
     value: 'bar'
