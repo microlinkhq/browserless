@@ -18,7 +18,7 @@ module.exports = (
   fn,
   { getBrowserless = requireOneOf(['browserless']), retry = 2, timeout = 30000, ...opts }
 ) => {
-  return async (url, query = {}) => {
+  return async (url, fnOpts = {}) => {
     const browserlessPromise = getBrowserless()
     let isRejected = false
     let subprocess
@@ -36,9 +36,9 @@ module.exports = (
       subprocess.send({
         url,
         code: fn.toString(),
-        query,
         browserWSEndpoint,
-        ...opts
+        ...opts,
+        ...fnOpts
       })
 
       const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')

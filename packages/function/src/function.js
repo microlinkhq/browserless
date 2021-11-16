@@ -7,12 +7,12 @@ const createVm = require('./vm')
 const scriptPath = path.resolve(__dirname, 'function.js')
 
 const createFn = code => `
-async ({ url, query, gotoOpts, browserWSEndpoint }) => {
+async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
   const { serializeError } = require('serialize-error')
 
   const getBrowserless = require('browserless')
   const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
-  const fnWrapper = fn => (page, response) => fn({ page, response, query })
+  const fnWrapper = fn => (page, response) => fn({ page, response, ...opts })
   const browserFn = browserless.evaluate(fnWrapper(${code}), gotoOpts)
 
   try {
@@ -25,9 +25,9 @@ async ({ url, query, gotoOpts, browserWSEndpoint }) => {
   }
 }`
 
-process.on('message', async ({ url, code, query, vmOpts, gotoOpts, browserWSEndpoint }) => {
+process.on('message', async ({ url, code, vmOpts, gotoOpts, browserWSEndpoint, ...opts }) => {
   const vm = createVm(vmOpts)
   const fn = createFn(code.endsWith(';') ? code.slice(0, -1) : code)
   const run = vm(fn, scriptPath)
-  process.send(await run({ url, query, gotoOpts, browserWSEndpoint }))
+  process.send(await run({ url, gotoOpts, browserWSEndpoint, ...opts }))
 })
