@@ -165,7 +165,7 @@ module.exports = ({
         const resourceType = req.resourceType()
         if (!abortTypes.includes(resourceType)) {
           debug('continue', { url: req.url(), resourceType })
-          return req.continue(req.continueRequestOverrides(), 2)
+          return req.continue(req.continueRequestOverrides(), 0)
         }
         debug('abort', { url: req.url(), resourceType })
         return req.abort('blockedbyclient', 2)
