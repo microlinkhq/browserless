@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.3.0-beta.9](https://github.com/microlinkhq/browserless/compare/v9.3.0-beta.8...v9.3.0-beta.9) (2021-12-08)
+
+
+### Bug Fixes
+
+* maximize timeout for wait* actions ([3ed555f](https://github.com/microlinkhq/browserless/commit/3ed555f28dc926833d0cc86cc955fdc5c5fae50a))
+
+
+
+
+
 # [9.3.0-beta.8](https://github.com/microlinkhq/browserless/compare/v9.3.0-beta.7...v9.3.0-beta.8) (2021-12-01)
 
 
