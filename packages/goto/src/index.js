@@ -117,6 +117,7 @@ module.exports = ({
   ...deviceOpts
 }) => {
   const baseTimeout = globalTimeout * (1 / 2)
+  const gotoTimeout = timeout * 0.8
   const actionTimeout = baseTimeout * (1 / 8)
 
   const getDevice = createDevices(deviceOpts)
@@ -277,7 +278,7 @@ module.exports = ({
 
     const { value } = await run({
       fn: html ? page.setContent(html, args) : page.goto(url, args),
-      timeout: timeout * 0.8,
+      timeout: gotoTimeout,
       debug: html ? 'html' : 'url'
     })
 
@@ -288,7 +289,7 @@ module.exports = ({
       waitForTimeout
     })) {
       if (value) {
-        await run({ fn: page[key](value), timeout: actionTimeout, debug: { [key]: value } })
+        await run({ fn: page[key](value), timeout: gotoTimeout, debug: { [key]: value } })
       }
     }
 
