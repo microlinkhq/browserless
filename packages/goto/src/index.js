@@ -92,38 +92,38 @@ const disableAnimations = `
   }
 `.trim()
 
-// related https://github.com/puppeteer/puppeteer/issues/1353
-const createWaitUntilAuto = defaultOpts => (page, opts) => {
-  const { timeout } = { ...defaultOpts, ...opts }
-
-  return Promise.all(
-    [
-      {
-        fn: () => page.waitForNavigation({ waitUntil: 'networkidle2' }),
-        debug: 'waitUntilAuto:waitForNavigation'
-      },
-      {
-        fn: () => page.evaluate(() => window.history.pushState(null, null, null)),
-        debug: 'waitUntilAuto:pushState'
-      }
-    ].map(({ fn, ...opts }) => run({ fn: fn(), timeout, ...opts }))
-  )
-}
-
 module.exports = ({
   evasions = ALL_EVASIONS_KEYS,
   defaultDevice = 'Macbook Pro 13',
   timeout: globalTimeout,
   ...deviceOpts
 }) => {
-  const baseTimeout = globalTimeout * (1 / 2)
-  const gotoTimeout = timeout * 0.8
-  const actionTimeout = baseTimeout * (1 / 8)
-
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
-  const _waitUntilAuto = createWaitUntilAuto({ timeout: actionTimeout })
+  const timeouts = {
+    base: (milliseconds = globalTimeout) => milliseconds * (1 / 2),
+    action: (milliseconds = globalTimeout) => milliseconds * (1 / 8),
+    goto: (milliseconds = globalTimeout) => milliseconds * 0.8
+  }
+
+  // related https://github.com/puppeteer/puppeteer/issues/1353
+  const _waitUntilAuto = (page, opts = {}) => {
+    const timeout = timeouts.action(opts.timeout)
+
+    return Promise.all(
+      [
+        {
+          fn: () => page.waitForNavigation({ waitUntil: 'networkidle2' }),
+          debug: 'waitUntilAuto:waitForNavigation'
+        },
+        {
+          fn: () => page.evaluate(() => window.history.pushState(null, null, null)),
+          debug: 'waitUntilAuto:pushState'
+        }
+      ].map(({ fn, ...opts }) => run({ fn: fn(), timeout, ...opts }))
+    )
+  }
 
   const goto = async (
     page,
@@ -143,7 +143,7 @@ module.exports = ({
       scripts,
       scroll,
       styles,
-      timeout = baseTimeout,
+      timeout = timeouts.base(globalTimeout),
       timezone,
       url,
       waitForFunction,
@@ -155,6 +155,9 @@ module.exports = ({
       ...args
     }
   ) => {
+    const actionTimeout = timeouts.action(timeout)
+    const gotoTimeout = timeouts.goto(timeout)
+
     const isWaitUntilAuto = waitUntil === 'auto'
     if (isWaitUntilAuto) waitUntil = 'load'
 
@@ -371,7 +374,11 @@ module.exports = ({
 
     if (click) {
       for (const selector of castArray(click)) {
-        await run({ fn: page.click(selector), timeout: actionTimeout, debug: { click: selector } })
+        await run({
+          fn: page.click(selector),
+          timeout: actionTimeout,
+          debug: { click: selector }
+        })
       }
     }
 
@@ -396,8 +403,7 @@ module.exports = ({
   goto.deviceDescriptors = getDevice.deviceDescriptors
   goto.defaultViewport = defaultViewport
   goto.waitUntilAuto = _waitUntilAuto
-  goto.timeout = baseTimeout
-  goto.actionTimeout = actionTimeout
+  goto.timeouts = timeouts
   goto.run = run
 
   return goto

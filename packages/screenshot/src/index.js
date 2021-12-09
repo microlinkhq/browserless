@@ -67,7 +67,9 @@ module.exports = ({ goto, ...gotoOpts }) => {
             fn: () => waitForImagesOnViewport(page),
             debug: 'beforeScreenshot:waitForImagesOnViewport'
           }
-        ].map(({ fn, ...opts }) => goto.run({ fn: fn(), timeout: goto.actionTimeout, ...opts }))
+        ].map(({ fn, ...opts }) =>
+          goto.run({ fn: fn(), timeout: goto.timeouts.action(opts.timeout), ...opts })
+        )
       )
 
     const takeScreenshot = async opts => {
