@@ -102,9 +102,9 @@ module.exports = ({
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
   const timeouts = {
-    base: (milliseconds = globalTimeout) => milliseconds * (1 / 2),
-    action: (milliseconds = globalTimeout) => milliseconds * (1 / 8),
-    goto: (milliseconds = globalTimeout) => milliseconds * 0.8
+    base: (milliseconds = globalTimeout) => milliseconds * (2 / 3),
+    action: (milliseconds = globalTimeout) => milliseconds * (1 / 11),
+    goto: (milliseconds = globalTimeout) => milliseconds * (7 / 8)
   }
 
   // related https://github.com/puppeteer/puppeteer/issues/1353
@@ -143,7 +143,7 @@ module.exports = ({
       scripts,
       scroll,
       styles,
-      timeout = timeouts.base(globalTimeout),
+      timeout = globalTimeout,
       timezone,
       url,
       waitForFunction,
@@ -155,8 +155,9 @@ module.exports = ({
       ...args
     }
   ) => {
-    const actionTimeout = timeouts.action(timeout)
-    const gotoTimeout = timeouts.goto(timeout)
+    const baseTimeout = timeouts.base(globalTimeout)
+    const actionTimeout = timeouts.action(baseTimeout)
+    const gotoTimeout = timeouts.goto(baseTimeout)
 
     const isWaitUntilAuto = waitUntil === 'auto'
     if (isWaitUntilAuto) waitUntil = 'load'
