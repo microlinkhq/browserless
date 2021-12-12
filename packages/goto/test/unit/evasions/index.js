@@ -227,10 +227,10 @@ test('hide webgl vendor', async t => {
       }
     })
 
-  t.deepEqual(await webgl(), {
-    vendor: 'Google Inc.',
-    renderer: 'Google SwiftShader'
-  })
+  const { vendor, renderer } = await webgl()
+
+  t.true(vendor.includes('Google Inc.'))
+  t.true(renderer.includes('SwiftShader'))
 
   await evasions.webglVendor(page)
   await page.goto(fileUrl)
@@ -259,10 +259,10 @@ test('hide `webgl2` vendor', async t => {
       }
     })
 
-  t.deepEqual(await webgl2(), {
-    vendor: 'Google Inc.',
-    renderer: 'Google SwiftShader'
-  })
+  const { vendor, renderer } = await webgl2()
+
+  t.true(vendor.includes('Google Inc.'))
+  t.true(renderer.includes('SwiftShader'))
 
   await evasions.webglVendor(page)
   await page.goto(fileUrl)
