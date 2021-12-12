@@ -167,6 +167,8 @@ module.exports = ({
     if (abortTypes.length > 0) {
       await page.setRequestInterception(true)
       page.on('request', req => {
+        if (req.isInterceptResolutionHandled()) return
+
         const resourceType = req.resourceType()
         if (!abortTypes.includes(resourceType)) {
           debug('continue', { url: req.url(), resourceType })
