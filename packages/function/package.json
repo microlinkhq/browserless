@@ -44,7 +44,6 @@
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
-    "nyc": "latest",
     "puppeteer": "latest"
   },
   "engines": {
@@ -54,7 +53,7 @@
     "src"
   ],
   "scripts": {
-    "test": "NODE_ENV=test nyc ava"
+    "test": "NODE_ENV=test ava"
   },
   "license": "MIT",
   "ava": {

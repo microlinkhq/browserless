@@ -32,8 +32,7 @@
   "devDependencies": {
     "@browserless/test": "latest",
     "ava": "latest",
-    "browserless": "latest",
-    "nyc": "latest"
+    "browserless": "latest"
   },
   "engines": {
     "node": ">= 12"
@@ -42,7 +41,7 @@
     "src"
   ],
   "scripts": {
-    "test": "NODE_ENV=test nyc ava"
+    "test": "NODE_ENV=test ava"
   },
   "license": "MIT",
   "ava": {
