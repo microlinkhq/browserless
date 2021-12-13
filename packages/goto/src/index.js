@@ -24,7 +24,6 @@ const engine = PuppeteerBlocker.deserialize(
 
 engine.on('request-blocked', ({ url }) => debugAdblock('block', url))
 engine.on('request-redirected', ({ url }) => debugAdblock('redirect', url))
-engine.setRequestInterceptionPriority(1)
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
@@ -175,7 +174,7 @@ module.exports = ({
           return req.continue(req.continueRequestOverrides(), 0)
         }
         debug('abort', { url: req.url(), resourceType })
-        return req.abort('blockedbyclient', 2)
+        return req.abort('blockedbyclient', 0)
       })
     }
 
