@@ -55,10 +55,14 @@ module.exports = ({ goto, ...gotoOpts }) => {
     let screenshot
     let response
 
-    const beforeScreenshot = response =>
-      Promise.all(
+    const beforeScreenshot = response => {
+      const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
+      return Promise.all(
         [
-          { fn: () => page.evaluate('document.fonts.ready'), debug: 'beforeScreenshot:fontsReady' },
+          {
+            fn: () => page.evaluate('document.fonts.ready'),
+            debug: 'beforeScreenshot:fontsReady'
+          },
           {
             fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
             debug: 'beforeScreenshot:waitForPrism'
@@ -67,14 +71,9 @@ module.exports = ({ goto, ...gotoOpts }) => {
             fn: () => waitForImagesOnViewport(page),
             debug: 'beforeScreenshot:waitForImagesOnViewport'
           }
-        ].map(({ fn, ...opts }) => {
-          return goto.run({
-            fn: fn(),
-            timeout: goto.timeouts.action(goto.timeouts.base(opts.timeout)),
-            ...opts
-          })
-        })
+        ].map(({ fn, ...opts }) => goto.run({ fn: fn(), ...opts, timeout }))
       )
+    }
 
     const takeScreenshot = async opts => {
       screenshot = await page.screenshot(opts)

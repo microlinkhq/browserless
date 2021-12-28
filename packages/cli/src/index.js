@@ -4,7 +4,6 @@
 
 const createBrowserless = require('browserless')
 const beautyError = require('beauty-error')
-const darkMode = require('dark-mode')
 const path = require('path')
 const fs = require('fs')
 
@@ -23,6 +22,10 @@ const cli = require('meow')({
     codeScheme: {
       type: 'string',
       default: 'ghcolors'
+    },
+    verbose: {
+      type: 'boolean',
+      default: true
     }
   }
 })
@@ -40,14 +43,6 @@ const run = async () => {
 
   const browserlessFactory = createBrowserless({ headless })
   const browserless = await browserlessFactory.createContext()
-
-  if (cli.flags.codeScheme === 'ghcolors') {
-    const isDark = await darkMode.isDark()
-    cli.flags.colorScheme = isDark ? 'dark' : 'light'
-    cli.flags.styles = isDark
-      ? '#screenshot pre{background:#000}#screenshot .token.string{color:#50e3c2}#screenshot .token.number{color:#f81ce5}'
-      : '#screenshot pre{background:#fff}#screenshot .token.string{color:#f81ce5}#screenshot .token.number{color:#50e3c2}'
-  }
 
   const result = await fn({ url, browserless, opts: cli.flags })
 

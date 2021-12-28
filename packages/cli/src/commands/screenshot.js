@@ -1,6 +1,7 @@
 'use strict'
 
 const uniqueRandomArray = require('unique-random-array')
+const darkMode = require('dark-mode')
 const termImg = require('term-img')
 const { set } = require('lodash')
 
@@ -37,6 +38,15 @@ module.exports = async ({ url, browserless, opts }) => {
 
   if (opts.browser) {
     set(opts, 'overlay.browser', opts.browser)
+  }
+
+  if (opts.codeScheme === 'ghcolors') {
+    const isDark = await darkMode.isDark()
+    opts.colorScheme = isDark ? 'dark' : 'light'
+
+    opts.styles = isDark
+      ? '#screenshot pre{background:#000}#screenshot .token.string{color:#50e3c2}#screenshot .token.number{color:#f81ce5}'
+      : '#screenshot pre{background:#fff}#screenshot .token.string{color:#f81ce5}#screenshot .token.number{color:#50e3c2}'
   }
 
   const screenshot = await browserless.screenshot(url, opts)
