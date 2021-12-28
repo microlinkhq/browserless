@@ -31,7 +31,7 @@ const castArray = value => [].concat(value).filter(Boolean)
 
 const run = async ({ fn, timeout, debug: props }) => {
   const debugProps = { duration: timeSpan() }
-  const result = await pReflect(pTimeout(fn, timeout))
+  const result = await pReflect(timeout ? pTimeout(fn, timeout) : fn())
   debugProps.duration = prettyMs(debugProps.duration())
   if (result.isRejected) debugProps.error = result.reason.message || result.reason
   debug(props, debugProps)
@@ -90,6 +90,87 @@ const disableAnimations = `
     transition-property: none !important;
   }
 `.trim()
+
+const inject = async (
+  page,
+  { timeout, mediaType, animations, hide, remove, modules, scripts, styles }
+) => {
+  const postPromises = []
+
+  if (mediaType) {
+    postPromises.push(
+      run({
+        fn: page.emulateMediaType(mediaType),
+        timeout,
+        debug: { mediaType }
+      })
+    )
+  }
+
+  if (animations === false) {
+    postPromises.push(
+      run({
+        fn: injectStyle(page, disableAnimations),
+        timeout,
+        debug: 'disableAnimations'
+      })
+    )
+  }
+
+  if (hide) {
+    postPromises.push(
+      run({
+        fn: injectStyle(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
+        timeout,
+        debug: 'hide'
+      })
+    )
+  }
+
+  if (remove) {
+    postPromises.push(
+      run({
+        fn: injectStyle(page, `${castArray(remove).join(', ')} { display: none !important; }`),
+        timeout,
+        debug: 'remove'
+      })
+    )
+  }
+
+  if (modules) {
+    postPromises.push(
+      run({
+        fn: Promise.all(
+          castArray(modules).map(value => injectScript(page, value, { type: 'modules' }))
+        ),
+        timeout,
+        debug: 'modules'
+      })
+    )
+  }
+
+  if (scripts) {
+    postPromises.push(
+      run({
+        fn: Promise.all(castArray(scripts).map(value => injectScript(page, value))),
+        timeout,
+        debug: 'scripts'
+      })
+    )
+  }
+
+  if (styles) {
+    postPromises.push(
+      run({
+        fn: Promise.all(castArray(styles).map(style => injectStyle(page, style))),
+        timeout,
+        debug: 'styles'
+      })
+    )
+  }
+
+  return Promise.all(postPromises)
+}
 
 module.exports = ({
   evasions = ALL_EVASIONS_KEYS,
@@ -281,7 +362,7 @@ module.exports = ({
 
     await Promise.all(prePromises.concat(applyEvasions))
 
-    const { value } = await run({
+    const { value: response } = await run({
       fn: html ? page.setContent(html, args) : page.goto(url, args),
       timeout: gotoTimeout,
       debug: html ? 'html' : 'url'
@@ -298,81 +379,16 @@ module.exports = ({
       }
     }
 
-    const postPromises = []
-
-    if (mediaType) {
-      postPromises.push(
-        run({
-          fn: page.emulateMediaType(mediaType),
-          timeout: actionTimeout,
-          debug: { mediaType }
-        })
-      )
-    }
-
-    if (animations === false) {
-      postPromises.push(
-        run({
-          fn: injectStyle(page, disableAnimations),
-          timeout: actionTimeout,
-          debug: 'disableAnimations'
-        })
-      )
-    }
-
-    if (hide) {
-      postPromises.push(
-        run({
-          fn: injectStyle(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
-          timeout: actionTimeout,
-          debug: 'hide'
-        })
-      )
-    }
-
-    if (remove) {
-      postPromises.push(
-        run({
-          fn: injectStyle(page, `${castArray(remove).join(', ')} { display: none !important; }`),
-          timeout: actionTimeout,
-          debug: 'remove'
-        })
-      )
-    }
-
-    if (modules) {
-      postPromises.push(
-        run({
-          fn: Promise.all(
-            castArray(modules).map(value => injectScript(page, value, { type: 'modules' }))
-          ),
-          timeout: actionTimeout,
-          debug: 'modules'
-        })
-      )
-    }
-
-    if (scripts) {
-      postPromises.push(
-        run({
-          fn: Promise.all(castArray(scripts).map(value => injectScript(page, value))),
-          timeout: actionTimeout,
-          debug: 'scripts'
-        })
-      )
-    }
-
-    if (styles) {
-      postPromises.push(
-        run({
-          fn: Promise.all(castArray(styles).map(style => injectStyle(page, style))),
-          timeout: actionTimeout,
-          debug: 'styles'
-        })
-      )
-    }
-
-    await Promise.all(postPromises)
+    await inject(page, {
+      timeout: actionTimeout,
+      mediaType,
+      animations,
+      hide,
+      remove,
+      modules,
+      scripts,
+      styles
+    })
 
     if (click) {
       for (const selector of castArray(click)) {
@@ -393,10 +409,10 @@ module.exports = ({
     }
 
     if (isWaitUntilAuto) {
-      await waitUntilAuto(page, { response: value, timeout: actionTimeout * 2 })
+      await waitUntilAuto(page, { response, timeout: actionTimeout * 2 })
     }
 
-    return { response: value, device }
+    return { response, device }
   }
 
   goto.getDevice = getDevice
@@ -412,7 +428,5 @@ module.exports = ({
 }
 
 module.exports.parseCookies = parseCookies
-module.exports.injectScript = injectScript
-module.exports.injectStyle = injectStyle
-module.exports.castArray = castArray
+module.exports.inject = inject
 module.exports.evasions = ALL_EVASIONS_KEYS

@@ -1,9 +1,9 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless:screenshot')
+const isHtmlContent = require('is-html-content')
 const { readFile } = require('fs').promises
 const { extension } = require('mime-types')
-const isHtml = require('is-html-content')
 const prettyMs = require('pretty-ms')
 const timeSpan = require('time-span')
 const path = require('path')
@@ -14,14 +14,14 @@ const getHtml = require('./html')
 
 const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
 
-const { injectScript, injectStyle, castArray } = require('@browserless/goto')
+const { inject } = require('@browserless/goto')
 
 const getContentType = headers => {
   const contentType = extension(headers['content-type'])
   return contentType === 'txt' ? 'text' : contentType
 }
 
-module.exports = async (page, response, { codeScheme, styles, scripts, modules }) => {
+module.exports = async (page, response, { timeout, codeScheme, styles, scripts, modules }) => {
   if (!response || !codeScheme) return
 
   const contentType = getContentType(response.headers())
@@ -30,28 +30,18 @@ module.exports = async (page, response, { codeScheme, styles, scripts, modules }
 
   const isHtmlContentType = contentType === 'html'
 
-  const [theme, payload, prism] = await Promise.all([
+  const [theme, content, prism] = await Promise.all([
     getTheme(codeScheme),
     response[isHtmlContentType ? 'text' : contentType](),
     getPrism
   ])
 
-  if (isHtmlContentType && isHtml(payload)) return
+  if (isHtmlContentType && isHtmlContent(content)) return
 
   const timePretty = timeSpan()
-  const html = getHtml(payload, { contentType, prism, theme })
+  const html = getHtml(content, { contentType, prism, theme })
   await page.setContent(html)
-
-  await Promise.all(
-    [
-      modules &&
-        Promise.all(
-          castArray(modules).map(value => injectScript(page, value, { type: 'modules' }))
-        ),
-      scripts && Promise.all(castArray(scripts).map(value => injectScript(page, value))),
-      styles && Promise.all(castArray(styles).map(style => injectStyle(page, style)))
-    ].filter(Boolean)
-  )
+  await inject(page, { timeout, modules, scripts, styles })
 
   debug('pretty', { duration: prettyMs(timePretty()) })
 }
