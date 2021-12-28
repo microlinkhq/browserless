@@ -414,4 +414,5 @@ module.exports = ({
 module.exports.parseCookies = parseCookies
 module.exports.injectScript = injectScript
 module.exports.injectStyle = injectStyle
+module.exports.castArray = castArray
 module.exports.evasions = ALL_EVASIONS_KEYS

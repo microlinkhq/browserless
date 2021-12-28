@@ -14,7 +14,7 @@ const getHtml = require('./html')
 
 const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
 
-const { injectScript, injectStyle } = require('@browserless/goto')
+const { injectScript, injectStyle, castArray } = require('@browserless/goto')
 
 const getContentType = headers => {
   const contentType = extension(headers['content-type'])
@@ -44,9 +44,12 @@ module.exports = async (page, response, { codeScheme, styles, scripts, modules }
 
   await Promise.all(
     [
-      modules && injectScript(page, modules, { type: 'modules' }),
-      scripts && injectScript(page, scripts),
-      styles && injectStyle(page, styles)
+      modules &&
+        Promise.all(
+          castArray(modules).map(value => injectScript(page, value, { type: 'modules' }))
+        ),
+      scripts && Promise.all(castArray(scripts).map(value => injectScript(page, value))),
+      styles && Promise.all(castArray(styles).map(style => injectStyle(page, style)))
     ].filter(Boolean)
   )
 
