@@ -41,12 +41,15 @@ module.exports = async ({ url, browserless, opts }) => {
   }
 
   if (opts.codeScheme === 'ghcolors') {
-    const isDark = await darkMode.isDark()
+    const isDark = darkMode.isDark()
     opts.colorScheme = isDark ? 'dark' : 'light'
 
-    opts.styles = isDark
-      ? '#screenshot pre{background:#000}#screenshot .token.string{color:#50e3c2}#screenshot .token.number{color:#f81ce5}'
-      : '#screenshot pre{background:#fff}#screenshot .token.string{color:#f81ce5}#screenshot .token.number{color:#50e3c2}'
+    opts.styles = [
+      isDark
+        ? '#screenshot pre{background:#000}#screenshot .token.string{color:#50e3c2}#screenshot .token.number{color:#f81ce5}'
+        : '#screenshot pre{background:#fff}#screenshot .token.string{color:#f81ce5}#screenshot .token.number{color:#50e3c2}',
+      '#screenshot .language-js span{font-family:"Roboto Mono"}'
+    ]
   }
 
   const screenshot = await browserless.screenshot(url, opts)
