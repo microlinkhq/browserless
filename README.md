@@ -62,7 +62,7 @@ console.log(termImg(buffer))
 await browserless.destroyContext()
 
 // At the end, gracefully shutdown the browser process
-await browserless.close()
+await browserlessFactory.close()
 ```
 
 As you can see, **browserless** is implemented using a single browser process and creating/destroying specific browser contexts.
