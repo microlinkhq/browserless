@@ -44,7 +44,7 @@
     "time-span": "~4.0.0"
   },
   "devDependencies": {
-    "express": "~4.17.1"
+    "express": "latest"
   },
   "engines": {
     "node": ">= 12"
