@@ -40,9 +40,9 @@
     "ora": "~5.4.1",
     "pretty-bytes": "~5.6.0",
     "process-stats": "~3.5.6",
+    "signal-exit": "~3.0.6",
     "term-img": "~5.0.0",
     "unique-random-array": "~2.0.0"
-    "signal-exit": "~3.0.6",
   },
   "engines": {
     "node": ">= 12"

@@ -43,9 +43,6 @@
     "svg-gradient": "~1.0.3",
     "time-span": "~4.0.0"
   },
-  "devDependencies": {
-    "express": "latest"
-  },
   "engines": {
     "node": ">= 12"
   },
