@@ -1,4 +1,4 @@
-/* PrismJS 1.25.0
+/* PrismJS 1.26.0
 https://prismjs.com/download.html#themes=prism&languages=clike+javascript */
 var _self =
     'undefined' != typeof window
@@ -7,7 +7,7 @@ var _self =
       ? self
       : {},
   Prism = (function (u) {
-    var c = /\blang(?:uage)?-([\w-]+)\b/i,
+    var t = /(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,
       n = 0,
       e = {},
       M = {
@@ -54,8 +54,16 @@ var _self =
             }
           },
           getLanguage: function (e) {
-            for (; e && !c.test(e.className); ) e = e.parentElement
-            return e ? (e.className.match(c) || [, 'none'])[1].toLowerCase() : 'none'
+            for (; e; ) {
+              var n = t.exec(e.className)
+              if (n) return n[1].toLowerCase()
+              e = e.parentElement
+            }
+            return 'none'
+          },
+          setLanguage: function (e, n) {
+            ;(e.className = e.className.replace(RegExp(t, 'gi'), '')),
+              e.classList.add('language-' + n)
           },
           currentScript: function () {
             if ('undefined' == typeof document) return null
@@ -141,11 +149,9 @@ var _self =
         highlightElement: function (e, n, t) {
           var r = M.util.getLanguage(e),
             a = M.languages[r]
-          e.className = e.className.replace(c, '').replace(/\s+/g, ' ') + ' language-' + r
+          M.util.setLanguage(e, r)
           var i = e.parentElement
-          i &&
-            'pre' === i.nodeName.toLowerCase() &&
-            (i.className = i.className.replace(c, '').replace(/\s+/g, ' ') + ' language-' + r)
+          i && 'pre' === i.nodeName.toLowerCase() && M.util.setLanguage(i, r)
           var l = { element: e, language: r, grammar: a, code: e.textContent }
           function o (e) {
             ;(l.highlightedCode = e),
@@ -207,23 +213,23 @@ var _self =
                       h = !!c.greedy,
                       d = c.alias
                     if (h && !c.pattern.global) {
-                      var p = c.pattern.toString().match(/[imsuy]*$/)[0]
-                      c.pattern = RegExp(c.pattern.source, p + 'g')
+                      var v = c.pattern.toString().match(/[imsuy]*$/)[0]
+                      c.pattern = RegExp(c.pattern.source, v + 'g')
                     }
                     for (
-                      var v = c.pattern || c, m = a.next, y = i;
+                      var p = c.pattern || c, m = a.next, y = i;
                       m !== t.tail && !(l && y >= l.reach);
                       y += m.value.length, m = m.next
                     ) {
-                      var b = m.value
+                      var k = m.value
                       if (t.length > n.length) return
-                      if (!(b instanceof W)) {
-                        var k,
-                          x = 1
+                      if (!(k instanceof W)) {
+                        var x,
+                          b = 1
                         if (h) {
-                          if (!(k = z(v, y, n, f))) break
-                          var w = k.index,
-                            A = k.index + k[0].length,
+                          if (!(x = z(p, y, n, f)) || x.index >= n.length) break
+                          var w = x.index,
+                            A = x.index + x[0].length,
                             P = y
                           for (P += m.value.length; P <= w; ) (m = m.next), (P += m.value.length)
                           if (((P -= m.value.length), (y = P), m.value instanceof W)) continue
@@ -232,20 +238,20 @@ var _self =
                             E !== t.tail && (P < A || 'string' == typeof E.value);
                             E = E.next
                           )
-                            x++, (P += E.value.length)
-                          x--, (b = n.slice(y, P)), (k.index -= y)
-                        } else if (!(k = z(v, 0, b, f))) continue
-                        var w = k.index,
-                          S = k[0],
-                          O = b.slice(0, w),
-                          L = b.slice(w + S.length),
-                          N = y + b.length
-                        l && N > l.reach && (l.reach = N)
-                        var j = m.prev
-                        O && ((j = I(t, j, O)), (y += O.length)), q(t, j, x)
-                        var C = new W(o, g ? M.tokenize(S, g) : S, d, S)
-                        if (((m = I(t, j, C)), L && I(t, m, L), 1 < x)) {
-                          var _ = { cause: o + ',' + u, reach: N }
+                            b++, (P += E.value.length)
+                          b--, (k = n.slice(y, P)), (x.index -= y)
+                        } else if (!(x = z(p, 0, k, f))) continue
+                        var w = x.index,
+                          L = x[0],
+                          S = k.slice(0, w),
+                          O = k.slice(w + L.length),
+                          j = y + k.length
+                        l && j > l.reach && (l.reach = j)
+                        var C = m.prev
+                        S && ((C = I(t, C, S)), (y += S.length)), q(t, C, b)
+                        var N = new W(o, g ? M.tokenize(L, g) : L, d, L)
+                        if (((m = I(t, C, N)), O && I(t, m, O), 1 < b)) {
+                          var _ = { cause: o + ',' + u, reach: j }
                           e(n, t, r, m.prev, y, _), l && _.reach > l.reach && (l.reach = _.reach)
                         }
                       }
@@ -359,19 +365,19 @@ var _self =
             )),
         M
       )
-    var t = M.util.currentScript()
-    function r () {
+    var r = M.util.currentScript()
+    function a () {
       M.manual || M.highlightAll()
     }
     if (
-      (t && ((M.filename = t.src), t.hasAttribute('data-manual') && (M.manual = !0)), !M.manual)
+      (r && ((M.filename = r.src), r.hasAttribute('data-manual') && (M.manual = !0)), !M.manual)
     ) {
-      var a = document.readyState
-      'loading' === a || ('interactive' === a && t && t.defer)
-        ? document.addEventListener('DOMContentLoaded', r)
+      var l = document.readyState
+      'loading' === l || ('interactive' === l && r && r.defer)
+        ? document.addEventListener('DOMContentLoaded', a)
         : window.requestAnimationFrame
-        ? window.requestAnimationFrame(r)
-        : window.setTimeout(r, 16)
+        ? window.requestAnimationFrame(a)
+        : window.setTimeout(a, 16)
     }
     return M
   })(_self)
@@ -384,12 +390,12 @@ Prism.languages.clike = {
   ],
   string: { pattern: /(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/, greedy: !0 },
   'class-name': {
-    pattern: /(\b(?:class|interface|extends|implements|trait|instanceof|new)\s+|\bcatch\s+\()[\w.\\]+/i,
+    pattern: /(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,
     lookbehind: !0,
     inside: { punctuation: /[.\\]/ }
   },
-  keyword: /\b(?:if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,
-  boolean: /\b(?:true|false)\b/,
+  keyword: /\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,
+  boolean: /\b(?:false|true)\b/,
   function: /\b\w+(?=\()/,
   number: /\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,
   operator: /[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,
@@ -399,7 +405,7 @@ Prism.languages.clike = {
   'class-name': [
     Prism.languages.clike['class-name'],
     {
-      pattern: /(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:prototype|constructor))/,
+      pattern: /(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,
       lookbehind: !0
     }
   ],
@@ -411,12 +417,17 @@ Prism.languages.clike = {
     }
   ],
   function: /#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,
-  number: /\b(?:(?:0[xX](?:[\dA-Fa-f](?:_[\dA-Fa-f])?)+|0[bB](?:[01](?:_[01])?)+|0[oO](?:[0-7](?:_[0-7])?)+)n?|(?:\d(?:_\d)?)+n|NaN|Infinity)\b|(?:\b(?:\d(?:_\d)?)+\.?(?:\d(?:_\d)?)*|\B\.(?:\d(?:_\d)?)+)(?:[Ee][+-]?(?:\d(?:_\d)?)+)?/,
+  number: {
+    pattern: RegExp(
+      '(^|[^\\w$])(?:NaN|Infinity|0[bB][01]+(?:_[01]+)*n?|0[oO][0-7]+(?:_[0-7]+)*n?|0[xX][\\dA-Fa-f]+(?:_[\\dA-Fa-f]+)*n?|\\d+(?:_\\d+)*n|(?:\\d+(?:_\\d+)*(?:\\.(?:\\d+(?:_\\d+)*)?)?|\\.\\d+(?:_\\d+)*)(?:[Ee][+-]?\\d+(?:_\\d+)*)?)(?![\\w$])'
+    ),
+    lookbehind: !0
+  },
   operator: /--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/
 })),
   (Prism.languages.javascript[
     'class-name'
-  ][0].pattern = /(\b(?:class|interface|extends|implements|instanceof|new)\s+)[\w.\\]+/),
+  ][0].pattern = /(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/),
   Prism.languages.insertBefore('javascript', 'keyword', {
     regex: {
       pattern: /((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)\/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/,
@@ -478,6 +489,19 @@ Prism.languages.clike = {
         },
         string: /[\s\S]+/
       }
+    },
+    'string-property': {
+      pattern: /((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,
+      lookbehind: !0,
+      greedy: !0,
+      alias: 'property'
+    }
+  }),
+  Prism.languages.insertBefore('javascript', 'operator', {
+    'literal-property': {
+      pattern: /((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,
+      lookbehind: !0,
+      alias: 'property'
     }
   }),
   Prism.languages.markup &&
