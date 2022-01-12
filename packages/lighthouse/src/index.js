@@ -13,7 +13,7 @@ const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
 
 const { AbortError } = pRetry
 
-const getConfig = ({ preset: presetName, ...settings }) => {
+const getConfig = ({ preset: presetName, ...settings } = {}) => {
   const baseConfig = presetName
     ? require(`lighthouse/lighthouse-core/config/${presetName}-config.js`)
     : { extends: 'lighthouse:default' }
@@ -85,3 +85,5 @@ module.exports = async (
 
   return result
 }
+
+module.exports.getConfig = getConfig
