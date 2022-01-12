@@ -44,7 +44,7 @@
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
-    "ava": "latest",
+    "ava": "3",
     "browserless": "latest",
     "puppeteer": "latest",
     "signal-exit": "latest"

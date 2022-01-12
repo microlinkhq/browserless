@@ -29,7 +29,7 @@
     "test"
   ],
   "devDependencies": {
-    "ava": "latest",
+    "ava": "3",
     "exists-file": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",

@@ -19,7 +19,6 @@
 - Shell interaction via [Browserless CLI](command-line-interface).
 - Easy [Google Lighthouse](#lighthouse) integration.
 - Automatic retry & error handling.
-- Configurable [pooling](#pool-of-instances) support.
 - Sensible good defaults.
 
 ## Installation
@@ -806,57 +805,6 @@ npx @browserless/cli --help
 
 That's the preferred way to interact with the CLI under CI/CD scenarios.
 
-## Pool of Instances
-
-If you want to keep multiple browsers open, use [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool) package:
-
-```js
-const createBrowserless = require('@browserless/pool')
-const onExit = require('signal-exit')
-
-const browserlessPool = createBrowserless({
-  max: 2, // max browsers to keep open
-  timeout: 30000 // max time a browser is considered fresh
-})
-
-// pool shutdown gracefully on process exit.
-onExit(() => browserlessPool.drain().then(() => browserlessPool.clear()))
-```
-
-You can still pass specific puppeteer options as the second argument:
-
-```js
-const createBrowserless = require('@browserless/pool')
-
-const browserlessPool = createBrowserless(
-  {
-    max: 2, // max browsers to keep open
-    timeout: 30000 // max time a browser is considered fresh
-  },
-  {
-    ignoreHTTPSErrors: true
-  }
-)
-```
-
-So now the pool is initialized, you can interact with the pool in the same way that you have done so far:
-
-```js
-const termImg = require('term-img')
-
-const browserless = await browserlessPool.createContext()
-
-const buffer = await browserless.screenshot('http://example.com', {
-  device: 'iPhone 6'
-})
-
-console.log(termImg(buffer))
-
-await browserless.destroyContext()
-```
-
-Every time you call the pool, it auto handle the acquire and release.
-
 ## Lighthouse
 
 **browserless** has a [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that connects to a [Puppeteer](https://github.com/GoogleChrome/puppeteer) instance in a simple way.
@@ -943,7 +891,6 @@ Includes only the specified categories in the final report.
 | [`@browserless/function`](https://github.com/microlinkhq/browserless/tree/master/packages/function)         | [![npm](https://img.shields.io/npm/v/@browserless/function.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/function) |
 | [`@browserless/goto`](https://github.com/microlinkhq/browserless/tree/master/packages/goto)             | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto)             |
 | [`@browserless/pdf`](https://github.com/microlinkhq/browserless/tree/master/packages/pdf)               | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf)               |
-| [`@browserless/pool`](https://github.com/microlinkhq/browserless/tree/master/packages/pool)             | [![npm](https://img.shields.io/npm/v/@browserless/pool.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pool)             |
 | [`@browserless/screenshot`](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) |
 | [`@browserless/lighthouse`](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse) | [![npm](https://img.shields.io/npm/v/@browserless/lighthouse.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/lighthouse) |
 

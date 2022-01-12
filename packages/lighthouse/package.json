@@ -34,7 +34,7 @@
     "serialize-error": "~8.1.0"
   },
   "devDependencies": {
-    "ava": "latest",
+    "ava": "3",
     "browserless": "latest"
   },
   "engines": {
@@ -48,7 +48,6 @@
   },
   "license": "MIT",
   "ava": {
-    "serial": true,
     "timeout": "2m",
     "verbose": true
   }

@@ -3,7 +3,6 @@
 process.setMaxListeners(Infinity)
 
 const createBrowserless = require('browserless')
-const createBrowserlessPool = require('@browserless/pool')
 const { includes, reduce } = require('lodash')
 const processStats = require('process-stats')
 const asciichart = require('asciichart')
@@ -20,10 +19,7 @@ const cli = meow(
 
     Flags
       --method         Choose what method to run (html, text, pdf, screenshot).
-      --pool           Enable pool mode.
       --iterations     Number of iterations.
-      --pool-min       Mininum of instances in pool mode.
-      --pool-max       Maximum of instances in pool mode.
       --concurrency    Define number of concurrent request.
       --firefox        Use Firefox browser.
 
@@ -56,14 +52,7 @@ const cli = meow(
   }
 )
 
-const benchmark = async ({
-  createBrowserless,
-  method,
-  url,
-  opts,
-  iterations,
-  concurrency
-}) => {
+const benchmark = async ({ createBrowserless, method, url, opts, iterations, concurrency }) => {
   const timer = new Measured.Timer()
   const promises = [...Array(iterations).keys()].map(n => {
     return async () => {
@@ -105,23 +94,11 @@ const main = async () => {
 
   if (!method) throw new TypeError('Need to provide a method to run.')
 
-  const puppeteer = firefox
-    ? require('puppeteer-firefox')
-    : require('puppeteer')
-
-  const _createBrowserless = isPool
-    ? () =>
-        createBrowserlessPool({
-          min: poolMin,
-          max: poolMax,
-          puppeteer,
-          ...opts
-        })
-    : () => createBrowserless({ puppeteer, ...opts })
+  const puppeteer = firefox ? require('puppeteer-firefox') : require('puppeteer')
 
   const { times, histogram } = await benchmark({
     concurrency,
-    createBrowserless: _createBrowserless,
+    createBrowserless: createBrowserless({ puppeteer, ...opts }),
     iterations,
     method,
     url,
