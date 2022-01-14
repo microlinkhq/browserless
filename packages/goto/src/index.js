@@ -31,7 +31,7 @@ const castArray = value => [].concat(value).filter(Boolean)
 
 const run = async ({ fn, timeout, debug: props }) => {
   const debugProps = { duration: timeSpan() }
-  const result = await pReflect(timeout ? pTimeout(fn, timeout) : fn())
+  const result = await pReflect(timeout ? pTimeout(fn, timeout) : fn)
   debugProps.duration = prettyMs(debugProps.duration())
   if (result.isRejected) debugProps.error = result.reason.message || result.reason
   debug(props, debugProps)
