@@ -43,6 +43,11 @@
     "svg-gradient": "~1.0.3",
     "time-span": "~4.0.0"
   },
+  "devDependencies": {
+    "ava": "3",
+    "browserless": "latest",
+    "puppeteer": "latest"
+  },
   "engines": {
     "node": ">= 12"
   },
@@ -52,7 +57,7 @@
   ],
   "scripts": {
     "coverage": "exit 0",
-    "test": "exit 0"
+    "test": "ava"
   },
   "license": "MIT"
 }
