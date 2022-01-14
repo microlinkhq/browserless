@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.3.4](https://github.com/microlinkhq/browserless/compare/v9.3.3...v9.3.4) (2022-01-14)
+
+
+### Bug Fixes
+
+* **goto:** just wait promise ([c7dc5e8](https://github.com/microlinkhq/browserless/commit/c7dc5e8a601a1bbc55c8c253d0dc5ec9dfc1e75c))
+
+
+
+
+
 ## [9.3.3](https://github.com/microlinkhq/browserless/compare/v9.3.2...v9.3.3) (2022-01-12)
 
 **Note:** Version bump only for package @browserless/goto
