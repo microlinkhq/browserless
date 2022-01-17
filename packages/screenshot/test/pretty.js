@@ -20,7 +20,7 @@ test.after(async () => {
 
 const pretty = require('../src/pretty')
 
-test('application/json', async t => {
+test('prettify `application/json`', async t => {
   const browser = await browserless()
   const page = await browser.page()
 
@@ -37,7 +37,7 @@ test('application/json', async t => {
   }
 
   const response = {
-    json: () => payload,
+    text: () => JSON.stringify(payload),
     headers: () => ({ 'content-type': 'application/json; charset=utf-8' })
   }
 
@@ -54,7 +54,7 @@ test('application/json', async t => {
   t.snapshot(html)
 })
 
-test('text/plain', async t => {
+test('prettify `text/plain`', async t => {
   const browser = await browserless()
   const page = await browser.page()
   const payload = 'Open the network tab in devtools to see the response headers'
@@ -74,10 +74,50 @@ test('text/plain', async t => {
   t.snapshot(html)
 })
 
-test('text/html', async t => {
+test('prettify `text/html` markup is not HTML', async t => {
   const browser = await browserless()
   const page = await browser.page()
   const payload = 'Open the network tab in devtools to see the response headers'
+
+  const response = {
+    text: () => payload,
+    headers: () => ({ 'content-type': 'text/html; charset=UTF-8' })
+  }
+
+  const opts = {
+    codeScheme: 'ghcolors',
+    styles: ['#screenshot code.language-text{font-family:"Roboto Mono";color:#f81ce5}']
+  }
+  await pretty(page, response, opts)
+  const html = await page.content()
+
+  t.snapshot(html)
+})
+
+test("don't prettify `text/html` when markup is HTML", async t => {
+  const browser = await browserless()
+  const page = await browser.page()
+  const payload = '<html><head></head><body></body></html>'
+
+  const response = {
+    text: () => payload,
+    headers: () => ({ 'content-type': 'text/html; charset=UTF-8' })
+  }
+
+  const opts = {
+    codeScheme: 'ghcolors',
+    styles: ['#screenshot code.language-text{font-family:"Roboto Mono";color:#f81ce5}']
+  }
+  await pretty(page, response, opts)
+  const html = await page.content()
+
+  t.snapshot(html)
+})
+
+test("don't prettify `text/plain` when markup is HTML", async t => {
+  const browser = await browserless()
+  const page = await browser.page()
+  const payload = '<html><head></head><body></body></html>'
 
   const response = {
     text: () => payload,

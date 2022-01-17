@@ -21,23 +21,34 @@ const getContentType = headers => {
   return contentType === 'txt' ? 'text' : contentType
 }
 
+const JSONParse = input => {
+  try {
+    return {
+      json: JSON.parse(input),
+      error: false
+    }
+  } catch (error) {
+    return { error: true }
+  }
+}
+
 module.exports = async (page, response, { timeout, codeScheme, styles, scripts, modules }) => {
   if (!response || !codeScheme) return
 
-  const contentType = getContentType(response.headers())
+  let [theme, content, prism] = await Promise.all([getTheme(codeScheme), response.text(), getPrism])
+
+  if (isHtmlContent(content)) return
+
+  let contentType = getContentType(response.headers())
+
+  const { json, error } = JSONParse(content)
+
+  if (!error) {
+    content = json
+    contentType = 'json'
+  }
 
   if (!PRETTY_CONTENT_TYPES.includes(contentType)) return
-
-  const isHtmlContentType = contentType === 'html'
-
-  const [theme, content, prism] = await Promise.all([
-    getTheme(codeScheme),
-    response[isHtmlContentType ? 'text' : contentType](),
-    getPrism
-  ])
-
-  if (isHtmlContentType && isHtmlContent(content)) return
-
   const timePretty = timeSpan()
   const html = getHtml(content, { contentType, prism, theme })
   await page.setContent(html)
