@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.3.5](https://github.com/microlinkhq/browserless/compare/v9.3.4...v9.3.5) (2022-01-17)
+
+**Note:** Version bump only for package @browserless/cli
+
+
+
+
+
 ## [9.3.4](https://github.com/microlinkhq/browserless/compare/v9.3.3...v9.3.4) (2022-01-14)
 
 **Note:** Version bump only for package @browserless/cli
