@@ -9,14 +9,15 @@ exitHook(browserlessFactory.close)
 
 test.skip('arh.antoinevastel.com/bots/areyouheadless', async t => {
   const browserless = await browserlessFactory.createContext()
+  t.teardown(() => browserless.destroyContext())
   const content = await browserless.text('https://arh.antoinevastel.com/bots/areyouheadless')
-  await browserless.destroyContext()
   t.true(content.includes('You are not Chrome headless'))
 })
 
 // See https://antoinevastel.com/bot%20detection/2018/11/13/fp-scanner-library-demo.html
 test('antoinevastel.com/bots/fpstructured', async t => {
   const browserless = await browserlessFactory.createContext()
+  t.teardown(() => browserless.destroyContext())
   const fpCollect = browserless.evaluate(page =>
     page.evaluate(() => {
       const fp = JSON.parse(document.getElementById('fp').innerText)
@@ -36,13 +37,12 @@ test('antoinevastel.com/bots/fpstructured', async t => {
     return value && value.consistent !== 3
   })
 
-  await browserless.destroyContext()
-
   t.is(scannerDetections.length, 0, scannerDetections.toString())
 })
 
 test('bot.sannysoft.com', async t => {
   const browserless = await browserlessFactory.createContext()
+  t.teardown(() => browserless.destroyContext())
 
   const getReport = browserless.evaluate(page =>
     page.evaluate(() => {
@@ -70,8 +70,6 @@ test('bot.sannysoft.com', async t => {
 
   const report = await getReport('https://bot.sannysoft.com/')
 
-  await browserless.destroyContext()
-
   t.deepEqual(report, {
     userAgent: true,
     webdriver: true,
@@ -89,13 +87,14 @@ test('bot.sannysoft.com', async t => {
 
 test('amiunique.org/fp', async t => {
   const browserless = await browserlessFactory.createContext()
+  t.teardown(() => browserless.destroyContext())
   const content = await browserless.text('https://amiunique.org/fp')
-  await browserless.destroyContext()
   t.false(content.includes('You can be tracked'))
 })
 
 test('browserleaks.com/webgl', async t => {
   const browserless = await browserlessFactory.createContext()
+  t.teardown(() => browserless.destroyContext())
   const getGpuInfo = browserless.evaluate(page =>
     page.evaluate(() => {
       return {
@@ -106,8 +105,6 @@ test('browserleaks.com/webgl', async t => {
   )
 
   const gpuInfo = await getGpuInfo('https://browserleaks.com/webgl')
-
-  await browserless.destroyContext()
 
   t.deepEqual(gpuInfo, {
     vendor: '! Intel Inc.',
