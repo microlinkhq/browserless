@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.3.7](https://github.com/microlinkhq/browserless/compare/v9.3.6...v9.3.7) (2022-01-30)
+
+
+### Bug Fixes
+
+* **function:** pass url as prop ([75c23db](https://github.com/microlinkhq/browserless/commit/75c23db763e7301f83a4112de167263c6c6d973f))
+
+
+
+
+
 ## [9.3.6](https://github.com/microlinkhq/browserless/compare/v9.3.5...v9.3.6) (2022-01-30)
 
 **Note:** Version bump only for package @browserless/function
