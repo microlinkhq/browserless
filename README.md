@@ -205,13 +205,9 @@ This method is am implementation detail, normally you don't need to call it.
 It will close the singleton browser associated with your browserless factory.
 
 ```js
-const onExit = require('signal-exit')
+const exitHook = require('exit-hook')
 
-onExit(async (code, signal) => {
-  console.log('shutting down all the things')
-  await browserlessFactory.close()
-  console.log(`exit with code ${code} (${signal})`)
-})
+exitHook(browserlessFactory.close())
 ```
 
 It should be used to gracefully shutdown your resources.

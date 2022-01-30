@@ -1,28 +1,16 @@
 'use strict'
 
-const createBrowserless = require('browserless')
+const { getBrowser } = require('@browserless/test/util')
 
 const test = require('ava')
-
-const browserless = () => {
-  const browserlessFactory = createBrowserless()
-  const browserlessPromise = browserlessFactory.createContext()
-  return browserlessPromise.then(browserContext => {
-    browserContext.close = browserlessFactory.close
-    return browserContext
-  })
-}
-
-test.after(async () => {
-  const browser = await browserless()
-  browser.close()
-})
 
 const pretty = require('../src/pretty')
 
 test('prettify `application/json`', async t => {
-  const browser = await browserless()
-  const page = await browser.page()
+  const browser = await getBrowser()
+  const page = await browser.newPage()
+
+  t.teardown(() => page.close())
 
   const payload = {
     version: 2,
@@ -55,8 +43,11 @@ test('prettify `application/json`', async t => {
 })
 
 test('prettify `text/plain`', async t => {
-  const browser = await browserless()
-  const page = await browser.page()
+  const browser = await getBrowser()
+  const page = await browser.newPage()
+
+  t.teardown(() => page.close())
+
   const payload = 'Open the network tab in devtools to see the response headers'
 
   const response = {
@@ -75,8 +66,11 @@ test('prettify `text/plain`', async t => {
 })
 
 test('prettify `text/html` markup is not HTML', async t => {
-  const browser = await browserless()
-  const page = await browser.page()
+  const browser = await getBrowser()
+  const page = await browser.newPage()
+
+  t.teardown(() => page.close())
+
   const payload = 'Open the network tab in devtools to see the response headers'
 
   const response = {
@@ -95,8 +89,11 @@ test('prettify `text/html` markup is not HTML', async t => {
 })
 
 test("don't prettify `text/html` when markup is HTML", async t => {
-  const browser = await browserless()
-  const page = await browser.page()
+  const browser = await getBrowser()
+  const page = await browser.newPage()
+
+  t.teardown(() => page.close())
+
   const payload = '<html><head></head><body></body></html>'
 
   const response = {
@@ -115,8 +112,11 @@ test("don't prettify `text/html` when markup is HTML", async t => {
 })
 
 test("don't prettify `text/plain` when markup is HTML", async t => {
-  const browser = await browserless()
-  const page = await browser.page()
+  const browser = await getBrowser()
+  const page = await browser.newPage()
+
+  t.teardown(() => page.close())
+
   const payload = '<html><head></head><body></body></html>'
 
   const response = {

@@ -2,29 +2,12 @@
 
 'use strict'
 
-const getBrowserless = require('browserless')
+const { getBrowserWSEndpoint } = require('@browserless/test/util')
+
 const path = require('path')
 const test = require('ava')
 
 const createVm = require('../src/vm')
-
-const getBrowser = async () => {
-  const ctx = getBrowser
-  if (ctx.initialized) return ctx
-
-  ctx.browserless = await getBrowserless()
-  ctx.browser = await ctx.browserless.browser()
-  ctx.browserWSEndpoint = ctx.browser.wsEndpoint()
-
-  ctx.initialized = true
-  return ctx
-}
-
-test.after.always('guaranteed cleanup', () => {
-  if (getBrowser.initialized) {
-    return getBrowser.browserless.close()
-  }
-})
 
 test('passing a function', async t => {
   const vm = createVm()
@@ -115,7 +98,7 @@ test('passing an async function', async t => {
 })
 
 test('run browserless code', async t => {
-  const { browserWSEndpoint } = await getBrowser()
+  const browserWSEndpoint = await getBrowserWSEndpoint()
 
   const url = 'https://example.com'
   const scriptPath = path.resolve(__dirname, 'vm.js')

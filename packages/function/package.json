@@ -42,9 +42,9 @@
     "vm2": "~3.9.5"
   },
   "devDependencies": {
+    "@browserless/test": "latest",
     "ava": "3",
-    "browserless": "latest",
-    "puppeteer": "latest"
+    "browserless": "latest"
   },
   "engines": {
     "node": ">= 12"

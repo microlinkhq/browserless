@@ -29,7 +29,6 @@
     "puppeteer"
   ],
   "devDependencies": {
-    "@browserless/pool": "latest",
     "asciichart": "latest",
     "browserless": "latest",
     "debug-logfmt": "latest",

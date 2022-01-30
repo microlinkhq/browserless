@@ -152,8 +152,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       )
 
     const destroyContext = async () => {
-      const context = await contextPromise
-      debug('destroyContext', await pReflect(context.close()))
+      const { isRejected, reason: error } = await pReflect(
+        contextPromise.then(context => context.close())
+      )
+      debug('destroyContext', isRejected ? { error } : {})
     }
 
     return {

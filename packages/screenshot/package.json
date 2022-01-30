@@ -44,9 +44,8 @@
     "time-span": "~4.0.0"
   },
   "devDependencies": {
-    "ava": "3",
-    "browserless": "latest",
-    "puppeteer": "latest"
+    "@browserless/test": "latest",
+    "ava": "3"
   },
   "engines": {
     "node": ">= 12"

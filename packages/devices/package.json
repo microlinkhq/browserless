@@ -34,8 +34,7 @@
   },
   "devDependencies": {
     "ava": "3",
-    "lodash": "latest",
-    "puppeteer": "latest"
+    "lodash": "latest"
   },
   "engines": {
     "node": ">= 12"

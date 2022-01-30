@@ -45,8 +45,7 @@
   },
   "devDependencies": {
     "@browserless/test": "latest",
-    "ava": "3",
-    "puppeteer": "latest"
+    "ava": "3"
   },
   "engines": {
     "node": ">= 12"
