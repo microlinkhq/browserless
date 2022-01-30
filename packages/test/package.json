@@ -30,6 +30,7 @@
   ],
   "devDependencies": {
     "ava": "3",
+    "browserless": "latest",
     "exists-file": "latest",
     "exit-hook": "2",
     "fs-extra": "latest",
@@ -37,6 +38,7 @@
     "is-ci": "latest",
     "micri": "latest",
     "pdf-parse": "latest",
+    "puppeteer": "latest",
     "temperment": "latest",
     "test-listen": "latest"
   },
