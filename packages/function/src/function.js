@@ -12,8 +12,8 @@ async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
 
   const getBrowserless = require('browserless')
   const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
-  const fnWrapper = fn => (page, response) => fn({ page, response, ...opts })
-  const browserFn = browserless.evaluate(fnWrapper(${code}), { ...gotoOpts, ...opts })
+  const fnWrapper = fn => (page, response) => fn({ page, response, ...opts, url })
+  const browserFn = browserless.evaluate(fnWrapper(${code}), gotoOpts)
 
   try {
     const value = await browserFn(url)
