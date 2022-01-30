@@ -47,7 +47,7 @@
     "@browserless/test": "latest",
     "ava": "3",
     "browserless": "latest",
-    "exit-hook": "2"
+    "exit-hook": "3"
   },
   "engines": {
     "node": ">= 12"

@@ -32,7 +32,7 @@
     "ava": "3",
     "browserless": "latest",
     "exists-file": "latest",
-    "exit-hook": "2",
+    "exit-hook": "3",
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "is-ci": "latest",
