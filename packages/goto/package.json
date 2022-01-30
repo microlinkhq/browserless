@@ -44,10 +44,11 @@
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
+    "@browserless/test": "latest",
     "ava": "3",
     "browserless": "latest",
     "puppeteer": "latest",
-    "signal-exit": "latest"
+    "exit-hook": "2"
   },
   "engines": {
     "node": ">= 12"

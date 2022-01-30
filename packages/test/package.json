@@ -30,14 +30,13 @@
   ],
   "devDependencies": {
     "ava": "3",
-    "exit-hook": "2",
     "exists-file": "latest",
+    "exit-hook": "2",
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "is-ci": "latest",
     "micri": "latest",
     "pdf-parse": "latest",
-    "signal-exit": "latest",
     "temperment": "latest",
     "test-listen": "latest"
   },

@@ -3,9 +3,9 @@
 const test = require('ava')
 
 const browserlessFactory = require('browserless')()
-const onExit = require('signal-exit')
+const exitHook = require('exit-hook')
 
-onExit(browserlessFactory.close)
+exitHook(browserlessFactory.close)
 
 test.skip('arh.antoinevastel.com/bots/areyouheadless', async t => {
   const browserless = await browserlessFactory.createContext()

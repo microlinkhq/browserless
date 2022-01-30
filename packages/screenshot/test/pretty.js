@@ -10,7 +10,7 @@ test('prettify `application/json`', async t => {
   const browser = await getBrowser()
   const page = await browser.newPage()
 
-  t.teardown(() => page.close)
+  t.teardown(() => page.close())
 
   const payload = {
     version: 2,
@@ -46,7 +46,7 @@ test('prettify `text/plain`', async t => {
   const browser = await getBrowser()
   const page = await browser.newPage()
 
-  t.teardown(() => page.close)
+  t.teardown(() => page.close())
 
   const payload = 'Open the network tab in devtools to see the response headers'
 
@@ -69,7 +69,7 @@ test('prettify `text/html` markup is not HTML', async t => {
   const browser = await getBrowser()
   const page = await browser.newPage()
 
-  t.teardown(() => page.close)
+  t.teardown(() => page.close())
 
   const payload = 'Open the network tab in devtools to see the response headers'
 
@@ -92,7 +92,7 @@ test("don't prettify `text/html` when markup is HTML", async t => {
   const browser = await getBrowser()
   const page = await browser.newPage()
 
-  t.teardown(() => page.close)
+  t.teardown(() => page.close())
 
   const payload = '<html><head></head><body></body></html>'
 
@@ -115,7 +115,7 @@ test("don't prettify `text/plain` when markup is HTML", async t => {
   const browser = await getBrowser()
   const page = await browser.newPage()
 
-  t.teardown(() => page.close)
+  t.teardown(() => page.close())
 
   const payload = '<html><head></head><body></body></html>'
 

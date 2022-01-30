@@ -3,7 +3,7 @@
 const { imgDiff } = require('img-diff-js')
 const existsFile = require('exists-file')
 const listen = require('test-listen')
-const onExit = require('signal-exit')
+const exitHook = require('exit-hook')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const { serve } = require('micri')
@@ -50,7 +50,7 @@ const getServerUrl = (() => {
 })()
 
 module.exports = (browserlessFactory, teardown = browserlessFactory.close) => {
-  onExit(teardown)
+  exitHook(teardown)
 
   test('.html', async t => {
     const url = await getServerUrl()

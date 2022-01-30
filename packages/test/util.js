@@ -5,8 +5,8 @@ const exitHook = require('exit-hook')
 
 let _browserless
 
-const initBrowserless = () => {
-  const browserless = createBrowserless()
+const initBrowserless = opts => {
+  const browserless = createBrowserless(opts)
   exitHook(browserless.close)
   return browserless
 }
@@ -19,4 +19,10 @@ const getBrowserWSEndpoint = () => getBrowser().then(browser => browser.wsEndpoi
 
 const getBrowserContext = () => getBrowserless().createContext()
 
-module.exports = { getBrowserless, getBrowserWSEndpoint, getBrowser, getBrowserContext }
+module.exports = {
+  initBrowserless,
+  getBrowserless,
+  getBrowserWSEndpoint,
+  getBrowser,
+  getBrowserContext
+}
