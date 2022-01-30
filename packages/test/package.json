@@ -30,6 +30,7 @@
   ],
   "devDependencies": {
     "ava": "3",
+    "exit-hook": "2",
     "exists-file": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
