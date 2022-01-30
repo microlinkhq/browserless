@@ -114,7 +114,7 @@ test('passing an async function', async t => {
   })
 })
 
-test('run browserless code', async t => {
+test.skip('run browserless code', async t => {
   const { browserWSEndpoint } = await getBrowser()
 
   const url = 'https://example.com'
