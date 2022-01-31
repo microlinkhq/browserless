@@ -12,7 +12,23 @@ async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
 
   const getBrowserless = require('browserless')
   const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
-  const fnWrapper = fn => (page, response) => fn({ page, response, ...opts, url })
+  const fnWrapper = fn => (page, response) => {
+    if (!response) {
+      response = {
+        ok: () => opts.status === 0 || (opts.status >= 200 && opts.status <= 299),
+        fromCache: () => false,
+        fromServiceWorker: () => false,
+        url: () => url,
+        text: () => opts.html,
+        statusText: () => opts.statusText,
+        json: () => JSON.parse(html),
+        headers: () => opts.headers,
+        status: () => statusCode
+      }
+    }
+
+    return fn({ ...opts, page, response, url })
+  }
   const browserFn = browserless.evaluate(fnWrapper(${code}), gotoOpts)
 
   try {
