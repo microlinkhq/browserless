@@ -24,7 +24,7 @@ async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
         statusText: () => statusText,
         json: () => JSON.parse(html),
         headers: () => headers,
-        status: () => statusCode
+        status: () => status
       }
     }
 
