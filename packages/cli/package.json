@@ -34,6 +34,7 @@
     "beauty-error": "~1.2.9",
     "browserless": "^9.3.11",
     "dark-mode": "~3.0.0",
+    "exit-hook": "~2.2.1",
     "kleur": "~4.1.4",
     "lodash": "~4.17.21",
     "meow": "~9.0.0",
