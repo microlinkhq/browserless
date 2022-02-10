@@ -42,11 +42,15 @@ module.exports = async ({ url, browserless, opts }) => {
 
   if (opts.codeScheme === 'ghcolors') {
     const isDark = darkMode.isDark()
+    const color = isDark ? '#29BC9B' : '#f81ce5'
+    const bg = isDark ? '#000' : '#fff'
+
     opts.colorScheme = isDark ? 'dark' : 'light'
     opts.codeScheme = 'ghcolors'
     opts.styles = [
-      '#screenshot .language-js .token{color:#f81ce5;font-family:"Roboto Mono";line-height:56px;font-size: 40px}',
-      '#screenshot .language-text{color:#f81ce5;font-family:"Roboto Mono";line-height:48px;font-size: 32px}'
+      `#screenshot .language-js{background-color:${bg}}`,
+      `#screenshot .language-js .token{color:${color};font-family:"Roboto Mono";line-height:56px;font-size: 40px}`,
+      `#screenshot .language-text{background-color:${bg};color:${color};font-family:"Roboto Mono";line-height:48px;font-size: 32px}`
     ]
   }
 
