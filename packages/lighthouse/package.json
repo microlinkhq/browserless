@@ -31,7 +31,7 @@
     "p-event": "~4.2.0",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
-    "serialize-error": "~8.1.0"
+    "serialize-error": "~9.1.0"
   },
   "devDependencies": {
     "ava": "3",
