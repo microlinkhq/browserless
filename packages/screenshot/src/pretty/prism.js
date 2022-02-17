@@ -1,4 +1,4 @@
-/* PrismJS 1.26.0
+/* PrismJS 1.27.0
 https://prismjs.com/download.html#themes=prism&languages=clike+javascript */
 var _self =
     'undefined' != typeof window
@@ -184,8 +184,9 @@ var _self =
         },
         highlight: function (e, n, t) {
           var r = { code: e, grammar: n, language: t }
+          if ((M.hooks.run('before-tokenize', r), !r.grammar))
+            throw new Error('The language "' + r.language + '" has no grammar.')
           return (
-            M.hooks.run('before-tokenize', r),
             (r.tokens = M.tokenize(r.code, r.grammar)),
             M.hooks.run('after-tokenize', r),
             W.stringify(M.util.encode(r.tokens), r.language)
@@ -230,16 +231,16 @@ var _self =
                           if (!(x = z(p, y, n, f)) || x.index >= n.length) break
                           var w = x.index,
                             A = x.index + x[0].length,
-                            P = y
-                          for (P += m.value.length; P <= w; ) (m = m.next), (P += m.value.length)
-                          if (((P -= m.value.length), (y = P), m.value instanceof W)) continue
+                            E = y
+                          for (E += m.value.length; E <= w; ) (m = m.next), (E += m.value.length)
+                          if (((E -= m.value.length), (y = E), m.value instanceof W)) continue
                           for (
-                            var E = m;
-                            E !== t.tail && (P < A || 'string' == typeof E.value);
-                            E = E.next
+                            var P = m;
+                            P !== t.tail && (E < A || 'string' == typeof P.value);
+                            P = P.next
                           )
-                            b++, (P += E.value.length)
-                          b--, (k = n.slice(y, P)), (x.index -= y)
+                            b++, (E += P.value.length)
+                          b--, (k = n.slice(y, E)), (x.index -= y)
                         } else if (!(x = z(p, 0, k, f))) continue
                         var w = x.index,
                           L = x[0],
@@ -248,7 +249,7 @@ var _self =
                           j = y + k.length
                         l && j > l.reach && (l.reach = j)
                         var C = m.prev
-                        S && ((C = I(t, C, S)), (y += S.length)), q(t, C, b)
+                        S && ((C = I(t, C, S)), (y += S.length)), T(t, C, b)
                         var N = new W(o, g ? M.tokenize(L, g) : L, d, L)
                         if (((m = I(t, C, N)), O && I(t, m, O), 1 < b)) {
                           var _ = { cause: o + ',' + u, reach: j }
@@ -302,7 +303,7 @@ var _self =
         a = { value: t, prev: n, next: r }
       return (n.next = a), (r.prev = a), e.length++, a
     }
-    function q (e, n, t) {
+    function T (e, n, t) {
       for (var r = n.next, a = 0; a < t && r !== e.tail; a++) r = r.next
       ;((n.next = r).prev = n), (e.length -= a)
     }
