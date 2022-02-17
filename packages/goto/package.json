@@ -30,7 +30,7 @@
   ],
   "dependencies": {
     "@browserless/devices": "^9.3.6",
-    "@cliqz/adblocker-puppeteer": "~1.23.3",
+    "@cliqz/adblocker-puppeteer": "~1.23.6",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.3",
     "is-url-http": "~2.2.7",
