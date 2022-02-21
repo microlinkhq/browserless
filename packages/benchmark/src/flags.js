@@ -16,8 +16,8 @@ const FLAGS = [
 ]
 
 const args = driver.args.reduce((acc, flag) => {
-  if (FLAGS.includes(flag)) return acc
-  return [...acc, flag]
+  if (!FLAGS.includes(flag)) acc.push(flag)
+  return acc
 }, [])
 
 const createBenchmark = ({ args }) => {

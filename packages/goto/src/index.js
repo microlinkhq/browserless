@@ -55,7 +55,8 @@ const parseCookies = (url, str) =>
       parsedCookie.expires = Math.floor(new Date(parsedCookie.expires) / 1000)
     }
 
-    return [...acc, parsedCookie]
+    acc.push(parsedCookie)
+    return acc
   }, [])
 
 const getMediaFeatures = ({ animations, colorScheme }) => {

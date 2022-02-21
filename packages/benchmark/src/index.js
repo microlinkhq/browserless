@@ -109,7 +109,6 @@ const main = async () => {
     histogram,
     (acc, value, key) => {
       const newValue = !includes(['count'], key) ? prettyMs(value) : value
-
       return { ...acc, [key]: newValue }
     },
     {}
