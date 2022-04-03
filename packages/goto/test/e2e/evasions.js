@@ -88,8 +88,8 @@ test('bot.sannysoft.com', async t => {
 test('amiunique.org/fp', async t => {
   const browserless = await browserlessFactory.createContext()
   t.teardown(() => browserless.destroyContext())
-  const content = await browserless.text('https://amiunique.org/fp')
-  t.false(content.includes('You can be tracked'))
+  const content = await browserless.text('https://amiunique.org/fp', { waitForTimeout: 3000 })
+  t.true(content.includes('You are unique'))
 })
 
 test('browserleaks.com/webgl', async t => {
