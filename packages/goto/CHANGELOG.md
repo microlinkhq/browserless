@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.3.14-alpha.0](https://github.com/microlinkhq/browserless/compare/v9.3.13...v9.3.14-alpha.0) (2022-04-03)
+
+
+### Performance Improvements
+
+* avoid spread ([2cb73f0](https://github.com/microlinkhq/browserless/commit/2cb73f0946b679c35b463944210803c23bc8c57f))
+
+
+
+
+
 ## [9.3.13](https://github.com/microlinkhq/browserless/compare/v9.3.12...v9.3.13) (2022-02-17)
 
 **Note:** Version bump only for package @browserless/goto
