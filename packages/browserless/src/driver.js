@@ -58,30 +58,23 @@ const getPid = childProcess => {
   return browserProcess.pid
 }
 
-const getPids = async pid => {
-  const { value: pids = [] } = await pReflect(pidtree(pid))
-  return pids.includes(pid) ? pids : [...pids, pid]
-}
+const getChildrenPids = pid => pReflect(pidtree(pid)).then(({ value = [] }) => value)
 
 const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
   const pid = getPid(childProcess)
   if (!pid) return
 
-  const pids = await getPids(pid)
-  pids.forEach(pid => {
-    try {
-      process.kill(pid, signal)
-    } catch (_) {}
-  })
-
   // It's necessary to call `browser.close` for removing temporal files associated
   // and remove listeners attached to the main process
   // see https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
-  if (childProcess.close) await childProcess.close()
+  await (childProcess.close
+    ? pReflect(childProcess.close())
+    : [...(await getChildrenPids(pid)), pid].map(pid =>
+        pReflect(Promise.resolve(process.kill(pid, signal)))
+      ))
 
-  debug('close', { pids, signal, ...debugOpts })
-
-  return { pids }
+  debug('close', { pid, signal, ...debugOpts })
+  return { pid }
 }
 
-module.exports = { spawn, getPid, close, defaultArgs }
+module.exports = { spawn, getChildrenPids, getPid, close, defaultArgs }

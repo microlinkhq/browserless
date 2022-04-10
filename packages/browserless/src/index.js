@@ -46,10 +46,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     promise.then(async browser => {
       browser.once('disconnected', getBrowser)
+      const pid = driver.getPid(browser)
 
       debug('spawn', {
         respawn: isRespawn,
-        pid: driver.getPid(browser) || launchOpts.mode,
+        pid: pid || launchOpts.mode,
         version: await browser.version()
       })
     })
@@ -80,26 +81,36 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout } = {}) => {
-    let contextPromise = createBrowserContext()
+    let _contextPromise = createBrowserContext()
 
-    contextPromise.then(context => {
+    const getBrowserContext = () => _contextPromise
+
+    getBrowserContext().then(context => {
       const browserProcess = context.browser()
       browserProcess.once('disconnected', async () => {
         await getBrowser()
-        contextPromise = createBrowserContext()
+        _contextPromise = createBrowserContext()
       })
     })
 
     const createPage = async () => {
-      const browserProcess = await getBrowser()
-      const page = await (await contextPromise).newPage()
-      debug('createPage', { pid: driver.getPid(browserProcess) })
+      const [browserProcess, browserContext] = await Promise.all([
+        getBrowser(),
+        getBrowserContext()
+      ])
+      const page = await browserContext.newPage()
+      debug('createPage', { pid: driver.getPid(browserProcess), id: browserContext._id })
       return page
     }
 
     const closePage = async page => {
       if (page && !page.isClosed()) {
-        debug('closePage', await pReflect(page.close()))
+        const [browserProcess, browserContext] = await Promise.all([
+          getBrowser(),
+          getBrowserContext(),
+          pReflect(page.close())
+        ])
+        debug('closePage', { pid: driver.getPid(browserProcess), id: browserContext._id })
       }
     }
 
@@ -128,7 +139,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
-            if (error.code === 'EBRWSRCONTEXTCONNRESET') contextPromise = createBrowserContext()
+            if (error.code === 'EBRWSRCONTEXTCONNRESET') _contextPromise = createBrowserContext()
             const { message, attemptNumber, retriesLeft } = error
             debug('retry', { attemptNumber, retriesLeft, message })
           }
@@ -152,15 +163,19 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       )
 
     const destroyContext = async () => {
-      const { isRejected, reason: error } = await pReflect(
-        contextPromise.then(context => context.close())
-      )
-      debug('destroyContext', isRejected ? { error } : {})
+      const [browserProcess, browserContext] = await Promise.all([
+        getBrowser(),
+        getBrowserContext()
+      ])
+      const id = browserContext._id
+      await pReflect(browserContext.close())
+
+      debug('destroyContext', { pid: driver.getPid(browserProcess), id })
     }
 
     return {
       respawn,
-      context: () => contextPromise,
+      context: getBrowserContext,
       browser: getBrowser,
       evaluate,
       goto,
