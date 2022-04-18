@@ -30,7 +30,7 @@
   "dependencies": {
     "debug-logfmt": "~1.0.4",
     "ensure-error": "~3.0.1",
-    "serialize-error": "~8.1.0",
+    "serialize-error": "~10.0.0",
     "whoops": "~4.1.0"
   },
   "devDependencies": {
