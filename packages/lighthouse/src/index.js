@@ -54,7 +54,7 @@ module.exports = async (
     const browser = await browserless.browser()
     const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-    subprocess = execa.node(lighthousePath)
+    subprocess = execa.node(lighthousePath, { detached: process.platform !== 'win32' })
     subprocess.stderr.pipe(process.stderr)
     debug('spawn', { pid: subprocess.pid })
     subprocess.send({ url, flags, config })

@@ -3,7 +3,9 @@
 const debug = require('debug-logfmt')('browserless')
 const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
-const pidtree = require('pidtree')
+const { promisify } = require('util')
+
+const exec = promisify(require('child_process').exec)
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches
 // default flags: https://github.com/puppeteer/puppeteer/blob/edb01972b9606d8b05b979a588eda0d622315981/src/node/Launcher.ts#L183
@@ -58,23 +60,23 @@ const getPid = childProcess => {
   return browserProcess.pid
 }
 
-const getChildrenPids = pid => pReflect(pidtree(pid)).then(({ value = [] }) => value)
+const killProcesssGroupPID = (pid, signal) =>
+  process.platform === 'win32'
+    ? exec(`taskkill /pid ${this.proc.pid} /T /F`)
+    : Promise.resolve(process.kill(-pid, signal))
 
 const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
   const pid = getPid(childProcess)
   if (!pid) return
 
   // It's necessary to call `browser.close` for removing temporal files associated
-  // and remove listeners attached to the main process
-  // see https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
-  await (childProcess.close
-    ? pReflect(childProcess.close())
-    : [...(await getChildrenPids(pid)), pid].map(pid =>
-        pReflect(Promise.resolve(process.kill(pid, signal)))
-      ))
+  // and remove listeners attached to the main process; check
+  // - https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
+  // - https://github.com/puppeteer/puppeteer/blob/69d85e874416d62de6e821bef30e5cebcfd42f15/src/node/BrowserRunner.ts#L189
+  await pReflect(childProcess.close ? childProcess.close() : killProcesssGroupPID(pid, signal))
 
   debug('close', { pid, signal, ...debugOpts })
   return { pid }
 }
 
-module.exports = { spawn, getChildrenPids, getPid, close, defaultArgs }
+module.exports = { spawn, getPid, close, defaultArgs }

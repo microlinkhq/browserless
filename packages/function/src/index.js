@@ -28,7 +28,7 @@ module.exports = (
       const browser = await browserless.browser()
       const browserWSEndpoint = browser.wsEndpoint()
 
-      subprocess = execa.node(execPath)
+      subprocess = execa.node(execPath, { detached: process.platform !== 'win32' })
       subprocess.stderr.pipe(process.stderr)
 
       debug('spawn', { pid: subprocess.pid })
