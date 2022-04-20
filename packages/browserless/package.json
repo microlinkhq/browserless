@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "the headless Chrome/Chromium performance driver for Node.js",
   "homepage": "https://browserless.js.org",
-  "version": "9.3.14-alpha.2",
+  "version": "9.3.14-alpha.3",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
