@@ -2,7 +2,7 @@
   "name": "@browserless/benchmark",
   "description": "Benchmarking tool for testing different browserless configurations",
   "homepage": "https://browserless.js.org/#/?id=benchmark",
-  "version": "9.3.14-alpha.1",
+  "version": "9.3.14",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
