@@ -1,11 +1,10 @@
-# @browserless/devices
-
-<h1 align="center">
+<div align="center">
   <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://browserless.js.org/static/logo-banner.png" alt="browserless">
   <br>
-</h1>
-
-> A collection of different devices for emulation purposes
+  <br>
+  <p align="center"><strong>@browserless/devices</strong>: A collection of different devices for emulation purposes</p>
+  <br>
+</div>
 
 See [devices](https://browserless.js.org/#%2F%3Fid=getdeviceoptions) section our [website](https://browserless.js.org) for more information.
 
@@ -19,7 +18,7 @@ npm install @browserless/devices --save
 
 ## License
 
-**browserless** © [Microlink](https://microlink.io), Released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
+**@browserless/devices** © [Microlink](https://microlink.io), Released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
 Authored and maintained by [Microlink](https://microlink.io) with help from [contributors](https://github.com/microlinkhq/browserless/contributors).
 
 The [logo](https://thenounproject.com/term/browser/288309/) has been designed by [xinh studio](https://xinh.studio).
