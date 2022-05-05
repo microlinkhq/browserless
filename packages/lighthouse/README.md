@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/lighthouse</strong>: Browserless Lighthouse integration using puppeteer.</p>
+  <p align="center">See <a href="https://browserless.js.org/#%2F%3Fid=lighthouse" target='_blank' rel='noopener noreferrer'>lighthouse</a> section our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See [lighthouse](https://browserless.js.org/#%2F%3Fid=lighthouse) section our [website](https://browserless.js.org) for more information.
 
 ## Install
 

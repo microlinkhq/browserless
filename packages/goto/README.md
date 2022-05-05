@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/goto</strong>: Go to a page aborting unnecessary requests</p>
+  <p align="center">See <a href="https://browserless.js.org/#%2F%3Fid=gotopage-options" target='_blank' rel='noopener noreferrer'>goto</a> section our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See [goto](https://browserless.js.org/#%2F%3Fid=gotopage-options) section our [website](https://browserless.js.org) for more information.
 
 ## Install
 

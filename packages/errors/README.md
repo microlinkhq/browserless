@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/errors</strong>: A collection of qualified errors for Puppeteer</p>
+  <p align="center">See our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See our [website](https://browserless.js.org) for more information.
 
 ## Install
 

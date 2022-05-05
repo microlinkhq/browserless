@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/pdf</strong>: Sensible good defaults for exporting a website as PDF</p>
+  <p align="center">See our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See our [website](https://browserless.js.org) for more information.
 
 ## Install
 

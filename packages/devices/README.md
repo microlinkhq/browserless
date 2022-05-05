@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/devices</strong>: A collection of different devices for emulation purposes</p>
+  <p align="center">See <a href="https://browserless.js.org/#%2F%3Fid=getdeviceoptions" target='_blank' rel='noopener noreferrer'>devices</a> section our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See [devices](https://browserless.js.org/#%2F%3Fid=getdeviceoptions) section our [website](https://browserless.js.org) for more information.
 
 ## Install
 

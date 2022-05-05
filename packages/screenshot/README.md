@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/screenshot</strong>: Take a clean screenshot of any website</p>
+  <p align="center">See our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See our [website](https://browserless.js.org) for more information.
 
 ## Install
 

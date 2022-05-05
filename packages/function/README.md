@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/function</strong>: Run abritrary JavaScript inside a browser sandbox</p>
+  <p align="center">See our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See our [website](https://browserless.js.org) for more information.
 
 ## Install
 

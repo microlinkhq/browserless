@@ -3,10 +3,9 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/cli</strong>: CLI to interact with Browserless capabilities</p>
+  <p align="center">See <a href="https://browserless.js.org/#%2F%3Fid=command-line-interface" target='_blank' rel='noopener noreferrer'>CLI</a> section our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
-
-See [CLI](https://browserless.js.org/#%2F%3Fid=command-line-interface) section our [website](https://browserless.js.org) for more information.
 
 ## Install
 
