@@ -2,7 +2,7 @@
   "name": "@browserless/errors",
   "description": "A collection of qualified errors for Puppeteer",
   "homepage": "https://browserless.js.org",
-  "version": "9.3.0",
+  "version": "9.3.15",
   "main": "index.js",
   "author": {
     "email": "hello@microlink.io",
