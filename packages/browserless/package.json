@@ -1,6 +1,6 @@
 {
   "name": "browserless",
-  "description": "the headless Chrome/Chromium performance driver for Node.js",
+  "description": "The headless Chrome/Chromium performance driver for Node.js",
   "homepage": "https://browserless.js.org",
   "version": "9.3.14",
   "main": "src/index.js",
