@@ -1,8 +1,9 @@
 <div align="center">
+  <br>
   <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://browserless.js.org/static/logo-banner.png" alt="browserless">
   <br>
   <br>
-  <p align="center"><strong>@browserless/test</strong>: A test suite for browserless API</p>
+  <p align="center"><strong>@browserless/test</strong>: A test suite for browserless API.</p>
   <p align="center">See our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
