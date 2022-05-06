@@ -72,6 +72,8 @@
   "devDependencies": {
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
+    "@lerna-lite/cli": "latest",
+    "@lerna-lite/exec": "latest",
     "browser-sync": "latest",
     "c8": "latest",
     "concurrently": "latest",
@@ -83,7 +85,6 @@
     "gulp-cssnano": "latest",
     "gulp-strip-css-comments": "latest",
     "gulp-uglify": "latest",
-    "lerna": "latest",
     "nano-staged": "latest",
     "npm-check-updates": "latest",
     "prettier-standard": "latest",
