@@ -540,7 +540,7 @@ It makes your Headless undetectable, preventing to being blocked.
 These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access. All the evasion techniques implemented are:
 
 | Evasion                                                                                                                              | Description                                                                                                                                                                                                                 |
-| ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|--------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`chromeRuntime`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/chrome-runtime.js)               | Ensure `window.chrome` is defined.                                                                                                                                                                                          |
 | [`stackTraces`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/error-stack-trace.js)              | Prevent detect Puppeteer via variable name.                                                                                                                                                                                 |
 | [`mediaCodecs`](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/media-codecs.js)                   | Ensure media codedcs are defined.                                                                                                                                                                                           |
@@ -873,7 +873,7 @@ Includes only the specified categories in the final report.
 **browserless** is internally divided into multiple packages for ensuring just use the minimum quantity of code necessary for your use case.
 
 | Package                                                                                                 | Version                                                                                                                                     |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | [`browserless`](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         |
 | [`@browserless/benchmark`](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   |
 | [`@browserless/cli`](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               |
@@ -912,9 +912,9 @@ Yes, check [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) to
 
 ## License
 
-**browserless** © [Microlink](https://microlink.io), Released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
+**browserless** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
 Authored and maintained by [Microlink](https://microlink.io) with help from [contributors](https://github.com/microlinkhq/browserless/contributors).
 
 The [logo](https://thenounproject.com/term/browser/288309/) has been designed by [xinh studio](https://xinh.studio).
 
-> [microlink.io](https://microlink.io) · GitHub [@MicrolinkHQ](https://github.com/microlinkhq) · Twitter [@microlinkhq](https://twitter.com/microlinkhq)
+> [microlink.io](https://microlink.io) · GitHub [microlinkhq](https://github.com/microlinkhq) · Twitter [@microlinkhq](https://twitter.com/microlinkhq)
