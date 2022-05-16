@@ -363,7 +363,7 @@ module.exports = ({
 
     await Promise.all(prePromises.concat(applyEvasions))
 
-    const { value: response } = await run({
+    const { value: response, reason: error } = await run({
       fn: html ? page.setContent(html, args) : page.goto(url, args),
       timeout: gotoTimeout,
       debug: html ? 'html' : 'url'
@@ -413,7 +413,7 @@ module.exports = ({
       await waitUntilAuto(page, { response, timeout: actionTimeout * 2 })
     }
 
-    return { response, device }
+    return { response, device, error }
   }
 
   goto.getDevice = getDevice
