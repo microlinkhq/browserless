@@ -3,236 +3,127 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [9.3.17](https://github.com/microlinkhq/browserless/compare/v9.3.16...v9.3.17) (2022-05-05)
+## [9.3.19](https://github.com/microlinkhq/browserless/compare/v9.3.18...v9.3.19) (2022-05-16)
 
 **Note:** Version bump only for package @browserless/errors
 
+## [9.3.17](https://github.com/microlinkhq/browserless/compare/v9.3.16...v9.3.17) (2022-05-05)
 
-
-
+**Note:** Version bump only for package @browserless/errors
 
 ## [9.3.16](https://github.com/microlinkhq/browserless/compare/v9.3.15...v9.3.16) (2022-05-05)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [9.3.15](https://github.com/microlinkhq/browserless/compare/v9.3.14...v9.3.15) (2022-05-05)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 # [9.3.0](https://github.com/microlinkhq/browserless/compare/v9.3.0-beta.12...v9.3.0) (2021-12-17)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 # [9.3.0-beta.12](https://github.com/microlinkhq/browserless/compare/v9.3.0-beta.11...v9.3.0-beta.12) (2021-12-13)
-
 
 ### Features
 
 * **goto:** check for interception ([#339](https://github.com/microlinkhq/browserless/issues/339)) ([953e187](https://github.com/microlinkhq/browserless/commit/953e1877f146abc9a89f01334f65e3ad2afe001d))
 
-
-
-
-
 ## [9.2.15](https://github.com/microlinkhq/browserless/compare/v9.2.14...v9.2.15) (2021-10-10)
-
 
 ### Bug Fixes
 
 * error message ([b23005a](https://github.com/microlinkhq/browserless/commit/b23005a72e22024386e1c851dd1b11b15ebcd08b))
 
-
-
-
-
 ## [9.2.14](https://github.com/microlinkhq/browserless/compare/v9.2.13...v9.2.14) (2021-10-08)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 ## [9.1.6](https://github.com/microlinkhq/browserless/compare/v9.1.5...v9.1.6) (2021-08-04)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [9.0.3](https://github.com/microlinkhq/browserless/compare/v9.0.2...v9.0.3) (2021-07-02)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 ## [9.0.1](https://github.com/microlinkhq/browserless/compare/v9.0.0...v9.0.1) (2021-06-26)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [8.8.8](https://github.com/microlinkhq/browserless/compare/v8.8.7...v8.8.8) (2021-04-20)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 ## [8.8.7](https://github.com/microlinkhq/browserless/compare/v8.8.6...v8.8.7) (2021-04-15)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [8.8.2](https://github.com/microlinkhq/browserless/compare/v8.8.1...v8.8.2) (2021-03-22)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 ## [8.7.3](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.7.2...v8.7.3) (2021-01-26)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [8.5.10](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.5.9...v8.5.10) (2021-01-11)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 ## [8.5.9](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.5.8...v8.5.9) (2021-01-11)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [8.5.6](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.5.5...v8.5.6) (2021-01-09)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 # [8.5.0](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.4.7...v8.5.0) (2021-01-06)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [8.4.4](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.4.3...v8.4.4) (2021-01-05)
-
 
 ### Bug Fixes
 
 * ensure error code is a string ([7cb4e15](https://github.com/microlinkhq/browserless/tree/master/packages/errors/commit/7cb4e15a01595e052fa72ad1543b4ebc91476594))
 
-
-
-
-
 ## [8.4.1](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.4.0...v8.4.1) (2021-01-04)
-
 
 ### Bug Fixes
 
 * ensure message is string ([4a53840](https://github.com/microlinkhq/browserless/tree/master/packages/errors/commit/4a538402cd59a31df29c01a85b9d4371907f1eb5))
 
-
-
-
-
 # [8.3.0](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.2.3...v8.3.0) (2021-01-01)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 ## [8.1.45](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.1.44...v8.1.45) (2020-12-17)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [8.1.39](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.1.38...v8.1.39) (2020-11-19)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 ## [8.1.27](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v8.1.26...v8.1.27) (2020-09-25)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 # [8.0.0](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v7.6.4...v8.0.0) (2020-07-03)
 
 **Note:** Version bump only for package @browserless/errors
-
-
-
-
 
 # [7.6.0](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v7.6.0-beta.3...v7.6.0) (2020-06-27)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 ## [7.4.1](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v7.4.0...v7.4.1) (2020-05-16)
 
 **Note:** Version bump only for package @browserless/errors
 
-
-
-
-
 # [7.4.0](https://github.com/microlinkhq/browserless/tree/master/packages/errors/compare/v7.3.0...v7.4.0) (2020-05-15)
-
 
 ### Features
 
