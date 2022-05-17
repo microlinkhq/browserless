@@ -156,8 +156,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const evaluate = (fn, gotoOpts) =>
       wrapError(
         page => async (url, opts) => {
-          const { response } = await goto(page, { url, ...gotoOpts, ...opts })
-          return fn(page, response)
+          const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
+          return fn(page, response, error)
         },
         gotoOpts
       )
