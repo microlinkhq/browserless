@@ -1,11 +1,9 @@
 'use strict'
 
+const killProcessGroup = require('kill-process-group')
 const debug = require('debug-logfmt')('browserless')
 const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
-const { promisify } = require('util')
-
-const exec = promisify(require('child_process').exec)
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches
 // default flags: https://github.com/puppeteer/puppeteer/blob/edb01972b9606d8b05b979a588eda0d622315981/src/node/Launcher.ts#L183
@@ -51,31 +49,29 @@ const spawn = ({
   ...launchOpts
 } = {}) => puppeteer[mode]({ ignoreHTTPSErrors: true, args, ...launchOpts })
 
-const getPid = childProcess => {
-  if (!childProcess) return null
-  if (childProcess.pid) return childProcess.pid
-  const browserProcess = childProcess.process ? childProcess.process() : undefined
-  if (!browserProcess) return null
-  return browserProcess.pid
+const getProcess = subprocess => {
+  if (!subprocess) return
+  if ('process' in subprocess) return subprocess.process()
+  if ('pid' in subprocess) return subprocess
 }
 
-const killProcesssGroupPID = (pid, signal) =>
-  process.platform === 'win32'
-    ? exec(`taskkill /pid ${this.proc.pid} /T /F`)
-    : Promise.resolve(process.kill(-pid, signal))
+const getPid = input => {
+  const subprocess = getProcess(input)
+  return subprocess ? subprocess.pid : undefined
+}
 
-const close = async (childProcess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
-  const pid = getPid(childProcess)
-  if (!pid) return
+const close = async (input, { signal = 'SIGKILL', ...debugOpts } = {}) => {
+  const subprocess = getProcess(input)
+  if (!subprocess) return
 
   // It's necessary to call `browser.close` for removing temporal files associated
   // and remove listeners attached to the main process; check
   // - https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
   // - https://github.com/puppeteer/puppeteer/blob/69d85e874416d62de6e821bef30e5cebcfd42f15/src/node/BrowserRunner.ts#L189
-  await pReflect(childProcess.close ? childProcess.close() : killProcesssGroupPID(pid, signal))
+  await pReflect('close' in subprocess ? subprocess.close() : killProcessGroup(subprocess, signal))
 
-  debug('close', { pid, signal, ...debugOpts })
-  return { pid }
+  debug('close', { pid: subprocess.pid, signal, ...debugOpts })
+  return { pid: subprocess.pid }
 }
 
-module.exports = { spawn, getPid, close, defaultArgs }
+module.exports = { spawn, getPid, getProcess, close, defaultArgs }
