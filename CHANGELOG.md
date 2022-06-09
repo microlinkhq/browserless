@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.4.0](https://github.com/microlinkhq/browserless/compare/v9.3.21...v9.4.0) (2022-06-09)
+
+### Features
+
+* **driver:** rename getPid → pid ([#381](https://github.com/microlinkhq/browserless/issues/381)) ([dc96ca7](https://github.com/microlinkhq/browserless/commit/dc96ca74be6b31e543d02cc3a4fb798d99e4c0d4))
+
 ## [9.3.21](https://github.com/microlinkhq/browserless/compare/v9.3.20...v9.3.21) (2022-06-09)
 
 **Note:** Version bump only for package browserless
