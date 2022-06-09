@@ -36,7 +36,7 @@
     "@browserless/pdf": "^9.3.19",
     "@browserless/screenshot": "^9.3.19",
     "debug-logfmt": "~1.0.4",
-    "kill-process-group": "~1.0.0",
+    "kill-process-group": "~1.0.1",
     "mutexify": "~1.4.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",
