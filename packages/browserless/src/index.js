@@ -46,11 +46,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     promise.then(async browser => {
       browser.once('disconnected', getBrowser)
-      const pid = driver.getPid(browser)
-
       debug('spawn', {
         respawn: isRespawn,
-        pid: pid || launchOpts.mode,
+        pid: driver.pid(browser) || launchOpts.mode,
         version: await browser.version()
       })
     })
@@ -99,7 +97,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         getBrowserContext()
       ])
       const page = await browserContext.newPage()
-      debug('createPage', { pid: driver.getPid(browserProcess), id: browserContext._id })
+      debug('createPage', { pid: driver.pid(browserProcess), id: browserContext._id })
       return page
     }
 
@@ -110,7 +108,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           getBrowserContext(),
           pReflect(page.close())
         ])
-        debug('closePage', { pid: driver.getPid(browserProcess), id: browserContext._id })
+        debug('closePage', { pid: driver.pid(browserProcess), id: browserContext._id })
       }
     }
 
@@ -170,7 +168,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       const id = browserContext._id
       await pReflect(browserContext.close())
 
-      debug('destroyContext', { pid: driver.getPid(browserProcess), id })
+      debug('destroyContext', { pid: driver.pid(browserProcess), id })
     }
 
     return {

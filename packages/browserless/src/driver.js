@@ -49,20 +49,15 @@ const spawn = ({
   ...launchOpts
 } = {}) => puppeteer[mode]({ ignoreHTTPSErrors: true, args, ...launchOpts })
 
-const getProcess = subprocess => {
-  if (!subprocess) return
-  if ('process' in subprocess) return subprocess.process()
-  if ('pid' in subprocess) return subprocess
+const pid = subprocess => {
+  if ('pid' in subprocess) return subprocess.pid
+  const browserProcess = 'process' in subprocess ? subprocess.process() : undefined
+  if (browserProcess === undefined || browserProcess === null) return
+  return 'pid' in browserProcess ? browserProcess.pid : undefined
 }
 
-const getPid = input => {
-  const subprocess = getProcess(input)
-  return subprocess ? subprocess.pid : undefined
-}
-
-const close = async (input, { signal = 'SIGKILL', ...debugOpts } = {}) => {
-  const subprocess = getProcess(input)
-  if (!subprocess) return
+const close = async (subprocess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
+  if (pid(subprocess) === undefined) return
 
   // It's necessary to call `browser.close` for removing temporal files associated
   // and remove listeners attached to the main process; check
@@ -74,4 +69,4 @@ const close = async (input, { signal = 'SIGKILL', ...debugOpts } = {}) => {
   return { pid: subprocess.pid }
 }
 
-module.exports = { spawn, getPid, getProcess, close, defaultArgs }
+module.exports = { spawn, pid, close, defaultArgs }
