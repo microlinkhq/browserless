@@ -37,8 +37,8 @@
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
-    "require-one-of": "~1.0.15",
     "serialize-error": "~8.1.0",
+    "require-one-of": "~1.0.16",
     "vm2": "~3.9.9"
   },
   "devDependencies": {
