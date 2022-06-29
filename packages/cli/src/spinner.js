@@ -2,7 +2,7 @@
 
 const createProcStats = require('process-stats')
 const prettyBytes = require('pretty-bytes')
-const { gray } = require('kleur')
+const { gray } = require('picocolors')
 const ora = require('ora')
 
 const TICK_INTERVAL = 100

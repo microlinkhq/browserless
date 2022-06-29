@@ -1,6 +1,6 @@
 'use strict'
 
-const { gray } = require('kleur')
+const { gray } = require('picocolors')
 const { EOL } = require('os')
 const path = require('path')
 
