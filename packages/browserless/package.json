@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "The headless Chrome/Chromium performance driver for Node.js",
   "homepage": "https://browserless.js.org",
-  "version": "9.4.1",
+  "version": "9.5.0",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -32,9 +32,9 @@
   ],
   "dependencies": {
     "@browserless/errors": "^9.3.21",
-    "@browserless/goto": "^9.4.1",
-    "@browserless/pdf": "^9.4.1",
-    "@browserless/screenshot": "^9.4.1",
+    "@browserless/goto": "^9.5.0",
+    "@browserless/pdf": "^9.5.0",
+    "@browserless/screenshot": "^9.5.0",
     "debug-logfmt": "~1.0.4",
     "kill-process-group": "~1.0.3",
     "mutexify": "~1.4.0",

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.5.0](https://github.com/microlinkhq/browserless/compare/v9.4.1...v9.5.0) (2022-06-30)
+
+### Features
+
+* delete `hide` and `remove` options ([ac85313](https://github.com/microlinkhq/browserless/commit/ac853137133dc9ab628e42b772caf1e9b017eb50))
+
 ## [9.4.1](https://github.com/microlinkhq/browserless/compare/v9.4.0...v9.4.1) (2022-06-29)
 
 **Note:** Version bump only for package browserless
