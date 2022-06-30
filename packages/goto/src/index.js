@@ -92,10 +92,7 @@ const disableAnimations = `
   }
 `.trim()
 
-const inject = async (
-  page,
-  { timeout, mediaType, animations, hide, remove, modules, scripts, styles }
-) => {
+const inject = async (page, { timeout, mediaType, animations, modules, scripts, styles }) => {
   const postPromises = []
 
   if (mediaType) {
@@ -114,26 +111,6 @@ const inject = async (
         fn: injectStyle(page, disableAnimations),
         timeout,
         debug: 'disableAnimations'
-      })
-    )
-  }
-
-  if (hide) {
-    postPromises.push(
-      run({
-        fn: injectStyle(page, `${castArray(hide).join(', ')} { visibility: hidden !important; }`),
-        timeout,
-        debug: 'hide'
-      })
-    )
-  }
-
-  if (remove) {
-    postPromises.push(
-      run({
-        fn: injectStyle(page, `${castArray(remove).join(', ')} { display: none !important; }`),
-        timeout,
-        debug: 'remove'
       })
     )
   }
@@ -215,12 +192,10 @@ module.exports = ({
       click,
       colorScheme,
       headers = {},
-      hide,
       html,
       javascript = true,
       mediaType,
       modules,
-      remove,
       scripts,
       scroll,
       styles,
@@ -384,8 +359,6 @@ module.exports = ({
       timeout: actionTimeout,
       mediaType,
       animations,
-      hide,
-      remove,
       modules,
       scripts,
       styles

@@ -361,7 +361,9 @@ You can configure the overlay specifying:
 
 ```js
 const buffer = await browserless.screenshot(url.toString(), {
-  hide: ['.crisp-client', '#cookies-policy'],
+  styles: [
+    '.crisp-client, #cookies-policy { display: none; }'
+  ],
   overlay: {
     browser: 'dark',
     background:
@@ -581,18 +583,6 @@ await browserless.goto(page, {
 })
 ```
 
-##### hide
-
-type: `string` | `string[]`</br>
-
-Hide DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
-
-```js
-const buffer = await browserless.screenshot(url.toString(), {
-  hide: ['.crisp-client', '#cookies-policy']
-})
-```
-
 This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on the matched elements.
 
 ##### html
@@ -636,20 +626,6 @@ const buffer = await browserless.screenshot(url.toString(), {
   ]
 })
 ```
-
-##### remove
-
-type: `string` | `string[]`</br>
-
-Remove DOM elements matching the given [CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
-
-```js
-const buffer = await browserless.screenshot(url.toString(), {
-  remove: ['.crisp-client', '#cookies-policy']
-})
-```
-
-This sets [`display: none`](https://stackoverflow.com/a/133064/64949) on the matched elements, so it could potentially break the website layout.
 
 ##### colorScheme
 
