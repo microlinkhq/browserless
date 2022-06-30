@@ -3,7 +3,7 @@
 const debug = require('debug-logfmt')('browserless:screenshot')
 const isHtmlContent = require('is-html-content')
 const { readFile } = require('fs').promises
-const { extension } = require('mime-types')
+const { getExtension } = require('mime')
 const prettyMs = require('pretty-ms')
 const timeSpan = require('time-span')
 const path = require('path')
@@ -17,7 +17,7 @@ const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
 const { inject } = require('@browserless/goto')
 
 const getContentType = headers => {
-  const contentType = extension(headers['content-type'])
+  const contentType = getExtension(headers['content-type'])
   return contentType === 'txt' ? 'text' : contentType
 }
 
