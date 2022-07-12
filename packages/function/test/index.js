@@ -101,6 +101,16 @@ test('access to page (with semicolon and break lines)', async t => {
   })
 })
 
+test('access to page (with semicolon and end break lines)', async t => {
+  const myFn = browserlessFunction('({ page }) => page.title();\n\n', { vmOpts })
+
+  t.deepEqual(await myFn('https://example.com'), {
+    isFulfilled: true,
+    isRejected: false,
+    value: 'Example Domain'
+  })
+})
+
 test('interact with a page', async t => {
   const code = async ({ page }) => {
     const navigationPromise = page.waitForNavigation()

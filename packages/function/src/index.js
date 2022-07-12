@@ -41,7 +41,10 @@ module.exports = (
 
       subprocess.send({
         url,
-        code: fn.toString(),
+        code: fn
+          .toString()
+          .trim()
+          .replace(/;$/, ''),
         browserWSEndpoint,
         ...opts,
         ...fnOpts
