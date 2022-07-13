@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.5.3](https://github.com/microlinkhq/browserless/compare/v9.5.2...v9.5.3) (2022-07-13)
+
+### Bug Fixes
+
+* **function:** trim code before remove semicolon ([c9b78d7](https://github.com/microlinkhq/browserless/commit/c9b78d7de3c4a0063cd8c5fce09e957a8e0afb6f))
+
 ## [9.5.2](https://github.com/microlinkhq/browserless/compare/v9.5.1...v9.5.2) (2022-07-10)
 
 **Note:** Version bump only for package browserless
