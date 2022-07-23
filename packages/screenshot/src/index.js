@@ -76,11 +76,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
     }
 
     const takeScreenshot = async opts => {
-      screenshot = await page.screenshot(opts)
+      screenshot = await page.bringToFront().then(() => page.screenshot(opts))
       const isWhite = await isWhiteScreenshot(screenshot)
       if (isWhite) {
         await goto.waitUntilAuto(page, opts)
-        screenshot = await page.screenshot(opts)
+        screenshot = await page.bringToFront().then(() => page.screenshot(opts))
       }
       return { isWhite }
     }
@@ -95,7 +95,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
         waitForElement(page, element),
         beforeScreenshot(response)
       ])
-      screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
+
+      screenshot = await page
+        .bringToFront()
+        .then(() => page.screenshot({ ...opts, ...screenshotOpts }))
       debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
     } else {
       ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
