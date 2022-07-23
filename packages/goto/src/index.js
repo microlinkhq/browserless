@@ -14,6 +14,8 @@ const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
+const truncate = (str, n = 80) => (str.length > n ? str.substr(0, n - 1) + '…' : str)
+
 const EVASIONS = require('./evasions')
 
 const ALL_EVASIONS_KEYS = Object.keys(EVASIONS)
@@ -224,13 +226,14 @@ module.exports = ({
       await page.setRequestInterception(true)
       page.on('request', req => {
         if (req.isInterceptResolutionHandled()) return
-
         const resourceType = req.resourceType()
+        const url = truncate(req.url())
+
         if (!abortTypes.includes(resourceType)) {
-          debug('continue', { url: req.url(), resourceType })
+          debug('continue', { url, resourceType })
           return req.continue(req.continueRequestOverrides(), 0)
         }
-        debug('abort', { url: req.url(), resourceType })
+        debug('abort', { url, resourceType })
         return req.abort('blockedbyclient', 0)
       })
     }
