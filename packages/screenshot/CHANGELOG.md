@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.5.4-alpha.0](https://github.com/microlinkhq/browserless/compare/v9.5.3...v9.5.4-alpha.0) (2022-07-23)
+
+### Bug Fixes
+
+* **screenshot:** bring page to front before screenshot ([a615192](https://github.com/microlinkhq/browserless/commit/a61519217a0195b14b39fc40eea702f87ab5fb42))
+
 ## [9.5.1](https://github.com/microlinkhq/browserless/compare/v9.5.0...v9.5.1) (2022-06-30)
 
 **Note:** Version bump only for package @browserless/screenshot
