@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.5.4](https://github.com/microlinkhq/browserless/compare/v9.5.3...v9.5.4) (2022-07-23)
+
+### Bug Fixes
+
+* **goto:** truncate excessive long URLs ([#390](https://github.com/microlinkhq/browserless/issues/390)) ([491d5eb](https://github.com/microlinkhq/browserless/commit/491d5eb0416fb4345b2690479b90612b5098b66e))
+
 ## [9.5.3](https://github.com/microlinkhq/browserless/compare/v9.5.2...v9.5.3) (2022-07-13)
 
 ### Bug Fixes
