@@ -32,7 +32,7 @@
     "@browserless/devices": "^9.4.1",
     "@cliqz/adblocker-puppeteer": "~1.23.8",
     "debug-logfmt": "~1.0.4",
-    "got": "~11.8.5",
+    "got": "~12.2.0",
     "is-url-http": "~2.3.2",
     "p-reflect": "~2.1.0",
     "p-timeout": "~4.1.0",
