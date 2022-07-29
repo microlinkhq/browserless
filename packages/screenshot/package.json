@@ -30,7 +30,7 @@
   "dependencies": {
     "@browserless/goto": "^9.5.4",
     "debug-logfmt": "~1.0.4",
-    "got": "~11.8.5",
+    "got": "~12.3.0",
     "is-html-content": "~1.0.0",
     "is-url-http": "~2.3.2",
     "jimp": "~0.16.1",
