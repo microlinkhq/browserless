@@ -10,6 +10,42 @@ const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
 const browserlessFactory = initBrowserless({ evasions: false })
 
+test('ensure `window.console` is present', async t => {
+  const browserless = await browserlessFactory.createContext()
+
+  t.teardown(() => browserless.destroyContext())
+
+  const page = await browserless.page()
+  const consoleKeys = () => page.evaluate('Object.keys(window.console)')
+
+  t.deepEqual(await consoleKeys(), [
+    'debug',
+    'error',
+    'info',
+    'log',
+    'warn',
+    'dir',
+    'dirxml',
+    'table',
+    'trace',
+    'group',
+    'groupCollapsed',
+    'groupEnd',
+    'clear',
+    'count',
+    'countReset',
+    'assert',
+    'profile',
+    'profileEnd',
+    'time',
+    'timeLog',
+    'timeEnd',
+    'timeStamp',
+    'context',
+    'memory'
+  ])
+})
+
 test('ensure `window.outerHeight` is present', async t => {
   const browserless = await browserlessFactory.createContext()
 
