@@ -9,6 +9,19 @@ const evasions = require('../../../src/evasions')
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
 const browserlessFactory = initBrowserless({ evasions: false })
+test('ensure `navigator.deviceMemory` is present', async t => {
+  const browserless = await browserlessFactory.createContext()
+
+  t.teardown(() => browserless.destroyContext())
+
+  const page = await browserless.page()
+
+  await page.goto(fileUrl)
+
+  const deviceMemory = () => page.evaluate('navigator.deviceMemory')
+
+  t.truthy(await deviceMemory())
+})
 
 test('randomize `user-agent`', async t => {
   const browserless = await browserlessFactory.createContext()
