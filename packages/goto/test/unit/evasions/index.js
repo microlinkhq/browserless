@@ -10,6 +10,112 @@ const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
 const browserlessFactory = initBrowserless({ evasions: false })
 
+test('ensure `window.console` is present', async t => {
+  const browserless = await browserlessFactory.createContext()
+
+  t.teardown(() => browserless.destroyContext())
+
+  const page = await browserless.page()
+  const consoleKeys = () => page.evaluate('Object.keys(window.console)')
+
+  t.deepEqual(await consoleKeys(), [
+    'debug',
+    'error',
+    'info',
+    'log',
+    'warn',
+    'dir',
+    'dirxml',
+    'table',
+    'trace',
+    'group',
+    'groupCollapsed',
+    'groupEnd',
+    'clear',
+    'count',
+    'countReset',
+    'assert',
+    'profile',
+    'profileEnd',
+    'time',
+    'timeLog',
+    'timeEnd',
+    'timeStamp',
+    'context',
+    'memory'
+  ])
+})
+
+test('ensure `window.outerHeight` is present', async t => {
+  const browserless = await browserlessFactory.createContext()
+
+  t.teardown(() => browserless.destroyContext())
+
+  const page = await browserless.page()
+  const outerHeight = () => page.evaluate(() => window.outerHeight)
+
+  await evasions.windowFrame(page)
+  await page.goto(fileUrl)
+
+  t.true((await outerHeight()) > 0)
+})
+
+test('ensure `window.outerWidth` is present', async t => {
+  const browserless = await browserlessFactory.createContext()
+
+  t.teardown(() => browserless.destroyContext())
+
+  const page = await browserless.page()
+  const outerWidth = () => page.evaluate(() => window.outerWidth)
+
+  await evasions.windowFrame(page)
+  await page.goto(fileUrl)
+
+  t.true((await outerWidth()) > 0)
+})
+
+test('`navigator.vendor` is synchronized with user-agent', async t => {
+  const browserless = await browserlessFactory.createContext()
+
+  t.teardown(() => browserless.destroyContext())
+
+  const page = await browserless.page()
+
+  const navigatorVendor = () => page.evaluate('navigator.vendor')
+
+  t.is(await navigatorVendor(), 'Google Inc.')
+
+  await page.setUserAgent(
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15'
+  )
+
+  await evasions.navigatorVendor(page)
+  await page.goto(fileUrl)
+
+  t.is(await navigatorVendor(), 'Apple Computer, Inc.')
+
+  await page.setUserAgent(
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0) Gecko/20100101 Firefox/102.0'
+  )
+
+  await page.goto(fileUrl)
+  t.is(await navigatorVendor(), '')
+})
+
+test('ensure `navigator.deviceMemory` is present', async t => {
+  const browserless = await browserlessFactory.createContext()
+
+  t.teardown(() => browserless.destroyContext())
+
+  const page = await browserless.page()
+
+  await page.goto(fileUrl)
+
+  const deviceMemory = () => page.evaluate('navigator.deviceMemory')
+
+  t.truthy(await deviceMemory())
+})
+
 test('randomize `user-agent`', async t => {
   const browserless = await browserlessFactory.createContext()
 

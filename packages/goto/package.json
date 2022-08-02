@@ -47,7 +47,8 @@
     "@browserless/test": "latest",
     "ava": "3",
     "browserless": "latest",
-    "exit-hook": "2"
+    "exit-hook": "2",
+    "fpscanner": "latest"
   },
   "engines": {
     "node": ">= 12"

@@ -1,5 +1,6 @@
 'use strict'
 
+const fpscanner = require('fpscanner')
 const test = require('ava')
 
 const browserlessFactory = require('browserless')()
@@ -14,30 +15,54 @@ test.skip('arh.antoinevastel.com/bots/areyouheadless', async t => {
   t.true(content.includes('You are not Chrome headless'))
 })
 
-// See https://antoinevastel.com/bot%20detection/2018/11/13/fp-scanner-library-demo.html
-test('antoinevastel.com/bots/fpstructured', async t => {
-  const browserless = await browserlessFactory.createContext()
-  t.teardown(() => browserless.destroyContext())
-  const fpCollect = browserless.evaluate(page =>
-    page.evaluate(() => {
-      const fp = JSON.parse(document.getElementById('fp').innerText)
-      const scanner = JSON.parse(document.getElementById('scanner').innerText)
-      return { fp, scanner }
+test('fingerprintjs', async t => {
+  const getFingerprint = async userAgent => {
+    const browserless = await browserlessFactory.createContext()
+    const fingerprint = await browserless.evaluate(page =>
+      page.evaluate("document.querySelector('.giant').innerText")
+    )
+
+    const hash = await fingerprint('https://fingerprintjs.github.io/fingerprintjs/', {
+      headers: {
+        'user-agent': userAgent
+      }
     })
+
+    await browserless.destroyContext()
+    return hash
+  }
+
+  t.not(
+    await getFingerprint(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15'
+    ),
+    await getFingerprint(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0) Gecko/20100101 Firefox/102.0'
+    )
   )
+})
 
-  const { scanner } = await fpCollect('https://antoinevastel.com/bots/fpstructured')
+test('fpscanner', async t => {
+  const waitForAssertion = async () => {
+    const browserless = await browserlessFactory.createContext()
+    const getFingerprint = browserless.evaluate(page =>
+      page.evaluate('fpCollect.generateFingerprint()')
+    )
 
-  // looks it isn't accurate,
-  // see https://github.com/antoinevastel/fpscanner/issues/9
-  const scannerProps = Object.keys(scanner).filter(key => key !== 'CHR_MEMORY')
+    const fingerprint = await getFingerprint('about:blank', {
+      scripts: ['https://unpkg.com/fpcollect']
+    })
 
-  const scannerDetections = Object.keys(scannerProps).filter(key => {
-    const value = scanner[key]
-    return value && value.consistent !== 3
-  })
+    await browserless.destroyContext()
 
-  t.is(scannerDetections.length, 0, scannerDetections.toString())
+    const result = fpscanner.analyseFingerprint(fingerprint)
+    const failedChecks = Object.values(result).filter(val => val.consistent < 3)
+    // webdriver check is failing due to the outdated fp analyzer
+    return failedChecks.length < 2
+  }
+
+  const results = await Promise.all([...Array(5).keys()].map(waitForAssertion))
+  t.true(results.some(value => value === true))
 })
 
 test('bot.sannysoft.com', async t => {
