@@ -15,6 +15,33 @@ test.skip('arh.antoinevastel.com/bots/areyouheadless', async t => {
   t.true(content.includes('You are not Chrome headless'))
 })
 
+test('fingerprintjs', async t => {
+  const getFingerprint = async userAgent => {
+    const browserless = await browserlessFactory.createContext()
+    const fingerprint = await browserless.evaluate(page =>
+      page.evaluate(`document.querySelector('.giant').innerText`)
+    )
+
+    const hash = await fingerprint('https://fingerprintjs.github.io/fingerprintjs/', {
+      headers: {
+        'user-agent': userAgent
+      }
+    })
+
+    await browserless.destroyContext()
+    return hash
+  }
+
+  t.not(
+    await getFingerprint(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15'
+    ),
+    await getFingerprint(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0) Gecko/20100101 Firefox/102.0'
+    )
+  )
+})
+
 test('fpscanner', async t => {
   const waitForAssertion = async () => {
     const browserless = await browserlessFactory.createContext()
