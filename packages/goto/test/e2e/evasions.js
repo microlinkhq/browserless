@@ -19,7 +19,7 @@ test('fingerprintjs', async t => {
   const getFingerprint = async userAgent => {
     const browserless = await browserlessFactory.createContext()
     const fingerprint = await browserless.evaluate(page =>
-      page.evaluate(`document.querySelector('.giant').innerText`)
+      page.evaluate("document.querySelector('.giant').innerText")
     )
 
     const hash = await fingerprint('https://fingerprintjs.github.io/fingerprintjs/', {
@@ -46,7 +46,7 @@ test('fpscanner', async t => {
   const waitForAssertion = async () => {
     const browserless = await browserlessFactory.createContext()
     const getFingerprint = browserless.evaluate(page =>
-      page.evaluate(() => fpCollect.generateFingerprint())
+      page.evaluate('fpCollect.generateFingerprint()')
     )
 
     const fingerprint = await getFingerprint('about:blank', {

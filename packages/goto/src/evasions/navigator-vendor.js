@@ -17,7 +17,6 @@ module.exports = page =>
     const userAgent = navigator.userAgent
     const userAgentVendor = getUserAgentVendor(userAgent)
 
-    console.log(userAgentVendor)
     if (userAgentVendor === 'chrome') return
 
     Object.defineProperty(navigator, 'vendor', {
