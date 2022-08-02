@@ -54,8 +54,6 @@ test('ensure `window.outerHeight` is present', async t => {
   const page = await browserless.page()
   const outerHeight = () => page.evaluate(() => window.outerHeight)
 
-  t.is(await outerHeight(), 0)
-
   await evasions.windowFrame(page)
   await page.goto(fileUrl)
 
@@ -69,8 +67,6 @@ test('ensure `window.outerWidth` is present', async t => {
 
   const page = await browserless.page()
   const outerWidth = () => page.evaluate(() => window.outerWidth)
-
-  t.is(await outerWidth(), 0)
 
   await evasions.windowFrame(page)
   await page.goto(fileUrl)
