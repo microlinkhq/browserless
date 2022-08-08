@@ -5,7 +5,7 @@ const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const createPdf = require('@browserless/pdf')
-const mutexify = require('mutexify/promise')
+const { withLock } = require('superlock')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -14,7 +14,7 @@ const { AbortError } = pRetry
 
 const driver = require('./driver')
 
-const lock = mutexify()
+const lock = withLock()
 
 module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const goto = createGoto({ timeout: globalTimeout, ...launchOpts })
@@ -64,18 +64,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const getBrowser = async () => {
     if (isClosed) return browserProcessPromise
 
-    const release = await lock()
-    const browserProcess = await browserProcessPromise
+    const browserProcess = await lock(async () => {
+      const browserProcess = await browserProcessPromise
+      if (browserProcess.isConnected()) return browserProcess
+      respawn()
+    })
 
-    if (browserProcess.isConnected()) {
-      release()
-      return browserProcess
-    }
-
-    await respawn()
-    release()
-
-    return getBrowser()
+    return browserProcess || getBrowser()
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout } = {}) => {
