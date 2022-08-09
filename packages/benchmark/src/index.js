@@ -1,13 +1,10 @@
 'use strict'
 
-process.setMaxListeners(Infinity)
-
 const createBrowserless = require('browserless')
-const { includes, reduce } = require('lodash')
 const processStats = require('process-stats')
 const asciichart = require('asciichart')
+const { gray } = require('picocolors')
 const prettyMs = require('pretty-ms')
-const prettyObj = require('fmt-obj')
 const Measured = require('measured')
 const pAll = require('p-all')
 const meow = require('meow')
@@ -32,6 +29,10 @@ const cli = meow(
       method: {
         type: 'string'
       },
+      strategy: {
+        type: 'string',
+        default: 'context'
+      },
       pool: {
         type: 'boolean',
         default: false
@@ -52,27 +53,68 @@ const cli = meow(
   }
 )
 
-const benchmark = async ({ createBrowserless, method, url, opts, iterations, concurrency }) => {
+const getStrategy = opts => {
+  return {
+    context: () => {
+      return {
+        onInit: () => createBrowserless(opts),
+        onCreate: browserlessFactory => browserlessFactory.createContext(),
+        onDestroy: browserless => browserless.destroyContext(),
+        onClose: browserlessFactory => browserlessFactory.close()
+      }
+    },
+    process: () => {
+      const browsers = new Map()
+      return {
+        onInit: () => {},
+        onCreate: (_, n) => {
+          const browserlessFactory = createBrowserless(opts)
+          browsers.set(n, browserlessFactory)
+          return browserlessFactory.createContext()
+        },
+        onDestroy: async (browserless, n) => {
+          const browserlessFactory = browsers.get(n)
+          await browserless.destroyContext()
+          return browserlessFactory.close()
+        },
+        onClose: () => {}
+      }
+    }
+  }
+}
+
+const benchmark = async ({
+  strategy,
+  browserlessFactory,
+  concurrency,
+  getStats,
+  iterations,
+  method,
+  opts,
+  url
+}) => {
   const timer = new Measured.Timer()
   const promises = [...Array(iterations).keys()].map(n => {
     return async () => {
       const stopwatch = timer.start()
-      const browserless = await createBrowserless()
+
+      const browserless = await strategy.onCreate(browserlessFactory, n)
       await browserless[method](url, opts)
-      await browserless.close()
+      await strategy.onDestroy(browserless, n)
       const time = stopwatch.end()
-      const stats = processStats()
+      const { cpu, delay, memUsed } = getStats()
 
       console.log(
-        `n=${n} cpu=${stats.cpu} mem=${stats.memUsed.pretty} eventLoop=${
-          stats.delay.pretty
-        } time=${prettyMs(time)}`
+        `  #${n < 10 ? `0${n}` : n} ${gray(
+          `cpu=${cpu.pretty} mem=${memUsed.pretty} eventLoop=${delay.pretty} time=`
+        )}${prettyMs(time)}`
       )
       return time
     }
   })
 
   const times = await pAll(promises, { concurrency })
+  await getStats.destroy()
   const histogram = timer.toJSON().histogram
   return { times, histogram }
 }
@@ -81,45 +123,51 @@ const main = async () => {
   const [url] = cli.input
   if (!url) throw new TypeError('Need to provide an URL as target.')
 
-  const {
-    method,
-    concurrency,
-    pool: isPool,
-    poolMin,
-    poolMax,
-    iterations,
-    firefox,
-    ...opts
-  } = cli.flags
+  const { method, concurrency, iterations, firefox, ...opts } = cli.flags
 
   if (!method) throw new TypeError('Need to provide a method to run.')
 
   const puppeteer = firefox ? require('puppeteer-firefox') : require('puppeteer')
 
+  const strategy = getStrategy({ puppeteer, ...opts })[cli.flags.strategy]()
+  const getStats = processStats()
+  const browserlessFactory = strategy.onInit()
+
+  console.log()
   const { times, histogram } = await benchmark({
+    strategy,
+    browserlessFactory,
     concurrency,
-    createBrowserless: createBrowserless({ puppeteer, ...opts }),
+    getStats,
     iterations,
     method,
-    url,
-    opts
+    opts,
+    url
   })
 
-  const stats = reduce(
-    histogram,
-    (acc, value, key) => {
-      const newValue = !includes(['count'], key) ? prettyMs(value) : value
-      return { ...acc, [key]: newValue }
-    },
-    {}
-  )
+  const graph = asciichart.plot(times, {
+    offset: 6,
+    height: 10,
+    format: time => prettyMs(time, { keepDecimalsOnWholeSeconds: true })
+  })
 
-  const graph = asciichart.plot(times, { height: 6 })
-  const { memUsed } = processStats.process()
+  await strategy.onClose(browserlessFactory)
+  const { uptime, memUsed } = getStats()
+  getStats.destroy()
 
   console.log()
   console.log(graph)
-  console.log(prettyObj({ memUsed: memUsed.pretty, ...stats }))
+  console.log(`
+${gray('     time:')} ${uptime.pretty}
+${gray('    count:')} ${histogram.count}
+${gray('  memUsed:')} ${memUsed.pretty}
+${gray('      min:')} ${prettyMs(histogram.min)}
+${gray('      max:')} ${prettyMs(histogram.max)}
+${gray('   median:')} ${prettyMs(histogram.median)}
+${gray('      p75:')} ${prettyMs(histogram.p75)}
+${gray('      p95:')} ${prettyMs(histogram.p95)}
+${gray('      p99:')} ${prettyMs(histogram.p99)}
+${gray('     p999:')} ${prettyMs(histogram.p999)}`)
 }
 
 main()
