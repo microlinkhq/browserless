@@ -45,10 +45,10 @@
   },
   "devDependencies": {
     "@browserless/test": "latest",
-    "p-wait-for": "3",
     "ava": "3",
     "browserless": "latest",
-    "fpscanner": "latest"
+    "fpscanner": "latest",
+    "p-wait-for": "3"
   },
   "engines": {
     "node": ">= 12"
