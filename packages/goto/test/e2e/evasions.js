@@ -15,7 +15,7 @@ test.skip('arh.antoinevastel.com/bots/areyouheadless', async t => {
   t.true(content.includes('You are not Chrome headless'))
 })
 
-test('fingerprintjs', async t => {
+test.serial('fingerprintjs', async t => {
   const getFingerprint = async userAgent => {
     const browserless = await browserlessFactory.createContext()
     const fingerprint = await browserless.evaluate(page =>
