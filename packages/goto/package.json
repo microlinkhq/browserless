@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@browserless/test": "latest",
-    "p-wait-for": "3",
+    "p-wait-for": "5",
     "ava": "3",
     "browserless": "latest",
     "fpscanner": "latest"
