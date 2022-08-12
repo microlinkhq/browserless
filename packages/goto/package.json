@@ -45,9 +45,9 @@
   },
   "devDependencies": {
     "@browserless/test": "latest",
+    "p-wait-for": "3",
     "ava": "3",
     "browserless": "latest",
-    "exit-hook": "2",
     "fpscanner": "latest"
   },
   "engines": {
