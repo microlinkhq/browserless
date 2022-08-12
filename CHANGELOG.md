@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.6.2](https://github.com/microlinkhq/browserless/compare/v9.6.1...v9.6.2) (2022-08-12)
+
+### Bug Fixes
+
+* **goto:** bypass CSP when is necessary ([#402](https://github.com/microlinkhq/browserless/issues/402)) ([d44cdfe](https://github.com/microlinkhq/browserless/commit/d44cdfe2c16133e8f3e557be4f8c9e848fb85298))
+* **goto:** setup module type properly ([#401](https://github.com/microlinkhq/browserless/issues/401)) ([b677379](https://github.com/microlinkhq/browserless/commit/b677379cce98691cb8ab31ccd14412968d2d3c4a))
+
 ## [9.6.1](https://github.com/microlinkhq/browserless/compare/v9.6.0...v9.6.1) (2022-08-08)
 
 **Note:** Version bump only for package browserless
