@@ -48,7 +48,7 @@
     "ava": "3",
     "browserless": "latest",
     "fpscanner": "latest",
-    "p-wait-for": "3"
+    "p-wait-for": "4"
   },
   "engines": {
     "node": ">= 12"
