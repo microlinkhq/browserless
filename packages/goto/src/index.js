@@ -121,7 +121,7 @@ const inject = async (page, { timeout, mediaType, animations, modules, scripts, 
     postPromises.push(
       run({
         fn: Promise.all(
-          castArray(modules).map(value => injectScript(page, value, { type: 'modules' }))
+          castArray(modules).map(value => injectScript(page, value, { type: 'module' }))
         ),
         timeout,
         debug: 'modules'
