@@ -1,9 +1,9 @@
 'use strict'
 
-const { initBrowserless } = require('@browserless/test/util')
+const { getBrowserless } = require('@browserless/test/util')
 const test = require('ava')
 
-const browserlessFactory = initBrowserless({ evasions: false })
+const browserlessFactory = getBrowserless()
 
 test('setup `scripts`', async t => {
   const browserless = await browserlessFactory.createContext()

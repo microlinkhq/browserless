@@ -222,6 +222,16 @@ module.exports = ({
 
     const prePromises = []
 
+    if (modules || scripts || styles) {
+      prePromises.push(
+        run({
+          fn: page.setBypassCSP(true),
+          timeout: actionTimeout,
+          debug: 'bypassCSP'
+        })
+      )
+    }
+
     if (abortTypes.length > 0) {
       await page.setRequestInterception(true)
       page.on('request', req => {
@@ -236,16 +246,6 @@ module.exports = ({
         debug('abort', { url, resourceType })
         return req.abort('blockedbyclient', 0)
       })
-    }
-
-    if (modules || scripts || styles) {
-      prePromises.push(
-        run({
-          fn: page.setBypassCSP(true),
-          timeout: actionTimeout,
-          debug: 'bypassCSP'
-        })
-      )
     }
 
     if (adblock) {
