@@ -238,6 +238,16 @@ module.exports = ({
       })
     }
 
+    if (modules || scripts || styles) {
+      prePromises.push(
+        run({
+          fn: page.setBypassCSP(true),
+          timeout: actionTimeout,
+          debug: 'bypassCSP'
+        })
+      )
+    }
+
     if (adblock) {
       prePromises.push(
         run({
