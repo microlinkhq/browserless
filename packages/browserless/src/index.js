@@ -58,8 +58,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
   let browserProcessPromise = spawn()
 
-  const createBrowserContext = () =>
-    getBrowser().then(browser => browser.createIncognitoBrowserContext())
+  const createBrowserContext = contextOpts =>
+    getBrowser().then(browser => browser.createIncognitoBrowserContext(contextOpts))
 
   const getBrowser = async () => {
     if (isClosed) return browserProcessPromise
@@ -73,8 +73,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     return browserProcess || getBrowser()
   }
 
-  const createContext = async ({ retry = 2, timeout: contextTimeout } = {}) => {
-    let _contextPromise = createBrowserContext()
+  const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
+    let _contextPromise = createBrowserContext(contextOpts)
 
     const getBrowserContext = () => _contextPromise
 
@@ -82,7 +82,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       const browserProcess = context.browser()
       browserProcess.once('disconnected', async () => {
         await getBrowser()
-        _contextPromise = createBrowserContext()
+        _contextPromise = createBrowserContext(contextOpts)
       })
     })
 
@@ -132,7 +132,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
             if (error.name === 'AbortError') throw error
             if (isRejected) throw new AbortError()
-            if (error.code === 'EBRWSRCONTEXTCONNRESET') _contextPromise = createBrowserContext()
+            if (error.code === 'EBRWSRCONTEXTCONNRESET') {
+              _contextPromise = createBrowserContext(contextOpts)
+            }
             const { message, attemptNumber, retriesLeft } = error
             debug('retry', { attemptNumber, retriesLeft, message })
           }

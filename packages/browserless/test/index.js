@@ -1,14 +1,51 @@
 'use strict'
 
-const test = require('ava')
-const createBrowserless = require('../src')
+const { initBrowserless, getBrowserless } = require('@browserless/test/util')
+const http = require('http')
 
-require('@browserless/test')(createBrowserless())
+const test = require('ava')
+
+const browserlessFactory = getBrowserless()
+
+require('@browserless/test')(browserlessFactory)
+
+test('pass specific options to a context', async t => {
+  const proxiedRequestUrls = []
+
+  const proxy = http
+    .createServer((req, res) => {
+      proxiedRequestUrls.push(req.url)
+
+      const proxyRequest = http.request(
+        req.url,
+        {
+          method: req.method,
+          headers: req.headers
+        },
+        proxyResponse => {
+          res.writeHead(proxyResponse.statusCode, proxyResponse.headers)
+          proxyResponse.pipe(res, { end: true })
+        }
+      )
+
+      req.pipe(proxyRequest, { end: true })
+    })
+    .listen()
+
+  const proxyServer = `http://[::]:${proxy.address().port}`
+
+  const browserless = await browserlessFactory.createContext({ proxyServer: proxyServer })
+  const page = await browserless.page()
+
+  await browserless.goto(page, { url: 'http://example.com' })
+
+  t.deepEqual(proxiedRequestUrls, ['http://example.com/'])
+})
 
 test('ensure to destroy browser contexts', async t => {
-  const browserlessFactory = createBrowserless()
+  const browserlessFactory = initBrowserless()
+
   const browser = await browserlessFactory.browser()
-  t.teardown(() => browser.close())
 
   t.is(browser.browserContexts().length, 1)
 

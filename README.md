@@ -166,6 +166,10 @@ Every browser context is isolated. They won't share cookies/cache with other bro
 
 #### options
 
+Any [browser.createIncognitoBrowserContext#options](https://pptr.dev/next/api/puppeteer.browsercontextoptions) can be passed.
+
+Additionally, you can setup:
+
 ##### retry
 
 type: `number`</br>
