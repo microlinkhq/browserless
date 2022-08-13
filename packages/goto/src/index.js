@@ -198,12 +198,14 @@ module.exports = ({
       javascript = true,
       mediaType,
       modules,
+      password,
       scripts,
       scroll,
       styles,
       timeout = globalTimeout,
       timezone,
       url,
+      username,
       waitForFunction,
       waitForSelector,
       waitForTimeout,
@@ -221,6 +223,16 @@ module.exports = ({
     if (isWaitUntilAuto) waitUntil = 'load'
 
     const prePromises = []
+
+    if (username || password) {
+      prePromises.push(
+        run({
+          fn: page.authenticate({ username, password }),
+          timeout: actionTimeout,
+          debug: 'authenticate'
+        })
+      )
+    }
 
     if (modules || scripts || styles) {
       prePromises.push(

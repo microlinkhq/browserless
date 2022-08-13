@@ -485,7 +485,7 @@ await serialize('https://example.com')
 
 ### .goto(page, options)
 
-It performs a [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options) with a lot of extra capabilities
+It performs a [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options) with a lot of extra capabilities:
 
 ```js
 const browserless = require('browserless')
