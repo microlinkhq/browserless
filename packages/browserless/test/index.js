@@ -34,7 +34,7 @@ test('pass specific options to a context', async t => {
 
   const proxyServer = `http://[::]:${proxy.address().port}`
 
-  const browserless = await browserlessFactory.createContext({ proxyServer: proxyServer })
+  const browserless = await browserlessFactory.createContext({ proxyServer })
   const page = await browserless.page()
 
   await browserless.goto(page, { url: 'http://example.com' })
