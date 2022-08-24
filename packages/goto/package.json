@@ -59,7 +59,7 @@
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall",
-    "test": "NODE_ENV=test ava"
+    "test": "NODE_ENV=test ava --concurrency 2"
   },
   "license": "MIT",
   "ava": {
