@@ -127,3 +127,18 @@ test('interact with a page', async t => {
   t.false(isRejected)
   t.true(value.startsWith('IANA'))
 })
+
+test('pass goto options', async t => {
+  const code = ({ page }) => page.evaluate('jQuery.fn.jquery')
+
+  const fn = browserlessFunction(code, { vmOpts })
+  const { isFulfilled, isRejected, value } = await fn('https://example.com', {
+    gotoOpts: {
+      scripts: ['https://code.jquery.com/jquery-3.5.0.min.js']
+    }
+  })
+
+  t.true(isFulfilled)
+  t.false(isRejected)
+  t.is(value, '3.5.0')
+})
