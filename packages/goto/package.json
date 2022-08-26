@@ -67,7 +67,7 @@
     "files": [
       "!test/fixtures"
     ],
-    "timeout": "2m",
+    "timeout": "30s",
     "verbose": true
   }
 }

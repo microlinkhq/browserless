@@ -49,7 +49,7 @@
   "license": "MIT",
   "ava": {
     "serial": true,
-    "timeout": "2m",
+    "timeout": "30s",
     "verbose": true
   }
 }
