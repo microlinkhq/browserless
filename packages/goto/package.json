@@ -59,14 +59,15 @@
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall",
-    "test": "NODE_ENV=test ava --concurrency 2"
+    "test": "ava"
   },
   "license": "MIT",
   "ava": {
+    "serial": true,
     "files": [
       "!test/fixtures"
     ],
-    "timeout": "2m",
+    "timeout": "30s",
     "verbose": true
   }
 }

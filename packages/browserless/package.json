@@ -54,11 +54,12 @@
     "src"
   ],
   "scripts": {
-    "test": "NODE_ENV=test ava --concurrency 2"
+    "test": "ava"
   },
   "license": "MIT",
   "ava": {
-    "timeout": "2m",
+    "serial": true,
+    "timeout": "30s",
     "verbose": true
   }
 }
