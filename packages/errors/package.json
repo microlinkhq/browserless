@@ -43,10 +43,11 @@
     "index.js"
   ],
   "scripts": {
-    "test": "NODE_ENV=test ava --concurrency 2"
+    "test": "ava"
   },
   "license": "MIT",
   "ava": {
+    "serial": true,
     "timeout": "2m",
     "verbose": true
   }
