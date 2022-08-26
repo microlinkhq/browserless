@@ -58,10 +58,10 @@
     "coverage": "exit 0",
     "test": "ava"
   },
+  "license": "MIT",
   "ava": {
     "serial": true,
     "timeout": "30s",
     "verbose": true
-  },
-  "license": "MIT"
+  }
 }
