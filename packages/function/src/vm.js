@@ -8,6 +8,7 @@ const path = require('path')
 const DEFAULT_VM_OPTS = {
   console: 'off',
   sandbox: {},
+  strict: true,
   require: {
     resolve: pkgName => path.resolve(process.cwd(), 'node_modules', pkgName),
     external: {
@@ -19,7 +20,7 @@ const DEFAULT_VM_OPTS = {
 const createVm = (opts = {}) => new NodeVM(merge(DEFAULT_VM_OPTS, opts))
 
 const compile = (vm, fn, scriptPath) => {
-  const code = `'use strict'; module.exports = ${fn.toString()}`
+  const code = `module.exports = ${fn.toString()}`
   return vm.run(code, scriptPath)
 }
 
