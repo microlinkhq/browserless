@@ -21,6 +21,35 @@ const vmOpts = {
   }
 }
 
+test('code runs in strict mode', async t => {
+  const code = () => {
+    function isStrict () {
+      return !this
+    }
+    return isStrict()
+  }
+
+  const myFn = browserlessFunction(code, { vmOpts })
+
+  t.deepEqual(await myFn('https://example.com'), {
+    isFulfilled: true,
+    isRejected: false,
+    value: true
+  })
+})
+
+test("don't expose process.env", async t => {
+  const code = () => JSON.stringify(process.env)
+
+  const myFn = browserlessFunction(code, { vmOpts })
+
+  t.deepEqual(await myFn('https://example.com'), {
+    isFulfilled: true,
+    isRejected: false,
+    value: '{}'
+  })
+})
+
 test('handle errors', async t => {
   const code = () => {
     throw new Error('oh no')
