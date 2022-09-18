@@ -42,6 +42,7 @@ test('ensure `window.console` is present', async t => {
     'timeEnd',
     'timeStamp',
     'context',
+    'createTask',
     'memory'
   ])
 })
