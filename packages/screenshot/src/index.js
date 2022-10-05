@@ -98,7 +98,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
       screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
       debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
     } else {
-      ;({ response } = await goto(page, { ...opts, url, waitUntilAuto }))
+      ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
       async function waitUntilAuto (page, { response }) {
         const [screenshotOpts] = await Promise.all([
           waitForElement(page, element),
