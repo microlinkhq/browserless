@@ -364,9 +364,11 @@ module.exports = ({
     await Promise.all(prePromises.concat(applyEvasions))
 
     const { value: response, reason: error } = await run({
-      fn: html ? page.setContent(html, args) : page.goto(url, args),
+      fn: html
+        ? page.setContent(html, { waitUntil, ...args })
+        : page.goto(url, { waitUntil, ...args }),
       timeout: gotoTimeout,
-      debug: html ? 'html' : 'url'
+      debug: { fn: html ? 'html' : 'url', waitUntil }
     })
 
     for (const [key, value] of Object.entries({
