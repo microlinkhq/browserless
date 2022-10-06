@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.6.11](https://github.com/microlinkhq/browserless/compare/v9.6.10...v9.6.11) (2022-10-06)
+
+### Bug Fixes
+
+* **goto:** pass waitUntil ([#420](https://github.com/microlinkhq/browserless/issues/420)) ([7b0d2c8](https://github.com/microlinkhq/browserless/commit/7b0d2c8fea5b97e7a912ca4649661c69c8e0b08d))
+
 ## [9.6.10](https://github.com/microlinkhq/browserless/compare/v9.6.9...v9.6.10) (2022-09-18)
 
 **Note:** Version bump only for package @browserless/goto
