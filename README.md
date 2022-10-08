@@ -64,8 +64,6 @@ await browserlessFactory.close()
 
 As you can see, **browserless** is implemented using a single browser process and creating/destroying specific browser contexts.
 
-You can read more about that at [technical details](/) section.
-
 If you're already using puppeteer, you can upgrade to use **browserless** instead almost with no effort.
 
 Additionally, you can use some specific [packages](#packages) in your codebase, interacting with them from puppeteer.
