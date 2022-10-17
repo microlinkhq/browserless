@@ -1,6 +1,6 @@
 'use strict'
 
-const { readFile } = require('fs').promises
+const { readFile } = require('fs/promises')
 const isHttpUrl = require('is-url-http')
 const path = require('path')
 
