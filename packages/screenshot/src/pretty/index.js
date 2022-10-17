@@ -2,7 +2,7 @@
 
 const debug = require('debug-logfmt')('browserless:screenshot')
 const isHtmlContent = require('is-html-content')
-const { readFile } = require('fs').promises
+const { readFile } = require('fs/promises')
 const { getExtension } = require('mime')
 const prettyMs = require('pretty-ms')
 const timeSpan = require('time-span')
