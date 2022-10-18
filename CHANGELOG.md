@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.6.12](https://github.com/microlinkhq/browserless/compare/v9.6.11...v9.6.12) (2022-10-18)
+
+### Bug Fixes
+
+* **browserless:** associate a context id ([#424](https://github.com/microlinkhq/browserless/issues/424)) ([f8137f2](https://github.com/microlinkhq/browserless/commit/f8137f2783587c7df9f706d78c0a01950b509e34))
+
 ## [9.6.11](https://github.com/microlinkhq/browserless/compare/v9.6.10...v9.6.11) (2022-10-06)
 
 ### Bug Fixes
