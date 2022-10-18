@@ -49,7 +49,7 @@ const spawn = ({
   ...launchOpts
 } = {}) => puppeteer[mode]({ ignoreHTTPSErrors: true, args, ...launchOpts })
 
-const pid = subprocess => {
+const getPid = subprocess => {
   if ('pid' in subprocess) return subprocess.pid
   const browserProcess = 'process' in subprocess ? subprocess.process() : undefined
   if (browserProcess === undefined || browserProcess === null) return
@@ -57,7 +57,8 @@ const pid = subprocess => {
 }
 
 const close = async (subprocess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
-  if (pid(subprocess) === undefined) return
+  const pid = getPid(subprocess)
+  if (pid === undefined) return
 
   // It's necessary to call `browser.close` for removing temporal files associated
   // and remove listeners attached to the main process; check
@@ -65,8 +66,8 @@ const close = async (subprocess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
   // - https://github.com/puppeteer/puppeteer/blob/69d85e874416d62de6e821bef30e5cebcfd42f15/src/node/BrowserRunner.ts#L189
   await pReflect('close' in subprocess ? subprocess.close() : killProcessGroup(subprocess, signal))
 
-  debug('close', { pid: subprocess.pid, signal, ...debugOpts })
-  return { pid: subprocess.pid }
+  debug('close', { pid, signal, ...debugOpts })
+  return { pid }
 }
 
-module.exports = { spawn, pid, close, defaultArgs }
+module.exports = { spawn, pid: getPid, close, defaultArgs }

@@ -6,6 +6,7 @@ const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const createPdf = require('@browserless/pdf')
 const { withLock } = require('superlock')
+const { randomUUID } = require('crypto')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -59,7 +60,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   let browserProcessPromise = spawn()
 
   const createBrowserContext = contextOpts =>
-    getBrowser().then(browser => browser.createIncognitoBrowserContext(contextOpts))
+    getBrowser()
+      .then(browser => browser.createIncognitoBrowserContext(contextOpts))
+      .then(context => (context._id = randomUUID()) && context)
 
   const getBrowser = async () => {
     if (isClosed) return browserProcessPromise
