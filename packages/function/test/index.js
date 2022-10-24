@@ -171,3 +171,19 @@ test('pass goto options', async t => {
   t.false(isRejected)
   t.is(value, '3.5.0')
 })
+
+test('interact with npm modules', async t => {
+  const code = async ({ page }) =>
+    require('lodash').toString(await page.evaluate('jQuery.fn.jquery'))
+
+  const fn = browserlessFunction(code, { vmOpts })
+  const { isFulfilled, isRejected, value } = await fn('https://example.com', {
+    gotoOpts: {
+      scripts: ['https://code.jquery.com/jquery-3.5.0.min.js']
+    }
+  })
+
+  t.true(isFulfilled)
+  t.false(isRejected)
+  t.is(value, '3.5.0')
+})

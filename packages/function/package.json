@@ -32,7 +32,6 @@
     "@browserless/errors": "^9.6.6",
     "debug-logfmt": "~1.0.4",
     "deepmerge": "~4.2.2",
-    "execa": "~5.1.1",
     "p-event": "~4.2.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",
@@ -44,7 +43,8 @@
   "devDependencies": {
     "@browserless/test": "latest",
     "ava": "3",
-    "browserless": "latest"
+    "browserless": "latest",
+    "lodash": "latest"
   },
   "engines": {
     "node": ">= 12"
