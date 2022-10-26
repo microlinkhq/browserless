@@ -2,13 +2,10 @@
 
 const { ensureError, browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless:lighthouse')
-const { Worker } = require('worker_threads')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
-const pEvent = require('p-event')
-const path = require('path')
 
-const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
+const lighthouse = require('./lighthouse')
 
 const { AbortError } = pRetry
 
@@ -40,7 +37,6 @@ module.exports = async (
     output,
     retry = 2,
     timeout = 30000,
-    workerOpts,
     ...opts
   } = {}
 ) => {
@@ -52,11 +48,7 @@ module.exports = async (
     const browserless = await browserlessPromise
     const browser = await browserless.browser()
     const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
-
-    const worker = new Worker(lighthousePath, { ...workerOpts, workerData: { url, flags, config } })
-    debug('spawn', { pid: process.pid, thread: worker.threadId })
-    const { value, reason, isFulfilled } = JSON.parse(await pEvent(worker, 'message'))
-
+    const { value, reason, isFulfilled } = await lighthouse({ url, flags, config })
     if (isFulfilled) return value
     throw ensureError(reason)
   }

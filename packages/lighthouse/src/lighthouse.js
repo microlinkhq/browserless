@@ -1,10 +1,9 @@
 'use strict'
 
-const { workerData, parentPort } = require('node:worker_threads')
 const { serializeError } = require('serialize-error')
 const lighthouse = require('lighthouse')
 
-const main = async ({ url, flags, config }) => {
+module.exports = async ({ url, flags, config }) => {
   try {
     const { lhr, report } = await lighthouse(url, flags, config)
     const value = flags.output === 'json' ? lhr : report
@@ -22,5 +21,3 @@ const main = async ({ url, flags, config }) => {
     }
   }
 }
-
-main(workerData).then(result => parentPort.postMessage(JSON.stringify(result)))
