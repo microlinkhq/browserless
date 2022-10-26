@@ -3,7 +3,7 @@
 const { serializeError } = require('serialize-error')
 const lighthouse = require('lighthouse')
 
-const runLighthouse = async ({ url, flags, config }) => {
+module.exports = async ({ url, flags, config }) => {
   try {
     const { lhr, report } = await lighthouse(url, flags, config)
     const value = flags.output === 'json' ? lhr : report
@@ -21,5 +21,3 @@ const runLighthouse = async ({ url, flags, config }) => {
     }
   }
 }
-
-process.on('message', async opts => process.send(await runLighthouse(opts)))

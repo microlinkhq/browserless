@@ -31,10 +31,10 @@
     "text"
   ],
   "dependencies": {
-    "@browserless/errors": "^9.6.6",
-    "@browserless/goto": "^9.6.11",
-    "@browserless/pdf": "^9.6.11",
-    "@browserless/screenshot": "^9.6.12",
+    "@browserless/errors": "workspace:*",
+    "@browserless/goto": "workspace:*",
+    "@browserless/pdf": "workspace:*",
+    "@browserless/screenshot": "workspace:*",
     "debug-logfmt": "~1.0.4",
     "kill-process-group": "~1.0.3",
     "p-reflect": "~2.1.0",
@@ -44,7 +44,7 @@
     "superlock": "~1.0.0"
   },
   "devDependencies": {
-    "@browserless/test": "latest",
+    "@browserless/test": "workspace:*",
     "ava": "3"
   },
   "engines": {

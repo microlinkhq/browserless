@@ -42,9 +42,9 @@ async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
   }
 }`
 
-process.on('message', async ({ url, code, vmOpts, gotoOpts, browserWSEndpoint, ...opts }) => {
+module.exports = ({ url, code, vmOpts, gotoOpts, browserWSEndpoint, ...opts }) => {
   const vm = createVm(vmOpts)
   const fn = createFn(code)
   const run = vm(fn, scriptPath)
-  process.send(await run({ url, gotoOpts, browserWSEndpoint, ...opts }))
-})
+  return run({ url, gotoOpts, browserWSEndpoint, ...opts })
+}

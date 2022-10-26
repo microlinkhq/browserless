@@ -28,7 +28,7 @@
     "screenshot"
   ],
   "dependencies": {
-    "@browserless/goto": "^9.6.11",
+    "@browserless/goto": "workspace:*",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.5",
     "is-html-content": "~1.0.0",
@@ -44,7 +44,7 @@
     "time-span": "~4.0.0"
   },
   "devDependencies": {
-    "@browserless/test": "latest",
+    "@browserless/test": "workspace:*",
     "ava": "3"
   },
   "engines": {

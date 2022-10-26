@@ -7,11 +7,11 @@
 [![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> **browserless** is an efficient driver for controlling headless browsers built on top of [puppeteer](https://github.com/GoogleChrome/puppeteer) developed for scenarios where performance matters.
+> **browserless** is an efficient way to interact with a headless browser built in top of [puppeteer](https://github.com/GoogleChrome/puppeteer).
 
 ## Highlights
 
-- Puppeteer-like API for common tasks ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
+- Compatible with Puppeteer API ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
 - Built-in [evasion](#evasions) techniques to prevent being blocked.
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
 - Shell interaction via [Browserless CLI](command-line-interface).
@@ -36,17 +36,17 @@ You can use it next to [`puppeteer`](https://www.npmjs.com/package/puppeteer), [
 This is a full example for showcase all the **browserless** capabilities:
 
 ```js
-const createBrowserless = require('browserless')
+const createBrowser = require('browserless')
 const termImg = require('term-img')
 
 // First, create a browserless factory
 // that it will keep a singleton process running
-const browserlessFactory = createBrowserless()
+const browser = createBrowser()
 
 // After that, you can create as many browser context
 // as you need. The browser contexts won't share cookies/cache
 // with other browser contexts.
-const browserless = await browserlessFactory.createContext()
+const browserless = await browser.createContext()
 
 // Perform the action you want, e.g., getting the HTML markup
 const buffer = await browserless.screenshot('http://example.com', {
@@ -59,7 +59,7 @@ console.log(termImg(buffer))
 await browserless.destroyContext()
 
 // At the end, gracefully shutdown the browser process
-await browserlessFactory.close()
+await browser.close()
 ```
 
 As you can see, **browserless** is implemented using a single browser process and creating/destroying specific browser contexts.
@@ -68,38 +68,54 @@ If you're already using puppeteer, you can upgrade to use **browserless** instea
 
 Additionally, you can use some specific [packages](#packages) in your codebase, interacting with them from puppeteer.
 
-## Initialization
+## CLI
 
-All methods follow the same interface:
+With the command-line interface (CLI) you can interact with browserless methods using a terminal, or through an automated system:
 
-- `<url>`: The target URL. It's required.
-- `[options]`: Specific settings for the method. It's optional.
+![](/static/cli.png)
 
-The methods follows an async interface, returning a `Promise`.
+Just install [`@browserless/cli`](https://npm.im/@browserless/cli) globally in your system using your favorite package manager:
 
-### .constructor(options)
+```
+npm install -g @browserless/cli
+```
 
-It initializes a singleton browserless process, returning a factory that will be used for creating browser contexts:
+## Initializing a browser
+
+The **browserless** main method is for creating a headless browser.
 
 ```js
-const browserlessFactory = require('browserless')
+const createBrowser = require('browserless')
 
-const { createContext } = browserlessFactory({
+const browser = createBrowser({
   timeout: 25000,
   lossyDeviceName: true,
   ignoreHTTPSErrors: true
 })
-
-// Now every time you call `createContext`
-// it will be create a browser context.
-const browserless = await createContext({ retry: 2 })
 ```
 
-They are some propetary browserless options; The rest of options will be passed to [puppeter.launch](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+Once the browser is initialized, some browser high level methods are available:
 
-#### options
+```js
+// Now, just call `createContext` for creating a browser tab
+const browserless = await browser.createContext({ retry: 2 })
 
-See [puppeteer.launch#options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+const buffer = await browserless.screenshot('https://example.com')
+
+// You call `destroyContext` to close the browser tab.
+await browserless.destroyContext()
+```
+
+The browser keeps running until you explicitly close it:
+
+```js
+// At the end, gracefully shutdown the browser process
+await browser.close()
+```
+
+### .constructor(options)
+
+You can pass any [puppeteer.launch#options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
 
 Additionally, you can setup:
 
@@ -152,10 +168,10 @@ It's automatically detected based on your `dependencies` being supported [puppet
 
 ### .createContext(options)
 
-Now you have your browserless factory instantiated, you can create browser contexts on demand:
+After initialize the browser, you can create browser context that is equivalente to open a tab:
 
 ```js
-const browserless = browserlessFactory.createContext({
+const browserless = browser.createContext({
   retry: 2
 })
 ```
@@ -175,44 +191,45 @@ default: `2`
 
 The number of retries that can be performed before considering a navigation as failed.
 
-### .browser
+### .browser()
 
-It returns the [Browser](https://github.com/puppeteer/puppeteer/blob/v10.0.0/docs/api.md#class-browser) instance associated with your browserless factory.
+It returns the internal [Browser](https://github.com/puppeteer/puppeteer/blob/v10.0.0/docs/api.md#class-browser) instance.
 
 ```js
-const browser = await browserlessFactory.browser()
-console.log('My browser PID is', browser.proces().pid)
+const headlessBrowser = await browser.browser()
+
+console.log('My headless browser PID is', headlessBrowser.process().pid)
 ```
 
-### .respawn
+### .respawn()
 
-It will respawn the singleton browser associated with your browserless factory.
+It will respawn the internal browser.
 
 ```js
 const getPID = promise => (await promise).process().pid
 
-console.log('Process PID:', await getPID(browserlessFactory.browser()))
+console.log('Process PID:', await getPID(browser.browser()))
 
-await browserlessFactory.respawn()
+await browser.respawn()
 
-console.log('Process PID:', await getPID(browserlessFactory.browser()))
+console.log('Process PID:', await getPID(browser.browser()))
 ```
 
-This method is am implementation detail, normally you don't need to call it.
+This method is an implementation detail, normally you don't need to call it.
 
-### .close
+### .close()
 
-It will close the singleton browser associated with your browserless factory.
+It will close the internal browser.
 
 ```js
 const exitHook = require('exit-hook')
 
-exitHook(browserlessFactory.close())
+// automatically teardown resources after
+// `process.exit` is called
+exitHook(browser.close())
 ```
 
-It should be used to gracefully shutdown your resources.
-
-## Methods
+## Using a browser
 
 ### .html(url, options)
 
@@ -220,7 +237,9 @@ It serializes the content from the target `url` into HTML.
 
 ```js
 const html = await browserless.html('https://example.com')
+
 console.log(html)
+// => "<!DOCTYPE html><html><head>…"
 ```
 
 #### options
@@ -233,7 +252,9 @@ It serializes the content from the target `url` into plain text.
 
 ```js
 const text = await browserless.text('https://example.com')
-console.log(text)
+
+console.log(text) 
+// => "Example Domain\nThis domain is for use in illustrative…"
 ```
 
 #### options
@@ -246,6 +267,7 @@ It generates the PDF version of a website behind an `url`.
 
 ```js
 const buffer = await browserless.pdf('https://example.com')
+
 console.log(`PDF generated in ${buffer.byteLength()} bytes`)
 ```
 
@@ -306,6 +328,7 @@ It takes a screenshot from the target `url`.
 
 ```js
 const buffer = await browserless.screenshot('https://example.com')
+
 console.log(`Screenshot taken in ${buffer.byteLength()} bytes`)
 ```
 
@@ -376,7 +399,7 @@ const buffer = await browserless.screenshot(url.toString(), {
 
 ### .destroyContext
 
-It will destroy the current browser context
+It will destroy the current browser context.
 
 ```js
 const browserless = await browserlessFactory.createContext({ retry: 0 })
@@ -392,7 +415,8 @@ Giving a specific device descriptons, this method will be the devices settings f
 
 ```js
 browserless.getDevice({ device: 'Macbook Pro 15' })
-// {
+
+// => {
 //   userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36',
 //   viewport: {
 //     width: 1440,
@@ -473,12 +497,15 @@ You don't need to close the page; It will be closed automatically.
 Internally, the method performs a [browserless.goto](#gotopage-options), being possible to pass extra arguments as second parameter:
 
 ```js
-const serialize = browserless.evaluate(page => page.evaluate(() => document.body.innerText), {
-  waitUntil: 'domcontentloaded'
-})
+const serialize = browserless.evaluate(
+  page => page.evaluate(() => document.body.innerText),
+  {
+    waitUntil: 'domcontentloaded'
+  }
+)
 
 await serialize('https://example.com')
-// '<!DOCTYPE html><html><div>…'
+// => '<!DOCTYPE html><html><div>…'
 ```
 
 ### .goto(page, options)
@@ -486,8 +513,6 @@ await serialize('https://example.com')
 It performs a [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options) with a lot of extra capabilities:
 
 ```js
-const browserless = require('browserless')
-
 const page = await browserless.page()
 const { response, device } = await browserless.goto(page, { url: 'http://example.com' })
 ```
@@ -734,7 +759,7 @@ Events can be either:
 - `'networkidle0'`: Consider navigation to be finished when there are no more than 0 network connections for at least 500 ms.
 - `'networkidle2'`: Consider navigation to be finished when there are no more than 2 network connections for at least 500 ms.
 
-### .context
+### .context()
 
 It returns the [BrowserContext](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#class-browsercontext) associated with your instance.
 
@@ -745,7 +770,7 @@ console.log({ isIncognito: browserContext.isIncognito() })
 // => { isIncognito: true }
 ```
 
-### .page
+### .page()
 
 It returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#class-page) associated with the current browser context.
 
@@ -755,29 +780,41 @@ await page.content()
 // => '<html><head></head><body></body></html>'
 ```
 
-## Command Line Interface
+## Executing arbitrary code
 
-You can perform any **browserless** action from your terminal.
+The [`@browserless/function`](https://npm.im/@browserless/function) package provides an isolated vm scope to run arbitrary JavaScript code with runtime access to a browser page:
 
-![](/static/cli.png)
+```js
+const createFunction = require('@browserless/function')
 
-Just you need to install [`@browserless/cli`](https://npm.im/@browserless/cli) globally:
+const code = async ({ page }) => page.evaluate('jQuery.fn.jquery')
 
+const version = createFunction(code)
+
+const { isFulfilled, isRejected, value } = await version('https://jquery.com')
+
+// => {
+//   isFulfilled: true,
+//   isRejected: false,
+//   value: '1.13.1'
+// }
 ```
-npm install @browserless/cli --global
-```
 
-Additionally, can do it under demand using [`npx`](https://npm.im/npx):
+### options
 
-```
-npx @browserless/cli --help
-```
+Besides the following properties, any other argument provided will be available during the code execution.
 
-That's the preferred way to interact with the CLI under CI/CD scenarios.
+#### vmOpts
 
-## Lighthouse
+The hosted code is also running inside a secure sandbox created via [vm2](https://npm.im/vm2).
 
-**browserless** has a [Lighthouse](https://developers.google.com/web/tools/lighthouse) integration that connects to a [Puppeteer](https://github.com/GoogleChrome/puppeteer) instance in a simple way.
+#### gotoOpts
+
+Any [goto#options](/#options-6) can be passed for tuning the internal URL resolution.
+
+## Runing Lighthouse
+
+The [`@browserless/lighthouse`](https://npm.im/@browserless/lighthouse) package provides you the setup for running [Lighthouse](https://developers.google.com/web/tools/lighthouse) reports backed by browserless.
 
 ```js
 const lighthouse = require('@browserless/lighthouse')
@@ -806,6 +843,8 @@ The second argument can contain lighthouse specific settings The following optio
 See [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/master/docs/configuration.md) to know all the options and values supported.
 
 Additionally, you can setup:
+
+The lighthouse execution runs as a [worker thread](https://nodejs.org/api/worker_threads.html), any [worker#options](https://nodejs.org/api/worker_threads.html#new-workerfilename-options) are supported.
 
 #### getBrowserless
 
