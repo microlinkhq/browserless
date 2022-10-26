@@ -2,11 +2,10 @@
 
 const { ensureError, browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless:lighthouse')
-const { driver } = require('browserless')
+const { Worker } = require('worker_threads')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 const pEvent = require('p-event')
-const execa = require('execa')
 const path = require('path')
 
 const lighthousePath = path.resolve(__dirname, 'lighthouse.js')
@@ -41,26 +40,23 @@ module.exports = async (
     output,
     retry = 2,
     timeout = 30000,
+    workerOpts,
     ...opts
   } = {}
 ) => {
   const browserlessPromise = getBrowserless()
   const config = getConfig(opts)
   let isRejected = false
-  let subprocess
 
   async function run () {
     const browserless = await browserlessPromise
     const browser = await browserless.browser()
     const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
 
-    subprocess = execa.node(lighthousePath, { detached: process.platform !== 'win32' })
-    subprocess.stderr.pipe(process.stderr)
-    debug('spawn', { pid: subprocess.pid })
-    subprocess.send({ url, flags, config })
+    const worker = new Worker(lighthousePath, { ...workerOpts, workerData: { url, flags, config } })
+    debug('spawn', { pid: process.pid, thread: worker.threadId })
+    const { value, reason, isFulfilled } = JSON.parse(await pEvent(worker, 'message'))
 
-    const { value, reason, isFulfilled } = await pEvent(subprocess, 'message')
-    await driver.close(subprocess)
     if (isFulfilled) return value
     throw ensureError(reason)
   }
@@ -79,7 +75,6 @@ module.exports = async (
 
   const result = await pTimeout(task(), timeout, () => {
     isRejected = true
-    if (subprocess) subprocess.kill('SIGKILL')
     throw browserTimeout({ timeout })
   })
 
