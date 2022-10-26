@@ -804,10 +804,6 @@ const { isFulfilled, isRejected, value } = await version('https://jquery.com')
 
 Besides the following properties, any other argument provided will be available during the code execution.
 
-#### workerOpts
-
-Since the hosted code runs as a [worker thread](https://nodejs.org/api/worker_threads.html), any [worker#options](https://nodejs.org/api/worker_threads.html#new-workerfilename-options) are supported.
-
 #### vmOpts
 
 The hosted code is also running inside a secure sandbox created via [vm2](https://npm.im/vm2).

@@ -1,6 +1,5 @@
 'use strict'
 
-const { workerData, parentPort } = require('node:worker_threads')
 const path = require('path')
 
 const createVm = require('./vm')
@@ -43,11 +42,9 @@ async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
   }
 }`
 
-const main = ({ url, code, vmOpts, gotoOpts, browserWSEndpoint, ...opts }) => {
+module.exports = ({ url, code, vmOpts, gotoOpts, browserWSEndpoint, ...opts }) => {
   const vm = createVm(vmOpts)
   const fn = createFn(code)
   const run = vm(fn, scriptPath)
   return run({ url, gotoOpts, browserWSEndpoint, ...opts })
 }
-
-main(workerData).then(result => parentPort.postMessage(JSON.stringify(result)))
