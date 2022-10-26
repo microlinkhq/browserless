@@ -464,6 +464,10 @@ body {
   margin-bottom: 10px;
 }
 
+.markdown-section li ul {
+  margin-top: 10px;
+}
+
 .markdown-section ul {
   padding-left: 2rem;
 }
