@@ -29,7 +29,7 @@
     "serverless"
   ],
   "dependencies": {
-    "@browserless/errors": "^9.6.6",
+    "@browserless/errors": "workspace:*",
     "debug-logfmt": "~1.0.4",
     "deepmerge": "~4.2.2",
     "p-reflect": "~2.1.0",
@@ -40,9 +40,9 @@
     "vm2": "~3.9.11"
   },
   "devDependencies": {
-    "@browserless/test": "latest",
+    "@browserless/test": "workspace:*",
     "ava": "3",
-    "browserless": "latest",
+    "browserless": "workspace:*",
     "lodash": "latest"
   },
   "engines": {

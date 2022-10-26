@@ -29,7 +29,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "@browserless/devices": "^9.6.6",
+    "@browserless/devices": "workspace:*",
     "@cliqz/adblocker-puppeteer": "~1.25.0",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.5",
@@ -44,7 +44,7 @@
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
-    "@browserless/test": "latest",
+    "@browserless/test": "workspace:*",
     "ava": "3",
     "browserless": "latest",
     "fpscanner": "latest",

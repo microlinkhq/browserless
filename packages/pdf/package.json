@@ -24,7 +24,7 @@
     "screen"
   ],
   "dependencies": {
-    "@browserless/goto": "^9.6.11"
+    "@browserless/goto": "workspace:*"
   },
   "engines": {
     "node": ">= 12"
