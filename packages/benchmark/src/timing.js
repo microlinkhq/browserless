@@ -1,6 +1,6 @@
 'use strict'
 
-const browserlessFactory = require('browserless')
+const createBrowser = require('browserless')
 const debug = require('debug-logfmt')('browserless:benchmark')
 const percentile = require('percentile')
 const timeSpan = require('time-span')
@@ -10,7 +10,7 @@ const HEADLESS = true
 // const TMP_FOLDER = '/tmp'
 
 const createBrowserless = id =>
-  browserlessFactory({
+  createBrowser({
     headless: HEADLESS,
     lossyDeviceName: true,
     timeout: 15000

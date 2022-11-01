@@ -402,7 +402,7 @@ const buffer = await browserless.screenshot(url.toString(), {
 It will destroy the current browser context.
 
 ```js
-const browserless = await browserlessFactory.createContext({ retry: 0 })
+const browserless = await browser.createContext({ retry: 0 })
 
 const content = await browserless.html('https://example.com')
 
@@ -582,13 +582,13 @@ These techniques are used by [antibot](https://news.ycombinator.com/item?id=2047
 The evasion techniques are enabled by default. You can omit techniques just filtering them:
 
 ```js
-const createBrowserless = require('browserless')
+const createBrowser = require('browserless')
 
 const evasions = require('@browserless/goto').evasions.filter(
   evasion => evasion !== 'randomizeUserAgent'
 )
 
-const browserlessFactory = createBrowserless({ evasions })
+const browser = createBrowser({ evasions })
 ```
 
 ##### headers

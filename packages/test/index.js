@@ -49,12 +49,12 @@ const getServerUrl = (() => {
   return () => Promise.resolve(initializedServer)
 })()
 
-module.exports = (browserlessFactory, teardown = browserlessFactory.close) => {
+module.exports = (browser, teardown = browser.close) => {
   exitHook(teardown)
 
   test('.html', async t => {
     const url = await getServerUrl()
-    const browserless = await browserlessFactory.createContext()
+    const browserless = await browser.createContext()
     t.teardown(() => browserless.destroyContext())
     const html = await browserless.html(url, { adblock: false, animations: true })
     t.snapshot(html)
@@ -63,7 +63,7 @@ module.exports = (browserlessFactory, teardown = browserlessFactory.close) => {
   test('.text', async t => {
     const url = await getServerUrl()
 
-    const browserless = await browserlessFactory.createContext()
+    const browserless = await browser.createContext()
     t.teardown(() => browserless.destroyContext())
     const text = await browserless.text(url)
 
@@ -74,7 +74,7 @@ module.exports = (browserlessFactory, teardown = browserlessFactory.close) => {
     const url = await getServerUrl()
     const filepath = temp.file({ extension: 'png' })
 
-    const browserless = await browserlessFactory.createContext()
+    const browserless = await browser.createContext()
     t.teardown(() => browserless.destroyContext())
     await browserless.screenshot(url, { path: filepath })
 
@@ -90,7 +90,7 @@ module.exports = (browserlessFactory, teardown = browserlessFactory.close) => {
     const url = await getServerUrl()
     const filepath = temp.file({ extension: 'jpeg' })
 
-    const browserless = await browserlessFactory.createContext()
+    const browserless = await browser.createContext()
     t.teardown(() => browserless.destroyContext())
     await browserless.screenshot(url, { type: 'jpeg', path: filepath })
 
@@ -106,7 +106,7 @@ module.exports = (browserlessFactory, teardown = browserlessFactory.close) => {
     const url = await getServerUrl()
     const filepath = temp.file({ extension: 'png' })
 
-    const browserless = await browserlessFactory.createContext()
+    const browserless = await browser.createContext()
     t.teardown(() => browserless.destroyContext())
     await browserless.screenshot(url, { device: 'iPhone 6', path: filepath })
 
@@ -121,7 +121,7 @@ module.exports = (browserlessFactory, teardown = browserlessFactory.close) => {
   test('.pdf', async t => {
     const url = await getServerUrl()
 
-    const browserless = await browserlessFactory.createContext()
+    const browserless = await browser.createContext()
     t.teardown(() => browserless.destroyContext())
     const buffer = await browserless.pdf(url)
 
