@@ -1,13 +1,13 @@
 'use strict'
 
-const { initBrowserless, getBrowserless } = require('@browserless/test/util')
+const { initBrowser, getBrowser } = require('@browserless/test/util')
 const http = require('http')
 
 const test = require('ava')
 
-const browserlessFactory = getBrowserless()
+const browser = getBrowser()
 
-require('@browserless/test')(browserlessFactory)
+require('@browserless/test')(browser)
 
 test('pass specific options to a context', async t => {
   const proxiedRequestUrls = []
@@ -34,7 +34,7 @@ test('pass specific options to a context', async t => {
 
   const proxyServer = `http://[::]:${proxy.address().port}`
 
-  const browserless = await browserlessFactory.createContext({ proxyServer })
+  const browserless = await browser.createContext({ proxyServer })
   const page = await browserless.page()
 
   await browserless.goto(page, { url: 'http://example.com' })
@@ -43,7 +43,7 @@ test('pass specific options to a context', async t => {
 })
 
 test('ensure to destroy browser contexts', async t => {
-  const browserlessFactory = initBrowserless()
+  const browserlessFactory = initBrowser()
 
   const browser = await browserlessFactory.browser()
 

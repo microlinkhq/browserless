@@ -1,12 +1,12 @@
 'use strict'
 
-const { getBrowserless } = require('@browserless/test/util')
+const { getBrowser } = require('@browserless/test/util')
 const test = require('ava')
 
-const browserlessFactory = getBrowserless()
+const browser = getBrowser()
 
 test('setup `scripts`', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
   t.teardown(browserless.destroyContext)
 
@@ -20,7 +20,7 @@ test('setup `scripts`', async t => {
 })
 
 test('setup `modules`', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
   t.teardown(browserless.destroyContext)
 
@@ -34,7 +34,7 @@ test('setup `modules`', async t => {
 })
 
 test('setup `styles`', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
   t.teardown(browserless.destroyContext)
 

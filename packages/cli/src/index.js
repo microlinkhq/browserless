@@ -2,7 +2,7 @@
 
 'use strict'
 
-const createBrowserless = require('browserless')
+const createBrowser = require('browserless')
 const beautyError = require('beauty-error')
 const exitHook = require('exit-hook')
 const path = require('path')
@@ -42,10 +42,10 @@ const run = async () => {
   const url = new URL(rawUrl).toString()
   const fn = require(`./commands/${command}`)
 
-  const browserlessFactory = createBrowserless({ headless })
-  const browserless = await browserlessFactory.createContext()
+  const browser = createBrowser({ headless })
+  const browserless = await browser.createContext()
 
-  exitHook(() => browserlessFactory.close())
+  exitHook(() => browser.close())
 
   const result = await fn({ url, browserless, opts: cli.flags })
 

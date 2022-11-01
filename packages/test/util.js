@@ -1,28 +1,28 @@
 'use strict'
 
-const createBrowserless = require('browserless')
+const createBrowser = require('browserless')
 const exitHook = require('exit-hook')
 
-let _browserless
+let _browser
 
-const initBrowserless = opts => {
-  const browserless = createBrowserless(opts)
-  exitHook(browserless.close)
-  return browserless
+const initBrowser = opts => {
+  const browser = createBrowser(opts)
+  exitHook(browser.close)
+  return browser
 }
 
-const getBrowserless = () => _browserless || (_browserless = initBrowserless())
+const getBrowser = () => _browser || (_browser = initBrowser())
 
-const getBrowser = () => getBrowserless().browser()
+const getInternalBrowser = () => getBrowser().browser()
 
-const getBrowserWSEndpoint = () => getBrowser().then(browser => browser.wsEndpoint())
+const getBrowserWSEndpoint = () => getInternalBrowser().then(browser => browser.wsEndpoint())
 
-const getBrowserContext = () => getBrowserless().createContext()
+const getBrowserContext = () => getBrowser().createContext()
 
 module.exports = {
-  initBrowserless,
-  getBrowserless,
-  getBrowserWSEndpoint,
   getBrowser,
-  getBrowserContext
+  getBrowserContext,
+  getBrowserWSEndpoint,
+  getInternalBrowser,
+  initBrowser
 }

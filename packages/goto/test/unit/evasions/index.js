@@ -1,6 +1,6 @@
 'use strict'
 
-const { initBrowserless } = require('@browserless/test/util')
+const { initBrowser } = require('@browserless/test/util')
 const test = require('ava')
 const path = require('path')
 
@@ -8,12 +8,12 @@ const evasions = require('../../../src/evasions')
 
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
-const browserlessFactory = initBrowserless({ evasions: false })
+const browser = initBrowser({ evasions: false })
 
 test('ensure `window.console` is present', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const consoleKeys = () => page.evaluate('Object.keys(window.console)')
@@ -48,9 +48,9 @@ test('ensure `window.console` is present', async t => {
 })
 
 test('ensure `window.outerHeight` is present', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const outerHeight = () => page.evaluate(() => window.outerHeight)
@@ -62,9 +62,9 @@ test('ensure `window.outerHeight` is present', async t => {
 })
 
 test('ensure `window.outerWidth` is present', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const outerWidth = () => page.evaluate(() => window.outerWidth)
@@ -76,9 +76,9 @@ test('ensure `window.outerWidth` is present', async t => {
 })
 
 test('`navigator.vendor` is synchronized with user-agent', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
 
@@ -104,9 +104,9 @@ test('`navigator.vendor` is synchronized with user-agent', async t => {
 })
 
 test('ensure `navigator.deviceMemory` is present', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
 
@@ -118,9 +118,9 @@ test('ensure `navigator.deviceMemory` is present', async t => {
 })
 
 test('randomize `user-agent`', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
 
@@ -134,9 +134,9 @@ test('randomize `user-agent`', async t => {
 })
 
 test('hide `navigator.webdriver`', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const webdriver = () => page.evaluate(() => window.navigator.webdriver)
@@ -148,9 +148,9 @@ test('hide `navigator.webdriver`', async t => {
 })
 
 test('ensure `navigator.hardwareConcurrency` is present', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const hardwareConcurrency = () => page.evaluate(() => window.navigator.hardwareConcurrency)
@@ -164,9 +164,9 @@ test('ensure `navigator.hardwareConcurrency` is present', async t => {
 })
 
 test('inject chrome runtime', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const chrome = () => page.evaluate(() => window.chrome)
@@ -179,9 +179,9 @@ test('inject chrome runtime', async t => {
 })
 
 test('override `navigator.permissions`', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const permissionStatusState = () =>
@@ -201,9 +201,9 @@ test('override `navigator.permissions`', async t => {
 })
 
 test('mock `navigator.plugins`', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const plugins = () => page.evaluate(() => window.navigator.plugins.length)
@@ -220,9 +220,9 @@ test('mock `navigator.plugins`', async t => {
 })
 
 test('ensure `navigator.languages` is present', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const languages = () => page.evaluate(() => window.navigator.languages)
@@ -230,9 +230,9 @@ test('ensure `navigator.languages` is present', async t => {
 })
 
 test('ensure media codecs are present', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   await page.goto(fileUrl, { waitUntil: 'networkidle0' })
@@ -288,9 +288,9 @@ test('ensure media codecs are present', async t => {
 })
 
 test('ensure `console.debug` is defined', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const consoleDebug = () => page.evaluate(() => !!console.debug)
@@ -298,9 +298,9 @@ test('ensure `console.debug` is defined', async t => {
 })
 
 test('ensure `navigator.vendor` is defined', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const vendor = () => page.evaluate(() => window.navigator.vendor)
@@ -308,9 +308,9 @@ test('ensure `navigator.vendor` is defined', async t => {
 })
 
 test('hide webgl vendor', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const webgl = () =>
@@ -342,9 +342,9 @@ test('hide webgl vendor', async t => {
 })
 
 test('hide `webgl2` vendor', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const webgl2 = () =>
@@ -373,9 +373,9 @@ test('hide `webgl2` vendor', async t => {
 })
 
 test('ensure broken images have dimensions', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const brokenImage = () =>
@@ -392,9 +392,9 @@ test('ensure broken images have dimensions', async t => {
 })
 
 test('sanetize stack traces', async t => {
-  const browserless = await browserlessFactory.createContext()
+  const browserless = await browser.createContext()
 
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const page = await browserless.page()
   const errorStackTrace = () =>

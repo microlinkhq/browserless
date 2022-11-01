@@ -58,9 +58,9 @@ const getStrategy = opts => {
     context: () => {
       return {
         onInit: () => createBrowserless(opts),
-        onCreate: browserlessFactory => browserlessFactory.createContext(),
+        onCreate: browser => browser.createContext(),
         onDestroy: browserless => browserless.destroyContext(),
-        onClose: browserlessFactory => browserlessFactory.close()
+        onClose: browser => browser.close()
       }
     },
     process: () => {
@@ -68,14 +68,14 @@ const getStrategy = opts => {
       return {
         onInit: () => {},
         onCreate: (_, n) => {
-          const browserlessFactory = createBrowserless(opts)
-          browsers.set(n, browserlessFactory)
-          return browserlessFactory.createContext()
+          const browser = createBrowserless(opts)
+          browsers.set(n, browser)
+          return browser.createContext()
         },
         onDestroy: async (browserless, n) => {
-          const browserlessFactory = browsers.get(n)
+          const browser = browsers.get(n)
           await browserless.destroyContext()
-          return browserlessFactory.close()
+          return browser.close()
         },
         onClose: () => {}
       }
@@ -85,7 +85,7 @@ const getStrategy = opts => {
 
 const benchmark = async ({
   strategy,
-  browserlessFactory,
+  browser,
   concurrency,
   getStats,
   iterations,
@@ -98,7 +98,7 @@ const benchmark = async ({
     return async () => {
       const stopwatch = timer.start()
 
-      const browserless = await strategy.onCreate(browserlessFactory, n)
+      const browserless = await strategy.onCreate(browser, n)
       await browserless[method](url, opts)
       await strategy.onDestroy(browserless, n)
       const time = stopwatch.end()
@@ -131,12 +131,12 @@ const main = async () => {
 
   const strategy = getStrategy({ puppeteer, ...opts })[cli.flags.strategy]()
   const getStats = processStats()
-  const browserlessFactory = strategy.onInit()
+  const browser = strategy.onInit()
 
   console.log()
   const { times, histogram } = await benchmark({
     strategy,
-    browserlessFactory,
+    browser,
     concurrency,
     getStats,
     iterations,
@@ -151,7 +151,7 @@ const main = async () => {
     format: time => prettyMs(time, { keepDecimalsOnWholeSeconds: true })
   })
 
-  await strategy.onClose(browserlessFactory)
+  await strategy.onClose(browser)
   const { uptime, memUsed } = getStats()
   getStats.destroy()
 

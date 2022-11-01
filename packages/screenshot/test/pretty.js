@@ -1,13 +1,13 @@
 'use strict'
 
-const { getBrowser } = require('@browserless/test/util')
+const { getInternalBrowser } = require('@browserless/test/util')
 
 const test = require('ava')
 
 const pretty = require('../src/pretty')
 
 test('prettify `application/json`', async t => {
-  const browser = await getBrowser()
+  const browser = await getInternalBrowser()
   const page = await browser.newPage()
 
   t.teardown(() => page.close())
@@ -43,7 +43,7 @@ test('prettify `application/json`', async t => {
 })
 
 test('prettify `text/plain`', async t => {
-  const browser = await getBrowser()
+  const browser = await getInternalBrowser()
   const page = await browser.newPage()
 
   t.teardown(() => page.close())
@@ -66,7 +66,7 @@ test('prettify `text/plain`', async t => {
 })
 
 test('prettify `text/html` markup is not HTML', async t => {
-  const browser = await getBrowser()
+  const browser = await getInternalBrowser()
   const page = await browser.newPage()
 
   t.teardown(() => page.close())
@@ -89,7 +89,7 @@ test('prettify `text/html` markup is not HTML', async t => {
 })
 
 test("don't prettify `text/html` when markup is HTML", async t => {
-  const browser = await getBrowser()
+  const browser = await getInternalBrowser()
   const page = await browser.newPage()
 
   t.teardown(() => page.close())
@@ -112,7 +112,7 @@ test("don't prettify `text/html` when markup is HTML", async t => {
 })
 
 test("don't prettify `text/plain` when markup is HTML", async t => {
-  const browser = await getBrowser()
+  const browser = await getInternalBrowser()
   const page = await browser.newPage()
 
   t.teardown(() => page.close())

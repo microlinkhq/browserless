@@ -204,7 +204,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-* change `browserless.close()` to `browserlessFactory.close()` on README example ([#343](https://github.com/microlinkhq/browserless/issues/343)) ([0d54620](https://github.com/microlinkhq/browserless/commit/0d5462050b015ff7f3fbeb372901634a729a866e))
+* change `browserless.close()` to `browser.close()` on README example ([#343](https://github.com/microlinkhq/browserless/issues/343)) ([0d54620](https://github.com/microlinkhq/browserless/commit/0d5462050b015ff7f3fbeb372901634a729a866e))
 
 ## [9.3.2](https://github.com/microlinkhq/browserless/compare/v9.3.1...v9.3.2) (2022-01-03)
 
