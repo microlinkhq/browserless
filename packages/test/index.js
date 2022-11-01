@@ -55,7 +55,7 @@ module.exports = (browser, teardown = browser.close) => {
   test('.html', async t => {
     const url = await getServerUrl()
     const browserless = await browser.createContext()
-    t.teardown(() => browserless.destroyContext())
+    t.teardown(browserless.destroyContext)
     const html = await browserless.html(url, { adblock: false, animations: true })
     t.snapshot(html)
   })
@@ -64,7 +64,7 @@ module.exports = (browser, teardown = browser.close) => {
     const url = await getServerUrl()
 
     const browserless = await browser.createContext()
-    t.teardown(() => browserless.destroyContext())
+    t.teardown(browserless.destroyContext)
     const text = await browserless.text(url)
 
     t.snapshot(text)
@@ -75,7 +75,7 @@ module.exports = (browser, teardown = browser.close) => {
     const filepath = temp.file({ extension: 'png' })
 
     const browserless = await browser.createContext()
-    t.teardown(() => browserless.destroyContext())
+    t.teardown(browserless.destroyContext)
     await browserless.screenshot(url, { path: filepath })
 
     const { diffCount } = await imageComparison(t, filepath, 'example.png')
@@ -91,7 +91,7 @@ module.exports = (browser, teardown = browser.close) => {
     const filepath = temp.file({ extension: 'jpeg' })
 
     const browserless = await browser.createContext()
-    t.teardown(() => browserless.destroyContext())
+    t.teardown(browserless.destroyContext)
     await browserless.screenshot(url, { type: 'jpeg', path: filepath })
 
     const { diffCount } = await imageComparison(t, filepath, 'example.jpeg')
@@ -107,7 +107,7 @@ module.exports = (browser, teardown = browser.close) => {
     const filepath = temp.file({ extension: 'png' })
 
     const browserless = await browser.createContext()
-    t.teardown(() => browserless.destroyContext())
+    t.teardown(browserless.destroyContext)
     await browserless.screenshot(url, { device: 'iPhone 6', path: filepath })
 
     const { diffCount } = await imageComparison(t, filepath, 'iphone.png')
@@ -122,7 +122,7 @@ module.exports = (browser, teardown = browser.close) => {
     const url = await getServerUrl()
 
     const browserless = await browser.createContext()
-    t.teardown(() => browserless.destroyContext())
+    t.teardown(browserless.destroyContext)
     const buffer = await browserless.pdf(url)
 
     const data = await pdf(buffer)

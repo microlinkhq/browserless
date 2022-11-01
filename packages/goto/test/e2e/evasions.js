@@ -85,7 +85,7 @@ test('fpscanner', async t => {
 
 test('bot.sannysoft.com', async t => {
   const browserless = await browser.createContext()
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
 
   const getReport = browserless.evaluate(page =>
     page.evaluate(() => {
@@ -130,14 +130,14 @@ test('bot.sannysoft.com', async t => {
 
 test('amiunique.org/fp', async t => {
   const browserless = await browser.createContext()
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
   const content = await browserless.text('https://amiunique.org/fp', { waitForTimeout: 3000 })
   t.true(content.includes('You are unique'))
 })
 
 test('browserleaks.com/webgl', async t => {
   const browserless = await browser.createContext()
-  t.teardown(() => browserless.destroyContext())
+  t.teardown(browserless.destroyContext)
   const getGpuInfo = browserless.evaluate(page =>
     page.evaluate(() => {
       return {
