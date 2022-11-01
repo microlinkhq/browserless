@@ -102,7 +102,7 @@
     "build": "gulp build",
     "clean": "pnpm -r exec -- rm -rf node_modules",
     "contributors": "pnpm run contributors:add && pnpm run contributors:commit",
-    "contributors:add": "`npm --recursive --parallel exec -- finepack",
+    "contributors:add": "pnpm --recursive --parallel exec -- finepack",
     "contributors:commit": "(git-authors-cli && finepack && git add package.json && git commit -m 'build: contributors' --no-verify) || true",
     "coverage": "c8 report --reporter=text-lcov > coverage/lcov.info",
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
