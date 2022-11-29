@@ -24,8 +24,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   let isClosed = false
 
   const close = opts => {
+    debug('close', { isClosed })
     isClosed = true
-    return browserProcessPromise.then(browserProcess => driver.close(browserProcess, opts))
+    return browserProcessPromise
+      .then(browserProcess => driver.close(browserProcess, opts))
+      .catch(error => {
+        throw ensureError(error)
+      })
   }
 
   const respawn = () =>
