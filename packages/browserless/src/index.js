@@ -45,7 +45,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     })
 
     promise.then(async browser => {
-      browser.once('disconnected', getBrowser)
+      if (launchOpts.mode !== 'connect') browser.once('disconnected', getBrowser)
       debug('spawn', {
         respawn: isRespawn,
         pid: driver.pid(browser) || launchOpts.mode,
