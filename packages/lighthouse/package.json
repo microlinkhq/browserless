@@ -24,7 +24,7 @@
     "stats"
   ],
   "dependencies": {
-    "@browserless/errors": "workspace:*",
+    "@browserless/errors": "^9.7.2",
     "debug-logfmt": "~1.0.4",
     "lighthouse": "~9.6.2",
     "p-retry": "~4.6.1",
