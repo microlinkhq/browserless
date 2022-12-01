@@ -6,7 +6,6 @@ const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const createPdf = require('@browserless/pdf')
 const { withLock } = require('superlock')
-const { randomUUID } = require('crypto')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
@@ -46,7 +45,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     })
 
     promise.then(async browser => {
-      browser.once('disconnected', getBrowser)
+      if (launchOpts.mode !== 'connect') browser.once('disconnected', getBrowser)
       debug('spawn', {
         respawn: isRespawn,
         pid: driver.pid(browser) || launchOpts.mode,
@@ -60,9 +59,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   let browserProcessPromise = spawn()
 
   const createBrowserContext = contextOpts =>
-    getBrowser()
-      .then(browser => browser.createIncognitoBrowserContext(contextOpts))
-      .then(context => (context._id = randomUUID()) && context)
+    getBrowser().then(browser => browser.createIncognitoBrowserContext(contextOpts))
 
   const getBrowser = async () => {
     if (isClosed) return browserProcessPromise
@@ -95,7 +92,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         getBrowserContext()
       ])
       const page = await browserContext.newPage()
-      debug('createPage', { pid: driver.pid(browserProcess), id: browserContext._id })
+      debug('createPage', { pid: driver.pid(browserProcess), id: browserContext.id })
       return page
     }
 
@@ -106,7 +103,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           getBrowserContext(),
           pReflect(page.close())
         ])
-        debug('closePage', { pid: driver.pid(browserProcess), id: browserContext._id })
+        debug('closePage', { pid: driver.pid(browserProcess), id: browserContext.id })
       }
     }
 
@@ -165,10 +162,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         getBrowser(),
         getBrowserContext()
       ])
-      const id = browserContext._id
       await pReflect(browserContext.close())
-
-      debug('destroyContext', { pid: driver.pid(browserProcess), id })
+      debug('destroyContext', { pid: driver.pid(browserProcess), id: browserContext.id })
     }
 
     return {

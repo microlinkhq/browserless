@@ -34,11 +34,12 @@ async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
 
   try {
     const value = await browserFn(url)
-    await browserless.destroyContext()
     return { isFulfilled: true, isRejected: false, value }
   } catch (error) {
-    await browserless.destroyContext()
     return { isFulfilled: false, isRejected: true, reason: serializeError(error) }
+  } finally {
+    await browserless.destroyContext()
+    await browserless.browser().then(browser => browser.disconnect())
   }
 }`
 
