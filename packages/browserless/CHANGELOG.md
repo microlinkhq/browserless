@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.7.1](https://github.com/microlinkhq/browserless/compare/v9.7.0...v9.7.1) (2022-12-01)
+
+### Bug Fixes
+
+* don't reconnect under connect mode ([#429](https://github.com/microlinkhq/browserless/issues/429)) ([e4f07a9](https://github.com/microlinkhq/browserless/commit/e4f07a99f972e3c93a7695d2eb4d77e4f31c2060))
+
 # [9.7.0](https://github.com/microlinkhq/browserless/compare/v9.7.0-beta.0...v9.7.0) (2022-11-01)
 
 **Note:** Version bump only for package browserless
