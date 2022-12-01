@@ -2,7 +2,7 @@
   "name": "@browserless/pdf",
   "description": "Sensible good defaults for exporting a website as PDF",
   "homepage": "https://browserless.js.org/#/?id=pdfurl-options",
-  "version": "9.7.0",
+  "version": "9.7.2",
   "main": "src",
   "repository": {
     "directory": "packages/pdf",
