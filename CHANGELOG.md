@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.8.0](https://github.com/microlinkhq/browserless/compare/v9.7.3...v9.8.0) (2022-12-09)
+
+### Features
+
+* **goto:** add onPageRequest ([#430](https://github.com/microlinkhq/browserless/issues/430)) ([cc06303](https://github.com/microlinkhq/browserless/commit/cc06303d1e2e128b60c7312fedebfa100d9ea67b))
+
 ## [9.7.1](https://github.com/microlinkhq/browserless/compare/v9.7.0...v9.7.1) (2022-12-01)
 
 ### Bug Fixes
