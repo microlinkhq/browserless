@@ -550,6 +550,13 @@ type: `string` | `string[]`</br>
 
 Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
+##### colorScheme
+
+type: `string`</br>
+default: `'no-preference'`
+
+Sets [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme) CSS media feature, used to detect if the user has requested the system use a `'light'` or `'dark'` color theme.
+
 ##### device
 
 type: `string`</br>
@@ -654,12 +661,11 @@ const buffer = await browserless.screenshot(url.toString(), {
 })
 ```
 
-##### colorScheme
+##### onPageRequest
 
-type: `string`</br>
-default: `'no-preference'`
+type:`function`
 
-Sets [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme) CSS media feature, used to detect if the user has requested the system use a `'light'` or `'dark'` color theme.
+Associate a handler for every request in the page.
 
 ##### scripts
 

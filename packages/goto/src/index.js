@@ -212,6 +212,7 @@ module.exports = ({
       waitForXPath,
       waitUntil = 'auto',
       waitUntilAuto = _waitUntilAuto,
+      onPageRequest,
       ...args
     }
   ) => {
@@ -244,19 +245,27 @@ module.exports = ({
       )
     }
 
-    if (abortTypes.length > 0) {
-      await page.setRequestInterception(true)
-      page.on('request', req => {
-        if (req.isInterceptResolutionHandled()) return
-        const resourceType = req.resourceType()
-        const url = truncate(req.url())
+    const enableInterception =
+      (onPageRequest || abortTypes.length > 0) && page.setRequestInterception(true)
 
-        if (!abortTypes.includes(resourceType)) {
-          debug('continue', { url, resourceType })
-          return req.continue(req.continueRequestOverrides(), 0)
-        }
-        debug('abort', { url, resourceType })
-        return req.abort('blockedbyclient', 0)
+    if (onPageRequest) {
+      Promise.resolve(enableInterception).then(() => page.on('request', onPageRequest))
+    }
+
+    if (abortTypes.length > 0) {
+      Promise.resolve(enableInterception).then(() => {
+        page.on('request', req => {
+          if (req.isInterceptResolutionHandled()) return
+          const resourceType = req.resourceType()
+          const url = truncate(req.url())
+
+          if (!abortTypes.includes(resourceType)) {
+            debug('continue', { url, resourceType })
+            return req.continue(req.continueRequestOverrides(), 0)
+          }
+          debug('abort', { url, resourceType })
+          return req.abort('blockedbyclient', 0)
+        })
       })
     }
 
