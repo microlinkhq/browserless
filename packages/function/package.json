@@ -31,7 +31,7 @@
   "dependencies": {
     "@browserless/errors": "^9.7.2",
     "debug-logfmt": "~1.0.4",
-    "deepmerge": "~4.2.2",
+    "deepmerge": "~4.3.0",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
