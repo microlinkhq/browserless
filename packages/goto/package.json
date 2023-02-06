@@ -30,17 +30,17 @@
   ],
   "dependencies": {
     "@browserless/devices": "^9.7.2",
-    "@cliqz/adblocker-puppeteer": "~1.25.0",
+    "@cliqz/adblocker-puppeteer": "~1.25.2",
     "debug-logfmt": "~1.0.4",
-    "got": "~11.8.5",
-    "is-url-http": "~2.3.2",
+    "got": "~11.8.6",
+    "is-url-http": "~2.3.5",
     "p-reflect": "~2.1.0",
     "p-timeout": "~4.1.0",
     "pretty-ms": "~7.0.1",
     "shallow-equal": "~3.0.0",
     "time-span": "~4.0.0",
-    "top-user-agents": "~1.0.45",
-    "tough-cookie": "~4.1.0",
+    "top-user-agents": "~1.0.50",
+    "tough-cookie": "~4.1.2",
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
