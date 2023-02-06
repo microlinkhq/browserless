@@ -41,7 +41,7 @@
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
     "require-one-of": "~1.0.16",
-    "superlock": "~1.0.0"
+    "superlock": "~1.0.1"
   },
   "devDependencies": {
     "@browserless/test": "^9.7.2",
