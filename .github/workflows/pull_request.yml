@@ -1,3 +1,5 @@
+name: pull_request
+
 on:
   push:
     branches:
@@ -6,15 +8,15 @@ on:
     branches:
       - master
 
-env:
-  CI: true
-
 jobs:
   test:
+    if: github.ref != 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -26,9 +28,9 @@ jobs:
           run_install: true
       - name: Test
         run: npm test
+      - name: Report
+        run: mkdir -p coverage && npx c8 report --reporter=text-lcov > coverage/lcov.info
       - name: Coverage
-        run: npm run coverage
-      - name: Upload
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
