@@ -33,7 +33,7 @@
     "got": "~11.8.5",
     "is-html-content": "~1.0.0",
     "is-url-http": "~2.3.2",
-    "jimp": "~0.21.3",
+    "jimp": "~0.22.1",
     "map-values-deep": "~1.0.2",
     "mime": "~3.0.0",
     "p-reflect": "~2.1.0",
