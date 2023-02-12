@@ -107,7 +107,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const wrapError = (fn, { timeout: evaluateTimeout } = {}) => async (...args) => {
+    const runOnPage = (fn, { timeout: evaluateTimeout } = {}) => async (...args) => {
       let isRejected = false
 
       async function run () {
@@ -149,7 +149,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const evaluate = (fn, gotoOpts) =>
-      wrapError(
+      runOnPage(
         page => async (url, opts) => {
           const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
           return fn(page, response, error)
@@ -174,11 +174,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       goto,
       html: evaluate(page => page.content(), { animations: true }),
       page: createPage,
-      pdf: wrapError(createPdf({ goto })),
-      screenshot: wrapError(createScreenshot({ goto })),
+      pdf: runOnPage(createPdf({ goto })),
+      screenshot: runOnPage(createScreenshot({ goto })),
       text: evaluate(page => page.evaluate(() => document.body.innerText)),
       getDevice: goto.getDevice,
-      destroyContext
+      destroyContext,
+      runOnPage
     }
   }
 

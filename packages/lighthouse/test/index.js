@@ -1,8 +1,17 @@
 'use strict'
 
+const createBrowser = require('browserless')
 const test = require('ava')
 
-const lighthouse = require('..')
+const createLighthouse = require('..')
+
+const browser = createBrowser()
+
+const lighthouse = createLighthouse(async teardown => {
+  const browserless = await browser.createContext()
+  teardown(() => browserless.destroyContext())
+  return browserless
+})
 
 test('default configuration', async t => {
   const url = 'https://example.com'
@@ -19,13 +28,13 @@ test('customize default configuration', async t => {
 })
 
 test('specifying custom different configuration', async t => {
-  const url = 'https://kikobeats.com'
+  const url = 'https://example.vercel.sh'
   const report = await lighthouse(url, { preset: 'lr-desktop' })
   t.snapshot(report.configSettings)
 })
 
 test('passing a different serializer', async t => {
-  const url = 'https://kikobeats.com'
+  const url = 'https://javivelasco.com'
   const report = await lighthouse(url, {
     onlyAudits: ['accessibility'],
     output: 'html'
@@ -35,7 +44,7 @@ test('passing a different serializer', async t => {
 })
 
 test('handle timeout', async t => {
-  const url = 'https://kikobeats.com'
+  const url = 'https://germanro.vercel.app'
 
   const error = await t.throwsAsync(
     lighthouse(url, {
