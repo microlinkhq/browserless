@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.9.0](https://github.com/microlinkhq/browserless/compare/v9.8.4...v9.9.0) (2023-02-12)
+
+### Features
+
+* upgrade lighthouse v10.0.0 ([#439](https://github.com/microlinkhq/browserless/issues/439)) ([75c31e5](https://github.com/microlinkhq/browserless/commit/75c31e532f97e98c9bc2a93a449ca287fb0ce0a5))
+
 ## [9.8.4](https://github.com/microlinkhq/browserless/compare/v9.8.3...v9.8.4) (2023-02-06)
 
 **Note:** Version bump only for package @browserless/lighthouse
