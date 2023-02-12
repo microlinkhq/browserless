@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.9.2](https://github.com/microlinkhq/browserless/compare/v9.9.1...v9.9.2) (2023-02-12)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
 # [9.9.0](https://github.com/microlinkhq/browserless/compare/v9.8.4...v9.9.0) (2023-02-12)
 
 ### Features
