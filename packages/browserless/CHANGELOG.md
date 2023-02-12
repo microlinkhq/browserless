@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.9.1](https://github.com/microlinkhq/browserless/compare/v9.9.0...v9.9.1) (2023-02-12)
+
+### Bug Fixes
+
+* remove debug log ([7001ff9](https://github.com/microlinkhq/browserless/commit/7001ff95bb8bb280868c8472c0b38c0dc1936b18))
+
 # [9.9.0](https://github.com/microlinkhq/browserless/compare/v9.8.4...v9.9.0) (2023-02-12)
 
 ### Features

@@ -2,7 +2,7 @@
   "name": "@browserless/cli",
   "description": "CLI to interact with Browserless capabilities",
   "homepage": "https://browserless.js.org",
-  "version": "9.9.0",
+  "version": "9.9.1",
   "bin": {
     "browserless": "src/index.js"
   },
@@ -32,7 +32,7 @@
   ],
   "dependencies": {
     "beauty-error": "~1.2.15",
-    "browserless": "^9.9.0",
+    "browserless": "^9.9.1",
     "dark-mode": "~3.0.0",
     "exit-hook": "~2.2.1",
     "lodash": "~4.17.21",
