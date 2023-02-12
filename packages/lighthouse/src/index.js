@@ -3,24 +3,13 @@
 const lighthouse = require('./lighthouse')
 const getConfig = require('./get-config')
 
-// See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
-const getFlags = ({ disableStorageReset = true, logLevel = 'error', output = 'json' }) => ({
-  disableStorageReset,
-  logLevel,
-  output
-})
-
-module.exports = getBrowserless => async (
-  url,
-  { timeout, disableStorageReset, logLevel, output, ...opts } = {}
-) => {
+module.exports = getBrowserless => async (url, { output = 'json', timeout, ...opts } = {}) => {
   let teardown
   const browserless = await getBrowserless(fn => (teardown = fn))
 
   const fn = page => async () =>
     lighthouse({
-      config: await getConfig(opts),
-      flags: getFlags({ disableStorageReset, logLevel, output }),
+      config: await getConfig({ ...opts, output }),
       page,
       url
     })

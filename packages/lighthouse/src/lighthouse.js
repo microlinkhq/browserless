@@ -2,7 +2,7 @@
 
 const lighthouse = require('lighthouse/core/index.cjs')
 
-module.exports = async ({ url, flags, config, page }) => {
-  const { lhr, report } = await lighthouse(url, flags, config, page)
-  return flags.output === 'json' ? lhr : report
+module.exports = async ({ url, config, page }) => {
+  const { lhr, report } = await lighthouse(url, undefined, config, page)
+  return config.settings.output === 'json' ? lhr : report
 }
