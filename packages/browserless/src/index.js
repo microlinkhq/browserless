@@ -140,7 +140,6 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           }
         })
 
-      console.log({ evaluateTimeout, contextTimeout, globalTimeout })
       const timeout = evaluateTimeout || contextTimeout || globalTimeout
 
       return pTimeout(task(), timeout, () => {
