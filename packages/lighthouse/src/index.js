@@ -6,16 +6,9 @@ const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 
 const lighthouse = require('./lighthouse')
+const getConfig = require('./get-config')
 
 const { AbortError } = pRetry
-
-const getConfig = ({ preset: presetName, ...settings } = {}) => {
-  const baseConfig = presetName
-    ? require(`lighthouse/lighthouse-core/config/${presetName}-config.js`)
-    : { extends: 'lighthouse:default' }
-
-  return { ...baseConfig, settings: { ...baseConfig.settings, ...settings } }
-}
 
 // See https://github.com/GoogleChrome/lighthouse/blob/master/docs/readme.md#configuration
 const getFlags = (
@@ -41,14 +34,17 @@ module.exports = async (
   } = {}
 ) => {
   const browserlessPromise = getBrowserless()
-  const config = getConfig(opts)
   let isRejected = false
 
   async function run () {
     const browserless = await browserlessPromise
     const browser = await browserless.browser()
     const flags = await getFlags(browser, { disableStorageReset, logLevel, output })
-    const { value, reason, isFulfilled } = await lighthouse({ url, flags, config })
+    const { value, reason, isFulfilled } = await lighthouse({
+      config: await getConfig(opts),
+      flags,
+      url
+    })
     if (isFulfilled) return value
     throw ensureError(reason)
   }
@@ -72,5 +68,3 @@ module.exports = async (
 
   return result
 }
-
-module.exports.getConfig = getConfig

@@ -1,7 +1,7 @@
 'use strict'
 
+const lighthouse = require('lighthouse/core/index.cjs')
 const { serializeError } = require('serialize-error')
-const lighthouse = require('lighthouse')
 
 module.exports = async ({ url, flags, config }) => {
   try {

@@ -8,12 +8,20 @@ test('default configuration', async t => {
   const url = 'https://example.com'
   const report = await lighthouse(url)
   t.true(report.audits['screenshot-thumbnails'].details.items.length > 0)
+  t.snapshot(report.configSettings)
 })
 
-test('passing custom configuration', async t => {
+test('customize default configuration', async t => {
   const url = 'https://kikobeats.com'
   const report = await lighthouse(url, { onlyAudits: ['accessibility'] })
   t.deepEqual(report.configSettings.onlyAudits, ['accessibility'])
+  t.snapshot(report.configSettings)
+})
+
+test('specifying custom different configuration', async t => {
+  const url = 'https://kikobeats.com'
+  const report = await lighthouse(url, { preset: 'lr-desktop' })
+  t.snapshot(report.configSettings)
 })
 
 test('passing a different serializer', async t => {
@@ -23,6 +31,7 @@ test('passing a different serializer', async t => {
     output: 'html'
   })
   t.true(report.startsWith('<!--'))
+  t.snapshot(report.configSettings)
 })
 
 test('handle timeout', async t => {
