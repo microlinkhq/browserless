@@ -24,14 +24,10 @@
     "stats"
   ],
   "dependencies": {
-    "@browserless/errors": "^9.8.4",
-    "debug-logfmt": "~1.0.4",
-    "lighthouse": "~9.6.8",
-    "p-retry": "~4.6.1",
-    "p-timeout": "~4.1.0",
-    "serialize-error": "~8.1.0"
+    "lighthouse": "~10.0.0"
   },
   "devDependencies": {
+    "@browserless/test": "^9.7.2",
     "ava": "3",
     "browserless": "latest"
   },

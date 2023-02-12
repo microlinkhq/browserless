@@ -226,7 +226,7 @@ const exitHook = require('exit-hook')
 
 // automatically teardown resources after
 // `process.exit` is called
-exitHook(browser.close())
+exitHook(browser.close)
 ```
 
 ## Using a browser
@@ -823,11 +823,21 @@ Any [goto#options](/#options-6) can be passed for tuning the internal URL resolu
 The [`@browserless/lighthouse`](https://npm.im/@browserless/lighthouse) package provides you the setup for running [Lighthouse](https://developers.google.com/web/tools/lighthouse) reports backed by browserless.
 
 ```js
-const lighthouse = require('@browserless/lighthouse')
+const createLighthouse = require('@browserless/lighthouse')
+const createBrowser = require('browserless')
 const { writeFile } = require('fs/promises')
+const exitHook = require('exit-hook')
 
-const report = await lighthouse('https://example.com')
+const browser = createBrowser()
+exitHook(browser.close)
 
+const lighthouse = createLighthouse(async teardown => {
+  const browserless = await browser.createContext()
+  teardown(() => browserless.destroyContext())
+  return browserless
+})
+
+const report = await lighthouse('https://microlink.io')
 await writeFile('report.json', JSON.stringify(report, null, 2))
 ```
 
@@ -835,29 +845,26 @@ The report will be generated `url`, extending from `lighthouse:default` settings
 
 ### options
 
-The second argument can contain lighthouse specific settings The following options are used by default:
+The [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/main/docs/configuration.md) that will extend `'lighthouse:default'` settings:
 
 ```js
-{
-  logLevel: 'error',
-  output: 'json',
-  device: 'desktop',
-  onlyCategories: ['perfomance', 'best-practices', 'accessibility', 'seo']
-}
+const report = await lighthouse(url, { 
+  onlyAudits: ['accessibility'] 
+})
 ```
 
-See [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/master/docs/configuration.md) to know all the options and values supported.
+Also, you can extend from a different preset of settings:
+
+```js
+const report = await lighthouse(url, { 
+  preset: 'desktop', 
+  onlyAudits: ['accessibility'] 
+})
+```
 
 Additionally, you can setup:
 
 The lighthouse execution runs as a [worker thread](https://nodejs.org/api/worker_threads.html), any [worker#options](https://nodejs.org/api/worker_threads.html#new-workerfilename-options) are supported.
-
-#### getBrowserless
-
-type: `function`</br>
-default: `require('browserless')`
-
-The browserless instance to use for getting the browser.
 
 #### logLevel
 
@@ -875,21 +882,12 @@ values: `'json'` | `'csv'` | `'html'`
 
 The type(s) of report output to be produced.
 
-#### device
+##### timeout
 
-type: `string`</br>
-default: `'desktop'`</br>
-values: `'desktop'` | `'mobile'` | `'none'` </br>
+type: `number`</br>
+default: `browserless.timeout`
 
-How emulation (useragent, device screen metrics, touch) should be applied. `'none'` indicates Lighthouse should leave the host browser as-is.
-
-#### onlyCategories
-
-type: `string[]` | `null`</br>
-default: `['performance', 'best-practices', 'accessibility', 'seo']`</br>
-values: `'performance'` | `'best-practices'` | `'accessibility'` | `'pwa'` | `'seo'`
-
-Includes only the specified categories in the final report.
+This setting will change the default maximum navigation time.
 
 ## Packages
 

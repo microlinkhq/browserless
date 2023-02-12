@@ -16,6 +16,10 @@ Using npm:
 npm install @browserless/lighthouse --save
 ```
 
+## Usage
+
+See [browseress#lighthouse](https://browserless.js.org/#/?id=runing-lighthouse).
+
 ## License
 
 **@browserless/lighthouse** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
