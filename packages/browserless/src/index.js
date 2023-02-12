@@ -107,7 +107,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const runOnPage = (fn, { timeout: evaluateTimeout } = {}) => async (...args) => {
+    const withPage = (fn, { timeout: evaluateTimeout } = {}) => async (...args) => {
       let isRejected = false
 
       async function run () {
@@ -140,6 +140,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           }
         })
 
+      console.log({ evaluateTimeout, contextTimeout, globalTimeout })
       const timeout = evaluateTimeout || contextTimeout || globalTimeout
 
       return pTimeout(task(), timeout, () => {
@@ -149,7 +150,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const evaluate = (fn, gotoOpts) =>
-      runOnPage(
+      withPage(
         page => async (url, opts) => {
           const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
           return fn(page, response, error)
@@ -174,12 +175,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       goto,
       html: evaluate(page => page.content(), { animations: true }),
       page: createPage,
-      pdf: runOnPage(createPdf({ goto })),
-      screenshot: runOnPage(createScreenshot({ goto })),
+      pdf: withPage(createPdf({ goto })),
+      screenshot: withPage(createScreenshot({ goto })),
       text: evaluate(page => page.evaluate(() => document.body.innerText)),
       getDevice: goto.getDevice,
       destroyContext,
-      runOnPage
+      withPage
     }
   }
 
