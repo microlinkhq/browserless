@@ -818,7 +818,7 @@ The hosted code is also running inside a secure sandbox created via [vm2](https:
 
 Any [goto#options](/#options-6) can be passed for tuning the internal URL resolution.
 
-## Runing Lighthouse
+## Running Lighthouse
 
 The [`@browserless/lighthouse`](https://npm.im/@browserless/lighthouse) package provides you the setup for running [Lighthouse](https://developers.google.com/web/tools/lighthouse) reports backed by browserless.
 
