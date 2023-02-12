@@ -18,28 +18,7 @@ npm install @browserless/lighthouse --save
 
 ## Usage
 
-```js
-const createLighthouse = require('@browserless/lighthouse')
-const createBrowser = require('browserless')
-
-const lighthouse = createLighthouse(async teardown => {
-  const browserless = await browser.createContext()
-  /* teardown is optional */
-  teardown(() => browserless.destroyContext())
-  return browserless
-})
-
-const report = await lighthouse('https://microlink.io')
-```
-
-Any lighthouse setting is supported:
-
-```js
-const report = await lighthouse(url, { 
-  preset: 'lr-desktop', 
-  onlyAudits: ['accessibility']
-})
-```
+See [browseress#lighthouse](https://browserless.js.org/#/?id=runing-lighthouse).
 
 ## License
 

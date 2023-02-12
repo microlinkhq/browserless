@@ -1,11 +1,11 @@
 'use strict'
 
-const createBrowser = require('browserless')
+const { getBrowser } = require('@browserless/test/util')
 const test = require('ava')
 
 const createLighthouse = require('..')
 
-const browser = createBrowser()
+const browser = getBrowser()
 
 const lighthouse = createLighthouse(async teardown => {
   const browserless = await browser.createContext()
