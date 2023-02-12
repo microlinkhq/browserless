@@ -27,6 +27,7 @@
     "lighthouse": "~10.0.0"
   },
   "devDependencies": {
+    "@browserless/test": "^9.7.2",
     "ava": "3",
     "browserless": "latest"
   },
@@ -44,8 +45,5 @@
     "serial": true,
     "timeout": "30s",
     "verbose": true
-  },
-  "devDependency": {
-    "@browserless/test": "^9.7.2"
   }
 }
