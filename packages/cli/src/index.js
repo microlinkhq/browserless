@@ -45,7 +45,7 @@ const run = async () => {
   const browser = createBrowser({ headless })
   const browserless = await browser.createContext()
 
-  exitHook(() => browser.close())
+  exitHook(browser.close)
 
   const result = await fn({ url, browserless, opts: cli.flags })
 

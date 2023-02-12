@@ -226,7 +226,7 @@ const exitHook = require('exit-hook')
 
 // automatically teardown resources after
 // `process.exit` is called
-exitHook(browser.close())
+exitHook(browser.close)
 ```
 
 ## Using a browser
