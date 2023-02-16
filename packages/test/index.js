@@ -2,11 +2,11 @@
 
 const { imgDiff } = require('img-diff-js')
 const existsFile = require('exists-file')
+const { createServer } = require('http')
 const listen = require('test-listen')
 const exitHook = require('exit-hook')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
-const { serve } = require('micri')
 const pdf = require('pdf-parse')
 const isCI = require('is-ci')
 const path = require('path')
@@ -30,7 +30,7 @@ const imageComparison = async (t, expectedFilename, filename) => {
 }
 
 const getServerUrl = (() => {
-  const server = serve(async (req, res) => {
+  const server = createServer(async (req, res) => {
     res.setHeader('Content-Type', 'text/html')
     return `<!DOCTYPE html>
     <html lang="en">
