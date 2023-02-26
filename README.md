@@ -528,7 +528,7 @@ Additionally, you can setup:
 type: `array`</br>
 default: `[]`
 
-It sets the ability to abort requests based on the [resource type](https://chromium.googlesource.com/chromium/src.git/+/64.0.3261.1/third_party/WebKit/Source/devtools/front_end/common/ResourceType.js).
+It sets the ability to abort requests based on the [ResourceType](https://github.com/puppeteer/puppeteer/blob/3db7d55d261b1e1fead7228a7ebf9825a0bcbe72/packages/puppeteer-core/src/common/HTTPRequest.ts#L68).
 
 ##### adblock
 
