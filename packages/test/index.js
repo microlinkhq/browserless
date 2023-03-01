@@ -32,7 +32,7 @@ const imageComparison = async (t, expectedFilename, filename) => {
 const getServerUrl = (() => {
   const server = createServer(async (req, res) => {
     res.setHeader('Content-Type', 'text/html')
-    return `<!DOCTYPE html>
+    return res.end(`<!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
@@ -42,7 +42,7 @@ const getServerUrl = (() => {
     <body>
       <p>hello world</p>
     </body>
-    </html>`
+    </html>`)
   })
 
   const initializedServer = listen(server)

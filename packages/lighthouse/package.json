@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@browserless/test": "^9.7.2",
-    "ava": "3",
+    "ava": "latest",
     "browserless": "latest"
   },
   "engines": {
@@ -44,6 +44,6 @@
   "ava": {
     "serial": true,
     "timeout": "30s",
-    "verbose": true
+    "workerThreads": false
   }
 }
