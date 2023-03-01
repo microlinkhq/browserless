@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@browserless/test": "^9.7.2",
-    "ava": "3",
+    "ava": "latest",
     "browserless": "^9.9.1",
     "lodash": "latest"
   },
