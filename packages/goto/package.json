@@ -68,6 +68,7 @@
     ],
     "serial": true,
     "timeout": "30s",
-    "verbose": true
+    "verbose": true,
+    "workerThreads": false
   }
 }
