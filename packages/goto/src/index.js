@@ -1,8 +1,6 @@
 'use strict'
 
-const debugAdblock = require('debug-logfmt')('browserless:goto:adblock')
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
-const debug = require('debug-logfmt')('browserless:goto')
 const { shallowEqualObjects } = require('shallow-equal')
 const createDevices = require('@browserless/devices')
 const toughCookie = require('tough-cookie')
@@ -14,6 +12,11 @@ const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
+const debug = require('debug-logfmt')('browserless:goto')
+debug.continue = require('debug-logfmt')('browserless:goto:continue')
+debug.abort = require('debug-logfmt')('browserless:goto:abort')
+debug.adblock = require('debug-logfmt')('browserless:goto:adblock')
+
 const truncate = (str, n = 80) => (str.length > n ? str.substr(0, n - 1) + '…' : str)
 
 const EVASIONS = require('./evasions')
@@ -24,8 +27,8 @@ const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
 )
 
-engine.on('request-blocked', ({ url }) => debugAdblock('block', url))
-engine.on('request-redirected', ({ url }) => debugAdblock('redirect', url))
+engine.on('request-blocked', ({ url }) => debug.adblock('block', url))
+engine.on('request-redirected', ({ url }) => debug.adblock('redirect', url))
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
@@ -260,10 +263,10 @@ module.exports = ({
           const url = truncate(req.url())
 
           if (!abortTypes.includes(resourceType)) {
-            debug('continue', { url, resourceType })
+            debug.continue({ url, resourceType })
             return req.continue(req.continueRequestOverrides(), 0)
           }
-          debug('abort', { url, resourceType })
+          debug.abort({ url, resourceType })
           return req.abort('blockedbyclient', 0)
         })
       })
