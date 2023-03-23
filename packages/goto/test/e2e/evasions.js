@@ -141,8 +141,8 @@ test('browserleaks.com/webgl', async t => {
   const getGpuInfo = browserless.evaluate(page =>
     page.evaluate(() => {
       return {
-        vendor: document.getElementById('f_unmasked_vendor').textContent,
-        renderer: document.getElementById('f_unmasked_renderer').textContent
+        vendor: document.getElementById('f-unmasked-vendor').textContent,
+        renderer: document.getElementById('f-unmasked-renderer').textContent
       }
     })
   )
