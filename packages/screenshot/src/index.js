@@ -15,16 +15,19 @@ const getBoundingClientRect = element => {
   return { top, left, height, width, x, y }
 }
 
-/* eslint-disable */
 const waitForImagesOnViewport = page =>
   page.$$eval('img[src]:not([aria-hidden="true"])', elements =>
     Promise.all(
       elements
-        .filter(el => el.getBoundingClientRect().top <= window.innerHeight)
+        .filter(
+          el =>
+            el.getBoundingClientRect().top <= window.innerHeight &&
+            el.width !== 0 &&
+            el.height !== 0
+        )
         .map(el => el.decode())
     )
   )
-/* eslint-enable */
 
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
