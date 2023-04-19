@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
-  "version": "9.9.5",
+  "version": "9.9.8",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -44,7 +44,7 @@
     "unique-random-array": "~2.0.0"
   },
   "devDependencies": {
-    "@browserless/test": "^9.9.3",
+    "@browserless/test": "^9.9.8",
     "ava": "latest",
     "browserless": "latest",
     "fpscanner": "latest",

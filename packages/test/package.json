@@ -2,7 +2,7 @@
   "name": "@browserless/test",
   "description": "A test suite for browserless API",
   "homepage": "https://browserless.js.org",
-  "version": "9.9.3",
+  "version": "9.9.8",
   "main": "index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -31,12 +31,12 @@
   "devDependencies": {
     "browserless": "latest",
     "exists-file": "latest",
-    "signal-exit": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "is-ci": "latest",
     "pdf-parse": "latest",
     "puppeteer": "latest",
+    "signal-exit": "latest",
     "temperment": "latest",
     "test-listen": "latest"
   },
