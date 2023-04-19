@@ -31,7 +31,7 @@
   "devDependencies": {
     "browserless": "latest",
     "exists-file": "latest",
-    "exit-hook": "2",
+    "signal-exit": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "is-ci": "latest",
