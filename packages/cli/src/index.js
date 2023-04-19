@@ -4,7 +4,7 @@
 
 const createBrowser = require('browserless')
 const beautyError = require('beauty-error')
-const exitHook = require('exit-hook')
+const { onExit } = require('signal-exit')
 const path = require('path')
 const fs = require('fs')
 
@@ -45,7 +45,7 @@ const run = async () => {
   const browser = createBrowser({ headless })
   const browserless = await browser.createContext()
 
-  exitHook(browser.close)
+  onExit(browser.close)
 
   const result = await fn({ url, browserless, opts: cli.flags })
 

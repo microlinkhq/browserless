@@ -222,11 +222,10 @@ This method is an implementation detail, normally you don't need to call it.
 It will close the internal browser.
 
 ```js
-const exitHook = require('exit-hook')
-
+const { onExit } = require('signal-exit')
 // automatically teardown resources after
 // `process.exit` is called
-exitHook(browser.close)
+onExit(browser.close)
 ```
 
 ## Using a browser
@@ -826,10 +825,10 @@ The [`@browserless/lighthouse`](https://npm.im/@browserless/lighthouse) package 
 const createLighthouse = require('@browserless/lighthouse')
 const createBrowser = require('browserless')
 const { writeFile } = require('fs/promises')
-const exitHook = require('exit-hook')
+const { onExit } = require('signal-exit')
 
 const browser = createBrowser()
-exitHook(browser.close)
+onExit(browser.close)
 
 const lighthouse = createLighthouse(async teardown => {
   const browserless = await browser.createContext()

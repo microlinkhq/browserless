@@ -1,13 +1,13 @@
 'use strict'
 
 const createBrowser = require('browserless')
-const exitHook = require('exit-hook')
+const { onExit } = require('signal-exit')
 
 let _browser
 
 const initBrowser = opts => {
   const browser = createBrowser(opts)
-  exitHook(browser.close)
+  onExit(browser.close)
   return browser
 }
 

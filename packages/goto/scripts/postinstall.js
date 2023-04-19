@@ -23,6 +23,4 @@ const main = async () => {
   await writeFile(OUTPUT_FILENAME, engine.serialize())
 }
 
-main()
-  .catch(err => console.error(err) && process.exit(1))
-  .then(process.exit)
+main().catch(error => console.error(error) || process.exit(1))

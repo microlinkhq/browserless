@@ -2,9 +2,9 @@
 
 const { imgDiff } = require('img-diff-js')
 const existsFile = require('exists-file')
+const { onExit } = require('signal-exit')
 const { createServer } = require('http')
 const listen = require('test-listen')
-const exitHook = require('exit-hook')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const pdf = require('pdf-parse')
@@ -50,7 +50,7 @@ const getServerUrl = (() => {
 })()
 
 module.exports = (browser, teardown = browser.close) => {
-  exitHook(teardown)
+  onExit(teardown)
 
   test('.html', async t => {
     const url = await getServerUrl()

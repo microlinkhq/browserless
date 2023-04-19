@@ -61,6 +61,5 @@ main(takeScreenshot, { iterations: 100, url: 'https://front-24ypc8or0.zeit.sh/' 
     Object.keys(result).forEach(key => {
       console.log(`  – ${key}: ${prettyMs(percentile(95, result[key]))}`)
     })
-    process.exit()
   })
-  .catch(err => console.error(err) && process.exit(1))
+  .catch(error => console.error(error) || process.exit(1))
