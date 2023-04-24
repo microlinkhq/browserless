@@ -15,5 +15,5 @@ module.exports = async ({ url, browserless, opts }) => {
 
   const result = await ping(url, opts)
 
-  return result
+  return [JSON.stringify(result), JSON.stringify(result, null, 2)]
 }

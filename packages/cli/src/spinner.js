@@ -13,7 +13,6 @@ const stats = () => {
   const time = `time${gray(`=${uptime.pretty}`)}`
   const cpu = `cpu${gray(`=${cpuUsage.pretty}`)}`
   const memory = `memory${gray(`=${memUsed.pretty}`)}`
-
   return `${time} ${cpu} ${memory}`
 }
 
@@ -28,13 +27,20 @@ const start = () => {
   }, TICK_INTERVAL)
 }
 
-const stop = (str = '') => {
-  const sizeValue = `=${prettyBytes(Buffer.from(JSON.stringify(str)).byteLength)}`
-  const text = `${stats()} size=${gray(sizeValue)}\n`
-
+const stop = ({ result, force = false } = {}) => {
+  if (force) {
+    spinner.error({ text: stats() })
+  } else {
+    const sizeValue = `=${prettyBytes(Buffer.from(result).length)}`
+    const text = `${stats()} size=${gray(sizeValue)}\n`
+    spinner.success({ text })
+  }
   procStats.destroy()
-  spinner.success({ text })
   clearInterval(timer)
 }
 
-module.exports = { start, stop }
+module.exports = {
+  ...spinner,
+  start,
+  stop
+}
