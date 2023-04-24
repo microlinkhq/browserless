@@ -1,9 +1,9 @@
 'use strict'
 
 const createProcStats = require('process-stats')
+const { createSpinner } = require('nanospinner')
 const prettyBytes = require('pretty-bytes')
 const { gray } = require('picocolors')
-const ora = require('ora')
 
 const TICK_INTERVAL = 100
 const procStats = createProcStats({ tick: TICK_INTERVAL })
@@ -17,27 +17,24 @@ const stats = () => {
   return `${time} ${cpu} ${memory}`
 }
 
-const spinner = ora({
-  color: 'white'
-})
+const spinner = createSpinner(stats(), { color: 'white' })
 let timer
 
 const start = () => {
   console.log()
-  spinner.start()
-
+  spinner.start(stats())
   timer = setInterval(() => {
-    spinner.text = stats()
+    spinner.update({ text: stats() })
   }, TICK_INTERVAL)
 }
 
 const stop = (str = '') => {
-  spinner.stop()
-  clearInterval(timer)
   const sizeValue = `=${prettyBytes(Buffer.from(JSON.stringify(str)).byteLength)}`
-  const info = `${stats()} size=${gray(sizeValue)}`
+  const text = `${stats()} size=${gray(sizeValue)}\n`
+
   procStats.destroy()
-  return info
+  spinner.success({ text })
+  clearInterval(timer)
 }
 
 module.exports = { start, stop }
