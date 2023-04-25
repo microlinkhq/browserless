@@ -1,5 +1,6 @@
 <h1 align="center">
-  <img style="width: 500px; margin:3rem 0 1.5rem;" src="/static/logo-banner.png" alt="browserless">
+  <img style="width: 500px; margin:3rem 0 1.5rem;" src="/static/logo-banner.png#gh-light-mode-only" alt="browserless">
+  <img style="width: 500px; margin:3rem 0 1.5rem;" src="/static/logo-banner-light.png#gh-dark-mode-only" alt="browserless">
   <br>
 </h1>
 
@@ -72,7 +73,9 @@ Additionally, you can use some specific [packages](#packages) in your codebase, 
 
 With the command-line interface (CLI) you can interact with browserless methods using a terminal, or through an automated system:
 
-![](/static/cli.png)
+<div style="width: 75%;margin: auto;">
+  <video poster="https://browserless.js.org/static/cli.jpg" loop="" controls="" src="https://user-images.githubusercontent.com/2096101/234336867-51b48f9c-0cc1-4d88-8f51-e9a242a83314.mp4" style="width: 100%;border-radius: 4px;" autoplay=""></video>
+</div>
 
 Just install [`@browserless/cli`](https://npm.im/@browserless/cli) globally in your system using your favorite package manager:
 

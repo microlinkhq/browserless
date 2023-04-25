@@ -1,9 +1,14 @@
 'use strict'
 
-const lighthouse = require('../../../lighthouse/src')
+const createLighthouse = require('../../../lighthouse/src')
 
 module.exports = async ({ url, browserless, opts }) => {
-  const getBrowserless = () => browserless
-  const report = await lighthouse(url, { getBrowserless, ...opts })
-  return JSON.stringify(report, null, 2)
+  const lighthouse = createLighthouse(async teardown => {
+    teardown(() => browserless.destroyContext())
+    return browserless
+  })
+
+  const report = await lighthouse(url)
+
+  return [JSON.stringify(report), JSON.stringify(report, null, 2)]
 }

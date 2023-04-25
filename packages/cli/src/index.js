@@ -2,6 +2,7 @@
 
 'use strict'
 
+const restoreCursor = require('restore-cursor')
 const createBrowser = require('browserless')
 const beautyError = require('beauty-error')
 const { onExit } = require('signal-exit')
@@ -10,15 +11,12 @@ const fs = require('fs')
 
 const commands = fs.readdirSync(path.resolve(__dirname, 'commands'))
 
-const { HEADLESS } = process.env
-
 const cli = require('meow')({
   pkg: require('../package.json'),
   help: require('./help')(commands),
   flags: {
     headless: {
-      type: 'boolean',
-      default: HEADLESS !== undefined ? HEADLESS === 'true' : true
+      default: 'new'
     },
     codeScheme: {
       type: 'string',
@@ -35,32 +33,32 @@ const { verbose, headless } = cli.flags
 
 const spinner = verbose ? require('./spinner') : { start: () => {}, stop: () => {} }
 
+process.on('SIGINT', () => {
+  spinner.stop({ force: true })
+  process.exit(1)
+})
+
 const run = async () => {
   if (cli.input.length === 0) return cli.showHelp()
   spinner.start()
   const [command, rawUrl] = cli.input
   const url = new URL(rawUrl).toString()
   const fn = require(`./commands/${command}`)
-
   const browser = createBrowser({ headless })
-  const browserless = await browser.createContext()
-
   onExit(browser.close)
-
-  const result = await fn({ url, browserless, opts: cli.flags })
-
-  return result
+  const browserless = await browser.createContext()
+  return fn({ url, browserless, opts: cli.flags })
 }
 
 run()
-  .then(result => {
-    const stats = spinner.stop(result)
-    if (result) console.log(result)
-    if (stats) console.error(`\n${stats}`)
+  .then(([result, preview = result]) => {
+    spinner.stop({ result })
+    if (typeof preview === 'string') console.log(preview)
     process.exit()
   })
   .catch(error => {
-    spinner.stop()
+    spinner.clear()
+    restoreCursor()
     console.error(beautyError(error))
     process.exit(1)
   })

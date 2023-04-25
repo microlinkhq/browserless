@@ -97,6 +97,10 @@ img {
   max-width: 100%;
 }
 
+img[src*="#gh-dark-mode-only"] {
+  display: none;
+}
+
 .github-corner {
   border-bottom: 0;
   position: fixed;
