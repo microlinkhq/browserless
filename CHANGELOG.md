@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.10.0](https://github.com/microlinkhq/browserless/compare/v9.9.8...v9.10.0) (2023-04-25)
+
+### Features
+
+* revamped CLI ([#453](https://github.com/microlinkhq/browserless/issues/453)) ([72c1e4e](https://github.com/microlinkhq/browserless/commit/72c1e4e80992839d188bd4c20cb839df52751f50))
+
 ## [9.9.8](https://github.com/microlinkhq/browserless/compare/v9.9.7...v9.9.8) (2023-04-19)
 
 **Note:** Version bump only for package browserless
