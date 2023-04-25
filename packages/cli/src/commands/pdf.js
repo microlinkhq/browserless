@@ -1,6 +1,3 @@
 'use strict'
 
-module.exports = async ({ url, browserless, opts }) => {
-  const result = await browserless.pdf(url, opts)
-  return result
-}
+module.exports = async ({ url, browserless, opts }) => [await browserless.pdf(url, opts)]

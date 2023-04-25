@@ -72,7 +72,9 @@ Additionally, you can use some specific [packages](#packages) in your codebase, 
 
 With the command-line interface (CLI) you can interact with browserless methods using a terminal, or through an automated system:
 
-![](/static/cli.png)
+<div style="width: 75%;margin: auto;">
+  <video poster="https://browserless.js.org/static/cli.jpg" loop="" controls="" src="https://user-images.githubusercontent.com/2096101/234336867-51b48f9c-0cc1-4d88-8f51-e9a242a83314.mp4" style="width: 100%;border-radius: 4px;" autoplay=""></video>
+</div>
 
 Just install [`@browserless/cli`](https://npm.im/@browserless/cli) globally in your system using your favorite package manager:
 
