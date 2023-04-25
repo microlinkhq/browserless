@@ -36,10 +36,11 @@
     "dark-mode": "~3.0.0",
     "lodash": "~4.17.21",
     "meow": "~9.0.0",
-    "ora": "~5.4.1",
+    "nanospinner": "~1.1.0",
     "picocolors": "~1.0.0",
     "pretty-bytes": "~5.6.0",
     "process-stats": "~3.7.0",
+    "restore-cursor": "~3.1.0",
     "signal-exit": "~4.0.1",
     "term-img": "~5.0.0",
     "unique-random-array": "~2.0.0"
