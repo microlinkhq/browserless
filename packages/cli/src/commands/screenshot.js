@@ -3,7 +3,7 @@
 const uniqueRandomArray = require('unique-random-array')
 const darkMode = require('dark-mode')
 const termImg = require('term-img')
-const { set } = require('lodash')
+const { dset } = require('dset')
 
 const BACKGROUNDS = [
   'linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)',
@@ -29,15 +29,15 @@ const randBackground = uniqueRandomArray(BACKGROUNDS)
 
 module.exports = async ({ url, browserless, opts }) => {
   if (opts.background === 'unsplash') {
-    set(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
+    dset(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
   }
 
   if (opts.background === 'gradient') {
-    set(opts, 'overlay.background', randBackground())
+    dset(opts, 'overlay.background', randBackground())
   }
 
   if (opts.browser) {
-    set(opts, 'overlay.browser', opts.browser)
+    dset(opts, 'overlay.browser', opts.browser)
   }
 
   if (opts.codeScheme === 'ghcolors') {
