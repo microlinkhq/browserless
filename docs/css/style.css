@@ -24,7 +24,7 @@
   --serif-font: 'Nunito', sans-serif;
   --sans-serif-font: 'Nunito Sans', sans-serif;
   --code-font: 'Roboto Mono', monospace;
-  --codebox-border-color: var(--gray2);
+  --border-color: var(--gray2);
 }
 
 @keyframes octocat {
@@ -103,7 +103,7 @@ img[src*="#gh-dark-mode-only"] {
 }
 
 .github-corner:hover .octo-arm {
-  animation: a 0.56s ease-in-out;
+  animation: octocat 0.5s ease-in-out;
 }
 
 main {
@@ -145,8 +145,8 @@ main {
 }
 
 .sidebar ul li a {
+  color: var(--gray8);
   display: block;
-  color: inherit;
   font-size: 14px;
   text-decoration: none;
 }
@@ -157,6 +157,7 @@ main {
 
 .sidebar ul li.active > a {
   border-right: 2px solid var(--primary-color);
+  color: var(--primary-color);
   font-weight: 700;
 }
 
@@ -206,6 +207,25 @@ body.sticky .sidebar-toggle {
 
 .markdown-section> :first-child {
   margin-top: 0 !important;
+}
+
+.markdown-section table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+}
+
+.markdown-section table thead tr {
+  text-align: left;
+}
+
+.markdown-section td,
+.markdown-section th {
+  border: 1px solid var(--border-color);
+  padding: .5rem;
 }
 
 @media print {
@@ -325,36 +345,16 @@ body {
 }
 
 .markdown-section blockquote p {
-  color: var(--gray9);
   margin-left: 0;
   padding: 12px 0;
 }
 
-.markdown-section table {
-  border-spacing: 0;
-  border-collapse: collapse;
-  display: block;
-  width: max-content;
-  max-width: 100%;
-  overflow: auto;
-}
-
-.markdown-section table thead tr {
-  text-align: left;
-}
-
-.markdown-section td,
-.markdown-section th {
-  padding: .5rem;
-}
-
-.markdown-section table tr {
-  border-bottom: 1px solid var(--codebox-border-color);
+.markdown-section :is(code, pre, img) {
+  border-radius: 4px;
 }
 
 .markdown-section code {
-  border-radius: 3px;
-  border: 1px solid var(--codebox-border-color);
+  border: 1px solid var(--border-color);
   font-family: var(--code-font);
   font-size: 0.75rem;
   padding: 3px 5px;
@@ -362,11 +362,7 @@ body {
 }
 
 .markdown-section pre {
-  border-radius: 3px;
-  border: 1px solid var(--codebox-border-color);
-}
-
-.markdown-section pre {
+  border: 1px solid var(--border-color);
   line-height: 1.5rem;
   margin: 1.2em 0;
   overflow: auto;
