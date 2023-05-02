@@ -170,11 +170,4 @@ ${gray('      p99:')} ${prettyMs(histogram.p99)}
 ${gray('     p999:')} ${prettyMs(histogram.p999)}`)
 }
 
-main()
-  .then(() => {
-    process.exit(0)
-  })
-  .catch(err => {
-    console.error(err)
-    process.exit(1)
-  })
+main().catch(error => console.error(error) || process.exit(1))

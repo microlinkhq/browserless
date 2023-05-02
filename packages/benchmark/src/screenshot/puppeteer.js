@@ -12,6 +12,4 @@ const main = async () => {
   await browser.close()
 }
 
-main()
-  .then(() => process.exit())
-  .catch(() => process.exit(1))
+main().catch(() => process.exit(1))
