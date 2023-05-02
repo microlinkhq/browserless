@@ -17,14 +17,12 @@ const stats = () => {
 }
 
 const spinner = createSpinner(stats(), { color: 'white' })
-let timer
+let interval
 
 const start = () => {
   console.log()
-  spinner.start(stats())
-  timer = setInterval(() => {
-    spinner.update({ text: stats() })
-  }, TICK_INTERVAL)
+  spinner.start({ text: stats() })
+  interval = setInterval(() => spinner.update({ text: stats() }), TICK_INTERVAL)
 }
 
 const stop = ({ result, force = false } = {}) => {
@@ -36,7 +34,7 @@ const stop = ({ result, force = false } = {}) => {
     spinner.success({ text })
   }
   procStats.destroy()
-  clearInterval(timer)
+  clearInterval(interval)
 }
 
 module.exports = {
