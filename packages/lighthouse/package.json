@@ -2,7 +2,7 @@
   "name": "@browserless/lighthouse",
   "description": "Browserless Lighthouse integration using puppeteer.",
   "homepage": "https://browserless.js.org",
-  "version": "9.9.8",
+  "version": "9.10.1",
   "main": "src",
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
     "lighthouse": "~10.1.0"
   },
   "devDependencies": {
-    "@browserless/test": "^9.9.8",
+    "@browserless/test": "^9.10.1",
     "ava": "latest",
     "browserless": "latest"
   },
