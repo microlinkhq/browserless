@@ -5,7 +5,7 @@ const { createSpinner } = require('nanospinner')
 const prettyBytes = require('pretty-bytes')
 const { gray } = require('picocolors')
 
-const TICK_INTERVAL = 100
+const TICK_INTERVAL = 50
 const procStats = createProcStats({ tick: TICK_INTERVAL })
 
 const stats = () => {

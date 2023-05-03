@@ -7,27 +7,27 @@ const createBrowser = require('browserless')
 const beautyError = require('beauty-error')
 const { onExit } = require('signal-exit')
 const path = require('path')
+const mri = require('mri')
 const fs = require('fs')
 
 const commands = fs.readdirSync(path.resolve(__dirname, 'commands'))
 
-const cli = require('meow')({
-  pkg: require('../package.json'),
-  help: require('./help')(commands),
-  flags: {
-    headless: {
-      default: 'new'
-    },
-    codeScheme: {
-      type: 'string',
-      default: 'ghcolors'
-    },
-    verbose: {
-      type: 'boolean',
-      default: true
-    }
+const { _, ...flags } = mri(process.argv.slice(2), {
+  boolean: ['headless', 'verbose'],
+  default: {
+    headless: 'new',
+    codeScheme: 'ghcolors'
   }
 })
+
+const cli = {
+  flags,
+  input: _,
+  showHelp: () => {
+    console.log(require('./help')(commands))
+    process.exit(0)
+  }
+}
 
 const { verbose, headless } = cli.flags
 
