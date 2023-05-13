@@ -1,6 +1,6 @@
 <h1 align="center">
-  <img style="width: 500px; margin:3rem 0 1.5rem;" src="/static/logo-banner.png#gh-light-mode-only" alt="browserless">
-  <img style="width: 500px; margin:3rem 0 1.5rem;" src="/static/logo-banner-light.png#gh-dark-mode-only" alt="browserless">
+  <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://github.com/microlinkhq/browserless/raw/master/static/logo-banner.png#gh-light-mode-only" alt="browserless">
+  <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://github.com/microlinkhq/browserless/raw/master/static/logo-banner-light.png#gh-dark-mode-only" alt="browserless">
   <br>
 </h1>
 
