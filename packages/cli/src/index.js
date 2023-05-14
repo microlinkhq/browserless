@@ -15,8 +15,9 @@ const commands = fs.readdirSync(path.resolve(__dirname, 'commands'))
 const { _, ...flags } = mri(process.argv.slice(2), {
   boolean: ['headless', 'verbose'],
   default: {
+    codeScheme: 'ghcolors',
     headless: 'new',
-    codeScheme: 'ghcolors'
+    verbose: true
   }
 })
 
