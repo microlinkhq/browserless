@@ -24,7 +24,7 @@
     "stats"
   ],
   "dependencies": {
-    "lighthouse": "~10.1.0"
+    "lighthouse": "~10.2.0"
   },
   "devDependencies": {
     "@browserless/test": "^9.10.1",

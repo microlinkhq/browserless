@@ -316,10 +316,7 @@ test('hide webgl vendor', async t => {
   const webgl = () =>
     page.evaluate(() => {
       const canvas = document.createElement('canvas')
-      const ctx =
-        canvas.getContext('webgl') ||
-        canvas.getContext('experimental-webgl') ||
-        canvas.getContext('moz-webgl')
+      const ctx = canvas.getContext('webgl')
       const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
       return {
         vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
@@ -350,7 +347,7 @@ test('hide `webgl2` vendor', async t => {
   const webgl2 = () =>
     page.evaluate(() => {
       const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('webgl2') || canvas.getContext('experimental-webgl2')
+      const ctx = canvas.getContext('webgl2')
       const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
       return {
         vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
