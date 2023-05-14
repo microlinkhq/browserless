@@ -40,8 +40,6 @@
     "picocolors": "latest",
     "pretty-ms": "7",
     "process-stats": "latest",
-    "puppeteer": "latest",
-    "puppeteer-firefox": "latest",
     "sieve-of-eratosthenes": "latest",
     "term-img": "latest",
     "time-span": "latest"
