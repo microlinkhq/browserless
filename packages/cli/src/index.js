@@ -36,7 +36,7 @@ const spinner = verbose ? require('./spinner') : { start: () => {}, stop: () => 
 
 process.on('SIGINT', () => {
   spinner.stop({ force: true })
-  process.exit(1)
+  process.exit(130)
 })
 
 const run = async () => {
