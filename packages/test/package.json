@@ -29,6 +29,7 @@
     "test"
   ],
   "devDependencies": {
+    "async-listen": "latest",
     "browserless": "latest",
     "exists-file": "latest",
     "fs-extra": "latest",
@@ -37,8 +38,7 @@
     "pdf-parse": "latest",
     "puppeteer": "19.11.1",
     "signal-exit": "latest",
-    "temperment": "latest",
-    "test-listen": "latest"
+    "temperment": "latest"
   },
   "engines": {
     "node": ">= 12"

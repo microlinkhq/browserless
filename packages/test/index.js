@@ -1,10 +1,10 @@
 'use strict'
 
 const { imgDiff } = require('img-diff-js')
+const { listen } = require('async-listen')
 const existsFile = require('exists-file')
 const { onExit } = require('signal-exit')
 const { createServer } = require('http')
-const listen = require('test-listen')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const pdf = require('pdf-parse')
@@ -45,8 +45,8 @@ const getServerUrl = (() => {
     </html>`)
   })
 
-  const initializedServer = listen(server)
-  return () => Promise.resolve(initializedServer)
+  const promise = listen(server)
+  return () => promise
 })()
 
 module.exports = (browser, teardown = browser.close) => {
