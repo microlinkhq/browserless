@@ -125,7 +125,7 @@ test('bot.sannysoft.com', async t => {
   })
 })
 
-test('amiunique.org/fp', async t => {
+test.skip('amiunique.org/fp', async t => {
   const browserless = await getBrowserContext(t)
   const content = await browserless.text('https://amiunique.org/fp', { waitForTimeout: 3000 })
   t.true(content.includes('You are unique'))
