@@ -6,20 +6,22 @@ const test = require('ava')
 
 const browser = createBrowser({ evasions: false })
 
-const server = createServer((req, res) => {
-  if (req.headers.cookie) {
-    const cookies = req.headers.cookie.split(';').map(cookie => cookie.trim())
-    res.setHeader('set-cookie', cookies)
-  }
-  res.setHeader('content-type', 'application/json')
-  res.end(
-    JSON.stringify({
-      headers: req.headers
-    })
-  )
-}).listen()
+const serverUrl = (() => {
+  const server = createServer((req, res) => {
+    if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';').map(cookie => cookie.trim())
+      res.setHeader('set-cookie', cookies)
+    }
+    res.setHeader('content-type', 'application/json')
+    res.end(
+      JSON.stringify({
+        headers: req.headers
+      })
+    )
+  }).listen()
 
-const serverUrl = `http://[::]:${server.address().port}`
+  return `http://[::]:${server.address().port}`
+})()
 
 const createPing = browserless =>
   browserless.evaluate(async (page, response) => {

@@ -29,7 +29,6 @@
     "test"
   ],
   "devDependencies": {
-    "async-listen": "latest",
     "browserless": "latest",
     "exists-file": "latest",
     "fs-extra": "latest",
