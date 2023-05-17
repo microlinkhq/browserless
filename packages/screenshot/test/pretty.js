@@ -1,16 +1,13 @@
 'use strict'
 
-const { getInternalBrowser } = require('@browserless/test/util')
+const { getPage } = require('@browserless/test/util')
 
 const test = require('ava')
 
 const pretty = require('../src/pretty')
 
 test('prettify `application/json`', async t => {
-  const browser = await getInternalBrowser()
-  const page = await browser.newPage()
-
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const payload = {
     version: 2,
@@ -43,10 +40,7 @@ test('prettify `application/json`', async t => {
 })
 
 test('prettify `text/plain`', async t => {
-  const browser = await getInternalBrowser()
-  const page = await browser.newPage()
-
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const payload = 'Open the network tab in devtools to see the response headers'
 
@@ -66,10 +60,7 @@ test('prettify `text/plain`', async t => {
 })
 
 test('prettify `text/html` markup is not HTML', async t => {
-  const browser = await getInternalBrowser()
-  const page = await browser.newPage()
-
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const payload = 'Open the network tab in devtools to see the response headers'
 
@@ -89,10 +80,7 @@ test('prettify `text/html` markup is not HTML', async t => {
 })
 
 test("don't prettify `text/html` when markup is HTML", async t => {
-  const browser = await getInternalBrowser()
-  const page = await browser.newPage()
-
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const payload = '<html><head></head><body></body></html>'
 
@@ -112,10 +100,7 @@ test("don't prettify `text/html` when markup is HTML", async t => {
 })
 
 test("don't prettify `text/plain` when markup is HTML", async t => {
-  const browser = await getInternalBrowser()
-  const page = await browser.newPage()
-
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const payload = '<html><head></head><body></body></html>'
 

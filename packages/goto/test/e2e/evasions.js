@@ -1,17 +1,15 @@
 'use strict'
 
-const { getBrowser } = require('@browserless/test/util')
+const { getBrowserContext } = require('@browserless/test/util')
 const fpscanner = require('fpscanner')
 const pWaitFor = require('p-wait-for')
 const test = require('ava')
 
-const browser = getBrowser()
-
-test('arh.antoinevastel.com/bots/areyouheadless', async t => {
+test.only('arh.antoinevastel.com/bots/areyouheadless', async t => {
   let assertion = false
 
   const fn = async () => {
-    const browserless = await browser.createContext()
+    const browserless = await getBrowserContext(t)
     const content = await browserless.text('https://arh.antoinevastel.com/bots/areyouheadless')
     await browserless.destroyContext()
     assertion = content.includes('You are not Chrome headless')
@@ -28,7 +26,7 @@ test('fingerprintjs', async t => {
 
   const fn = async () => {
     const getFingerprint = async userAgent => {
-      const browserless = await browser.createContext()
+      const browserless = await getBrowserContext(t)
       const fingerprint = await browserless.evaluate(page =>
         page.evaluate("document.querySelector('.giant').innerText")
       )
@@ -62,7 +60,7 @@ test('fingerprintjs', async t => {
 
 test('fpscanner', async t => {
   const waitForAssertion = async () => {
-    const browserless = await browser.createContext()
+    const browserless = await getBrowserContext(t)
     const getFingerprint = browserless.evaluate(page =>
       page.evaluate('fpCollect.generateFingerprint()')
     )
@@ -84,8 +82,7 @@ test('fpscanner', async t => {
 })
 
 test('bot.sannysoft.com', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
 
   const getReport = browserless.evaluate(page =>
     page.evaluate(() => {
@@ -129,15 +126,13 @@ test('bot.sannysoft.com', async t => {
 })
 
 test('amiunique.org/fp', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
   const content = await browserless.text('https://amiunique.org/fp', { waitForTimeout: 3000 })
   t.true(content.includes('You are unique'))
 })
 
 test('browserleaks.com/webgl', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
   const getGpuInfo = browserless.evaluate(page =>
     page.evaluate(() => {
       return {

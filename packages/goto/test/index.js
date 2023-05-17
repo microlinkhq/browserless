@@ -1,14 +1,10 @@
 'use strict'
 
-const { getBrowser } = require('@browserless/test/util')
+const { getBrowserContext } = require('@browserless/test/util')
 const test = require('ava')
 
-const browser = getBrowser()
-
 test('setup `scripts`', async t => {
-  const browserless = await browser.createContext()
-
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
 
   const getVersion = browserless.evaluate(async page => page.evaluate('jQuery.fn.jquery'))
 
@@ -20,9 +16,7 @@ test('setup `scripts`', async t => {
 })
 
 test('setup `modules`', async t => {
-  const browserless = await browser.createContext()
-
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
 
   const getVersion = browserless.evaluate(async page => page.evaluate('jQuery.fn.jquery'))
 
@@ -34,9 +28,7 @@ test('setup `modules`', async t => {
 })
 
 test('setup `styles`', async t => {
-  const browserless = await browser.createContext()
-
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
 
   const getStyle = browserless.evaluate(async page =>
     page.evaluate('window.getComputedStyle(document.body).fontFamily')

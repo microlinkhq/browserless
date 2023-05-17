@@ -1,31 +1,35 @@
 'use strict'
 
-const { getBrowser } = require('@browserless/test/util')
+const { getBrowserContext } = require('@browserless/test/util')
 const cheerio = require('cheerio')
 const test = require('ava')
 
-const browser = getBrowser()
-
 test('graphics features', async t => {
-  const browserless = await browser.createContext()
+  const browserless = await getBrowserContext(t)
 
-  t.teardown(browserless.destroyContext)
+  const getGpu = browserless.withPage(page => async () => {
+    await page.goto('chrome://gpu/')
 
-  const page = await browserless.page()
-  await page.goto('chrome://gpu/')
+    const html = await page.evaluate(() => document.querySelector('info-view').shadowRoot.innerHTML)
+    await page.close()
 
-  const html = await page.evaluate(() => document.querySelector('info-view').shadowRoot.innerHTML)
-  await page.close()
+    const $ = cheerio.load(html)
 
-  const $ = cheerio.load(html)
+    const props = []
 
-  const props = []
+    $('.feature-status-list li').each(function () {
+      props.push(
+        $(this)
+          .text()
+          .split(': ')
+      )
+    })
 
-  $('.feature-status-list li').each(function () {
-    props.push($(this).text().split(': '))
+    return Object.fromEntries(props)
   })
 
-  const gpu = Object.fromEntries(props)
+  const gpu = await getGpu()
+
   t.is(gpu.WebGL, 'Software only, hardware acceleration unavailable')
   t.is(gpu.WebGL2, 'Software only, hardware acceleration unavailable')
 })
