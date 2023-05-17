@@ -29,6 +29,7 @@
     "test"
   ],
   "devDependencies": {
+    "ava": "latest",
     "browserless": "latest",
     "exists-file": "latest",
     "fs-extra": "latest",
