@@ -5,7 +5,7 @@ const fpscanner = require('fpscanner')
 const pWaitFor = require('p-wait-for')
 const test = require('ava')
 
-test.only('arh.antoinevastel.com/bots/areyouheadless', async t => {
+test('arh.antoinevastel.com/bots/areyouheadless', async t => {
   let assertion = false
 
   const fn = async () => {
