@@ -53,7 +53,7 @@ module.exports = (browser, teardown = browser.close) => {
   test('.html', async t => {
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    const html = await browserless.html(serverUrl, { adblock: false, animations: true })
+    const html = await browserless.html(serverUrl, { adblock: false })
     t.snapshot(html)
   })
 
