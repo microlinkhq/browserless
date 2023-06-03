@@ -10,6 +10,8 @@ const path = require('path')
 const mri = require('mri')
 const fs = require('fs')
 
+const noop = () => {}
+
 const commands = fs.readdirSync(path.resolve(__dirname, 'commands'))
 
 const { _, ...flags } = mri(process.argv.slice(2), {
@@ -32,7 +34,7 @@ const cli = {
 
 const { verbose, headless } = cli.flags
 
-const spinner = verbose ? require('./spinner') : { start: () => {}, stop: () => {} }
+const spinner = verbose ? require('./spinner') : { start: noop, stop: noop, clear: noop }
 
 process.on('SIGINT', () => {
   spinner.stop({ force: true })
