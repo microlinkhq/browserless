@@ -2,7 +2,7 @@
   "name": "@browserless/function",
   "description": "Run abritrary JavaScript inside a browser sandbox",
   "homepage": "https://browserless.js.org",
-  "version": "9.10.2",
+  "version": "9.11.0",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -40,9 +40,9 @@
     "vm2": "~3.9.14"
   },
   "devDependencies": {
-    "@browserless/test": "^9.10.2",
+    "@browserless/test": "^9.11.0",
     "ava": "latest",
-    "browserless": "^9.10.2",
+    "browserless": "^9.11.0",
     "lodash": "latest"
   },
   "engines": {

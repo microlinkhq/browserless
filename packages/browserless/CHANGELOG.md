@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [9.11.0](https://github.com/microlinkhq/browserless/compare/v9.10.2...v9.11.0) (2023-06-03)
+
+### Features
+
+* methods are cancelables ([#468](https://github.com/microlinkhq/browserless/issues/468)) ([2d29252](https://github.com/microlinkhq/browserless/commit/2d29252d4fa4806a23d5158e6a1a5a696219e7d1))
+
 ## [9.10.2](https://github.com/microlinkhq/browserless/compare/v9.10.1...v9.10.2) (2023-05-14)
 
 **Note:** Version bump only for package browserless
