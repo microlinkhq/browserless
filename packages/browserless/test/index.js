@@ -58,3 +58,24 @@ test('ensure to destroy browser contexts', async t => {
 
   t.is(browser.browserContexts().length, 1)
 })
+;[
+  { method: 'evaluate', isDecorator: true },
+  { method: 'withPage', isDecorator: true },
+  { method: 'html' },
+  { method: 'pdf' },
+  { method: 'screenshot' },
+  { method: 'text' }
+].forEach(({ method, isDecorator = false }) => {
+  test(`.${method} is cancelable`, async t => {
+    const browserless = await getBrowserContext(t)
+
+    const fn = isDecorator
+      ? browserless[method](() => {})
+      : () => browserless[method]('about:blank')
+
+    const promise = fn()
+    promise.catch(() => {})
+    t.is(!!promise.cancel, true)
+    promise.cancel()
+  })
+})
