@@ -37,7 +37,7 @@
     "@browserless/screenshot": "^9.10.2",
     "debug-logfmt": "~1.0.4",
     "kill-process-group": "~1.0.3",
-    "p-cancelable": "2.1.1",
+    "p-cancelable": "4.0.1",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
