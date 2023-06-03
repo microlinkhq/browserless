@@ -172,7 +172,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       browser: getBrowser,
       evaluate,
       goto,
-      html: evaluate(page => page.content(), { animations: true }),
+      html: evaluate(page => page.content()),
       page: createPage,
       pdf: withPage(createPdf({ goto })),
       screenshot: withPage(createScreenshot({ goto })),
