@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.11.1](https://github.com/microlinkhq/browserless/compare/v9.11.0...v9.11.1) (2023-06-06)
+
+### Reverts
+
+* Revert "feat: methods are cancelables" (#470) ([d1c64be](https://github.com/microlinkhq/browserless/commit/d1c64be3ac2e407435aba145c87ec009668cfb05)), closes [#470](https://github.com/microlinkhq/browserless/issues/470)
+
 # [9.11.0](https://github.com/microlinkhq/browserless/compare/v9.10.2...v9.11.0) (2023-06-03)
 
 ### Features
