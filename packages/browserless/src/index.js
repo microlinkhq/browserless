@@ -5,7 +5,6 @@ const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
 const createPdf = require('@browserless/pdf')
-const PCancelable = require('p-cancelable')
 const { withLock } = require('superlock')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -108,50 +107,46 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage = (fn, { timeout: evaluateTimeout } = {}) =>
-      PCancelable.fn(async (...args) => {
-        const onCancel = args.pop()
-        let isRejected = false
+    const withPage = (fn, { timeout: evaluateTimeout } = {}) => async (...args) => {
+      let isRejected = false
 
-        async function run () {
-          let page
+      async function run () {
+        let page
 
-          try {
-            page = await createPage(args)
-            const close = () => closePage(page)
-            onCancel(close)
-            setTimeout(close, timeout).unref()
-            const value = await fn(page)(...args)
-            await closePage(page)
-            return value
-          } catch (error) {
-            await closePage(page)
-            if (!isRejected) throw ensureError(error)
-          }
+        try {
+          page = await createPage(args)
+          setTimeout(() => closePage(page), timeout).unref()
+          const value = await fn(page)(...args)
+          await closePage(page)
+          return value
+        } catch (error) {
+          await closePage(page)
+          if (!isRejected) throw ensureError(error)
         }
+      }
 
-        const task = () =>
-          pRetry(run, {
-            retries: retry,
-            onFailedAttempt: async error => {
-              debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
-              if (error.name === 'AbortError') throw error
-              if (isRejected) throw new AbortError()
-              if (error.code === 'EBRWSRCONTEXTCONNRESET') {
-                _contextPromise = createBrowserContext(contextOpts)
-              }
-              const { message, attemptNumber, retriesLeft } = error
-              debug('retry', { attemptNumber, retriesLeft, message })
+      const task = () =>
+        pRetry(run, {
+          retries: retry,
+          onFailedAttempt: async error => {
+            debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
+            if (error.name === 'AbortError') throw error
+            if (isRejected) throw new AbortError()
+            if (error.code === 'EBRWSRCONTEXTCONNRESET') {
+              _contextPromise = createBrowserContext(contextOpts)
             }
-          })
-
-        const timeout = evaluateTimeout || contextTimeout || globalTimeout
-
-        return pTimeout(task(), timeout, () => {
-          isRejected = true
-          throw browserTimeout({ timeout })
+            const { message, attemptNumber, retriesLeft } = error
+            debug('retry', { attemptNumber, retriesLeft, message })
+          }
         })
+
+      const timeout = evaluateTimeout || contextTimeout || globalTimeout
+
+      return pTimeout(task(), timeout, () => {
+        isRejected = true
+        throw browserTimeout({ timeout })
       })
+    }
 
     const evaluate = (fn, gotoOpts) =>
       withPage(
