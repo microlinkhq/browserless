@@ -41,7 +41,7 @@ module.exports = async ({ url, browserless, opts }) => {
   }
 
   if (opts.codeScheme === 'ghcolors') {
-    const isDark = darkMode.isDark()
+    const isDark = await darkMode.isDark().catch(() => false)
     const color = isDark ? '#29BC9B' : '#f81ce5'
     const bg = isDark ? '#000' : '#fff'
 
