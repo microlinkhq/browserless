@@ -61,7 +61,10 @@ module.exports = async ({ url, browserless, opts }) => {
     screenshot,
     termImg(Buffer.from(screenshot), {
       width: '50%',
-      fallback: () => `\n${yellow('  tip:')} ${gray('use iTerm >=3 to see the image here!')}`
+      fallback: () =>
+        `${opts.verbose ? '' : '\n'}${yellow('  tip:')} ${gray(
+          'use iTerm >=3 to see the image here!'
+        )}`
     })
   ]
 }
