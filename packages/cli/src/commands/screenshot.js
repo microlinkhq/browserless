@@ -1,6 +1,7 @@
 'use strict'
 
 const uniqueRandomArray = require('unique-random-array')
+const { gray, yellow } = require('picocolors')
 const darkMode = require('dark-mode')
 const termImg = require('term-img')
 const { dset } = require('dset')
@@ -56,5 +57,11 @@ module.exports = async ({ url, browserless, opts }) => {
 
   const screenshot = await browserless.screenshot(url, opts)
 
-  return [screenshot, termImg(Buffer.from(screenshot), { width: '50%' })]
+  return [
+    screenshot,
+    termImg(Buffer.from(screenshot), {
+      width: '50%',
+      fallback: () => `\n${yellow('  tip:')} ${gray('use iTerm >=3 to see the image here!')}`
+    })
+  ]
 }

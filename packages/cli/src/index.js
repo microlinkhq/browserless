@@ -56,7 +56,7 @@ const run = async () => {
 run()
   .then(([result, preview = result]) => {
     spinner.stop({ result })
-    if (typeof preview === 'string') console.log(preview)
+    if (typeof preview === 'string') console.error(preview)
     process.exit()
   })
   .catch(error => {
