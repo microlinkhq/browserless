@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.11.4](https://github.com/microlinkhq/browserless/compare/v9.11.3...v9.11.4) (2023-06-07)
+
+### Bug Fixes
+
+* **cli:** hide break lin under verbose ([5659d13](https://github.com/microlinkhq/browserless/commit/5659d13eff356fbddca2bcbdedf65df573dc671a))
+
 ## [9.11.3](https://github.com/microlinkhq/browserless/compare/v9.11.2...v9.11.3) (2023-06-07)
 
 ### Bug Fixes
