@@ -1,0 +1,53 @@
+{
+  "name": "@browserless/screencast",
+  "description": "Take a video recording screencast of any website",
+  "homepage": "https://browserless.js.org/#/?id=screencasturl-options",
+  "version": "9.11.0",
+  "main": "src/index.js",
+  "author": {
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
+  },
+  "repository": {
+    "directory": "packages/screencast",
+    "type": "git",
+    "url": "git+https://github.com/microlinkhq/browserless.git#master"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless/issues"
+  },
+  "keywords": [
+    "browser",
+    "browserless",
+    "chrome",
+    "chromeless",
+    "core",
+    "headless",
+    "puppeteer",
+    "screencast"
+  ],
+  "dependencies": {
+    "data-uri-to-buffer": "~5.0.1"
+  },
+  "devDependencies": {
+    "@browserless/test": "^9.11.0",
+    "ava": "latest"
+  },
+  "engines": {
+    "node": ">= 12"
+  },
+  "files": [
+    "scripts",
+    "src"
+  ],
+  "scripts": {
+    "coverage": "exit 0",
+    "test": "ava"
+  },
+  "license": "MIT",
+  "ava": {
+    "timeout": "30s",
+    "workerThreads": false
+  }
+}
