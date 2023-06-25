@@ -6,21 +6,18 @@ const getCDPClient = page => page._client()
 
 const startScreencast = async (page, { onFrame, ...opts }) => {
   const client = getCDPClient(page)
-  const acks = []
 
   client.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
     onFrame(data, metadata)
-    acks.push(client.send('Page.screencastFrameAck', { sessionId }).catch(() => {}))
+    client.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
   })
 
-  const windowSize = await page.evaluate(() => ({
-    maxWidth: window.innerWidth,
-    maxHeight: window.innerHeight
-  }))
+  page
+    .evaluate(() => ({ maxWidth: window.innerWidth, maxHeight: window.innerHeight }))
+    // https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast
+    .then(windowSize => client.send('Page.startScreencast', { ...opts, ...windowSize }))
 
-  // https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast
-  await client.send('Page.startScreencast', { ...opts, ...windowSize })
-  return () => Promise.all(acks).then(() => client.send('Page.stopScreencast'))
+  return () => client.send('Page.stopScreencast')
 }
 
 const createScreenRecorder = async (page, { format }) => {
@@ -69,8 +66,8 @@ const createScreenRecorder = async (page, { format }) => {
         this.recordingFinish = this.beginRecording(this.canvas.captureStream())
       }
 
-      async draw (base64, mimeType) {
-        const data = await fetch(`data:${mimeType};base64,${base64}`)
+      async draw (base64) {
+        const data = await fetch(`data:;base64,${base64}`)
           .then(res => res.blob())
           .then(blob => createImageBitmap(blob))
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)

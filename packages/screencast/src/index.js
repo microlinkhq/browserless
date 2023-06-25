@@ -21,15 +21,14 @@ module.exports = async ({
     const renderer = await browserless.page()
     const draws = []
 
-    const [screenRecorder, screencastStop] = await Promise.all([
-      createScreenRecorder(renderer, { format }),
-      startScreencast(page, {
-        format: imageFormat,
-        quality,
-        everyNthFrame,
-        onFrame: data => draws.push(screenRecorder.draw(data, `image/${imageFormat}`))
-      })
-    ])
+    const screenRecorder = await createScreenRecorder(renderer, { format })
+
+    const screencastStop = await startScreencast(page, {
+      format: imageFormat,
+      quality,
+      everyNthFrame,
+      onFrame: data => draws.push(screenRecorder.draw(data))
+    })
 
     screenRecorder.start()
 
