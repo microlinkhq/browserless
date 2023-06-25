@@ -1,6 +1,6 @@
 {
   "name": "@browserless/screencast",
-  "description": "Take a video recording screencast of any website",
+  "description": "Browserless video recording using puppeteer.",
   "homepage": "https://browserless.js.org/#/?id=screencasturl-options",
   "version": "9.11.0",
   "main": "src/index.js",
@@ -24,8 +24,13 @@
     "chromeless",
     "core",
     "headless",
+    "media",
+    "mediarecorder",
     "puppeteer",
-    "screencast"
+    "recorder",
+    "recording",
+    "screencast",
+    "video"
   ],
   "dependencies": {
     "data-uri-to-buffer": "~5.0.1"

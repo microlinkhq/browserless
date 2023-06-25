@@ -119,6 +119,8 @@ main {
   padding: 40px;
   width: 300px;
   transition: transform 0.25s ease-out;
+  overflow: auto;
+  height: 100vh;
 }
 
 .sidebar .sidebar-nav {

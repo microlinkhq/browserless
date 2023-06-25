@@ -73,8 +73,8 @@ Additionally, you can use some specific [packages](#packages) in your codebase, 
 
 With the command-line interface (CLI) you can interact with browserless methods using a terminal, or through an automated system:
 
-<div style="width: 75%;margin: auto;">
-  <video poster="https://browserless.js.org/static/cli.jpg" loop="" controls="" src="https://user-images.githubusercontent.com/2096101/234336867-51b48f9c-0cc1-4d88-8f51-e9a242a83314.mp4" style="width: 100%;border-radius: 4px;" autoplay=""></video>
+<div style="margin: auto;">
+  <video poster="/static/cli.png" loop="" controls="" src="https://github.com/microlinkhq/browserless/assets/2096101/5200b2c5-d930-40e7-b128-6d23a6974c28" style="width: 100%;border-radius: 4px;" autoplay=""></video>
 </div>
 
 Just install [`@browserless/cli`](https://npm.im/@browserless/cli) globally in your system using your favorite package manager:
@@ -231,7 +231,7 @@ const { onExit } = require('signal-exit')
 onExit(browser.close)
 ```
 
-## Using a browser
+## Built-in
 
 ### .html(url, options)
 
@@ -788,7 +788,9 @@ await page.content()
 // => '<html><head></head><body></body></html>'
 ```
 
-## Executing arbitrary code
+## Extended
+
+### function
 
 The [`@browserless/function`](https://npm.im/@browserless/function) package provides an isolated vm scope to run arbitrary JavaScript code with runtime access to a browser page:
 
@@ -808,19 +810,19 @@ const { isFulfilled, isRejected, value } = await version('https://jquery.com')
 // }
 ```
 
-### options
+#### options
 
 Besides the following properties, any other argument provided will be available during the code execution.
 
-#### vmOpts
+##### vmOpts
 
 The hosted code is also running inside a secure sandbox created via [vm2](https://npm.im/vm2).
 
-#### gotoOpts
+##### gotoOpts
 
 Any [goto#options](/#options-6) can be passed for tuning the internal URL resolution.
 
-## Running Lighthouse
+### lighthouse
 
 The [`@browserless/lighthouse`](https://npm.im/@browserless/lighthouse) package provides you the setup for running [Lighthouse](https://developers.google.com/web/tools/lighthouse) reports backed by browserless.
 
@@ -845,7 +847,7 @@ await writeFile('report.json', JSON.stringify(report, null, 2))
 
 The report will be generated `url`, extending from `lighthouse:default` settings, being these settings the same than Google Chrome Audits reports on Developer Tools.
 
-### options
+#### options
 
 The [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/main/docs/configuration.md) that will extend `'lighthouse:default'` settings:
 
@@ -868,7 +870,7 @@ Additionally, you can setup:
 
 The lighthouse execution runs as a [worker thread](https://nodejs.org/api/worker_threads.html), any [worker#options](https://nodejs.org/api/worker_threads.html#new-workerfilename-options) are supported.
 
-#### logLevel
+##### logLevel
 
 type: `string`</br>
 default: `'error'`</br>
@@ -876,7 +878,7 @@ values: `'silent'` | `'error'` | `'info'` | `'verbose'` </br>
 
 The level of logging to enable.
 
-#### output
+##### output
 
 type: `string` | `string[]`</br>
 default: `'json'`</br>
@@ -891,6 +893,83 @@ default: `browserless.timeout`
 
 This setting will change the default maximum navigation time.
 
+### screencast
+
+The [`@browserless/screencast`](https://npm.im/@browserless/screencast) package allows you automate browser action and produce a video recording as output.
+
+<div style="margin: auto;">
+  <video poster="/static/screencast.png" loop="" controls="" src="https://github.com/microlinkhq/browserless/assets/2096101/81d3e7e2-bf12-4ce1-8d54-f7c36ce0b2c9" style="width: 100%;border-radius: 4px;" autoplay=""></video>
+</div>
+
+```js
+const screencast = require('@browserless/screencast')
+
+const buffer = await screencast({
+  getBrowserless: () => browserless,
+  videoFormat: 'webm',
+  gotoOpts: {
+    url: 'https://vercel.com',
+    animations: true,
+    abortTypes: [],
+    waitUntil: 'load'
+  },
+  withPage: async page => {
+    await page.waitForTimeout(3000)
+  }
+})
+```
+
+#### options
+
+##### everyNthFrame
+
+type: `number`</br>
+default: `1`</br>
+
+Sends every n-th frame.
+
+##### format
+
+type: `string`</br>
+default: `'video/webm;codecs=vp9'`</br>
+
+The MIME media type that will be used for creating the `MediaRecorder` object.
+
+##### gotoOpts
+
+type: `object`
+
+These options will be passed to [goto#options](/#options-6) in order to resolve, prior to starting the recording.
+
+##### imageFormat
+
+type: `string`</br>
+default: `'png'`</br>
+values: `'jpeg'` | `'png'`
+
+The image compression format.
+
+##### quality
+
+type: `number`</br>
+default: `100`</br>
+values: `'0' to '100'
+
+Compression quality range for JPEG image format.
+
+##### timeout
+
+type: `number`</br>
+default: `30000`
+
+Sets the maximum navigation time.
+
+##### withPage(page)
+
+type: `function`
+
+It sets the in-page browser action to perform during the video recording.
+
 ## Packages
 
 **browserless** is internally divided into multiple packages for ensuring just use the minimum quantity of code necessary for your use case.
@@ -901,13 +980,14 @@ This setting will change the default maximum navigation time.
 | [@browserless/benchmark](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   |
 | [@browserless/cli](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               |
 | [@browserless/devices](https://github.com/microlinkhq/browserless/tree/master/packages/devices)       | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices)       |
-| [@browserless/examples](https://github.com/microlinkhq/browserless/tree/master/packages/examples)     | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples)     |
 | [@browserless/errors](https://github.com/microlinkhq/browserless/tree/master/packages/errors)         | [![npm](https://img.shields.io/npm/v/@browserless/errors.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/errors)         |
+| [@browserless/examples](https://github.com/microlinkhq/browserless/tree/master/packages/examples)     | [![npm](https://img.shields.io/npm/v/@browserless/examples.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/examples)     |
 | [@browserless/function](https://github.com/microlinkhq/browserless/tree/master/packages/function)     | [![npm](https://img.shields.io/npm/v/@browserless/function.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/function)     |
 | [@browserless/goto](https://github.com/microlinkhq/browserless/tree/master/packages/goto)             | [![npm](https://img.shields.io/npm/v/@browserless/goto.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/goto)             |
-| [@browserless/pdf](https://github.com/microlinkhq/browserless/tree/master/packages/pdf)               | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf)               |
-| [@browserless/screenshot](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) |
 | [@browserless/lighthouse](https://github.com/microlinkhq/browserless/tree/master/packages/lighthouse) | [![npm](https://img.shields.io/npm/v/@browserless/lighthouse.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/lighthouse) |
+| [@browserless/pdf](https://github.com/microlinkhq/browserless/tree/master/packages/pdf)               | [![npm](https://img.shields.io/npm/v/@browserless/pdf.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/pdf)               |
+| [@browserless/screencast](https://github.com/microlinkhq/browserless/tree/master/packages/screencast) | [![npm](https://img.shields.io/npm/v/@browserless/screencast.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screencast) |
+| [@browserless/screenshot](https://github.com/microlinkhq/browserless/tree/master/packages/screenshot) | [![npm](https://img.shields.io/npm/v/@browserless/screenshot.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/screenshot) |
 
 ## FAQ
 
