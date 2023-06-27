@@ -14,12 +14,12 @@
 Using npm:
 
 ```sh
-npm install @browserless/lighthouse --save
+npm install @browserless/screencast --save
 ```
 
 ## Usage
 
-See [browseress#lighthouse](https://browserless.js.org/#/?id=running-lighthouse).
+See [browseress#screencast](https://browserless.js.org/#/?id=screencast).
 
 ## License
 
