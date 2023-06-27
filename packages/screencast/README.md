@@ -4,8 +4,8 @@
   <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://github.com/microlinkhq/browserless/raw/master/static/logo-banner-light.png#gh-dark-mode-only" alt="browserless">
   <br>
   <br>
-  <p align="center"><strong>@browserless/lighthouse</strong>: Browserless Lighthouse integration using puppeteer.</p>
-  <p align="center">See <a href="https://browserless.js.org/#%2F%3Fid=lighthouse" target='_blank' rel='noopener noreferrer'>lighthouse</a> section our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
+  <p align="center"><strong>@browserless/screencast</strong>: Browserless video recording using puppeteer.</p>
+  <p align="center">See <a href="https://browserless.js.org/#%2F%3Fid=screencast" target='_blank' rel='noopener noreferrer'>screecast</a> section our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
 
@@ -23,7 +23,7 @@ See [browseress#screencast](https://browserless.js.org/#/?id=screencast).
 
 ## License
 
-**@browserless/lighthouse** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
+**@browserless/screencast** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
 Authored and maintained by [Microlink](https://microlink.io) with help from [contributors](https://github.com/microlinkhq/browserless/contributors).
 
 The [logo](https://thenounproject.com/term/browser/288309/) has been designed by [xinh studio](https://xinh.studio).

@@ -5,7 +5,7 @@
   <br>
   <br>
   <p align="center"><strong>@browserless/function</strong>: Run abritrary JavaScript inside a browser sandbox.</p>
-  <p align="center">See our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
+  <p align="center">See <a href="https://browserless.js.org/#%2F%3Fid=function" target='_blank' rel='noopener noreferrer'>function</a> section our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
   <br>
 </div>
 
