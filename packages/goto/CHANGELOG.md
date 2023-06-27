@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.12.1](https://github.com/microlinkhq/browserless/compare/v9.12.0...v9.12.1) (2023-06-27)
+
+### Bug Fixes
+
+* **goto:** check page state before intercept ([#477](https://github.com/microlinkhq/browserless/issues/477)) ([a190621](https://github.com/microlinkhq/browserless/commit/a190621df1156e6980384a48cc161db86d8b9e70))
+
 # [9.11.0](https://github.com/microlinkhq/browserless/compare/v9.10.2...v9.11.0) (2023-06-03)
 
 **Note:** Version bump only for package @browserless/goto
