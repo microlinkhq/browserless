@@ -40,3 +40,24 @@ test('setup `styles`', async t => {
 
   t.is(style, '"Helvetica Neue", Helvetica, Arial, sans-serif')
 })
+
+test('handle page disconnections', async t => {
+  t.plan(1)
+  const browserless = await getBrowserContext(t, { retry: 0 })
+  const onPageRequest = req => {
+    console.log('req.url', req.url)
+  }
+  const intercept = browserless.withPage((page, goto) => async url => {
+    await page.close()
+
+    const result = await goto(page, {
+      url,
+      onPageRequest,
+      abortTypes: ['image', 'stylesheet', 'font']
+    })
+
+    t.deepEqual(Object.keys(result), ['response', 'device', 'error'])
+  })
+
+  await intercept('chrome://version')
+})

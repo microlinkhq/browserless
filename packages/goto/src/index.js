@@ -249,7 +249,7 @@ module.exports = ({
     }
 
     const enableInterception =
-      (onPageRequest || abortTypes.length > 0) && page.setRequestInterception(true)
+      (onPageRequest || abortTypes.length > 0) && run({ fn: page.setRequestInterception(true), debug: 'enableInterception' })
 
     if (onPageRequest) {
       Promise.resolve(enableInterception).then(() => page.on('request', onPageRequest))

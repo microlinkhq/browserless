@@ -118,7 +118,6 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             try {
               page = await createPage(args)
               setTimeout(() => closePage(page), timeout).unref()
-
               const value = await fn(page, goto)(...args)
               await closePage(page)
               return value
@@ -153,7 +152,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     const evaluate = (fn, gotoOpts) =>
       withPage(
-        page => async (url, opts) => {
+        (page, goto) => async (url, opts) => {
           const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
           return fn(page, response, error)
         },
