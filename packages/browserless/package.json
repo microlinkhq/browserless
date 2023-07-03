@@ -44,7 +44,7 @@
     "superlock": "~1.0.1"
   },
   "devDependencies": {
-    "ps-list": "7",
+    "ps-list": "8",
     "@browserless/test": "^9.11.0",
     "ava": "latest"
   },
