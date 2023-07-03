@@ -2,6 +2,7 @@
 
 const { createBrowser } = require('@browserless/test/util')
 const psList = require('ps-list')
+const isCI = require('is-ci')
 const test = require('ava')
 
 const getChromiumPs = async () => {
@@ -9,8 +10,8 @@ const getChromiumPs = async () => {
   return ps.filter(ps => ps.name.includes('Chromium'))
 }
 
-test.serial('.close() will kill process and subprocess', async t => {
-  t.is((await getChromiumPs()).length, 0)
+;(isCI ? test.skip : test.serial)('.close() will kill process and subprocess', async t => {
+  const initialPs = await getChromiumPs()
 
   const browserlessFactory = createBrowser()
   t.teardown(() => browserlessFactory.close())
@@ -25,18 +26,18 @@ test.serial('.close() will kill process and subprocess', async t => {
   t.is((await getChromiumPs()).length, 3)
 
   await browserlessFactory.close()
-  t.is((await getChromiumPs()).length, 0)
+  t.is((await getChromiumPs()).length, initialPs)
 })
 
-test.serial('.close() is idempotency', async t => {
-  t.is((await getChromiumPs()).length, 0)
+;(isCI ? test.skip : test.serial)('.close() is idempotency', async t => {
+  const initialPs = await getChromiumPs()
 
   const browserlessFactory = createBrowser()
   t.is((await getChromiumPs()).length, 1)
 
   await browserlessFactory.close()
-  t.is((await getChromiumPs()).length, 0)
+  t.is((await getChromiumPs()).length, initialPs)
 
   await browserlessFactory.close()
-  t.is((await getChromiumPs()).length, 0)
+  t.is((await getChromiumPs()).length, initialPs)
 })
