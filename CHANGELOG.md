@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [9.12.2](https://github.com/microlinkhq/browserless/compare/v9.12.1...v9.12.2) (2023-07-03)
+
+### Bug Fixes
+
+* silently capture close error ([#481](https://github.com/microlinkhq/browserless/issues/481)) ([78058ee](https://github.com/microlinkhq/browserless/commit/78058ee77a9707f6c2d6f68953994312ba114883))
+
 ## [9.12.1](https://github.com/microlinkhq/browserless/compare/v9.12.0...v9.12.1) (2023-06-27)
 
 ### Bug Fixes
