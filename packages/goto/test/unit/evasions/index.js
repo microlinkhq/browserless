@@ -120,19 +120,9 @@ test('ensure `navigator.deviceMemory` is present', async t => {
   t.truthy(await deviceMemory())
 })
 
-test('randomize `user-agent`', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
-
-  const userAgent = () => page.evaluate(() => window.navigator.userAgent)
-
-  t.true(/HeadlessChrome/.test(await userAgent()))
-
-  await evasions.randomizeUserAgent(page)
-
+test('`window.navigator.userAgent` is not bot', async t => {
+  const page = await getPage(t)
+  const userAgent = () => page.evaluate('window.navigator.userAgent')
   t.false(/HeadlessChrome/.test(await userAgent()))
 })
 
