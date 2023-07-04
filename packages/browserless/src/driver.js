@@ -30,15 +30,13 @@ const defaultArgs = [
   '--enable-async-dns',
   '--enable-simple-cache-backend',
   '--enable-tcp-fast-open',
-  '--enable-webgl',
   '--force-webrtc-ip-handling-policy=default_public_interface_only',
   '--ignore-gpu-blocklist', // https://source.chromium.org/search?q=lang:cpp+symbol:kIgnoreGpuBlocklist&ss=chromium
   '--no-default-browser-check', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoDefaultBrowserCheck&ss=chromium
   '--no-pings', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoPings&ss=chromium
   '--no-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoSandbox&ss=chromium
   '--no-zygote', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium
-  '--prerender-from-omnibox=disabled',
-  '--use-gl=swiftshader' // https://source.chromium.org/search?q=lang:cpp+symbol:kUseGl&ss=chromium
+  '--prerender-from-omnibox=disabled'
 ]
 
 const spawn = ({
