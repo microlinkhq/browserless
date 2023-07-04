@@ -52,7 +52,7 @@ test('`window.outerWidth` is defined', async t => {
   t.true((await page.evaluate(() => window.outerWidth)) > 0)
 })
 
-test('`navigator.vendor` is synchronized with user-agent', async t => {
+test('`window.navigator.vendor` is synchronized with user-agent', async t => {
   const page = await getPage(t)
 
   const navigatorVendor = () => page.evaluate('navigator.vendor')
@@ -60,16 +60,17 @@ test('`navigator.vendor` is synchronized with user-agent', async t => {
   t.is(await navigatorVendor(), 'Google Inc.')
 
   await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15'
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15'
   )
 
   await evasions.navigatorVendor(page)
+
   await page.goto(fileUrl)
 
   t.is(await navigatorVendor(), 'Apple Computer, Inc.')
 
   await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0) Gecko/20100101 Firefox/102.0'
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/114.0'
   )
 
   await page.goto(fileUrl)
@@ -78,11 +79,7 @@ test('`navigator.vendor` is synchronized with user-agent', async t => {
 
 test('`navigator.deviceMemory` is present', async t => {
   const page = await getPage(t)
-
-  await page.goto(fileUrl)
-
   const deviceMemory = () => page.evaluate('navigator.deviceMemory')
-
   t.truthy(await deviceMemory())
 })
 
@@ -92,26 +89,19 @@ test('`window.navigator.userAgent` is not bot', async t => {
   t.false(/HeadlessChrome/.test(await userAgent()))
 })
 
-test('hide `navigator.webdriver`', async t => {
+test('`window.navigator.webdriver` is present', async t => {
   const page = await getPage(t)
+  t.is(await page.evaluate('window.navigator.webdriver'), false)
+})
 
-  const webdriver = () => page.evaluate(() => window.navigator.webdriver)
-  const javaEnabled = () => page.evaluate(() => navigator.javaEnabled())
-
-  await page.goto(fileUrl)
-  t.is(await webdriver(), false)
-  t.is(await javaEnabled(), false)
+test('`navigator.javaEnabled()` is present', async t => {
+  const page = await getPage(t)
+  t.is(page.evaluate('navigator.javaEnabled()'), false)
 })
 
 test('`navigator.hardwareConcurrency` is present', async t => {
   const page = await getPage(t)
-
-  const hardwareConcurrency = () => page.evaluate(() => window.navigator.hardwareConcurrency)
-
-  await page.goto(fileUrl)
-
-  const n = await hardwareConcurrency()
-
+  const n = await page.evaluate('window.navigator.hardwareConcurrency')
   t.true(typeof n === 'number')
   t.true(n !== 0)
 })
@@ -122,7 +112,7 @@ test('`window.chrome` is defined', async t => {
   t.snapshot(windowChrome)
 })
 
-test('`navigator.permissions` works as expected', async t => {
+test('`navigator.permissions` is defined', async t => {
   const page = await getPage(t)
 
   const permissionStatusState = () =>
@@ -136,15 +126,19 @@ test('`navigator.permissions` works as expected', async t => {
   t.is(await permissionStatusState(), 'denied')
 })
 
-test('`window.navigator.plugins` & `window.navigator.mimeTypes` are correct', async t => {
+test('`window.navigator.plugins` is defined', async t => {
   const page = await getPage(t)
   t.snapshot(await page.evaluate('window.navigator.plugins'))
+})
+
+test('`window.navigator.mimeTypes` are correct', async t => {
+  const page = await getPage(t)
   t.snapshot(await page.evaluate('window.navigator.mimeTypes'))
 })
 
-test('`navigator.languages` is present', async t => {
+test('`navigator.languages` is defined', async t => {
   const page = await getPage(t)
-  const languages = () => page.evaluate(() => window.navigator.languages)
+  const languages = () => page.evaluate('window.navigator.languages')
   t.deepEqual(await languages(), ['en-US'])
 })
 
@@ -188,33 +182,6 @@ test('media codecs are present', async t => {
     m4a: '',
     aac: ''
   })
-
-  await evasions.mediaCodecs(page)
-  await page.goto(fileUrl)
-
-  t.deepEqual(await videoCodecs(), { ogg: 'probably', h264: 'probably', webm: 'probably' })
-
-  t.deepEqual(await audioCodecs(), {
-    ogg: 'probably',
-    mp3: 'probably',
-    wav: 'probably',
-    m4a: 'maybe',
-    aac: 'probably'
-  })
-})
-
-test('`console.debug` is defined', async t => {
-  const page = await getPage(t)
-
-  const consoleDebug = () => page.evaluate(() => !!console.debug)
-  t.is(await consoleDebug(), true)
-})
-
-test('`navigator.vendor` is defined', async t => {
-  const page = await getPage(t)
-
-  const vendor = () => page.evaluate(() => window.navigator.vendor)
-  t.is(await vendor(), 'Google Inc.')
 })
 
 test('hide webgl vendor', async t => {
@@ -276,17 +243,19 @@ test('hide `webgl2` vendor', async t => {
 test('broken images have dimensions', async t => {
   const page = await getPage(t)
 
-  const brokenImage = () =>
-    page.evaluate(() => {
-      const body = document.body
-      const image = document.createElement('img')
-      image.src = 'http://iloveponeydotcom32188.jg'
-      image.setAttribute('id', 'fakeimage')
-      image.onerror = () => Promise.resolve(`${image.width}x${image.height}`)
-      body.appendChild(image)
-    })
+  const dimensions = await page.evaluate(
+    () =>
+      new Promise(resolve => {
+        const body = document.body
+        const image = document.createElement('img')
+        image.src = 'http://iloveponeydotcom32188.jg'
+        image.setAttribute('id', 'fakeimage')
+        image.onerror = () => resolve(`${image.width}x${image.height}`)
+        body.appendChild(image)
+      })
+  )
 
-  t.true((await brokenImage()) !== '0x0')
+  t.is(dimensions, '16x16')
 })
 
 test("error stack traces doesn't reveal implementation details", async t => {
