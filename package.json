@@ -76,6 +76,7 @@
   "devDependencies": {
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
+    "@ksmithut/prettier-standard": "latest",
     "@lerna-lite/cli": "latest",
     "@lerna-lite/exec": "latest",
     "@lerna-lite/publish": "latest",
@@ -92,7 +93,6 @@
     "gulp-uglify": "latest",
     "nano-staged": "latest",
     "npm-check-updates": "latest",
-    "prettier-standard": "latest",
     "simple-git-hooks": "latest",
     "standard": "latest"
   },
