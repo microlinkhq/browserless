@@ -36,7 +36,7 @@
     "img-diff-js": "latest",
     "is-ci": "latest",
     "pdf-parse": "latest",
-    "puppeteer": "19.11.1",
+    "puppeteer": "20.7.4",
     "signal-exit": "latest",
     "temperment": "latest"
   },
