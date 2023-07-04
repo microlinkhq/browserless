@@ -42,26 +42,14 @@ test('`window.console` is present', async t => {
   ])
 })
 
-test('`window.outerHeight` is present', async t => {
+test('`window.outerHeight` is defined', async t => {
   const page = await getPage(t)
-
-  const outerHeight = () => page.evaluate(() => window.outerHeight)
-
-  await evasions.windowFrame(page)
-  await page.goto(fileUrl)
-
-  t.true((await outerHeight()) > 0)
+  t.true((await page.evaluate(() => window.outerHeight)) > 0)
 })
 
-test('`window.outerWidth` is present', async t => {
+test('`window.outerWidth` is defined', async t => {
   const page = await getPage(t)
-
-  const outerWidth = () => page.evaluate(() => window.outerWidth)
-
-  await evasions.windowFrame(page)
-  await page.goto(fileUrl)
-
-  t.true((await outerWidth()) > 0)
+  t.true((await page.evaluate(() => window.outerWidth)) > 0)
 })
 
 test('`navigator.vendor` is synchronized with user-agent', async t => {

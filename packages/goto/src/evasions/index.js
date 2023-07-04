@@ -6,6 +6,5 @@ module.exports = {
   navigatorPlugins: require('./navigator-plugins'),
   navigatorVendor: require('./navigator-vendor'),
   stackTraces: require('./stack-traces'),
-  webglVendor: require('./webgl-vendor'),
-  windowFrame: require('./window-frame')
+  webglVendor: require('./webgl-vendor')
 }
