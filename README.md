@@ -13,7 +13,6 @@
 ## Highlights
 
 - Compatible with Puppeteer API ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
-- Built-in [evasion](#evasions) techniques to prevent being blocked.
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
 - Shell interaction via [Browserless CLI](command-line-interface).
 - Easy [Google Lighthouse](#lighthouse) integration.
@@ -565,40 +564,6 @@ type: `string`</br>
 default: `'macbook pro 13'`
 
 It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`.
-
-##### evasions
-
-type: `string[]`</br>
-default: `require('@browserless/goto').evasions`
-
-It makes your Headless undetectable, preventing to being blocked.
-
-![](/static/evasions.png)
-
-These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access. All the evasion techniques implemented are:
-
-| Evasion                                                                                                                              | Description                                                                                                                                                                                                                 |
-|--------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [chromeRuntime](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/chrome-runtime.js)               | Ensure `window.chrome` is defined.                                                                                                                                                                                          |
-| [stackTraces](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/error-stack-trace.js)              | Prevent detect Puppeteer via variable name.                                                                                                                                                                                 |
-| [mediaCodecs](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/media-codecs.js)                   | Ensure media codedcs are defined.                                                                                                                                                                                           |
-| [navigatorPermissions](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-permissions.js) | Mock over [Notification.permissions](https://developer.mozilla.org/en-US/docs/Web/API/Notification/permission).                                                                                                           |
-| [navigatorPlugins](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-plugins.js)         | Ensure your browser has [NavigatorPlugins](https://developer.mozilla.org/en-US/docs/Web/API/NavigatorPlugins) defined.                                                                                                    |
-| [navigatorWebdriver](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-webdriver.js)     | Ensure [Navigator.webdriver](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/webdriver) exists.                                                                                                                |
-| [randomizeUserAgent](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/randomize-user-agent.js)    | Use a different [User-Agent](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) every time.                                                                                                            |
-| [webglVendor](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/webgl-vendor.js)                   | Ensure [WebGLRenderingContext](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext) & [WebGL2RenderingContext](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext) are defined. |
-
-The evasion techniques are enabled by default. You can omit techniques just filtering them:
-
-```js
-const createBrowser = require('browserless')
-
-const evasions = require('@browserless/goto').evasions.filter(
-  evasion => evasion !== 'randomizeUserAgent'
-)
-
-const browser = createBrowser({ evasions })
-```
 
 ##### headers
 
