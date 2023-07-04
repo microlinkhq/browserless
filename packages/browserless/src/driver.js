@@ -45,8 +45,9 @@ const spawn = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   mode = 'launch',
   args = defaultArgs,
+  headless = 'new',
   ...launchOpts
-} = {}) => puppeteer[mode]({ ignoreHTTPSErrors: true, args, ...launchOpts })
+} = {}) => puppeteer[mode]({ ignoreHTTPSErrors: true, args, headless, ...launchOpts })
 
 const getPid = subprocess => {
   if ('pid' in subprocess) return subprocess.pid
