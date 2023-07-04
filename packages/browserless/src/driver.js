@@ -6,7 +6,7 @@ const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches
-// default flags: https://github.com/puppeteer/puppeteer/blob/edb01972b9606d8b05b979a588eda0d622315981/src/node/Launcher.ts#L183
+// default flags: https://github.com/puppeteer/puppeteer/blob/0d2c42a1c47c7cc5293d9664121180b35c4cdf65/packages/puppeteer-core/src/node/ChromeLauncher.ts#L166
 // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/78fdbf1b9b9a439883dc2fe747171a765b835031/source/index.ts#L94
 const defaultArgs = [
   '--autoplay-policy=user-gesture-required', // https://source.chromium.org/search?q=lang:cpp+symbol:kAutoplayPolicy&ss=chromium
