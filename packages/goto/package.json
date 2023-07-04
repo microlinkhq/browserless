@@ -48,6 +48,7 @@
     "ava": "latest",
     "browserless": "latest",
     "fpscanner": "latest",
+    "is-ci": "latest",
     "p-wait-for": "3"
   },
   "engines": {

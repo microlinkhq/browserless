@@ -1,8 +1,9 @@
 'use strict'
 
 const { getPage } = require('@browserless/test/util/create')({ evasions: false })
-const test = require('ava')
+const isCI = require('is-ci')
 const path = require('path')
+const test = require('ava')
 
 const evasions = require('../../../src/evasions')
 
@@ -77,10 +78,10 @@ test('`window.navigator.vendor` is synchronized with user-agent', async t => {
   t.is(await navigatorVendor(), '')
 })
 
-test('`navigator.deviceMemory` is present', async t => {
+test('`window.navigator.deviceMemory` is present', async t => {
   const page = await getPage(t)
-  const deviceMemory = () => page.evaluate('navigator.deviceMemory')
-  t.truthy(await deviceMemory())
+  await page.goto(fileUrl)
+  t.is(await page.evaluate('window.navigator.deviceMemory'), 8)
 })
 
 test('`window.navigator.userAgent` is not bot', async t => {
@@ -96,7 +97,7 @@ test('`window.navigator.webdriver` is present', async t => {
 
 test('`navigator.javaEnabled()` is present', async t => {
   const page = await getPage(t)
-  t.is(page.evaluate('navigator.javaEnabled()'), false)
+  t.is(await page.evaluate('navigator.javaEnabled()'), false)
 })
 
 test('`navigator.hardwareConcurrency` is present', async t => {
@@ -184,13 +185,13 @@ test('media codecs are present', async t => {
   })
 })
 
-test('hide webgl vendor', async t => {
+test('webgl vendor is not bot', async t => {
   const page = await getPage(t)
 
   const webgl = () =>
     page.evaluate(() => {
       const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('webgl2')
+      const ctx = canvas.getContext('webgl')
       const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
       return {
         vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
@@ -198,21 +199,21 @@ test('hide webgl vendor', async t => {
       }
     })
 
-  const { vendor, renderer } = await webgl()
+  const expected = isCI
+    ? {
+        vendor: 'Google Inc. (Google)',
+        renderer:
+        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
+      }
+    : {
+        vendor: 'Google Inc. (Apple)',
+        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+      }
 
-  t.true(vendor.includes('Google Inc. (Apple)'))
-  t.true(renderer.includes('ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'))
-
-  await evasions.webglVendor(page)
-  await page.goto(fileUrl)
-
-  t.deepEqual(await webgl(), {
-    vendor: 'Intel Inc.',
-    renderer: 'Intel(R) Iris(TM) Plus Graphics 640'
-  })
+  t.deepEqual(await webgl(), expected)
 })
 
-test('hide `webgl2` vendor', async t => {
+test('webgl2 vendor is not bot', async t => {
   const page = await getPage(t)
 
   const webgl2 = () =>
@@ -226,18 +227,18 @@ test('hide `webgl2` vendor', async t => {
       }
     })
 
-  const { vendor, renderer } = await webgl2()
+  const expected = isCI
+    ? {
+        vendor: 'Google Inc. (Google)',
+        renderer:
+        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
+      }
+    : {
+        vendor: 'Google Inc. (Apple)',
+        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+      }
 
-  t.true(vendor.includes('Google Inc. (Apple)'))
-  t.true(renderer.includes('ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'))
-
-  await evasions.webglVendor(page)
-  await page.goto(fileUrl)
-
-  t.deepEqual(await webgl2(), {
-    vendor: 'Intel Inc.',
-    renderer: 'Intel(R) Iris(TM) Plus Graphics 640'
-  })
+  t.deepEqual(await webgl2(), expected)
 })
 
 test('broken images have dimensions', async t => {
