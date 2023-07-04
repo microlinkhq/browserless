@@ -53,31 +53,6 @@ test('`window.outerWidth` is defined', async t => {
   t.true((await page.evaluate(() => window.outerWidth)) > 0)
 })
 
-test('`window.navigator.vendor` is synchronized with user-agent', async t => {
-  const page = await getPage(t)
-
-  const navigatorVendor = () => page.evaluate('navigator.vendor')
-
-  t.is(await navigatorVendor(), 'Google Inc.')
-
-  await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15'
-  )
-
-  await evasions.navigatorVendor(page)
-
-  await page.goto(fileUrl)
-
-  t.is(await navigatorVendor(), 'Apple Computer, Inc.')
-
-  await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/114.0'
-  )
-
-  await page.goto(fileUrl)
-  t.is(await navigatorVendor(), '')
-})
-
 test('`window.navigator.deviceMemory` is present', async t => {
   const page = await getPage(t)
   await page.goto(fileUrl)
@@ -88,6 +63,8 @@ test('`window.navigator.userAgent` is not bot', async t => {
   const page = await getPage(t)
   const userAgent = () => page.evaluate('window.navigator.userAgent')
   t.false(/HeadlessChrome/.test(await userAgent()))
+  await page.setUserAgent('googlebot')
+  t.is(await userAgent(), 'googlebot')
 })
 
 test('`window.navigator.webdriver` is present', async t => {
@@ -201,14 +178,14 @@ test('webgl vendor is not bot', async t => {
 
   const expected = isCI
     ? {
-        vendor: 'Google Inc. (Google)',
-        renderer:
+      vendor: 'Google Inc. (Google)',
+      renderer:
         'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
-      }
+    }
     : {
-        vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
-      }
+      vendor: 'Google Inc. (Apple)',
+      renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+    }
 
   t.deepEqual(await webgl(), expected)
 })
@@ -229,14 +206,14 @@ test('webgl2 vendor is not bot', async t => {
 
   const expected = isCI
     ? {
-        vendor: 'Google Inc. (Google)',
-        renderer:
+      vendor: 'Google Inc. (Google)',
+      renderer:
         'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
-      }
+    }
     : {
-        vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
-      }
+      vendor: 'Google Inc. (Apple)',
+      renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+    }
 
   t.deepEqual(await webgl2(), expected)
 })

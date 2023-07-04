@@ -19,10 +19,6 @@ debug.adblock = require('debug-logfmt')('browserless:goto:adblock')
 
 const truncate = (str, n = 80) => (str.length > n ? str.substr(0, n - 1) + '…' : str)
 
-const EVASIONS = require('./evasions')
-
-const ALL_EVASIONS_KEYS = Object.keys(EVASIONS)
-
 const engine = PuppeteerBlocker.deserialize(
   new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
 )
@@ -155,12 +151,7 @@ const inject = async (page, { timeout, mediaType, animations, modules, scripts, 
   return Promise.all(postPromises)
 }
 
-module.exports = ({
-  evasions = ALL_EVASIONS_KEYS,
-  defaultDevice = 'Macbook Pro 13',
-  timeout: globalTimeout,
-  ...deviceOpts
-}) => {
+module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ...deviceOpts }) => {
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
@@ -249,7 +240,8 @@ module.exports = ({
     }
 
     const enableInterception =
-      (onPageRequest || abortTypes.length > 0) && run({ fn: page.setRequestInterception(true), debug: 'enableInterception' })
+      (onPageRequest || abortTypes.length > 0) &&
+      run({ fn: page.setRequestInterception(true), debug: 'enableInterception' })
 
     if (onPageRequest) {
       Promise.resolve(enableInterception).then(() => page.on('request', onPageRequest))
@@ -363,18 +355,6 @@ module.exports = ({
       )
     }
 
-    const applyEvasions = castArray(evasions)
-      .filter(Boolean)
-      .map(key =>
-        run({
-          fn: EVASIONS[key](page),
-          timeout: actionTimeout,
-          debug: key
-        })
-      )
-
-    await Promise.all(prePromises.concat(applyEvasions))
-
     const { value: response, reason: error } = await run({
       fn: html
         ? page.setContent(html, { waitUntil, ...args })
@@ -442,4 +422,3 @@ module.exports = ({
 
 module.exports.parseCookies = parseCookies
 module.exports.inject = inject
-module.exports.evasions = ALL_EVASIONS_KEYS
