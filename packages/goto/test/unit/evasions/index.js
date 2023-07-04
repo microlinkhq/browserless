@@ -1,6 +1,6 @@
 'use strict'
 
-const { createBrowser } = require('@browserless/test/util')
+const { getPage, createBrowser } = require('@browserless/test/util')
 const test = require('ava')
 const path = require('path')
 
@@ -168,20 +168,10 @@ test('ensure `navigator.hardwareConcurrency` is present', async t => {
   t.true(n !== 0)
 })
 
-test('inject chrome runtime', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
-
-  const chrome = () => page.evaluate(() => window.chrome)
-  t.is(await chrome(), undefined)
-
-  await evasions.chromeRuntime(page)
-  await page.goto(fileUrl)
-
-  t.true((await chrome()) instanceof Object)
+test('`window.chrome` is defined', async t => {
+  const page = await getPage(t)
+  const windowChrome = await page.evaluate('window.chrome')
+  t.snapshot(windowChrome)
 })
 
 test('override `navigator.permissions`', async t => {

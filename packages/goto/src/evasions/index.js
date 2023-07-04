@@ -1,7 +1,6 @@
 'use strict'
 
 module.exports = {
-  chromeRuntime: require('./chrome-runtime'),
   mediaCodecs: require('./media-codecs'),
   navigatorPermissions: require('./navigator-permissions'),
   navigatorPlugins: require('./navigator-plugins'),
