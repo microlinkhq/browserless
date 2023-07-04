@@ -57,6 +57,11 @@ test('`window.navigator.deviceMemory` is present', async t => {
   t.is(await page.evaluate('window.navigator.deviceMemory'), 8)
 })
 
+test('`window.navigator.webdriver` is false', async t => {
+  const page = await getPage(t)
+  t.is(await page.evaluate('window.navigator.webdriver'), false)
+})
+
 test('`window.navigator.userAgent` is not bot', async t => {
   const page = await getPage(t)
   const userAgent = () => page.evaluate('window.navigator.userAgent')
