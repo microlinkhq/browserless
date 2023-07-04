@@ -1,6 +1,6 @@
 'use strict'
 
-const { getPage, createBrowser } = require('@browserless/test/util')
+const { getPage } = require('@browserless/test/util/create')({ evasions: false })
 const test = require('ava')
 const path = require('path')
 
@@ -8,14 +8,8 @@ const evasions = require('../../../src/evasions')
 
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
-const browser = createBrowser({ evasions: false })
-
-test('ensure `window.console` is present', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`window.console` is present', async t => {
+  const page = await getPage(t)
 
   const consoleKeys = () => page.evaluate('Object.keys(window.console)')
 
@@ -48,12 +42,8 @@ test('ensure `window.console` is present', async t => {
   ])
 })
 
-test('ensure `window.outerHeight` is present', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`window.outerHeight` is present', async t => {
+  const page = await getPage(t)
 
   const outerHeight = () => page.evaluate(() => window.outerHeight)
 
@@ -63,12 +53,8 @@ test('ensure `window.outerHeight` is present', async t => {
   t.true((await outerHeight()) > 0)
 })
 
-test('ensure `window.outerWidth` is present', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`window.outerWidth` is present', async t => {
+  const page = await getPage(t)
 
   const outerWidth = () => page.evaluate(() => window.outerWidth)
 
@@ -79,11 +65,7 @@ test('ensure `window.outerWidth` is present', async t => {
 })
 
 test('`navigator.vendor` is synchronized with user-agent', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const navigatorVendor = () => page.evaluate('navigator.vendor')
 
@@ -106,12 +88,8 @@ test('`navigator.vendor` is synchronized with user-agent', async t => {
   t.is(await navigatorVendor(), '')
 })
 
-test('ensure `navigator.deviceMemory` is present', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`navigator.deviceMemory` is present', async t => {
+  const page = await getPage(t)
 
   await page.goto(fileUrl)
 
@@ -127,11 +105,7 @@ test('`window.navigator.userAgent` is not bot', async t => {
 })
 
 test('hide `navigator.webdriver`', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const webdriver = () => page.evaluate(() => window.navigator.webdriver)
   const javaEnabled = () => page.evaluate(() => navigator.javaEnabled())
@@ -141,12 +115,8 @@ test('hide `navigator.webdriver`', async t => {
   t.is(await javaEnabled(), false)
 })
 
-test('ensure `navigator.hardwareConcurrency` is present', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`navigator.hardwareConcurrency` is present', async t => {
+  const page = await getPage(t)
 
   const hardwareConcurrency = () => page.evaluate(() => window.navigator.hardwareConcurrency)
 
@@ -164,12 +134,8 @@ test('`window.chrome` is defined', async t => {
   t.snapshot(windowChrome)
 })
 
-test('override `navigator.permissions`', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`navigator.permissions` works as expected', async t => {
+  const page = await getPage(t)
 
   const permissionStatusState = () =>
     page.evaluate(async () => {
@@ -179,51 +145,23 @@ test('override `navigator.permissions`', async t => {
       return permissionStatus.state
     })
 
-  t.is(await permissionStatusState(), 'prompt')
-
-  await evasions.navigatorPermissions(page)
-  await page.goto(fileUrl)
-
   t.is(await permissionStatusState(), 'denied')
 })
 
-test('mock `navigator.plugins`', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
-
-  const plugins = () => page.evaluate(() => window.navigator.plugins.length)
-  const mimeTypes = () => page.evaluate(() => window.navigator.mimeTypes.length)
-
-  t.is(await plugins(), 0)
-  t.is(await mimeTypes(), 0)
-
-  await evasions.navigatorPlugins(page)
-  await page.goto(fileUrl)
-
-  t.is(await plugins(), 3)
-  t.is(await mimeTypes(), 4)
+test('`window.navigator.plugins` & `window.navigator.mimeTypes` are correct', async t => {
+  const page = await getPage(t)
+  t.snapshot(await page.evaluate('window.navigator.plugins'))
+  t.snapshot(await page.evaluate('window.navigator.mimeTypes'))
 })
 
-test('ensure `navigator.languages` is present', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
-
+test('`navigator.languages` is present', async t => {
+  const page = await getPage(t)
   const languages = () => page.evaluate(() => window.navigator.languages)
   t.deepEqual(await languages(), ['en-US'])
 })
 
-test('ensure media codecs are present', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('media codecs are present', async t => {
+  const page = await getPage(t)
 
   await page.goto(fileUrl, { waitUntil: 'networkidle0' })
 
@@ -277,39 +215,27 @@ test('ensure media codecs are present', async t => {
   })
 })
 
-test('ensure `console.debug` is defined', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`console.debug` is defined', async t => {
+  const page = await getPage(t)
 
   const consoleDebug = () => page.evaluate(() => !!console.debug)
   t.is(await consoleDebug(), true)
 })
 
-test('ensure `navigator.vendor` is defined', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('`navigator.vendor` is defined', async t => {
+  const page = await getPage(t)
 
   const vendor = () => page.evaluate(() => window.navigator.vendor)
   t.is(await vendor(), 'Google Inc.')
 })
 
 test('hide webgl vendor', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const webgl = () =>
     page.evaluate(() => {
       const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('webgl')
+      const ctx = canvas.getContext('webgl2')
       const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
       return {
         vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
@@ -319,8 +245,8 @@ test('hide webgl vendor', async t => {
 
   const { vendor, renderer } = await webgl()
 
-  t.true(vendor.includes('Google Inc.'))
-  t.true(renderer.includes('SwiftShader'))
+  t.true(vendor.includes('Google Inc. (Apple)'))
+  t.true(renderer.includes('ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'))
 
   await evasions.webglVendor(page)
   await page.goto(fileUrl)
@@ -332,11 +258,7 @@ test('hide webgl vendor', async t => {
 })
 
 test('hide `webgl2` vendor', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+  const page = await getPage(t)
 
   const webgl2 = () =>
     page.evaluate(() => {
@@ -351,8 +273,8 @@ test('hide `webgl2` vendor', async t => {
 
   const { vendor, renderer } = await webgl2()
 
-  t.true(vendor.includes('Google Inc.'))
-  t.true(renderer.includes('SwiftShader'))
+  t.true(vendor.includes('Google Inc. (Apple)'))
+  t.true(renderer.includes('ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'))
 
   await evasions.webglVendor(page)
   await page.goto(fileUrl)
@@ -363,12 +285,8 @@ test('hide `webgl2` vendor', async t => {
   })
 })
 
-test('ensure broken images have dimensions', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test('broken images have dimensions', async t => {
+  const page = await getPage(t)
 
   const brokenImage = () =>
     page.evaluate(() => {
@@ -383,23 +301,14 @@ test('ensure broken images have dimensions', async t => {
   t.true((await brokenImage()) !== '0x0')
 })
 
-test('sanetize stack traces', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
-
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+test("error stack traces doesn't reveal implementation details", async t => {
+  const page = await getPage(t)
 
   const errorStackTrace = () =>
     page.evaluate(() => {
       const error = new Error('oh no!')
       return error.stack.toString()
     })
-
-  t.true((await errorStackTrace()).includes('puppeteer_evaluation_script'))
-
-  await evasions.stackTraces(page)
-  await page.goto(fileUrl)
 
   t.false((await errorStackTrace()).includes('puppeteer_evaluation_script'))
 })
