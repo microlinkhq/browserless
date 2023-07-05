@@ -7,6 +7,11 @@ const test = require('ava')
 
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
+test('`window.Notification` is not defined', async t => {
+  const page = await getPage(t)
+  t.is((await page.evaluate('typeof window.Notification'), undefined))
+})
+
 test('`window.console` is present', async t => {
   const page = await getPage(t)
 
