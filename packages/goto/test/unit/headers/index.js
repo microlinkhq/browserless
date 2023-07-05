@@ -1,10 +1,8 @@
 'use strict'
 
-const { createBrowser } = require('@browserless/test/util')
+const { getBrowserContext } = require('@browserless/test/util')
 const { createServer } = require('http')
 const test = require('ava')
-
-const browser = createBrowser({ evasions: false })
 
 const serverUrl = (() => {
   const server = createServer((req, res) => {
@@ -33,8 +31,7 @@ const createPing = browserless =>
   })
 
 test('set extra HTTP headers', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
 
   const ping = createPing(browserless)
 
@@ -49,8 +46,7 @@ test('set extra HTTP headers', async t => {
 })
 
 test('set `uset agent` header', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
 
   const ping = createPing(browserless)
 
@@ -66,8 +62,7 @@ test('set `uset agent` header', async t => {
 })
 
 test('set `cookie` header', async t => {
-  const browserless = await browser.createContext()
-  t.teardown(browserless.destroyContext)
+  const browserless = await getBrowserContext(t)
 
   const ping = createPing(browserless)
 
