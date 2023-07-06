@@ -44,6 +44,7 @@
     "time-span": "~4.0.0"
   },
   "devDependencies": {
+    "is-ci": "latest",
     "@browserless/test": "^9.11.0",
     "ava": "latest",
     "cheerio": "latest"
