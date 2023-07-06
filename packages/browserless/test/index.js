@@ -38,7 +38,7 @@ test('pass specific options to a context', async t => {
 
   await browserless.goto(page, { url: 'http://example.com' })
 
-  t.deepEqual(proxiedRequestUrls, ['http://example.com/'])
+  t.deepEqual(proxiedRequestUrls, ['http://example.com/', 'http://example.com/favicon.ico'])
 })
 
 test('ensure to destroy browser contexts', async t => {
