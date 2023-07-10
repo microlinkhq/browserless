@@ -871,7 +871,8 @@ const screencast = require('@browserless/screencast')
 
 const buffer = await screencast({
   getBrowserless: () => browserless,
-  videoFormat: 'webm',
+  format: 'webm',
+  ffmpegPath: await execa.command('which ffmpeg').then(({ stdout }) => stdout),
   gotoOpts: {
     url: 'https://vercel.com',
     animations: true,
@@ -879,26 +880,30 @@ const buffer = await screencast({
     waitUntil: 'load'
   },
   withPage: async page => {
-    await page.waitForTimeout(3000)
+    await page.waitForTimeout(7000)
   }
 })
 ```
 
 #### options
 
-##### everyNthFrame
+##### ffmpegPath
 
-type: `number`</br>
-default: `1`</br>
+type: `string`
 
-Sends every n-th frame.
+The path for using `ffmpeg` binary.
 
 ##### format
 
 type: `string`</br>
-default: `'video/webm;codecs=vp9'`</br>
+values: `'mp4'` | `'gif' | 'webm'`</br>
+default: `'webm'`
 
-The MIME media type that will be used for creating the `MediaRecorder` object.
+The video output format.
+
+##### frames
+
+These options will be passed to [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast)
 
 ##### gotoOpts
 
@@ -906,28 +911,19 @@ type: `object`
 
 These options will be passed to [goto#options](/#options-6) in order to resolve, prior to starting the recording.
 
-##### imageFormat
-
-type: `string`</br>
-default: `'png'`</br>
-values: `'jpeg'` | `'png'`
-
-The image compression format.
-
-##### quality
-
-type: `number`</br>
-default: `100`</br>
-values: `'0' to '100'
-
-Compression quality range for JPEG image format.
-
 ##### timeout
 
 type: `number`</br>
 default: `30000`
 
 Sets the maximum navigation time.
+
+##### tmpPath
+
+type: `string`</br>
+default: `os.tmpdir()`
+
+The temporary directory for writing the video. This is necessary for ffmpeg, will be cleaned before the function finished.
 
 ##### withPage(page)
 

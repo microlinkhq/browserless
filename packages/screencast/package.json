@@ -33,11 +33,12 @@
     "video"
   ],
   "dependencies": {
-    "data-uri-to-buffer": "~5.0.1"
+    "execa": "~5.1.1"
   },
   "devDependencies": {
     "@browserless/test": "^9.11.0",
-    "ava": "latest"
+    "ava": "latest",
+    "is-ci": "latest"
   },
   "engines": {
     "node": ">= 12"
