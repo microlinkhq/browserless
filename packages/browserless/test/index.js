@@ -58,3 +58,9 @@ test('ensure to destroy browser contexts', async t => {
 
   t.is(browser.browserContexts().length, 1)
 })
+
+test('ensure to close browser', async t => {
+  const browser = require('..')()
+  await browser.close()
+  t.true(browser.isClosed())
+})

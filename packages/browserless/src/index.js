@@ -185,7 +185,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
   }
 
-  return { createContext, respawn, browser: getBrowser, close }
+  return { createContext, respawn, browser: getBrowser, close, isClosed: () => isClosed }
 }
 
 module.exports.driver = driver
