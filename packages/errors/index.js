@@ -22,11 +22,6 @@ browserlessError.evaluationFailed = createBrowserlessError({
   message: 'Evaluation failed'
 })
 
-browserlessError.browserDisconnected = createBrowserlessError({
-  code: 'EBRWSRCONNRESET',
-  message: 'The browser is not connected.'
-})
-
 browserlessError.contextDisconnected = createBrowserlessError({
   code: 'EBRWSRCONTEXTCONNRESET',
   message: 'The browser context is not connected.'
@@ -36,14 +31,17 @@ browserlessError.ensureError = rawError => {
   debug('ensureError', serializeError(rawError))
 
   const error = 'error' in rawError ? rawError.error : rawError
-
-  if (error.code === 'ECONNREFUSED') {
-    return browserlessError.browserDisconnected()
-  }
-
   const { message: errorMessage = '' } = error
 
-  if (errorMessage === 'Protocol error (Target.createTarget): browserContextId') {
+  console.log({ errorMessage })
+
+  if (
+    [
+      'Protocol error (Target.createTarget): browserContextId',
+      'Protocol error (Target.createTarget): Target closed',
+      'Protocol error (Target.createBrowserContext): Target closed'
+    ].includes(errorMessage)
+  ) {
     return browserlessError.contextDisconnected()
   }
 
