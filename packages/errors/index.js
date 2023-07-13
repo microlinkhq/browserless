@@ -35,10 +35,10 @@ browserlessError.ensureError = rawError => {
 
   if (
     [
-      'Protocol error (Target.createTarget): browserContextId',
+      'Protocol error (Target.createTarget): Failed to find browser context with id',
       'Protocol error (Target.createTarget): Target closed',
       'Protocol error (Target.createBrowserContext): Target closed'
-    ].includes(errorMessage)
+    ].some(message => errorMessage.startsWith(message))
   ) {
     return browserlessError.contextDisconnected()
   }
