@@ -33,8 +33,6 @@ browserlessError.ensureError = rawError => {
   const error = 'error' in rawError ? rawError.error : rawError
   const { message: errorMessage = '' } = error
 
-  console.log({ errorMessage })
-
   if (
     [
       'Protocol error (Target.createTarget): browserContextId',
