@@ -5,12 +5,12 @@ const { request, createServer } = require('http')
 const { setTimeout } = require('timers/promises')
 const execa = require('execa')
 const path = require('path')
+const isCI = require('is-ci')
 
 const test = require('ava')
 
 require('@browserless/test')(getBrowser())
-
-test('pass specific options to a context', async t => {
+;(isCI ? test.serial : test)('pass specific options to a context', async t => {
   const proxiedRequestUrls = []
 
   const serverUrl = (() => {
@@ -43,8 +43,7 @@ test('pass specific options to a context', async t => {
 
   t.deepEqual(proxiedRequestUrls, ['http://example.com/', 'http://example.com/favicon.ico'])
 })
-
-test('ensure to destroy browser contexts', async t => {
+;(isCI ? test.serial : test)('ensure to destroy browser contexts', async t => {
   const browserlessFactory = createBrowser()
 
   const browser = await browserlessFactory.browser()
@@ -61,20 +60,17 @@ test('ensure to destroy browser contexts', async t => {
 
   t.is(browser.browserContexts().length, 1)
 })
-
-test.serial('ensure to close browser', async t => {
+;(isCI ? test.serial : test)('ensure to close browser', async t => {
   const browser = require('..')()
   await browser.close()
   t.true(browser.isClosed())
 })
-
-test.serial("don't respawn after close", async t => {
+;(isCI ? test.serial : test)("don't respawn after close", async t => {
   const script = path.join(__dirname, '../../../packages/benchmark/src/screenshot/speed.js')
   const { exitCode } = await execa.node(script, { stdio: 'inherit' })
   t.is(exitCode, 0)
 })
-
-test.serial(
+;(isCI ? test.serial : test)(
   'respawn under `Protocol error (Target.createBrowserContext): Target closed`',
   async t => {
     /**
@@ -118,29 +114,30 @@ test.serial(
     }
   }
 )
+;(isCI ? test.serial : test)(
+  'respawn under `Protocol error (Target.createTarget): Target closed`',
+  async t => {
+    /**
+     * It simulates te context is created but the URL is not set yet
+     */
+    const browserlessFactory = createBrowser()
+    t.teardown(browserlessFactory.close)
 
-test.serial('respawn under `Protocol error (Target.createTarget): Target closed`', async t => {
-  /**
-   * It simulates te context is created but the URL is not set yet
-   */
-  const browserlessFactory = createBrowser()
-  t.teardown(browserlessFactory.close)
+    const pid = (await browserlessFactory.browser()).process().pid
 
-  const pid = (await browserlessFactory.browser()).process().pid
+    const browserless = await browserlessFactory.createContext()
+    await setTimeout(200)
+    process.kill(pid, 'SIGKILL')
 
-  const browserless = await browserlessFactory.createContext()
-  await setTimeout(0)
-  process.kill(pid, 'SIGKILL')
+    await browserless.text('https://example.com')
+    await browserless.destroyContext()
 
-  await browserless.text('https://example.com')
-  await browserless.destroyContext()
+    const anotherPid = (await browserlessFactory.browser()).process().pid
 
-  const anotherPid = (await browserlessFactory.browser()).process().pid
-
-  t.true(pid !== anotherPid)
-})
-
-test.serial(
+    t.true(pid !== anotherPid)
+  }
+)
+;(isCI ? test.serial : test)(
   'respawn under `Protocol error (Target.createTarget): Failed to find browser context with id {browserContextId}`',
   async t => {
     const browserlessFactory = createBrowser()
