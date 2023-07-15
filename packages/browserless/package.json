@@ -44,6 +44,7 @@
     "superlock": "~1.0.2"
   },
   "devDependencies": {
+    "execa": "5",
     "@browserless/test": "^9.11.0",
     "ava": "latest",
     "is-ci": "latest",

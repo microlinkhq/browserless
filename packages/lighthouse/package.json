@@ -28,8 +28,7 @@
   },
   "devDependencies": {
     "@browserless/test": "^9.11.0",
-    "ava": "latest",
-    "browserless": "latest"
+    "ava": "latest"
   },
   "engines": {
     "node": ">= 12"
