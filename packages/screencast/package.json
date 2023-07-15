@@ -38,6 +38,7 @@
   "devDependencies": {
     "@browserless/test": "^9.11.0",
     "ava": "latest",
+    "file-type": "16",
     "is-ci": "latest"
   },
   "engines": {
