@@ -49,7 +49,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       debug('spawn', {
         respawn: isRespawn,
         pid: driver.pid(browser) || launchOpts.mode,
-        version: await browser.version()
+        version: await browser.version().catch(() => {})
       })
     })
 
@@ -63,7 +63,6 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
   const getBrowser = async () => {
     if (isClosed) return browserProcessPromise
-
     const browserProcess = await lock(async () => {
       const browserProcess = await browserProcessPromise
       if (browserProcess.isConnected()) return browserProcess
@@ -77,14 +76,6 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     let _contextPromise = createBrowserContext(contextOpts)
 
     const getBrowserContext = () => _contextPromise
-
-    getBrowserContext().then(context => {
-      const browserProcess = context.browser()
-      browserProcess.once('disconnected', async () => {
-        await getBrowser()
-        _contextPromise = createBrowserContext(contextOpts)
-      })
-    })
 
     const createPage = async () => {
       const [browserProcess, browserContext] = await Promise.all([
@@ -185,7 +176,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
   }
 
-  return { createContext, respawn, browser: getBrowser, close }
+  return { createContext, respawn, browser: getBrowser, close, isClosed: () => isClosed }
 }
 
 module.exports.driver = driver

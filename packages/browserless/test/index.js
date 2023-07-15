@@ -2,12 +2,15 @@
 
 const { createBrowser, getBrowserContext, getBrowser } = require('@browserless/test/util')
 const { request, createServer } = require('http')
+const { setTimeout } = require('timers/promises')
+const execa = require('execa')
+const path = require('path')
+const isCI = require('is-ci')
 
 const test = require('ava')
 
 require('@browserless/test')(getBrowser())
-
-test('pass specific options to a context', async t => {
+;(isCI ? test.serial : test)('pass specific options to a context', async t => {
   const proxiedRequestUrls = []
 
   const serverUrl = (() => {
@@ -38,10 +41,9 @@ test('pass specific options to a context', async t => {
 
   await browserless.goto(page, { url: 'http://example.com' })
 
-  t.deepEqual(proxiedRequestUrls, ['http://example.com/'])
+  t.deepEqual(proxiedRequestUrls, ['http://example.com/', 'http://example.com/favicon.ico'])
 })
-
-test('ensure to destroy browser contexts', async t => {
+;(isCI ? test.serial : test)('ensure to destroy browser contexts', async t => {
   const browserlessFactory = createBrowser()
 
   const browser = await browserlessFactory.browser()
@@ -58,3 +60,103 @@ test('ensure to destroy browser contexts', async t => {
 
   t.is(browser.browserContexts().length, 1)
 })
+;(isCI ? test.serial : test)('ensure to close browser', async t => {
+  const browser = require('..')()
+  await browser.close()
+  t.true(browser.isClosed())
+})
+;(isCI ? test.serial : test)("don't respawn after close", async t => {
+  const script = path.join(__dirname, '../../../packages/benchmark/src/screenshot/speed.js')
+  const { exitCode } = await execa.node(script, { stdio: 'inherit' })
+  t.is(exitCode, 0)
+})
+;(isCI ? test.serial : test)(
+  'respawn under `Protocol error (Target.createBrowserContext): Target closed`',
+  async t => {
+    /**
+     * It simulates the browser is dead before created a context
+     */
+    {
+      const browserlessFactory = createBrowser()
+      t.teardown(browserlessFactory.close)
+
+      const pid = (await browserlessFactory.browser()).process().pid
+
+      process.kill(pid, 'SIGKILL')
+      const browserless = await browserlessFactory.createContext()
+
+      await browserless.text('https://example.com')
+      await browserless.destroyContext()
+
+      const anotherPid = (await browserlessFactory.browser()).process().pid
+
+      t.true(pid !== anotherPid)
+    }
+
+    /**
+     * It simulates the browser is dead after created a context
+     */
+    {
+      const browserlessFactory = createBrowser()
+      t.teardown(browserlessFactory.close)
+
+      const pid = (await browserlessFactory.browser()).process().pid
+
+      const browserless = await browserlessFactory.createContext()
+      process.kill(pid, 'SIGKILL')
+
+      await browserless.text('https://example.com')
+      await browserless.destroyContext()
+
+      const anotherPid = (await browserlessFactory.browser()).process().pid
+
+      t.true(pid !== anotherPid)
+    }
+  }
+)
+;(isCI ? test.serial : test)(
+  'respawn under `Protocol error (Target.createTarget): Target closed`',
+  async t => {
+    /**
+     * It simulates te context is created but the URL is not set yet
+     */
+    const browserlessFactory = createBrowser()
+    t.teardown(browserlessFactory.close)
+
+    const pid = (await browserlessFactory.browser()).process().pid
+
+    const browserless = await browserlessFactory.createContext()
+    await setTimeout(200)
+    process.kill(pid, 'SIGKILL')
+
+    await browserless.text('https://example.com')
+    await browserless.destroyContext()
+
+    const anotherPid = (await browserlessFactory.browser()).process().pid
+
+    t.true(pid !== anotherPid)
+  }
+)
+;(isCI ? test.serial : test)(
+  'respawn under `Protocol error (Target.createTarget): Failed to find browser context with id {browserContextId}`',
+  async t => {
+    const browserlessFactory = createBrowser()
+    t.teardown(browserlessFactory.close)
+
+    const pid = (await browserlessFactory.browser()).process().pid
+
+    const browserless = await browserlessFactory.createContext()
+    const contextId = await browserless.context().then(({ id }) => id)
+
+    await browserless.text('https://example.com')
+    await browserless.destroyContext()
+
+    await browserless.text('https://example.com')
+    const anotherContextId = await browserless.context().then(({ id }) => id)
+
+    const anotherPid = (await browserlessFactory.browser()).process().pid
+
+    t.true(pid === anotherPid)
+    t.false(contextId === anotherContextId)
+  }
+)

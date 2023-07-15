@@ -2,6 +2,7 @@
 
 const { getBrowserContext } = require('@browserless/test/util')
 const cheerio = require('cheerio')
+const isCI = require('is-ci')
 const test = require('ava')
 
 test('graphics features', async t => {
@@ -18,18 +19,46 @@ test('graphics features', async t => {
     const props = []
 
     $('.feature-status-list li').each(function () {
-      props.push(
-        $(this)
-          .text()
-          .split(': ')
-      )
+      props.push($(this).text().split(': '))
     })
 
     return Object.fromEntries(props)
   })
 
-  const gpu = await getGpu()
-
-  t.is(gpu.WebGL, 'Software only, hardware acceleration unavailable')
-  t.is(gpu.WebGL2, 'Software only, hardware acceleration unavailable')
+  t.deepEqual(
+    await getGpu(),
+    isCI
+      ? {
+          Canvas: 'Software only, hardware acceleration unavailable',
+          'Canvas out-of-process rasterization': 'Disabled',
+          'Direct Rendering Display Compositor': 'Disabled',
+          Compositing: 'Software only. Hardware acceleration disabled',
+          'Multiple Raster Threads': 'Disabled',
+          OpenGL: 'Disabled',
+          Rasterization: 'Software only. Hardware acceleration disabled',
+          'Raw Draw': 'Disabled',
+          'Video Decode': 'Software only. Hardware acceleration disabled',
+          'Video Encode': 'Software only. Hardware acceleration disabled',
+          Vulkan: 'Disabled',
+          WebGL: 'Software only, hardware acceleration unavailable',
+          WebGL2: 'Software only, hardware acceleration unavailable',
+          WebGPU: 'Disabled'
+        }
+      : {
+          Canvas: 'Hardware accelerated',
+          'Canvas out-of-process rasterization': 'Enabled',
+          'Direct Rendering Display Compositor': 'Disabled',
+          Compositing: 'Hardware accelerated',
+          'Multiple Raster Threads': 'Enabled',
+          OpenGL: 'Enabled',
+          Rasterization: 'Hardware accelerated',
+          'Raw Draw': 'Disabled',
+          'Video Decode': 'Hardware accelerated',
+          'Video Encode': 'Hardware accelerated',
+          Vulkan: 'Disabled',
+          WebGL: 'Hardware accelerated',
+          WebGL2: 'Hardware accelerated',
+          WebGPU: 'Hardware accelerated'
+        }
+  )
 })

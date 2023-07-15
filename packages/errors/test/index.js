@@ -20,21 +20,6 @@ test('protocolError', t => {
   t.is(error.message, 'EPROTOCOL, Target closed.')
 })
 
-test('browserDisconnected', t => {
-  const parsedError = errors.ensureError({ code: 'ECONNREFUSED' })
-
-  t.true(parsedError instanceof Error)
-  t.is(parsedError.name, 'BrowserlessError')
-  t.is(parsedError.code, 'EBRWSRCONNRESET')
-  t.is(parsedError.message, 'EBRWSRCONNRESET, The browser is not connected.')
-
-  const error = errors.browserDisconnected()
-  t.true(error instanceof Error)
-  t.is(error.name, 'BrowserlessError')
-  t.is(parsedError.code, 'EBRWSRCONNRESET')
-  t.is(parsedError.message, 'EBRWSRCONNRESET, The browser is not connected.')
-})
-
 test('browserTimeout', t => {
   const error = errors.browserTimeout({ timeout: 50 })
 

@@ -46,6 +46,7 @@
   "devDependencies": {
     "@browserless/test": "^9.11.0",
     "ava": "latest",
+    "is-ci": "latest",
     "ps-list": "7"
   },
   "engines": {

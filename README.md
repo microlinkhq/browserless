@@ -13,7 +13,6 @@
 ## Highlights
 
 - Compatible with Puppeteer API ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
-- Built-in [evasion](#evasions) techniques to prevent being blocked.
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
 - Shell interaction via [Browserless CLI](command-line-interface).
 - Easy [Google Lighthouse](#lighthouse) integration.
@@ -566,40 +565,6 @@ default: `'macbook pro 13'`
 
 It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`.
 
-##### evasions
-
-type: `string[]`</br>
-default: `require('@browserless/goto').evasions`
-
-It makes your Headless undetectable, preventing to being blocked.
-
-![](/static/evasions.png)
-
-These techniques are used by [antibot](https://news.ycombinator.com/item?id=20479015) systems to check if you are a real browser and block any kind of automated access. All the evasion techniques implemented are:
-
-| Evasion                                                                                                                              | Description                                                                                                                                                                                                                 |
-|--------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [chromeRuntime](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/chrome-runtime.js)               | Ensure `window.chrome` is defined.                                                                                                                                                                                          |
-| [stackTraces](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/error-stack-trace.js)              | Prevent detect Puppeteer via variable name.                                                                                                                                                                                 |
-| [mediaCodecs](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/media-codecs.js)                   | Ensure media codedcs are defined.                                                                                                                                                                                           |
-| [navigatorPermissions](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-permissions.js) | Mock over [Notification.permissions](https://developer.mozilla.org/en-US/docs/Web/API/Notification/permission).                                                                                                           |
-| [navigatorPlugins](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-plugins.js)         | Ensure your browser has [NavigatorPlugins](https://developer.mozilla.org/en-US/docs/Web/API/NavigatorPlugins) defined.                                                                                                    |
-| [navigatorWebdriver](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/navigator-webdriver.js)     | Ensure [Navigator.webdriver](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/webdriver) exists.                                                                                                                |
-| [randomizeUserAgent](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/randomize-user-agent.js)    | Use a different [User-Agent](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) every time.                                                                                                            |
-| [webglVendor](https://github.com/microlinkhq/browserless/blob/master/packages/goto/src/evasions/webgl-vendor.js)                   | Ensure [WebGLRenderingContext](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext) & [WebGL2RenderingContext](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext) are defined. |
-
-The evasion techniques are enabled by default. You can omit techniques just filtering them:
-
-```js
-const createBrowser = require('browserless')
-
-const evasions = require('@browserless/goto').evasions.filter(
-  evasion => evasion !== 'randomizeUserAgent'
-)
-
-const browser = createBrowser({ evasions })
-```
-
 ##### headers
 
 type: `object`
@@ -906,7 +871,8 @@ const screencast = require('@browserless/screencast')
 
 const buffer = await screencast({
   getBrowserless: () => browserless,
-  videoFormat: 'webm',
+  format: 'webm',
+  ffmpegPath: await execa.command('which ffmpeg').then(({ stdout }) => stdout),
   gotoOpts: {
     url: 'https://vercel.com',
     animations: true,
@@ -914,26 +880,30 @@ const buffer = await screencast({
     waitUntil: 'load'
   },
   withPage: async page => {
-    await page.waitForTimeout(3000)
+    await page.waitForTimeout(7000)
   }
 })
 ```
 
 #### options
 
-##### everyNthFrame
+##### ffmpegPath
 
-type: `number`</br>
-default: `1`</br>
+type: `string`
 
-Sends every n-th frame.
+The path for using `ffmpeg` binary.
 
 ##### format
 
 type: `string`</br>
-default: `'video/webm;codecs=vp9'`</br>
+values: `'mp4'` | `'gif' | 'webm'`</br>
+default: `'webm'`
 
-The MIME media type that will be used for creating the `MediaRecorder` object.
+The video output format.
+
+##### frames
+
+These options will be passed to [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast)
 
 ##### gotoOpts
 
@@ -941,28 +911,19 @@ type: `object`
 
 These options will be passed to [goto#options](/#options-6) in order to resolve, prior to starting the recording.
 
-##### imageFormat
-
-type: `string`</br>
-default: `'png'`</br>
-values: `'jpeg'` | `'png'`
-
-The image compression format.
-
-##### quality
-
-type: `number`</br>
-default: `100`</br>
-values: `'0' to '100'
-
-Compression quality range for JPEG image format.
-
 ##### timeout
 
 type: `number`</br>
 default: `30000`
 
 Sets the maximum navigation time.
+
+##### tmpPath
+
+type: `string`</br>
+default: `os.tmpdir()`
+
+The temporary directory for writing the video. This is necessary for ffmpeg, will be cleaned before the function finished.
 
 ##### withPage(page)
 
