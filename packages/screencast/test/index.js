@@ -7,11 +7,12 @@ const FileType = require('file-type')
 const { unlinkSync } = require('fs')
 const { tmpdir } = require('os')
 const execa = require('execa')
-const isCI = require('is-ci')
 const path = require('path')
 const test = require('ava')
 
 const screencast = require('..')
+
+const isCI = !!process.env.CI
 
 test('get a webm video', async t => {
   const browserless = await getBrowserContext(t)

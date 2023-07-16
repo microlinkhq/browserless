@@ -34,7 +34,6 @@
     "exists-file": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
-    "is-ci": "latest",
     "pdf-parse": "latest",
     "puppeteer": "20.8.2",
     "signal-exit": "latest",
