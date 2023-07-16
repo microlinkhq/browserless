@@ -18,7 +18,6 @@ const { _, ...flags } = mri(process.argv.slice(2), {
   boolean: ['headless', 'verbose'],
   default: {
     codeScheme: 'ghcolors',
-    headless: 'new',
     verbose: true
   }
 })
