@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
-  "version": "9.12.4",
+  "version": "10.0.0",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -29,7 +29,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "@browserless/devices": "^9.10.2",
+    "@browserless/devices": "^10.0.0",
     "@cliqz/adblocker-puppeteer": "~1.26.6",
     "debug-logfmt": "~1.0.4",
     "got": "~11.8.6",
@@ -42,7 +42,7 @@
     "tough-cookie": "~4.1.3"
   },
   "devDependencies": {
-    "@browserless/test": "^9.11.0",
+    "@browserless/test": "^10.0.0",
     "ava": "latest",
     "is-ci": "latest",
     "p-wait-for": "3"
