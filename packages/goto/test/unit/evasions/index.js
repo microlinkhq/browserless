@@ -187,14 +187,14 @@ test('webgl vendor is not bot', async t => {
 
   const expected = isCI
     ? {
-      vendor: 'Google Inc. (Google)',
-      renderer:
+        vendor: 'Google Inc. (Google)',
+        renderer:
         'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
-    }
+      }
     : {
-      vendor: 'Google Inc. (Apple)',
-      renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
-    }
+        vendor: 'Google Inc. (Apple)',
+        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+      }
 
   t.deepEqual(await webgl(), expected)
 })
@@ -215,14 +215,14 @@ test('webgl2 vendor is not bot', async t => {
 
   const expected = isCI
     ? {
-      vendor: 'Google Inc. (Google)',
-      renderer:
+        vendor: 'Google Inc. (Google)',
+        renderer:
         'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
-    }
+      }
     : {
-      vendor: 'Google Inc. (Apple)',
-      renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
-    }
+        vendor: 'Google Inc. (Apple)',
+        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+      }
 
   t.deepEqual(await webgl2(), expected)
 })
