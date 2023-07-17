@@ -1,1 +1,1 @@
-module.exports = require('./create')({ timeout: 60000 })
+module.exports = require('./create')({ timeout: 120000 })

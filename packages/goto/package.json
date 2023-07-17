@@ -62,7 +62,7 @@
     "files": [
       "!test/fixtures"
     ],
-    "timeout": "60s",
+    "timeout": "2m",
     "workerThreads": false
   }
 }

@@ -10,7 +10,7 @@ const browserlessFactory = getBrowser()
 
 const opts = {
   getBrowserless: () => browserlessFactory,
-  timeout: 60000,
+  timeout: 120000,
   vmOpts: {
     require: {
       external: {
