@@ -2,7 +2,7 @@
   "name": "@browserless/test",
   "description": "A test suite for browserless API",
   "homepage": "https://browserless.js.org",
-  "version": "10.0.0",
+  "version": "10.0.1",
   "main": "index.js",
   "author": {
     "email": "hello@microlink.io",
