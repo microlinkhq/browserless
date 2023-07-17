@@ -2,7 +2,9 @@
 
 const { getBrowserContext } = require('@browserless/test/util')
 const pWaitFor = require('p-wait-for')
-const test = require('ava')
+const ava = require('ava')
+
+const test = process.env.CI ? ava.serial : ava
 
 test('arh.antoinevastel.com/bots/areyouheadless', async t => {
   let assertion = false

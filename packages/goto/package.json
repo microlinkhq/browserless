@@ -62,8 +62,7 @@
     "files": [
       "!test/fixtures"
     ],
-    "serial": true,
-    "timeout": "30s",
+    "timeout": "2m",
     "workerThreads": false
   }
 }

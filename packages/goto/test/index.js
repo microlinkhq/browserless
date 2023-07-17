@@ -1,7 +1,9 @@
 'use strict'
 
 const { getBrowserContext } = require('@browserless/test/util')
-const test = require('ava')
+const ava = require('ava')
+
+const test = process.env.CI ? ava.serial : ava
 
 test('setup `scripts`', async t => {
   const browserless = await getBrowserContext(t)

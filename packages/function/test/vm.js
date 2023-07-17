@@ -5,9 +5,11 @@
 const { getBrowserWSEndpoint } = require('@browserless/test/util')
 
 const path = require('path')
-const test = require('ava')
+const ava = require('ava')
 
 const createVm = require('../src/vm')
+
+const test = process.env.CI ? ava.serial : ava
 
 test('passing a function', async t => {
   const vm = createVm()
@@ -107,7 +109,7 @@ test('run browserless code', async t => {
 
   const template = `async ({ browserWSEndpoint, code, url, opts }) => {
     const getBrowserless = require('browserless')
-    const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
+    const browserless = await getBrowserless({ timeout: 120000, mode: 'connect', browserWSEndpoint }).createContext()
     const browserFn = browserless.evaluate(${eval(code)})
     const result = await browserFn(url, opts)
     return result

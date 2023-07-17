@@ -41,8 +41,7 @@
   },
   "license": "MIT",
   "ava": {
-    "serial": true,
-    "timeout": "30s",
+    "timeout": "2m",
     "workerThreads": false
   }
 }

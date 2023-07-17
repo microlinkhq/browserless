@@ -1,23 +1,32 @@
 'use strict'
 
+const { getBrowser } = require('@browserless/test/util')
 const path = require('path')
-const test = require('ava')
+const ava = require('ava')
 
 const browserlessFunction = require('..')
 
-const vmOpts = {
-  require: {
-    external: {
-      builtin: ['path', 'url'],
-      modules: [
-        'p-reflect',
-        'p-retry',
-        'browserless',
-        'metascraper',
-        'metascraper-',
-        '@metascraper',
-        'lodash'
-      ]
+const browserless = getBrowser()
+
+const test = process.env.CI ? ava.serial : ava
+
+const opts = {
+  getBrowserless: () => browserless,
+  timeout: 120000,
+  vmOpts: {
+    require: {
+      external: {
+        builtin: ['path', 'url'],
+        modules: [
+          'p-reflect',
+          'p-retry',
+          'browserless',
+          'metascraper',
+          'metascraper-',
+          '@metascraper',
+          'lodash'
+        ]
+      }
     }
   }
 }
@@ -32,7 +41,7 @@ test('code runs in strict mode', async t => {
     return isStrict()
   }
 
-  const myFn = browserlessFunction(code, { vmOpts })
+  const myFn = browserlessFunction(code, opts)
 
   t.deepEqual(await myFn(fileUrl), {
     isFulfilled: true,
@@ -44,7 +53,7 @@ test('code runs in strict mode', async t => {
 test("don't expose process.env", async t => {
   const code = () => JSON.stringify(process.env)
 
-  const myFn = browserlessFunction(code, { vmOpts })
+  const myFn = browserlessFunction(code, opts)
 
   t.deepEqual(await myFn(fileUrl), {
     isFulfilled: true,
@@ -58,7 +67,7 @@ test('handle errors', async t => {
     throw new Error('oh no')
   }
 
-  const myFn = browserlessFunction(code, { vmOpts })
+  const myFn = browserlessFunction(code, opts)
   const result = await myFn(fileUrl)
 
   t.true(result.isRejected)
@@ -67,7 +76,7 @@ test('handle errors', async t => {
 
 test('provide a mechanism to pass things to the function ', async t => {
   const code = ({ query }) => query.foo
-  const myFn = browserlessFunction(code, { vmOpts })
+  const myFn = browserlessFunction(code, opts)
 
   t.deepEqual(await myFn(fileUrl, { query: { foo: 'bar' } }), {
     isFulfilled: true,
@@ -78,7 +87,7 @@ test('provide a mechanism to pass things to the function ', async t => {
 
 test('access to response', async t => {
   const code = ({ response }) => response.status()
-  const myFn = browserlessFunction(code, { vmOpts })
+  const myFn = browserlessFunction(code, opts)
 
   t.deepEqual(await myFn(fileUrl), {
     isFulfilled: true,
@@ -89,7 +98,7 @@ test('access to response', async t => {
 
 test('access to page', async t => {
   const code = ({ page }) => page.title()
-  const myFn = browserlessFunction(code, { vmOpts })
+  const myFn = browserlessFunction(code, opts)
 
   t.deepEqual(await myFn(fileUrl), {
     isFulfilled: true,
@@ -99,7 +108,7 @@ test('access to page', async t => {
 })
 
 test('access to page (with inline code)', async t => {
-  const myFn = browserlessFunction('({ page }) => page.title()', { vmOpts })
+  const myFn = browserlessFunction('({ page }) => page.title()', opts)
 
   t.deepEqual(await myFn(fileUrl), {
     isFulfilled: true,
@@ -109,7 +118,7 @@ test('access to page (with inline code)', async t => {
 })
 
 test('access to page (with semicolon)', async t => {
-  const myFn = browserlessFunction('({ page }) => page.title();', { vmOpts })
+  const myFn = browserlessFunction('({ page }) => page.title();', opts)
 
   t.deepEqual(await myFn(fileUrl), {
     isFulfilled: true,
@@ -123,7 +132,7 @@ test('access to page (with semicolon and break lines)', async t => {
     `({ page }) => {
     return page.title()
     ; }`,
-    { vmOpts }
+    opts
   )
 
   t.deepEqual(await myFn(fileUrl), {
@@ -134,7 +143,7 @@ test('access to page (with semicolon and break lines)', async t => {
 })
 
 test('access to page (with semicolon and end break lines)', async t => {
-  const myFn = browserlessFunction('({ page }) => page.title();\n\n', { vmOpts })
+  const myFn = browserlessFunction('({ page }) => page.title();\n\n', opts)
 
   t.deepEqual(await myFn(fileUrl), {
     isFulfilled: true,
@@ -152,7 +161,7 @@ test('interact with a page', async t => {
     return title
   }
 
-  const fn = browserlessFunction(code, { vmOpts })
+  const fn = browserlessFunction(code, opts)
   const { isFulfilled, isRejected, value } = await fn(fileUrl)
 
   t.true(isFulfilled)
@@ -163,7 +172,7 @@ test('interact with a page', async t => {
 test('pass goto options', async t => {
   const code = ({ page }) => page.evaluate('jQuery.fn.jquery')
 
-  const fn = browserlessFunction(code, { vmOpts })
+  const fn = browserlessFunction(code, opts)
   const { isFulfilled, isRejected, value } = await fn(fileUrl, {
     gotoOpts: {
       scripts: ['https://code.jquery.com/jquery-3.5.0.min.js']
@@ -179,7 +188,7 @@ test('interact with npm modules', async t => {
   const code = async ({ page }) =>
     require('lodash').toString(await page.evaluate('jQuery.fn.jquery'))
 
-  const fn = browserlessFunction(code, { vmOpts })
+  const fn = browserlessFunction(code, opts)
   const { isFulfilled, isRejected, value } = await fn(fileUrl, {
     gotoOpts: {
       scripts: ['https://code.jquery.com/jquery-3.5.0.min.js']
