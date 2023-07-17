@@ -1,11 +1,15 @@
 'use strict'
 
+const { getBrowser } = require('@browserless/test/util')
 const path = require('path')
 const test = require('ava')
 
 const browserlessFunction = require('..')
 
+const browserlessFactory = getBrowser()
+
 const opts = {
+  getBrowserless: () => browserlessFactory,
   timeout: 60000,
   vmOpts: {
     require: {
