@@ -6,10 +6,10 @@ const test = require('ava')
 
 const browserlessFunction = require('..')
 
-const browserlessFactory = getBrowser()
+const browserless = getBrowser()
 
 const opts = {
-  getBrowserless: () => browserlessFactory,
+  getBrowserless: () => browserless,
   timeout: 120000,
   vmOpts: {
     require: {
