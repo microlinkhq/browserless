@@ -2,8 +2,9 @@
 
 const { getBrowserContext } = require('@browserless/test/util')
 const cheerio = require('cheerio')
-const isCI = require('is-ci')
 const test = require('ava')
+
+const isCI = !!process.env.CI
 
 test('graphics features', async t => {
   const browserless = await getBrowserContext(t)

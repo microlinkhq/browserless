@@ -7,9 +7,10 @@ const { createServer } = require('http')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const pdf = require('pdf-parse')
-const isCI = require('is-ci')
 const path = require('path')
 const test = require('ava')
+
+const isCI = !!process.env.CI
 
 const PIXELS_DIFFERENCE = isCI ? 50000 : 0
 

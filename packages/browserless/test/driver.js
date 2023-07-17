@@ -2,8 +2,9 @@
 
 const { createBrowser } = require('@browserless/test/util')
 const psList = require('ps-list')
-const isCI = require('is-ci')
 const test = require('ava')
+
+const isCI = !!process.env.CI
 
 const getChromiumPs = async () => {
   const ps = await psList()

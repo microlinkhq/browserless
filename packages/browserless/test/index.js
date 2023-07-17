@@ -5,9 +5,9 @@ const { request, createServer } = require('http')
 const { setTimeout } = require('timers/promises')
 const execa = require('execa')
 const path = require('path')
-const isCI = require('is-ci')
-
 const test = require('ava')
+
+const isCI = !!process.env.CI
 
 require('@browserless/test')(getBrowser())
 ;(isCI ? test.serial : test)('pass specific options to a context', async t => {

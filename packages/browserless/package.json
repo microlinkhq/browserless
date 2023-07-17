@@ -47,7 +47,6 @@
     "@browserless/test": "^10.0.0",
     "ava": "latest",
     "execa": "5",
-    "is-ci": "latest",
     "ps-list": "7"
   },
   "engines": {

@@ -1,9 +1,10 @@
 'use strict'
 
 const { getPage } = require('@browserless/test/util')
-const isCI = require('is-ci')
 const path = require('path')
 const test = require('ava')
+
+const isCI = !!process.env.CI
 
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 

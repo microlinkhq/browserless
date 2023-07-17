@@ -44,7 +44,6 @@
   "devDependencies": {
     "@browserless/test": "^10.0.0",
     "ava": "latest",
-    "is-ci": "latest",
     "p-wait-for": "3"
   },
   "engines": {
