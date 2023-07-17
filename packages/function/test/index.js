@@ -2,11 +2,13 @@
 
 const { getBrowser } = require('@browserless/test/util')
 const path = require('path')
-const test = require('ava')
+const ava = require('ava')
 
 const browserlessFunction = require('..')
 
 const browserless = getBrowser()
+
+const test = process.env.CI ? ava.serial : ava
 
 const opts = {
   getBrowserless: () => browserless,

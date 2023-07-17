@@ -1,11 +1,13 @@
 'use strict'
 
 const { getBrowserContext } = require('@browserless/test/util')
-const test = require('ava')
+const ava = require('ava')
 
 const createLighthouse = require('..')
 
 const lighthouse = t => createLighthouse(() => getBrowserContext(t))
+
+const test = process.env.CI ? ava.serial : ava
 
 test('default configuration', async t => {
   const url = 'https://example.com'

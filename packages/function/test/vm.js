@@ -5,9 +5,11 @@
 const { getBrowserWSEndpoint } = require('@browserless/test/util')
 
 const path = require('path')
-const test = require('ava')
+const ava = require('ava')
 
 const createVm = require('../src/vm')
+
+const test = process.env.CI ? ava.serial : ava
 
 test('passing a function', async t => {
   const vm = createVm()
