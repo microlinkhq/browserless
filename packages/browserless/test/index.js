@@ -45,6 +45,7 @@ require('@browserless/test')(getBrowser())
 })
 ;(isCI ? test.serial : test)('ensure to destroy browser contexts', async t => {
   const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
 
   const browser = await browserlessFactory.browser()
 

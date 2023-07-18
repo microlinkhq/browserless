@@ -15,7 +15,7 @@ const getChromiumPs = async () => {
   const initialPs = await getChromiumPs()
 
   const browserlessFactory = createBrowser()
-  t.teardown(() => browserlessFactory.close())
+  t.teardown(browserlessFactory.close)
 
   t.is((await getChromiumPs()).length, 1)
   t.is((await getChromiumPs())[0].pid, (await browserlessFactory.browser()).process().pid)
