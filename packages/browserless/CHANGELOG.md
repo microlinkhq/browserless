@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.1.0](https://github.com/microlinkhq/browserless/compare/v10.0.2...v10.1.0) (2023-07-18)
+
+### Features
+
+* add `force` for destroyContext ([14a8759](https://github.com/microlinkhq/browserless/commit/14a8759cd1415438bd24a3d42872daff08f8b83c))
+
 ## [10.0.2](https://github.com/microlinkhq/browserless/compare/v10.0.1...v10.0.2) (2023-07-17)
 
 **Note:** Version bump only for package browserless
