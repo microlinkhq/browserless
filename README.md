@@ -398,7 +398,7 @@ const buffer = await browserless.screenshot(url.toString(), {
 })
 ```
 
-### .destroyContext
+### .destroyContext(options)
 
 It will destroy the current browser context.
 
@@ -409,6 +409,15 @@ const content = await browserless.html('https://example.com')
 
 await browserless.destroyContext()
 ```
+
+#### options
+
+##### force
+
+type: `string` </br>
+default: `'force'`
+
+When force is passed, it avoids recreating the context in case a browser actions is being executed.
 
 ### .getDevice(options)
 

@@ -60,6 +60,22 @@ require('@browserless/test')(getBrowser())
 
   t.is(browser.browserContexts().length, 1)
 })
+;(isCI ? test.serial : test)('force to destroy a browser context', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+
+  const browserless = await browserlessFactory.createContext()
+
+  const promise = browserless.html('https://example.com')
+
+  await setTimeout(500)
+
+  await browserless.destroyContext({ force: true })
+
+  const error = await Promise.resolve(promise).catch(error => error)
+
+  t.is(error.name, 'AbortError')
+})
 ;(isCI ? test.serial : test)('ensure to close browser', async t => {
   const browser = require('..')()
   await browser.close()

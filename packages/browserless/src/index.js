@@ -74,6 +74,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
     let _contextPromise = createBrowserContext(contextOpts)
+    let isDestroyedForced = false
 
     const getBrowserContext = () => _contextPromise
 
@@ -124,7 +125,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               onFailedAttempt: async error => {
                 debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
                 if (error.name === 'AbortError') throw error
-                if (isRejected) throw new AbortError()
+                if (isRejected || isDestroyedForced) throw new AbortError()
                 if (error.code === 'EBRWSRCONTEXTCONNRESET') {
                   _contextPromise = createBrowserContext(contextOpts)
                 }
@@ -150,13 +151,15 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         gotoOpts
       )
 
-    const destroyContext = async () => {
+    const destroyContext = async ({ force = false } = {}) => {
+      if (force) isDestroyedForced = true
+
       const [browserProcess, browserContext] = await Promise.all([
         getBrowser(),
         getBrowserContext()
       ])
       await pReflect(browserContext.close())
-      debug('destroyContext', { pid: driver.pid(browserProcess), id: browserContext.id })
+      debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
     }
 
     return {
