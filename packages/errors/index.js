@@ -52,7 +52,8 @@ browserlessError.ensureError = rawError => {
   if (
     ['Evaluation failed', 'Cannot read properties of undefined'].some(message =>
       errorMessage.startsWith(message)
-    )
+    ) ||
+    errorMessage.endsWith('is not defined')
   ) {
     const messages = errorMessage.split(': ')
     return browserlessError.evaluationFailed({
