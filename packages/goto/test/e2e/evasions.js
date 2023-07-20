@@ -6,7 +6,7 @@ const ava = require('ava')
 
 const test = process.env.CI ? ava.serial : ava
 
-test('arh.antoinevastel.com/bots/areyouheadless', async t => {
+test.serial('arh.antoinevastel.com/bots/areyouheadless', async t => {
   let assertion = false
 
   const fn = async () => {
@@ -20,7 +20,7 @@ test('arh.antoinevastel.com/bots/areyouheadless', async t => {
   t.true(assertion)
 })
 
-test('creepjs', async t => {
+test.serial('creepjs', async t => {
   const browserless = await getBrowserContext(t)
 
   const fingerprint = await browserless.evaluate(page =>
@@ -43,7 +43,7 @@ test('creepjs', async t => {
   t.true(fingerprintOne !== fingerprintTwo)
 })
 
-test('fingerprintjs', async t => {
+test.serial('fingerprintjs', async t => {
   const browserless = await getBrowserContext(t)
 
   const fingerprint = await browserless.evaluate(page =>
@@ -58,7 +58,7 @@ test('fingerprintjs', async t => {
   t.true(fingerprintOne !== fingerprintTwo)
 })
 
-test('amiunique.org/fp', async t => {
+test.serial('amiunique.org/fp', async t => {
   const browserless = await getBrowserContext(t)
   const content = await browserless.text('https://amiunique.org/fingerprint', {
     waitForSelector:
