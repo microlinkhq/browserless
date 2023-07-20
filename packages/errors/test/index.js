@@ -30,19 +30,60 @@ test('browserTimeout', t => {
 })
 
 test('evaluationFailed', t => {
-  const parsedError = errors.ensureError({
-    message: "Evaluation failed: TypeError: Cannot read property 'bar' of undefined"
-  })
+  {
+    const parsedError = errors.ensureError({
+      message: "Evaluation failed: TypeError: Cannot read property 'bar' of undefined"
+    })
 
-  t.true(parsedError instanceof Error)
-  t.is(parsedError.name, 'BrowserlessError')
-  t.is(parsedError.code, 'EFAILEDEVAL')
-  t.is(parsedError.message, "EFAILEDEVAL, Cannot read property 'bar' of undefined")
+    t.true(parsedError instanceof Error)
+    t.is(parsedError.name, 'BrowserlessError')
+    t.is(parsedError.code, 'EFAILEDEVAL')
+    t.is(parsedError.message, "EFAILEDEVAL, Cannot read property 'bar' of undefined")
 
-  const error = errors.evaluationFailed("Cannot read property 'bar' of undefined")
+    const error = errors.evaluationFailed("Cannot read property 'bar' of undefined")
 
-  t.true(error instanceof Error)
-  t.is(error.name, 'BrowserlessError')
-  t.is(error.code, 'EFAILEDEVAL')
-  t.is(error.message, "EFAILEDEVAL, Cannot read property 'bar' of undefined")
+    t.true(error instanceof Error)
+    t.is(error.name, 'BrowserlessError')
+    t.is(error.code, 'EFAILEDEVAL')
+    t.is(error.message, "EFAILEDEVAL, Cannot read property 'bar' of undefined")
+  }
+  {
+    const parsedError = errors.ensureError({
+      message: "Cannot read properties of undefined (reading 'versoin')"
+    })
+
+    t.true(parsedError instanceof Error)
+    t.is(parsedError.name, 'BrowserlessError')
+    t.is(parsedError.code, 'EFAILEDEVAL')
+
+    t.is(
+      parsedError.message,
+      "EFAILEDEVAL, Cannot read properties of undefined (reading 'versoin')"
+    )
+
+    const error = errors.evaluationFailed("Cannot read properties of undefined (reading 'versoin')")
+
+    t.true(error instanceof Error)
+    t.is(error.name, 'BrowserlessError')
+    t.is(error.code, 'EFAILEDEVAL')
+    t.is(error.message, "EFAILEDEVAL, Cannot read properties of undefined (reading 'versoin')")
+  }
+  {
+    const parsedError = errors.ensureError({
+      message: 'version is not defined'
+    })
+
+    t.true(parsedError instanceof Error)
+    t.is(parsedError.name, 'BrowserlessError')
+    t.is(parsedError.code, 'EFAILEDEVAL')
+
+    t.is(parsedError.message, 'EFAILEDEVAL, version is not defined')
+
+    const error = errors.evaluationFailed('version is not defined')
+
+    t.true(error instanceof Error)
+    t.is(error.name, 'BrowserlessError')
+    t.is(error.code, 'EFAILEDEVAL')
+    t.is(error.message, 'EFAILEDEVAL, version is not defined')
+  }
 })
