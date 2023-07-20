@@ -38,6 +38,7 @@ test('graphics features', async t => {
           OpenGL: 'Disabled',
           Rasterization: 'Software only. Hardware acceleration disabled',
           'Raw Draw': 'Disabled',
+          'Skia Graphite': 'Disabled',
           'Video Decode': 'Software only. Hardware acceleration disabled',
           'Video Encode': 'Software only. Hardware acceleration disabled',
           Vulkan: 'Disabled',
@@ -54,9 +55,9 @@ test('graphics features', async t => {
           OpenGL: 'Enabled',
           Rasterization: 'Hardware accelerated',
           'Raw Draw': 'Disabled',
+          'Skia Graphite': 'Disabled',
           'Video Decode': 'Hardware accelerated',
           'Video Encode': 'Hardware accelerated',
-          Vulkan: 'Disabled',
           WebGL: 'Hardware accelerated',
           WebGL2: 'Hardware accelerated',
           WebGPU: 'Hardware accelerated'
