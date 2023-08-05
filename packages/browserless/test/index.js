@@ -5,12 +5,12 @@ const { request, createServer } = require('http')
 const { setTimeout } = require('timers/promises')
 const execa = require('execa')
 const path = require('path')
-const test = require('ava')
+const ava = require('ava')
 
-const isCI = !!process.env.CI
+const test = process.env.CI ? ava.serial : ava
 
 require('@browserless/test')(getBrowser())
-;(isCI ? test.serial : test)('pass specific options to a context', async t => {
+test('pass specific options to a context', async t => {
   const proxiedRequestUrls = []
 
   const serverUrl = (() => {
@@ -43,7 +43,7 @@ require('@browserless/test')(getBrowser())
 
   t.deepEqual(proxiedRequestUrls, ['http://example.com/', 'http://example.com/favicon.ico'])
 })
-;(isCI ? test.serial : test)('ensure to destroy browser contexts', async t => {
+test('ensure to destroy browser contexts', async t => {
   const browserlessFactory = createBrowser()
   t.teardown(browserlessFactory.close)
 
@@ -61,7 +61,7 @@ require('@browserless/test')(getBrowser())
 
   t.is(browser.browserContexts().length, 1)
 })
-;(isCI ? test.serial : test)('force to destroy a browser context', async t => {
+test('force to destroy a browser context', async t => {
   const browserlessFactory = createBrowser()
   t.teardown(browserlessFactory.close)
 
@@ -77,17 +77,17 @@ require('@browserless/test')(getBrowser())
 
   t.is(error.name, 'AbortError')
 })
-;(isCI ? test.serial : test)('ensure to close browser', async t => {
+test('ensure to close browser', async t => {
   const browser = require('..')()
   await browser.close()
   t.true(browser.isClosed())
 })
-;(isCI ? test.serial : test)("don't respawn after close", async t => {
+test("don't respawn after close", async t => {
   const script = path.join(__dirname, '../../../packages/benchmark/src/screenshot/speed.js')
   const { exitCode } = await execa.node(script, { stdio: 'inherit' })
   t.is(exitCode, 0)
 })
-;(isCI ? test.serial : test)(
+test(
   'respawn under `Protocol error (Target.createBrowserContext): Target closed`',
   async t => {
     /**
@@ -131,7 +131,7 @@ require('@browserless/test')(getBrowser())
     }
   }
 )
-;(isCI ? test.serial : test)(
+test(
   'respawn under `Protocol error (Target.createTarget): Target closed`',
   async t => {
     /**
@@ -154,7 +154,7 @@ require('@browserless/test')(getBrowser())
     t.true(pid !== anotherPid)
   }
 )
-;(isCI ? test.serial : test)(
+test(
   'respawn under `Protocol error (Target.createTarget): Failed to find browser context with id {browserContextId}`',
   async t => {
     const browserlessFactory = createBrowser()

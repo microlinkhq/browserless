@@ -5,13 +5,11 @@
 const { getBrowserWSEndpoint } = require('@browserless/test/util')
 
 const path = require('path')
-const ava = require('ava')
+const test = require('ava')
 
 const createVm = require('../src/vm')
 
-const test = process.env.CI ? ava.serial : ava
-
-test('passing a function', async t => {
+test.serial('passing a function', async t => {
   const vm = createVm()
   function template ({ name }) {
     return `greetings ${name}`
@@ -25,7 +23,7 @@ test('passing a function', async t => {
   })
 })
 
-test('catch errors', async t => {
+test.serial('catch errors', async t => {
   const vm = createVm()
 
   async function template () {
@@ -40,7 +38,7 @@ test('catch errors', async t => {
   t.is(result.reason.message, 'oh no')
 })
 
-test('passing an arrow function', async t => {
+test.serial('passing an arrow function', async t => {
   const vm = createVm()
   const template = ({ name }) => `greetings ${name}`
   const fn = vm(template)
@@ -52,7 +50,7 @@ test('passing an arrow function', async t => {
   })
 })
 
-test('passing a function.toString', async t => {
+test.serial('passing a function.toString', async t => {
   const vm = createVm()
   const template = ({ name }) => `greetings ${name}`
   const fn = vm(template.toString())
@@ -64,7 +62,7 @@ test('passing a function.toString', async t => {
   })
 })
 
-test('passing a string as function', async t => {
+test.serial('passing a string as function', async t => {
   const vm = createVm()
   // eslint-disable-next-line
   const fn = vm('({ name }) => `greetings ${name}`')
@@ -76,7 +74,7 @@ test('passing a string as function', async t => {
   })
 })
 
-test('passing an async function', async t => {
+test.serial('passing an async function', async t => {
   const vm = createVm()
 
   async function template ({ name }) {
@@ -99,7 +97,7 @@ test('passing an async function', async t => {
   })
 })
 
-test('run browserless code', async t => {
+test.serial('run browserless code', async t => {
   const browserWSEndpoint = await getBrowserWSEndpoint()
 
   const url = 'https://example.com'

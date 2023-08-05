@@ -30,7 +30,7 @@ const createPing = browserless =>
     return { cookies, userAgent, body, request, response }
   })
 
-test('set extra HTTP headers', async t => {
+test.serial('set extra HTTP headers', async t => {
   const browserless = await getBrowserContext(t)
 
   const ping = createPing(browserless)
@@ -45,7 +45,7 @@ test('set extra HTTP headers', async t => {
   t.is(body.headers['x-foo'], 'bar')
 })
 
-test('set `uset agent` header', async t => {
+test.serial('set `uset agent` header', async t => {
   const browserless = await getBrowserContext(t)
 
   const ping = createPing(browserless)
@@ -61,7 +61,7 @@ test('set `uset agent` header', async t => {
   t.is(userAgent, 'googlebot')
 })
 
-test('set `cookie` header', async t => {
+test.serial('set `cookie` header', async t => {
   const browserless = await getBrowserContext(t)
 
   const ping = createPing(browserless)
