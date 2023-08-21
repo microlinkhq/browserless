@@ -20,10 +20,16 @@ const waitForImagesOnViewport = page =>
     Promise.all(
       elements
         .filter(
-          el =>
-            el.getBoundingClientRect().top <= window.innerHeight &&
-            el.width !== 0 &&
-            el.height !== 0
+          el => {
+            if (el.naturalHeight === 0 || el.naturalWeight === 0) return false
+            const { top, left, bottom, right } = el.getBoundingClientRect()
+            return (
+              top >= 0 &&
+              left >= 0 &&
+              bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+              right <= (window.innerWidth || document.documentElement.clientWidth)
+            )
+          }
         )
         .map(el => el.decode())
     )
