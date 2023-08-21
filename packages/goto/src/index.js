@@ -162,9 +162,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   }
 
   // related https://github.com/puppeteer/puppeteer/issues/1353
-  const _waitUntilAuto = (page, opts = {}) => {
-    const timeout = timeouts.action(opts.timeout)
-
+  const _waitUntilAuto = (page, { timeout }) => {
     return Promise.all(
       [
         {
@@ -175,7 +173,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
           fn: () => page.evaluate(() => window.history.pushState(null, null, null)),
           debug: 'waitUntilAuto:pushState'
         }
-      ].map(({ fn, ...opts }) => run({ fn: fn(), timeout, ...opts }))
+      ].map(({ fn, debug }) => run({ fn: fn(), debug, timeout }))
     )
   }
 
