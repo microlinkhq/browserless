@@ -46,7 +46,7 @@
   "devDependencies": {
     "@browserless/test": "^10.1.7",
     "ava": "latest",
-    "execa": "5",
+    "execa": "8",
     "ps-list": "7"
   },
   "engines": {
