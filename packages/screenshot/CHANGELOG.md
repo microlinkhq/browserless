@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.1.9](https://github.com/microlinkhq/browserless/compare/v10.1.8...v10.1.9) (2023-08-21)
+
+### Bug Fixes
+
+* **screenshot:** check image is on viewport ([#508](https://github.com/microlinkhq/browserless/issues/508)) ([04971d5](https://github.com/microlinkhq/browserless/commit/04971d5b4403b18feff9706bb5eff6f5f150e534))
+
 ## [10.1.8](https://github.com/microlinkhq/browserless/compare/v10.1.7...v10.1.8) (2023-08-21)
 
 **Note:** Version bump only for package @browserless/screenshot
