@@ -31,7 +31,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "beauty-error": "~1.2.15",
+    "beauty-error": "~1.2.17",
     "browserless": "^10.1.10",
     "dark-mode": "~3.0.0",
     "dset": "~3.1.2",
@@ -39,9 +39,9 @@
     "nanospinner": "~1.1.0",
     "picocolors": "~1.0.0",
     "pretty-bytes": "~5.6.0",
-    "process-stats": "~3.7.4",
+    "process-stats": "~3.7.6",
     "restore-cursor": "~3.1.0",
-    "signal-exit": "~4.0.2",
+    "signal-exit": "~4.1.0",
     "term-img": "~5.0.0",
     "unique-random-array": "~2.0.0"
   },
