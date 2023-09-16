@@ -42,7 +42,7 @@ test.serial('handle timeout', async t => {
 
   const error = await t.throwsAsync(
     lighthouse(t)(url, {
-      timeout: 50,
+      timeout: 500,
       onlyAudits: ['accessibility'],
       output: 'html'
     })
