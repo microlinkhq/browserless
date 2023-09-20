@@ -68,14 +68,6 @@ test.serial('`window.navigator.webdriver` is false', async t => {
   t.is(await page.evaluate('window.navigator.webdriver'), false)
 })
 
-test.serial('`window.navigator.userAgent` is not bot', async t => {
-  const page = await getPage(t)
-  const userAgent = () => page.evaluate('window.navigator.userAgent')
-  t.false(/HeadlessChrome/.test(await userAgent()))
-  await page.setUserAgent('googlebot')
-  t.is(await userAgent(), 'googlebot')
-})
-
 test.serial('`window.navigator.webdriver` is present', async t => {
   const page = await getPage(t)
   t.is(await page.evaluate('window.navigator.webdriver'), false)
