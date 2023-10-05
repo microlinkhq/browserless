@@ -15,4 +15,3 @@ for (const packagePath of await readdir(packagesPath)) {
 }
 
 console.log(`{"package":${JSON.stringify(packages)}}`)
-

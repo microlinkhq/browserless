@@ -1,57 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <!-- Basic -->
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
 
-<head>
-  <!-- Basic -->
-  <meta charset="utf-8">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net/">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <!-- Search Engine -->
+    <meta
+      name="description"
+      content="The headless Chrome/Chromium performance driver for Node.js"
+    />
+    <meta name="image" content="https://browserless.js.org/static/demo.png" />
+    <link rel="canonical" href="https://browserless.js.org" />
+    <title>browserless, the headless Chrome/Chromium performance driver for Node.js</title>
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
 
-  <!-- Search Engine -->
-  <meta name="description" content="The headless Chrome/Chromium performance driver for Node.js">
-  <meta name="image" content="https://browserless.js.org/static/demo.png">
-  <link rel="canonical" href="https://browserless.js.org" />
-  <title>browserless, the headless Chrome/Chromium performance driver for Node.js</title>
-  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <!-- Schema.org for Google -->
+    <meta
+      itemprop="name"
+      content="browserless, The headless Chrome/Chromium performance driver for Node.js"
+    />
+    <meta
+      itemprop="description"
+      content="The headless Chrome/Chromium performance driver for Node.js"
+    />
+    <meta itemprop="image" content="https://browserless.js.org/static/demo.png" />
 
-  <!-- Schema.org for Google -->
-  <meta itemprop="name" content="browserless, The headless Chrome/Chromium performance driver for Node.js">
-  <meta itemprop="description" content="The headless Chrome/Chromium performance driver for Node.js">
-  <meta itemprop="image" content="https://browserless.js.org/static/demo.png">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="browserless" />
+    <meta
+      name="twitter:description"
+      content="The headless Chrome/Chromium performance driver for Node.js"
+    />
+    <meta name="twitter:image" content="https://browserless.js.org/static/demo.png" />
+    <meta name="twitter:label1" value="Installation" />
+    <meta name="twitter:data1" value="npm install browserless --save" />
+    <!-- Open Graph general (Facebook, Pinterest & Google+) -->
+    <meta property="og:title" content="browserless" />
+    <meta property="og:logo" content="https://browserless.js.org/static/logo.png" />
+    <meta
+      property="og:description"
+      content="The headless Chrome/Chromium performance driver for Node.js"
+    />
+    <meta property="og:image" content="https://browserless.js.org/static/demo.png" />
+    <meta property="og:url" content="https://browserless.js.org" />
+    <meta property="og:site_name" content="browserless.js.org" />
+    <meta property="og:type" content="website" />
 
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="browserless">
-  <meta name="twitter:description" content="The headless Chrome/Chromium performance driver for Node.js">
-  <meta name="twitter:image" content="https://browserless.js.org/static/demo.png">
-  <meta name="twitter:label1" value="Installation" />
-  <meta name="twitter:data1" value="npm install browserless --save" />
-  <!-- Open Graph general (Facebook, Pinterest & Google+) -->
-  <meta property="og:title" content="browserless">
-  <meta property="og:logo" content="https://browserless.js.org/static/logo.png">
-  <meta property="og:description" content="The headless Chrome/Chromium performance driver for Node.js">
-  <meta property="og:image" content="https://browserless.js.org/static/demo.png">
-  <meta property="og:url" content="https://browserless.js.org">
-  <meta property="og:site_name" content="browserless.js.org">
-  <meta property="og:type" content="website">
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://browserless.js.org/static/favicon-32x32.png?t=1694946921639"
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://browserless.js.org/static/favicon-16x16.png?t=1694946921639"
+      sizes="16x16"
+    />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="https://browserless.js.org/static/favicon-32x32.png?t=1694946921639" sizes="32x32" />
-  <link rel="icon" type="image/png" href="https://browserless.js.org/static/favicon-16x16.png?t=1694946921639" sizes="16x16" />
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito&family=Nunito+Sans&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Nunito&family=Nunito+Sans&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/style.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codecopy/umd/codecopy.min.css" />
+  </head>
 
-  <!-- Stylesheet -->
-  <link rel="stylesheet" href="/static/style.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codecopy/umd/codecopy.min.css">
-</head>
-
-<body>
-  <div id="app"></div>
-</body>
-<script src="/static/main.min.js"></script>
-<script src="https://cdn.jsdelivr.net/combine/npm/docsify/lib/docsify.min.js,npm/docsify/lib/plugins/external-script.min.js,npm/codecopy/umd/codecopy.min.js"></script>
+  <body>
+    <div id="app"></div>
+  </body>
+  <script src="/static/main.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/combine/npm/docsify/lib/docsify.min.js,npm/docsify/lib/plugins/external-script.min.js,npm/codecopy/umd/codecopy.min.js"></script>
 </html>

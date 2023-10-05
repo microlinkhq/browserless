@@ -10,11 +10,7 @@ const { AbortError } = pRetry
 
 const runFunction = require('./function')
 
-const stringify = fn =>
-  fn
-    .toString()
-    .trim()
-    .replace(/;$/, '')
+const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
 module.exports = (
   fn,
