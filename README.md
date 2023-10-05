@@ -254,7 +254,7 @@ It serializes the content from the target `url` into plain text.
 ```js
 const text = await browserless.text('https://example.com')
 
-console.log(text) 
+console.log(text)
 // => "Example Domain\nThis domain is for use in illustrative…"
 ```
 
@@ -387,9 +387,7 @@ You can configure the overlay specifying:
 
 ```js
 const buffer = await browserless.screenshot(url.toString(), {
-  styles: [
-    '.crisp-client, #cookies-policy { display: none; }'
-  ],
+  styles: ['.crisp-client, #cookies-policy { display: none; }'],
   overlay: {
     browser: 'dark',
     background:
@@ -507,12 +505,9 @@ You don't need to close the page; It will be closed automatically.
 Internally, the method performs a [browserless.goto](#gotopage-options), being possible to pass extra arguments as second parameter:
 
 ```js
-const serialize = browserless.evaluate(
-  page => page.evaluate(() => document.body.innerText),
-  {
-    waitUntil: 'domcontentloaded'
-  }
-)
+const serialize = browserless.evaluate(page => page.evaluate(() => document.body.innerText), {
+  waitUntil: 'domcontentloaded'
+})
 
 await serialize('https://example.com')
 // => '<!DOCTYPE html><html><div>…'
@@ -826,17 +821,17 @@ The report will be generated `url`, extending from `lighthouse:default` settings
 The [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/main/docs/configuration.md) that will extend `'lighthouse:default'` settings:
 
 ```js
-const report = await lighthouse(url, { 
-  onlyAudits: ['accessibility'] 
+const report = await lighthouse(url, {
+  onlyAudits: ['accessibility']
 })
 ```
 
 Also, you can extend from a different preset of settings:
 
 ```js
-const report = await lighthouse(url, { 
-  preset: 'desktop', 
-  onlyAudits: ['accessibility'] 
+const report = await lighthouse(url, {
+  preset: 'desktop',
+  onlyAudits: ['accessibility']
 })
 ```
 
@@ -905,7 +900,7 @@ The path for using `ffmpeg` binary.
 ##### format
 
 type: `string`</br>
-values: `'mp4'` | `'gif' | 'webm'`</br>
+values: `'mp4'` | `'gif' | 'webm'`</br>
 default: `'webm'`
 
 The video output format.
@@ -944,8 +939,8 @@ It sets the in-page browser action to perform during the video recording.
 
 **browserless** is internally divided into multiple packages for ensuring just use the minimum quantity of code necessary for your use case.
 
-| Package                                                                                                 | Version                                                                                                                                     |
-|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| Package                                                                                               | Version                                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | [browserless](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         |
 | [@browserless/benchmark](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   |
 | [@browserless/cli](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               |

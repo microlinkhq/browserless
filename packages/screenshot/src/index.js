@@ -19,18 +19,16 @@ const waitForImagesOnViewport = page =>
   page.$$eval('img[src]:not([aria-hidden="true"])', elements =>
     Promise.all(
       elements
-        .filter(
-          el => {
-            if (el.naturalHeight === 0 || el.naturalWeight === 0) return false
-            const { top, left, bottom, right } = el.getBoundingClientRect()
-            return (
-              top >= 0 &&
-              left >= 0 &&
-              bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-              right <= (window.innerWidth || document.documentElement.clientWidth)
-            )
-          }
-        )
+        .filter(el => {
+          if (el.naturalHeight === 0 || el.naturalWeight === 0) return false
+          const { top, left, bottom, right } = el.getBoundingClientRect()
+          return (
+            top >= 0 &&
+            left >= 0 &&
+            bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            right <= (window.innerWidth || document.documentElement.clientWidth)
+          )
+        })
         .map(el => el.decode())
     )
   )
@@ -51,75 +49,76 @@ const waitForElement = async (page, element) => {
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
-  return page => async (
-    url,
-    {
-      element,
-      codeScheme = 'atom-dark',
-      overlay: overlayOpts = {},
-      waitUntil = 'auto',
-      ...opts
-    } = {}
-  ) => {
-    let screenshot
-    let response
+  return page =>
+    async (
+      url,
+      {
+        element,
+        codeScheme = 'atom-dark',
+        overlay: overlayOpts = {},
+        waitUntil = 'auto',
+        ...opts
+      } = {}
+    ) => {
+      let screenshot
+      let response
 
-    const beforeScreenshot = response => {
-      const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
-      return Promise.all(
-        [
-          {
-            fn: () => page.evaluate('document.fonts.ready'),
-            debug: 'beforeScreenshot:fontsReady'
-          },
-          {
-            fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
-            debug: 'beforeScreenshot:waitForPrism'
-          },
-          {
-            fn: () => waitForImagesOnViewport(page),
-            debug: 'beforeScreenshot:waitForImagesOnViewport'
-          }
-        ].map(({ fn, ...opts }) => goto.run({ fn: fn(), ...opts, timeout }))
-      )
-    }
-
-    const takeScreenshot = async opts => {
-      screenshot = await page.screenshot(opts)
-      const isWhite = await isWhiteScreenshot(screenshot)
-      if (isWhite) {
-        await goto.waitUntilAuto(page, opts)
-        screenshot = await page.screenshot(opts)
+      const beforeScreenshot = response => {
+        const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
+        return Promise.all(
+          [
+            {
+              fn: () => page.evaluate('document.fonts.ready'),
+              debug: 'beforeScreenshot:fontsReady'
+            },
+            {
+              fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
+              debug: 'beforeScreenshot:waitForPrism'
+            },
+            {
+              fn: () => waitForImagesOnViewport(page),
+              debug: 'beforeScreenshot:waitForImagesOnViewport'
+            }
+          ].map(({ fn, ...opts }) => goto.run({ fn: fn(), ...opts, timeout }))
+        )
       }
-      return { isWhite }
-    }
 
-    page.on('dialog', dialog => pReflect(dialog.dismiss()))
+      const takeScreenshot = async opts => {
+        screenshot = await page.screenshot(opts)
+        const isWhite = await isWhiteScreenshot(screenshot)
+        if (isWhite) {
+          await goto.waitUntilAuto(page, opts)
+          screenshot = await page.screenshot(opts)
+        }
+        return { isWhite }
+      }
 
-    const timeScreenshot = timeSpan()
+      page.on('dialog', dialog => pReflect(dialog.dismiss()))
 
-    if (waitUntil !== 'auto') {
-      ;({ response } = await goto(page, { ...opts, url, waitUntil }))
-      const [screenshotOpts] = await Promise.all([
-        waitForElement(page, element),
-        beforeScreenshot(response)
-      ])
-      screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
-      debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
-    } else {
-      ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
-      async function waitUntilAuto (page, { response }) {
+      const timeScreenshot = timeSpan()
+
+      if (waitUntil !== 'auto') {
+        ;({ response } = await goto(page, { ...opts, url, waitUntil }))
         const [screenshotOpts] = await Promise.all([
           waitForElement(page, element),
           beforeScreenshot(response)
         ])
-        const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
-        debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
+        screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
+        debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
+      } else {
+        ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
+        async function waitUntilAuto (page, { response }) {
+          const [screenshotOpts] = await Promise.all([
+            waitForElement(page, element),
+            beforeScreenshot(response)
+          ])
+          const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
+          debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
+        }
       }
-    }
 
-    return Object.keys(overlayOpts).length === 0
-      ? screenshot
-      : overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
-  }
+      return Object.keys(overlayOpts).length === 0
+        ? screenshot
+        : overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
+    }
 }

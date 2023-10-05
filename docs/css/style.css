@@ -82,7 +82,7 @@ img {
   max-width: 100%;
 }
 
-img[src*="#gh-dark-mode-only"] {
+img[src*='#gh-dark-mode-only'] {
   display: none;
 }
 
@@ -207,7 +207,7 @@ body.sticky .sidebar-toggle {
   font-size: inherit;
 }
 
-.markdown-section> :first-child {
+.markdown-section > :first-child {
   margin-top: 0 !important;
 }
 
@@ -227,7 +227,7 @@ body.sticky .sidebar-toggle {
 .markdown-section td,
 .markdown-section th {
   border: 1px solid var(--border-color);
-  padding: .5rem;
+  padding: 0.5rem;
 }
 
 @media print {
@@ -278,7 +278,7 @@ body {
 }
 
 .markdown-section :is(h1, h2, h3, h4, h5) a:hover::after {
-  content: "#";
+  content: '#';
   position: relative;
   margin-left: 6px;
   display: inline-block;
