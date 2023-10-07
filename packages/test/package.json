@@ -31,7 +31,6 @@
   "devDependencies": {
     "ava": "latest",
     "browserless": "latest",
-    "exists-file": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "pdf-parse": "latest",

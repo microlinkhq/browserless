@@ -1,7 +1,6 @@
 'use strict'
 
 const { imgDiff } = require('img-diff-js')
-const existsFile = require('exists-file')
 const { onExit } = require('signal-exit')
 const { createServer } = require('http')
 const { copy } = require('fs-extra')
@@ -9,6 +8,7 @@ const temp = require('temperment')
 const pdf = require('pdf-parse')
 const path = require('path')
 const test = require('ava')
+const fs = require('fs')
 
 const isCI = !!process.env.CI
 
@@ -22,7 +22,7 @@ const looksSame = async (actualFilename, expectedFilename) =>
 
 const imageComparison = async (t, expectedFilename, filename) => {
   const actualFilename = path.resolve(process.cwd(), `test/snapshots/${filename}`)
-  if (!(await existsFile(actualFilename))) {
+  if (!fs.existsSync(actualFilename)) {
     await copy(expectedFilename, actualFilename)
     return true
   }
