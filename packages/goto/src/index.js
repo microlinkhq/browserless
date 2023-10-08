@@ -1,12 +1,11 @@
 'use strict'
 
+const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const { shallowEqualObjects } = require('shallow-equal')
 const createDevices = require('@browserless/devices')
 const toughCookie = require('tough-cookie')
-const prettyMs = require('pretty-ms')
 const pReflect = require('p-reflect')
-const timeSpan = require('time-span')
 const pTimeout = require('p-timeout')
 const isUrl = require('is-url-http')
 const path = require('path')
@@ -33,7 +32,7 @@ const castArray = value => [].concat(value).filter(Boolean)
 const run = async ({ fn, timeout, debug: props }) => {
   const debugProps = { duration: timeSpan() }
   const result = await pReflect(timeout ? pTimeout(fn, timeout) : fn)
-  debugProps.duration = prettyMs(debugProps.duration())
+  debugProps.duration = debugProps.duration()
   if (result.isRejected) debugProps.error = result.reason.message || result.reason
   debug(props, debugProps)
   return result
