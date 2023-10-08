@@ -1,9 +1,9 @@
 'use strict'
 
-const createBrowser = require('browserless')
 const debug = require('debug-logfmt')('browserless:benchmark')
+const timeSpan = require('@kikobeats/time-span')()
+const createBrowser = require('browserless')
 const percentile = require('percentile')
-const timeSpan = require('time-span')
 const prettyMs = require('pretty-ms')
 
 const HEADLESS = true

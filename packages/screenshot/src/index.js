@@ -2,12 +2,11 @@
 
 const debug = require('debug-logfmt')('browserless:screenshot')
 const createGoto = require('@browserless/goto')
-const prettyMs = require('pretty-ms')
-const timeSpan = require('time-span')
 const pReflect = require('p-reflect')
 
 const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
+const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 
 const getBoundingClientRect = element => {
@@ -104,7 +103,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           beforeScreenshot(response)
         ])
         screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
-        debug('screenshot', { waitUntil, duration: prettyMs(timeScreenshot()) })
+        debug('screenshot', { waitUntil, duration: timeScreenshot() })
       } else {
         ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
         async function waitUntilAuto (page, { response }) {
@@ -113,7 +112,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
             beforeScreenshot(response)
           ])
           const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
-          debug('screenshot', { waitUntil, isWhite, duration: prettyMs(timeScreenshot()) })
+          debug('screenshot', { waitUntil, isWhite, duration: timeScreenshot() })
         }
       }
 

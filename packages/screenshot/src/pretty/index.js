@@ -4,11 +4,10 @@ const debug = require('debug-logfmt')('browserless:screenshot')
 const isHtmlContent = require('is-html-content')
 const { readFile } = require('fs/promises')
 const { getExtension } = require('mime')
-const prettyMs = require('pretty-ms')
-const timeSpan = require('time-span')
 const path = require('path')
 
 const getPrism = readFile(path.resolve(__dirname, 'prism.js'))
+const timeSpan = require('../time-span')
 const getTheme = require('./theme')
 const getHtml = require('./html')
 
@@ -54,5 +53,5 @@ module.exports = async (page, response, { timeout, codeScheme, styles, scripts, 
   await page.setContent(html)
   await inject(page, { timeout, modules, scripts, styles })
 
-  debug('pretty', { duration: prettyMs(timePretty()) })
+  debug('pretty', { duration: timePretty() })
 }
