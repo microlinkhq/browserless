@@ -29,6 +29,7 @@
     "puppeteer"
   ],
   "devDependencies": {
+    "@kikobeats/time-span": "latest",
     "asciichart": "latest",
     "browserless": "latest",
     "debug-logfmt": "latest",
@@ -41,8 +42,7 @@
     "pretty-ms": "7",
     "process-stats": "latest",
     "sieve-of-eratosthenes": "latest",
-    "term-img": "latest",
-    "time-span": "latest"
+    "term-img": "latest"
   },
   "engines": {
     "node": ">= 12"

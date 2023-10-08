@@ -1,7 +1,6 @@
 'use strict'
 
-const prettyMs = require('pretty-ms')
-const timeSpan = require('time-span')
+const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
 const termImg = require('term-img')
 
 const printImage = image => termImg(image, { width: '50%' })
@@ -26,12 +25,12 @@ const main = async () => {
   for (const url of URLS) {
     const time = timeSpan()
     const buffer = await browserless.screenshot(url)
-    console.log(`\n# ${url} ${prettyMs(time())}\n`)
+    console.log(`\n# ${url} ${time()}\n`)
     console.log(printImage(buffer))
     console.log()
   }
 
-  console.log(`\n${prettyMs(total())}\n`)
+  console.log(`\n${total()}\n`)
 
   await browserless.close()
 }
