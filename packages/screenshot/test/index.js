@@ -19,8 +19,10 @@ test('graphics features', async t => {
 
     const props = []
 
-    $('.feature-status-list li').each(function () {
-      props.push($(this).text().split(': '))
+    $('#content div:first li').each((_, element) => {
+      const key = $(element).find('span:eq(2)').text().trim().slice(0, -1)
+      const value = $(element).find('span:eq(3)').text().trim()
+      props.push([key, value])
     })
 
     return Object.fromEntries(props)
