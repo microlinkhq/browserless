@@ -6,6 +6,7 @@ const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
 
 // flags explained: https://peter.sh/experiments/chromium-command-line-switches
+// features explained: https://niek.github.io/chrome-features/
 // default flags: https://github.com/puppeteer/puppeteer/blob/0d2c42a1c47c7cc5293d9664121180b35c4cdf65/packages/puppeteer-core/src/node/ChromeLauncher.ts#L166
 // AWS Lambda flags: https://github.com/alixaxel/chrome-aws-lambda/blob/78fdbf1b9b9a439883dc2fe747171a765b835031/source/index.ts#L94
 const defaultArgs = [
