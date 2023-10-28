@@ -13,26 +13,14 @@ const pReflect = require('p-reflect')
 const defaultArgs = [
   '--autoplay-policy=user-gesture-required', // https://source.chromium.org/search?q=lang:cpp+symbol:kAutoplayPolicy&ss=chromium
   '--disable-blink-features=PrettyPrintJSONDocument,AutomationControlled', // https://blog.m157q.tw/posts/2020/09/11/bypass-cloudflare-detection-while-using-selenium-with-chromedriver/
-  '--disable-cloud-import',
   '--disable-domain-reliability', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableDomainReliability&ss=chromium
-  '--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process', // https://source.chromium.org/search?q=file:content_features.cc&ss=chromium
-  '--disable-gesture-typing',
-  '--disable-infobars',
-  '--disable-notifications',
-  '--disable-offer-store-unmasked-wallet-cards',
-  '--disable-offer-upload-credit-cards',
+  '--disable-features=CalculateNativeWinOcclusion,InterestFeedV2,site-per-process', // https://source.chromium.org/search?q=file:content_features.cc&ss=chromium
+  '--disable-notifications', // https://source.chromium.org/search?q=lang%3Acpp+symbol%3AkDisablePermissionsAPI&ss=chromium
   '--disable-print-preview', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisablePrintPreview&ss=chromium
   '--disable-setuid-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSetuidSandbox&ss=chromium
   '--disable-site-isolation-trials', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSiteIsolation&ss=chromium
   '--disable-speech-api', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSpeechAPI&ss=chromium
-  '--disable-tab-for-desktop-share',
-  '--disable-translate',
-  '--disable-voice-input',
-  '--disable-wake-on-wifi',
-  '--enable-async-dns',
-  '--enable-simple-cache-backend',
-  '--enable-tcp-fast-open',
-  '--force-webrtc-ip-handling-policy=default_public_interface_only',
+  '--ash-no-nudges', // https://source.chromium.org/search?q=lang:cpp+symbol:kAshNoNudges&ss=chromium
   '--ignore-gpu-blocklist', // https://source.chromium.org/search?q=lang:cpp+symbol:kIgnoreGpuBlocklist&ss=chromium
   '--no-default-browser-check', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoDefaultBrowserCheck&ss=chromium
   '--no-pings', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoPings&ss=chromium
