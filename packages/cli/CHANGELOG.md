@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.1.18](https://github.com/microlinkhq/browserless/compare/v10.1.17...v10.1.18) (2023-10-28)
+
+### Bug Fixes
+
+* default device ([#528](https://github.com/microlinkhq/browserless/issues/528)) ([7be3b04](https://github.com/microlinkhq/browserless/commit/7be3b04239974e842cbe8e9e3b89c8d00d9b4bc0))
+
 ## [10.1.17](https://github.com/microlinkhq/browserless/compare/v10.1.16...v10.1.17) (2023-10-23)
 
 **Note:** Version bump only for package @browserless/cli
