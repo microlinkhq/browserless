@@ -6,6 +6,7 @@ const restoreCursor = require('restore-cursor')
 const createBrowser = require('browserless')
 const beautyError = require('beauty-error')
 const { onExit } = require('signal-exit')
+const { nestie } = require('nestie')
 const path = require('path')
 const mri = require('mri')
 const fs = require('fs')
@@ -31,7 +32,7 @@ const cli = {
   }
 }
 
-const { verbose, headless } = cli.flags
+const { verbose, headless, ...opts } = cli.flags
 
 const spinner = verbose ? require('./spinner') : { start: noop, stop: noop, clear: noop }
 
@@ -49,7 +50,7 @@ const run = async () => {
   const browser = createBrowser({ headless })
   onExit(browser.close)
   const browserless = await browser.createContext()
-  return fn({ url, browserless, opts: cli.flags })
+  return fn({ url, browserless, opts: nestie(opts) })
 }
 
 run()
