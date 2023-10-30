@@ -11,6 +11,8 @@ const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
+const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
+
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
 debug.abort = require('debug-logfmt')('browserless:goto:abort')
@@ -253,10 +255,13 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
           if (!abortTypes.includes(resourceType)) {
             debug.continue({ url, resourceType })
-            return req.continue(req.continueRequestOverrides(), 0)
+            return req.continue(
+              req.continueRequestOverrides(),
+              DEFAULT_INTERCEPT_RESOLUTION_PRIORITY
+            )
           }
           debug.abort({ url, resourceType })
-          return req.abort('blockedbyclient', 0)
+          return req.abort('blockedbyclient', DEFAULT_INTERCEPT_RESOLUTION_PRIORITY)
         })
       })
     }
