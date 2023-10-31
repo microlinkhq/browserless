@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.2.0](https://github.com/microlinkhq/browserless/compare/v10.1.18...v10.2.0) (2023-10-31)
+
+### Features
+
+* **cli:** add page-weight script ([#529](https://github.com/microlinkhq/browserless/issues/529)) ([b257d86](https://github.com/microlinkhq/browserless/commit/b257d868b74d93f2a587c3ef3ab425ff4150c1a3))
+
 ## [10.1.18](https://github.com/microlinkhq/browserless/compare/v10.1.17...v10.1.18) (2023-10-28)
 
 ### Bug Fixes
