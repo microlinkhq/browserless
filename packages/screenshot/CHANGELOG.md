@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.2.2](https://github.com/microlinkhq/browserless/compare/v10.2.1...v10.2.2) (2023-12-06)
+
+### Bug Fixes
+
+* **screenshot:** Fixed typo in `waitForImagesOnViewport` ([#541](https://github.com/microlinkhq/browserless/issues/541)) ([27a4d8b](https://github.com/microlinkhq/browserless/commit/27a4d8bed3efde84f94f68f600be596a856e056c))
+
 ## [10.2.1](https://github.com/microlinkhq/browserless/compare/v10.2.0...v10.2.1) (2023-12-06)
 
 ### Bug Fixes
