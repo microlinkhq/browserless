@@ -96,7 +96,7 @@ module.exports = (browser, teardown = browser.close) => {
     )
   })
 
-  test.skip('.screenshot with device emulation', async t => {
+  test('.screenshot with device emulation', async t => {
     const filepath = temp.file({ extension: 'png' })
 
     const browserless = await browser.createContext()

@@ -8,12 +8,12 @@ const isCI = !!process.env.CI
 
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
-test.serial('`window.Notification` is not defined', async t => {
+test('`window.Notification` is not defined', async t => {
   const page = await getPage(t)
   t.is((await page.evaluate('typeof window.Notification'), undefined))
 })
 
-test.serial('`window.console` is present', async t => {
+test('`window.console` is present', async t => {
   const page = await getPage(t)
 
   const consoleKeys = () => page.evaluate('Object.keys(window.console)')
@@ -47,51 +47,51 @@ test.serial('`window.console` is present', async t => {
   ])
 })
 
-test.serial('`window.outerHeight` is defined', async t => {
+test('`window.outerHeight` is defined', async t => {
   const page = await getPage(t)
   t.true((await page.evaluate(() => window.outerHeight)) > 0)
 })
 
-test.serial('`window.outerWidth` is defined', async t => {
+test('`window.outerWidth` is defined', async t => {
   const page = await getPage(t)
   t.true((await page.evaluate(() => window.outerWidth)) > 0)
 })
 
-test.serial('`window.navigator.deviceMemory` is present', async t => {
+test('`window.navigator.deviceMemory` is present', async t => {
   const page = await getPage(t)
   await page.goto(fileUrl)
   t.is(await page.evaluate('window.navigator.deviceMemory'), 8)
 })
 
-test.serial('`window.navigator.webdriver` is false', async t => {
+test('`window.navigator.webdriver` is false', async t => {
   const page = await getPage(t)
   t.is(await page.evaluate('window.navigator.webdriver'), false)
 })
 
-test.serial('`window.navigator.webdriver` is present', async t => {
+test('`window.navigator.webdriver` is present', async t => {
   const page = await getPage(t)
   t.is(await page.evaluate('window.navigator.webdriver'), false)
 })
 
-test.serial('`navigator.javaEnabled()` is present', async t => {
+test('`navigator.javaEnabled()` is present', async t => {
   const page = await getPage(t)
   t.is(await page.evaluate('navigator.javaEnabled()'), false)
 })
 
-test.serial('`navigator.hardwareConcurrency` is present', async t => {
+test('`navigator.hardwareConcurrency` is present', async t => {
   const page = await getPage(t)
   const n = await page.evaluate('window.navigator.hardwareConcurrency')
   t.true(typeof n === 'number')
   t.true(n !== 0)
 })
 
-test.serial('`window.chrome` is defined', async t => {
+test('`window.chrome` is defined', async t => {
   const page = await getPage(t)
   const windowChrome = await page.evaluate('window.chrome')
   t.snapshot(windowChrome)
 })
 
-test.serial('`navigator.permissions` is defined', async t => {
+test('`navigator.permissions` is defined', async t => {
   const page = await getPage(t)
 
   const permissionStatusState = () =>
@@ -105,23 +105,23 @@ test.serial('`navigator.permissions` is defined', async t => {
   t.is(await permissionStatusState(), 'denied')
 })
 
-test.serial('`window.navigator.plugins` is defined', async t => {
+test('`window.navigator.plugins` is defined', async t => {
   const page = await getPage(t)
   t.snapshot(await page.evaluate('window.navigator.plugins'))
 })
 
-test.serial('`window.navigator.mimeTypes` are correct', async t => {
+test('`window.navigator.mimeTypes` are correct', async t => {
   const page = await getPage(t)
   t.snapshot(await page.evaluate('window.navigator.mimeTypes'))
 })
 
-test.serial('`navigator.languages` is defined', async t => {
+test('`navigator.languages` is defined', async t => {
   const page = await getPage(t)
   const languages = () => page.evaluate('window.navigator.languages')
   t.deepEqual(await languages(), ['en-US'])
 })
 
-test.serial('media codecs are present', async t => {
+test('media codecs are present', async t => {
   const page = await getPage(t)
 
   await page.goto(fileUrl, { waitUntil: 'networkidle0' })
@@ -152,18 +152,18 @@ test.serial('media codecs are present', async t => {
       }
     })
 
-  t.deepEqual(await videoCodecs(), { ogg: 'probably', h264: '', webm: 'probably' })
+  t.deepEqual(await videoCodecs(), { ogg: 'probably', h264: 'probably', webm: 'probably' })
 
   t.deepEqual(await audioCodecs(), {
     ogg: 'probably',
     mp3: 'probably',
     wav: 'probably',
-    m4a: '',
-    aac: ''
+    m4a: 'maybe',
+    aac: 'probably'
   })
 })
 
-test.serial('webgl vendor is not bot', async t => {
+test('webgl vendor is not bot', async t => {
   const page = await getPage(t)
 
   const webgl = () =>
@@ -185,13 +185,13 @@ test.serial('webgl vendor is not bot', async t => {
       }
     : {
         vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
       }
 
   t.deepEqual(await webgl(), expected)
 })
 
-test.serial('webgl2 vendor is not bot', async t => {
+test('webgl2 vendor is not bot', async t => {
   const page = await getPage(t)
 
   const webgl2 = () =>
@@ -213,13 +213,13 @@ test.serial('webgl2 vendor is not bot', async t => {
       }
     : {
         vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
       }
 
   t.deepEqual(await webgl2(), expected)
 })
 
-test.serial('broken images have dimensions', async t => {
+test('broken images have dimensions', async t => {
   const page = await getPage(t)
 
   const dimensions = await page.evaluate(
@@ -237,7 +237,7 @@ test.serial('broken images have dimensions', async t => {
   t.is(dimensions, '16x16')
 })
 
-test.serial("error stack traces doesn't reveal implementation details", async t => {
+test("error stack traces doesn't reveal implementation details", async t => {
   const page = await getPage(t)
 
   const errorStackTrace = () =>

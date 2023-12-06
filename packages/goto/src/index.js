@@ -357,6 +357,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
+    await Promise.all(prePromises)
+
     const { value: response, reason: error } = await run({
       fn: html
         ? page.setContent(html, { waitUntil, ...args })
