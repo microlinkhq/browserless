@@ -19,7 +19,7 @@ const waitForImagesOnViewport = page =>
     Promise.all(
       elements
         .filter(el => {
-          if (el.naturalHeight === 0 || el.naturalWeight === 0) return false
+          if (el.naturalHeight === 0 || el.naturalWidth === 0) return false
           const { top, left, bottom, right } = el.getBoundingClientRect()
           return (
             top >= 0 &&
