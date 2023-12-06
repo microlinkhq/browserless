@@ -152,14 +152,14 @@ test.serial('media codecs are present', async t => {
       }
     })
 
-  t.deepEqual(await videoCodecs(), { ogg: 'probably', h264: '', webm: 'probably' })
+  t.deepEqual(await videoCodecs(), { ogg: 'probably', h264: 'probably', webm: 'probably' })
 
   t.deepEqual(await audioCodecs(), {
     ogg: 'probably',
     mp3: 'probably',
     wav: 'probably',
-    m4a: '',
-    aac: ''
+    m4a: 'maybe',
+    aac: 'probably'
   })
 })
 
@@ -185,7 +185,7 @@ test.serial('webgl vendor is not bot', async t => {
       }
     : {
         vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
       }
 
   t.deepEqual(await webgl(), expected)
@@ -213,7 +213,7 @@ test.serial('webgl2 vendor is not bot', async t => {
       }
     : {
         vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
+        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
       }
 
   t.deepEqual(await webgl2(), expected)
