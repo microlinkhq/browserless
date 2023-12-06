@@ -11,7 +11,7 @@ const getChromiumPs = async () => {
   return ps.filter(ps => ps.name === 'Google Chrome for Testing')
 }
 
-;(isCI ? test.skip : test.serial)('.close() will kill process and subprocess', async t => {
+;(isCI ? test.skip : test)('.close() will kill process and subprocess', async t => {
   const initialPs = await getChromiumPs()
 
   const browserlessFactory = createBrowser()
@@ -29,7 +29,7 @@ const getChromiumPs = async () => {
   await browserlessFactory.close()
   t.is((await getChromiumPs()).length, initialPs.length)
 })
-;(isCI ? test.skip : test.serial)('.close() is idempotency', async t => {
+;(isCI ? test.skip : test)('.close() is idempotency', async t => {
   const initialPs = await getChromiumPs()
 
   const browserlessFactory = createBrowser()

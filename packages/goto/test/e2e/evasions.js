@@ -4,7 +4,7 @@ const { getBrowserContext } = require('@browserless/test/util')
 const pWaitFor = require('p-wait-for')
 const test = require('ava')
 
-test.serial('arh.antoinevastel.com/bots/areyouheadless', async t => {
+test('arh.antoinevastel.com/bots/areyouheadless', async t => {
   let assertion = false
 
   const fn = async () => {
@@ -18,7 +18,7 @@ test.serial('arh.antoinevastel.com/bots/areyouheadless', async t => {
   t.true(assertion)
 })
 
-test.serial('creepjs', async t => {
+test('creepjs', async t => {
   const browserless = await getBrowserContext(t)
 
   const fingerprint = await browserless.evaluate(page =>
@@ -41,7 +41,7 @@ test.serial('creepjs', async t => {
   t.true(fingerprintOne !== fingerprintTwo)
 })
 
-test.serial('fingerprintjs', async t => {
+test('fingerprintjs', async t => {
   const browserless = await getBrowserContext(t)
 
   const fingerprint = await browserless.evaluate(page =>
@@ -56,7 +56,7 @@ test.serial('fingerprintjs', async t => {
   t.true(fingerprintOne !== fingerprintTwo)
 })
 
-test.serial('amiunique.org/fp', async t => {
+test('amiunique.org/fp', async t => {
   const browserless = await getBrowserContext(t)
   const content = await browserless.text('https://amiunique.org/fingerprint', {
     waitForSelector:

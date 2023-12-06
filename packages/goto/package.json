@@ -59,6 +59,7 @@
   },
   "license": "MIT",
   "ava": {
+    "serial": true,
     "files": [
       "!test/fixtures"
     ],

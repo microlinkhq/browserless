@@ -31,7 +31,7 @@ const opts = {
 
 const fileUrl = `file://${path.join(__dirname, './fixtures/example.html')}`
 
-test.serial('code runs in strict mode', async t => {
+test('code runs in strict mode', async t => {
   const code = () => {
     function isStrict () {
       return !this
@@ -48,7 +48,7 @@ test.serial('code runs in strict mode', async t => {
   })
 })
 
-test.serial("don't expose process.env", async t => {
+test("don't expose process.env", async t => {
   const code = () => JSON.stringify(process.env)
 
   const myFn = browserlessFunction(code, opts)
@@ -60,7 +60,7 @@ test.serial("don't expose process.env", async t => {
   })
 })
 
-test.serial('handle errors', async t => {
+test('handle errors', async t => {
   const code = () => {
     throw new Error('oh no')
   }
@@ -72,7 +72,7 @@ test.serial('handle errors', async t => {
   t.is(result.reason.message, 'oh no')
 })
 
-test.serial('provide a mechanism to pass things to the function ', async t => {
+test('provide a mechanism to pass things to the function ', async t => {
   const code = ({ query }) => query.foo
   const myFn = browserlessFunction(code, opts)
 
@@ -83,7 +83,7 @@ test.serial('provide a mechanism to pass things to the function ', async t => {
   })
 })
 
-test.serial('access to response', async t => {
+test('access to response', async t => {
   const code = ({ response }) => response.status()
   const myFn = browserlessFunction(code, opts)
 
@@ -94,7 +94,7 @@ test.serial('access to response', async t => {
   })
 })
 
-test.serial('access to page', async t => {
+test('access to page', async t => {
   const code = ({ page }) => page.title()
   const myFn = browserlessFunction(code, opts)
 
@@ -105,7 +105,7 @@ test.serial('access to page', async t => {
   })
 })
 
-test.serial('access to page (with inline code)', async t => {
+test('access to page (with inline code)', async t => {
   const myFn = browserlessFunction('({ page }) => page.title()', opts)
 
   t.deepEqual(await myFn(fileUrl), {
@@ -115,7 +115,7 @@ test.serial('access to page (with inline code)', async t => {
   })
 })
 
-test.serial('access to page (with semicolon)', async t => {
+test('access to page (with semicolon)', async t => {
   const myFn = browserlessFunction('({ page }) => page.title();', opts)
 
   t.deepEqual(await myFn(fileUrl), {
@@ -125,7 +125,7 @@ test.serial('access to page (with semicolon)', async t => {
   })
 })
 
-test.serial('access to page (with semicolon and break lines)', async t => {
+test('access to page (with semicolon and break lines)', async t => {
   const myFn = browserlessFunction(
     `({ page }) => {
     return page.title()
@@ -140,7 +140,7 @@ test.serial('access to page (with semicolon and break lines)', async t => {
   })
 })
 
-test.serial('access to page (with semicolon and end break lines)', async t => {
+test('access to page (with semicolon and end break lines)', async t => {
   const myFn = browserlessFunction('({ page }) => page.title();\n\n', opts)
 
   t.deepEqual(await myFn(fileUrl), {
@@ -150,7 +150,7 @@ test.serial('access to page (with semicolon and end break lines)', async t => {
   })
 })
 
-test.serial('interact with a page', async t => {
+test('interact with a page', async t => {
   const code = async ({ page }) => {
     const navigationPromise = page.waitForNavigation()
     const link = 'body > div > p > a'
@@ -167,7 +167,7 @@ test.serial('interact with a page', async t => {
   t.true(value.startsWith('Example Domains'))
 })
 
-test.serial('pass goto options', async t => {
+test('pass goto options', async t => {
   const code = ({ page }) => page.evaluate('jQuery.fn.jquery')
 
   const fn = browserlessFunction(code, opts)
@@ -182,7 +182,7 @@ test.serial('pass goto options', async t => {
   t.is(value, '3.5.0')
 })
 
-test.serial('interact with npm modules', async t => {
+test('interact with npm modules', async t => {
   const code = async ({ page }) =>
     require('lodash').toString(await page.evaluate('jQuery.fn.jquery'))
 

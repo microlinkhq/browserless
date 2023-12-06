@@ -9,7 +9,7 @@ const test = require('ava')
 
 const createVm = require('../src/vm')
 
-test.serial('passing a function', async t => {
+test('passing a function', async t => {
   const vm = createVm()
   function template ({ name }) {
     return `greetings ${name}`
@@ -23,7 +23,7 @@ test.serial('passing a function', async t => {
   })
 })
 
-test.serial('catch errors', async t => {
+test('catch errors', async t => {
   const vm = createVm()
 
   async function template () {
@@ -38,7 +38,7 @@ test.serial('catch errors', async t => {
   t.is(result.reason.message, 'oh no')
 })
 
-test.serial('passing an arrow function', async t => {
+test('passing an arrow function', async t => {
   const vm = createVm()
   const template = ({ name }) => `greetings ${name}`
   const fn = vm(template)
@@ -50,7 +50,7 @@ test.serial('passing an arrow function', async t => {
   })
 })
 
-test.serial('passing a function.toString', async t => {
+test('passing a function.toString', async t => {
   const vm = createVm()
   const template = ({ name }) => `greetings ${name}`
   const fn = vm(template.toString())
@@ -62,7 +62,7 @@ test.serial('passing a function.toString', async t => {
   })
 })
 
-test.serial('passing a string as function', async t => {
+test('passing a string as function', async t => {
   const vm = createVm()
   // eslint-disable-next-line
   const fn = vm('({ name }) => `greetings ${name}`')
@@ -74,7 +74,7 @@ test.serial('passing a string as function', async t => {
   })
 })
 
-test.serial('passing an async function', async t => {
+test('passing an async function', async t => {
   const vm = createVm()
 
   async function template ({ name }) {
@@ -97,7 +97,7 @@ test.serial('passing an async function', async t => {
   })
 })
 
-test.serial('run browserless code', async t => {
+test('run browserless code', async t => {
   const browserWSEndpoint = await getBrowserWSEndpoint()
 
   const url = 'https://example.com'

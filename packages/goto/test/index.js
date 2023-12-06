@@ -3,7 +3,7 @@
 const { getBrowserContext } = require('@browserless/test/util')
 const test = require('ava')
 
-test.serial('setup `scripts`', async t => {
+test('setup `scripts`', async t => {
   const browserless = await getBrowserContext(t)
 
   const getVersion = browserless.evaluate(async page => page.evaluate('jQuery.fn.jquery'))
@@ -15,7 +15,7 @@ test.serial('setup `scripts`', async t => {
   t.is(version, '3.5.0')
 })
 
-test.serial('setup `modules`', async t => {
+test('setup `modules`', async t => {
   const browserless = await getBrowserContext(t)
 
   const getVersion = browserless.evaluate(async page => page.evaluate('jQuery.fn.jquery'))
@@ -27,7 +27,7 @@ test.serial('setup `modules`', async t => {
   t.is(version, '3.5.0')
 })
 
-test.serial('setup `styles`', async t => {
+test('setup `styles`', async t => {
   const browserless = await getBrowserContext(t)
 
   const getStyle = browserless.evaluate(async page =>
@@ -41,7 +41,7 @@ test.serial('setup `styles`', async t => {
   t.is(style, '"Helvetica Neue", Helvetica, Arial, sans-serif')
 })
 
-test.serial('handle page disconnections', async t => {
+test('handle page disconnections', async t => {
   t.plan(1)
   const browserless = await getBrowserContext(t, { retry: 0 })
   const onPageRequest = req => {
