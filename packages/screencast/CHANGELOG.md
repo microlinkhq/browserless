@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.2.1](https://github.com/microlinkhq/browserless/compare/v10.2.0...v10.2.1) (2023-12-06)
+
+### Bug Fixes
+
+* **goto:** wait pre promises ([#540](https://github.com/microlinkhq/browserless/issues/540)) ([87e448f](https://github.com/microlinkhq/browserless/commit/87e448fab406b6cf7f027fb3727c7178880b5f35)), closes [/github.com/microlinkhq/browserless/commit/3412549d54e9c029f336250cb6aca610a5fac614#diff-47b28dd5d66a87f05a38f36f08033b3c3c5aee0daa99badbebffa4c84d30e63eL376](https://github.com//github.com/microlinkhq/browserless/commit/3412549d54e9c029f336250cb6aca610a5fac614/issues/diff-47b28dd5d66a87f05a38f36f08033b3c3c5aee0daa99badbebffa4c84d30e63eL376)
+
 ## [10.1.17](https://github.com/microlinkhq/browserless/compare/v10.1.16...v10.1.17) (2023-10-23)
 
 **Note:** Version bump only for package @browserless/screencast
