@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.2.3](https://github.com/microlinkhq/browserless/compare/v10.2.2...v10.2.3) (2023-12-12)
+
+**Note:** Version bump only for package @browserless/lighthouse
+
 ## [10.2.1](https://github.com/microlinkhq/browserless/compare/v10.2.0...v10.2.1) (2023-12-06)
 
 ### Bug Fixes
