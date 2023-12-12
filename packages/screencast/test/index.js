@@ -6,7 +6,7 @@ const { randomUUID } = require('crypto')
 const FileType = require('file-type')
 const { unlinkSync } = require('fs')
 const { tmpdir } = require('os')
-const execa = require('execa')
+const $ = require('tinyspawn')
 const path = require('path')
 const test = require('ava')
 
@@ -15,11 +15,14 @@ const screencast = require('..')
 const isCI = !!process.env.CI
 
 test('get a webm video', async t => {
-  const browserless = await getBrowserContext(t)
+  const [browserless, { stdout: ffmpegPath }] = await Promise.all([
+    getBrowserContext(t),
+    $('which ffmpeg')
+  ])
 
   const buffer = await screencast({
     getBrowserless: () => browserless,
-    ffmpegPath: await execa.command('which ffmpeg').then(({ stdout }) => stdout),
+    ffmpegPath,
     frames: {
       everyNthFrame: 2
     },
@@ -70,9 +73,9 @@ test('get a webm video', async t => {
   t.teardown(() => unlinkSync(filepath))
   await writeFile(filepath, buffer)
 
-  const ffprobe = await execa
-    .command(`ffprobe ${filepath} -print_format json -show_format -show_streams`)
-    .then(({ stdout }) => JSON.parse(stdout))
+  const { stdout: ffprobe } = await $.json(
+    `ffprobe ${filepath} -print_format json -v quiet -show_format -show_streams -show_error`
+  )
 
   t.is(ffprobe.streams[0].codec_name, 'vp9')
   t.is(ffprobe.streams[0].pix_fmt, 'yuv420p')
