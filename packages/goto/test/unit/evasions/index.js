@@ -185,7 +185,7 @@ test('webgl vendor is not bot', async t => {
       }
     : {
         vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
+        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
       }
 
   t.deepEqual(await webgl(), expected)
@@ -213,7 +213,7 @@ test('webgl2 vendor is not bot', async t => {
       }
     : {
         vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
+        renderer: 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'
       }
 
   t.deepEqual(await webgl2(), expected)
