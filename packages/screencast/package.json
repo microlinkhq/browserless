@@ -33,7 +33,7 @@
     "video"
   ],
   "dependencies": {
-    "execa": "~5.1.1"
+    "tinyspawn": "~1.0.0"
   },
   "devDependencies": {
     "@browserless/test": "^10.2.1",

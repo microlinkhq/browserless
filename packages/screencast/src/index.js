@@ -4,7 +4,7 @@ const { unlink, readFile } = require('fs/promises')
 const { randomUUID } = require('crypto')
 const { Readable } = require('stream')
 const { tmpdir } = require('os')
-const execa = require('execa')
+const $ = require('tinyspawn')
 const path = require('path')
 
 const { startScreencast } = require('./utils')
@@ -70,7 +70,7 @@ module.exports = async ({
     }, [])
 
     const filepath = path.join(tmpPath, `${randomUUID()}.${format}`)
-    const subprocess = execa.command(
+    const subprocess = $(
       `${ffmpegPath} -f image2pipe -i pipe:0 -r ${frameRate} ${ffmpegArgs(format)} ${filepath}`
     )
     Readable.from(interpolatedFrames).pipe(subprocess.stdin)

@@ -3,7 +3,7 @@
 const { createBrowser, getBrowserContext, getBrowser } = require('@browserless/test/util')
 const { request, createServer } = require('http')
 const { setTimeout } = require('timers/promises')
-const execa = require('execa')
+const $ = require('tinyspawn')
 const path = require('path')
 const ava = require('ava')
 
@@ -43,6 +43,7 @@ test('pass specific options to a context', async t => {
 
   t.deepEqual(proxiedRequestUrls, ['http://example.com/', 'http://example.com/favicon.ico'])
 })
+
 test('ensure to destroy browser contexts', async t => {
   const browserlessFactory = createBrowser()
   t.teardown(browserlessFactory.close)
@@ -61,6 +62,7 @@ test('ensure to destroy browser contexts', async t => {
 
   t.is(browser.browserContexts().length, 1)
 })
+
 test('force to destroy a browser context', async t => {
   const browserlessFactory = createBrowser()
   t.teardown(browserlessFactory.close)
@@ -77,16 +79,20 @@ test('force to destroy a browser context', async t => {
 
   t.is(error.name, 'AbortError')
 })
+
 test('ensure to close browser', async t => {
   const browser = require('..')()
   await browser.close()
   t.true(browser.isClosed())
 })
+
 test("don't respawn after close", async t => {
+  const { stdout: node } = await $('which node')
   const script = path.join(__dirname, '../../../packages/benchmark/src/screenshot/speed.js')
-  const { exitCode } = await execa.node(script, { stdio: 'inherit' })
+  const { exitCode } = await $(`${node} ${script}`)
   t.is(exitCode, 0)
 })
+
 test('respawn under `Protocol error (Target.createBrowserContext): Target closed`', async t => {
   /**
    * It simulates the browser is dead before created a context
@@ -128,6 +134,7 @@ test('respawn under `Protocol error (Target.createBrowserContext): Target closed
     t.true(pid !== anotherPid)
   }
 })
+
 test('respawn under `Protocol error (Target.createTarget): Target closed`', async t => {
   /**
    * It simulates te context is created but the URL is not set yet
@@ -148,6 +155,7 @@ test('respawn under `Protocol error (Target.createTarget): Target closed`', asyn
 
   t.true(pid !== anotherPid)
 })
+
 test('respawn under `Protocol error (Target.createTarget): Failed to find browser context with id {browserContextId}`', async t => {
   const browserlessFactory = createBrowser()
   t.teardown(browserlessFactory.close)
