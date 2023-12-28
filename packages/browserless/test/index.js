@@ -87,9 +87,8 @@ test('ensure to close browser', async t => {
 })
 
 test("don't respawn after close", async t => {
-  const { stdout: node } = await $('which node')
   const script = path.join(__dirname, '../../../packages/benchmark/src/screenshot/speed.js')
-  const { exitCode } = await $(`${node} ${script}`)
+  const { exitCode } = await $(`node ${script}`)
   t.is(exitCode, 0)
 })
 
