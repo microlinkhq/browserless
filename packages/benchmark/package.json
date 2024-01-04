@@ -34,7 +34,7 @@
     "browserless": "latest",
     "debug-logfmt": "latest",
     "measured": "latest",
-    "meow": "9",
+    "meow": "13",
     "nanobench": "latest",
     "p-all": "3",
     "percentile": "latest",
