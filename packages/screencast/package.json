@@ -33,7 +33,7 @@
     "video"
   ],
   "dependencies": {
-    "tinyspawn": "~1.1.1"
+    "tinyspawn": "~1.2.6"
   },
   "devDependencies": {
     "@browserless/test": "^10.2.4",

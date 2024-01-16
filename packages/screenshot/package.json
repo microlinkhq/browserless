@@ -29,18 +29,18 @@
   ],
   "dependencies": {
     "@browserless/goto": "^10.2.4",
-    "@kikobeats/time-span": "~1.0.2",
+    "@kikobeats/time-span": "~1.0.3",
     "@lukeed/ms": "~2.0.2",
-    "debug-logfmt": "~1.0.4",
+    "debug-logfmt": "~1.2.1",
     "got": "~11.8.6",
     "is-html-content": "~1.0.0",
-    "is-url-http": "~2.3.6",
+    "is-url-http": "~2.3.7",
     "jimp": "~0.22.10",
     "map-values-deep": "~1.0.2",
     "mime": "~3.0.0",
     "p-reflect": "~2.1.0",
     "prism-themes": "~1.9.0",
-    "sharp": "~0.32.5",
+    "sharp": "~0.33.2",
     "svg-gradient": "~1.0.3"
   },
   "devDependencies": {

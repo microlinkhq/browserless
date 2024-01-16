@@ -35,13 +35,13 @@
     "@browserless/goto": "^10.2.4",
     "@browserless/pdf": "^10.2.4",
     "@browserless/screenshot": "^10.2.4",
-    "debug-logfmt": "~1.0.4",
-    "kill-process-group": "~1.0.6",
+    "debug-logfmt": "~1.2.1",
+    "kill-process-group": "~1.0.7",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
-    "require-one-of": "~1.0.18",
-    "superlock": "~1.0.4"
+    "require-one-of": "~1.0.19",
+    "superlock": "~1.0.6"
   },
   "devDependencies": {
     "@browserless/test": "^10.2.4",
