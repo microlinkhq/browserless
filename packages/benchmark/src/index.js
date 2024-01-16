@@ -2,9 +2,9 @@
 
 const createBrowserless = require('browserless')
 const processStats = require('process-stats')
-const { format } = require('@lukeed/ms')
 const asciichart = require('asciichart')
 const { gray } = require('picocolors')
+const prettyMs = require('pretty-ms')
 const Measured = require('measured')
 const pAll = require('p-all')
 const meow = require('meow')
@@ -107,7 +107,7 @@ const benchmark = async ({
       console.log(
         `  #${n < 10 ? `0${n}` : n} ${gray(
           `cpu=${cpu.pretty} mem=${memUsed.pretty} eventLoop=${delay.pretty} time=`
-        )}${format(time)}`
+        )}${prettyMs(time)}`
       )
       return time
     }
@@ -148,7 +148,7 @@ const main = async () => {
   const graph = asciichart.plot(times, {
     offset: 6,
     height: 10,
-    format: time => format(time, { keepDecimalsOnWholeSeconds: true })
+    format: time => prettyMs(time, { keepDecimalsOnWholeSeconds: true })
   })
 
   await strategy.onClose(browser)
@@ -161,13 +161,13 @@ const main = async () => {
 ${gray('     time:')} ${uptime.pretty}
 ${gray('    count:')} ${histogram.count}
 ${gray('  memUsed:')} ${memUsed.pretty}
-${gray('      min:')} ${format(histogram.min)}
-${gray('      max:')} ${format(histogram.max)}
-${gray('   median:')} ${format(histogram.median)}
-${gray('      p75:')} ${format(histogram.p75)}
-${gray('      p95:')} ${format(histogram.p95)}
-${gray('      p99:')} ${format(histogram.p99)}
-${gray('     p999:')} ${format(histogram.p999)}`)
+${gray('      min:')} ${prettyMs(histogram.min)}
+${gray('      max:')} ${prettyMs(histogram.max)}
+${gray('   median:')} ${prettyMs(histogram.median)}
+${gray('      p75:')} ${prettyMs(histogram.p75)}
+${gray('      p95:')} ${prettyMs(histogram.p95)}
+${gray('      p99:')} ${prettyMs(histogram.p99)}
+${gray('     p999:')} ${prettyMs(histogram.p999)}`)
 }
 
 main().catch(error => console.error(error) || process.exit(1))

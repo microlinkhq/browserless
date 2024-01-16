@@ -4,14 +4,13 @@ const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const { shallowEqualObjects } = require('shallow-equal')
 const createDevices = require('@browserless/devices')
 const toughCookie = require('tough-cookie')
-const { format } = require('@lukeed/ms')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
-const timeSpan = require('@kikobeats/time-span')({ format: n => format(Math.round(n)) })
+const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
 
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 

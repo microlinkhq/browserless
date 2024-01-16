@@ -4,7 +4,7 @@ const debug = require('debug-logfmt')('browserless:benchmark')
 const timeSpan = require('@kikobeats/time-span')()
 const createBrowser = require('browserless')
 const percentile = require('percentile')
-const { format } = require('@lukeed/ms')
+const prettyMs = require('pretty-ms')
 
 const HEADLESS = true
 // const TMP_FOLDER = '/tmp'
@@ -59,7 +59,7 @@ main(takeScreenshot, { iterations: 100, url: 'https://front-24ypc8or0.zeit.sh/' 
   .then(result => {
     console.log()
     Object.keys(result).forEach(key => {
-      console.log(`  – ${key}: ${format(percentile(95, result[key]))}`)
+      console.log(`  – ${key}: ${prettyMs(percentile(95, result[key]))}`)
     })
   })
   .catch(error => console.error(error) || process.exit(1))

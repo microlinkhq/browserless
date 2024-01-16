@@ -30,7 +30,6 @@
   ],
   "devDependencies": {
     "@kikobeats/time-span": "latest",
-    "@lukeed/ms": "latest",
     "asciichart": "latest",
     "browserless": "latest",
     "debug-logfmt": "latest",
@@ -40,6 +39,7 @@
     "p-all": "3",
     "percentile": "latest",
     "picocolors": "latest",
+    "pretty-ms": "7",
     "process-stats": "latest",
     "sieve-of-eratosthenes": "latest",
     "term-img": "latest"

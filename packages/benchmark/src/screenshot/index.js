@@ -1,11 +1,12 @@
 'use strict'
 
-const { format } = require('@lukeed/ms')
+const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
 const termImg = require('term-img')
 
-const timeSpan = require('@kikobeats/time-span')({ format })
-
-const printImage = image => termImg(image, { width: '50%' })
+const printImage = image =>
+  termImg(image, {
+    width: '50%'
+  })
 
 const URLS = [
   'https://example.com',
