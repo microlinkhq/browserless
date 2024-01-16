@@ -1,7 +1,9 @@
 'use strict'
 
-const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
+const { format } = require('@lukeed/ms')
 const termImg = require('term-img')
+
+const timeSpan = require('@kikobeats/time-span')({ format })
 
 const printImage = image => termImg(image, { width: '50%' })
 

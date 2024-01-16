@@ -1,1 +1,2 @@
-module.exports = require('@kikobeats/time-span')({ format: require('pretty-ms') })
+const { format } = require('@lukeed/ms')
+module.exports = require('@kikobeats/time-span')({ format: n => format(Math.round(n)) })
