@@ -2,7 +2,7 @@
   "name": "@browserless/screencast",
   "description": "Browserless video recording using puppeteer.",
   "homepage": "https://browserless.js.org/#/?id=screencasturl-options",
-  "version": "10.2.4",
+  "version": "10.2.5",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
