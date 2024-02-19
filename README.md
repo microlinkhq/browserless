@@ -8,7 +8,7 @@
 [![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> **browserless** is an efficient way to interact with a headless browser built in top of [puppeteer](https://github.com/GoogleChrome/puppeteer).
+> **browserless** is an efficient way to interact with a headless browser built on top of [puppeteer](https://github.com/GoogleChrome/puppeteer).
 
 ## Highlights
 
@@ -33,7 +33,7 @@ You can use it next to [`puppeteer`](https://www.npmjs.com/package/puppeteer), [
 
 ## Usage
 
-This is a full example for showcase all the **browserless** capabilities:
+This is a full example showcasing all the **browserless** capabilities:
 
 ```js
 const createBrowser = require('browserless')
@@ -96,7 +96,7 @@ const browser = createBrowser({
 })
 ```
 
-Once the browser is initialized, some browser high level methods are available:
+Once the browser is initialized, some browser high-level methods are available:
 
 ```js
 // Now, just call `createContext` for creating a browser tab
@@ -152,7 +152,7 @@ type: `string`</br>
 default: `launch`</br>
 values: `'launch'` | `'connect'`
 
-It defines if browser should be spawned using [puppeteer.launch](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerlaunchoptions) or [puppeteer.connect](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerconnectoptions)
+It defines if a browser should be spawned using [puppeteer.launch](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerlaunchoptions) or [puppeteer.connect](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerconnectoptions)
 
 ##### timeout
 
@@ -170,7 +170,7 @@ It's automatically detected based on your `dependencies` being supported [puppet
 
 ### .createContext(options)
 
-After initialize the browser, you can create browser context that is equivalente to open a tab:
+After initializing the browser, you can create a browser context which is equivalent to opening a tab:
 
 ```js
 const browserless = browser.createContext({
@@ -264,7 +264,7 @@ See [browserless.goto](/#gotopage-options) to know all the options and values su
 
 ### .pdf(url, options)
 
-It generates the PDF version of a website behind an `url`.
+It generates the PDF version of a website behind a `url`.
 
 ```js
 const buffer = await browserless.pdf('https://example.com')
@@ -274,7 +274,7 @@ console.log(`PDF generated in ${buffer.byteLength()} bytes`)
 
 #### options
 
-This method use the following options by default:
+This method uses the following options by default:
 
 ```js
 {
@@ -315,7 +315,7 @@ const buffer = await browserless.pdf(url.toString(), {
 })
 ```
 
-Or, in case you pass an `string`, it will be used for all the sides:
+Or, in case you pass a `string`, it will be used for all the sides:
 
 ```js
 const buffer = await browserless.pdf(url.toString(), {
@@ -335,7 +335,7 @@ console.log(`Screenshot taken in ${buffer.byteLength()} bytes`)
 
 #### options
 
-This method use the following options by default:
+This method uses the following options by default:
 
 ```js
 {
@@ -358,7 +358,7 @@ When this value is present and the response `'Content-Type'` header is `'json'`,
 
 ![](https://i.imgur.com/uFfviX7.png)
 
-The syntax highlight theme can be customized, being possible to setup:
+The syntax highlight theme can be customized, during setup:
 
 - A [prism-themes](https://github.com/PrismJS/prism-themes/tree/master/themes) identifier (e.g., `'dracula'`).
 - A remote URL (e.g., `'https://unpkg.com/prism-theme-night-owl'`).
@@ -377,13 +377,13 @@ After the screenshot has been taken, this option allows you to place the screens
 
 ![](https://i.imgur.com/GBa6Mj7.png)
 
-You can configure the overlay specifying:
+You can configure the overlay by specifying:
 
 - **browser**: It sets the browser image overlay to use, being `light` and `dark` supported values.
 - **background**: It sets the background to use, being supported to pass:
   - An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
   - A [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
-  - An image url, eg. `https://source.unsplash.com/random/1920x1080`.
+  - An image URL, eg. `https://source.unsplash.com/random/1920x1080`.
 
 ```js
 const buffer = await browserless.screenshot(url.toString(), {
@@ -415,11 +415,11 @@ await browserless.destroyContext()
 type: `string` </br>
 default: `'force'`
 
-When force is passed, it avoids recreating the context in case a browser actions is being executed.
+When force is passed, it avoids recreating the context in case a browser action is being executed.
 
 ### .getDevice(options)
 
-Giving a specific device descriptons, this method will be the devices settings for it.
+Used to set specific device descriptions, this method will be the device's settings.
 
 ```js
 browserless.getDevice({ device: 'Macbook Pro 15' })
@@ -453,7 +453,7 @@ When [lossyDeviceName](#lossydevicename) is enabled, a fuzzy search rather than 
 
 type: `object` </br>
 
-An extra of viewport settings that will be merged with the device presets.
+An extra viewport settings that will be merged with the device presets.
 
 ```js
 browserless.getDevice({
@@ -468,7 +468,7 @@ browserless.getDevice({
 
 type: `object` </br>
 
-An extra of headers that will be merged with the device presets.
+Extra headers that will be merged with the device presets.
 
 ```js
 browserless.getDevice({
@@ -481,7 +481,7 @@ browserless.getDevice({
 
 ### .evaluate(fn, gotoOpts)
 
-It exposes an interface for creating your own evaluate function, passing you the `page` and `response`.
+It exposes an interface for creating your own `evaluate` function, passing you the `page` and `response`.
 
 The `fn` will receive `page` and `response` as arguments:
 
@@ -502,7 +502,7 @@ await ping('https://example.com')
 
 You don't need to close the page; It will be closed automatically.
 
-Internally, the method performs a [browserless.goto](#gotopage-options), being possible to pass extra arguments as second parameter:
+Internally, the method performs a [browserless.[goto](#gotopage-options), making it possible to pass extra arguments as a second parameter:
 
 ```js
 const serialize = browserless.evaluate(page => page.evaluate(() => document.body.innerText), {
@@ -540,7 +540,7 @@ It sets the ability to abort requests based on the [ResourceType](https://github
 type: `boolean`</br>
 default: `true`
 
-It enabled the builtin [adblocker by Cliqz](https://www.npmjs.com/package/@cliqz/adblocker) that aborts unnecessary third party requests associated with ads services.
+It enabled the built-in [adblocker by](https://www.npmjs.com/package/@cliqz/adblocker) Cliqz](https://www.npmjs.com/package/@cliqz/adblocker) that aborts unnecessary third-party requests associated with ads services.
 
 ##### animations
 
@@ -567,7 +567,7 @@ Sets [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@me
 type: `string`</br>
 default: `'macbook pro 13'`
 
-It specifies the [device](#devices) descriptor to use in order to retrieve `userAgent` and `viewport`.
+It specifies the [device](#devices) descriptor used to retrieve `userAgent`` and `viewport`.
 
 ##### headers
 
@@ -724,7 +724,7 @@ type: `string` | `string[]`</br>
 default: `'auto'`</br>
 values: `'auto'` | `'load'` | `'domcontentloaded'` | `'networkidle0'` | `'networkidle2'`
 
-When to consider navigation succeeded.
+When to consider navigation successful.
 
 If you provide an array of event strings, navigation is considered to be successful after all events have been fired.
 
@@ -761,7 +761,7 @@ await page.content()
 
 ### function
 
-The [`@browserless/function`](https://npm.im/@browserless/function) package provides an isolated vm scope to run arbitrary JavaScript code with runtime access to a browser page:
+The [`@browserless/function`](https://npm.im/@browserless/function) package provides an isolated VM scope to run arbitrary JavaScript code with runtime access to a browser page:
 
 ```js
 const createFunction = require('@browserless/function')
@@ -814,7 +814,7 @@ const report = await lighthouse('https://microlink.io')
 await writeFile('report.json', JSON.stringify(report, null, 2))
 ```
 
-The report will be generated `url`, extending from `lighthouse:default` settings, being these settings the same than Google Chrome Audits reports on Developer Tools.
+The report will be generated for the provided URL. This extends the `lighthouse:default` settings. These settings are similar to the Google Chrome Audits reports on Developer Tools.
 
 #### options
 
@@ -864,7 +864,7 @@ This setting will change the default maximum navigation time.
 
 ### screencast
 
-The [`@browserless/screencast`](https://npm.im/@browserless/screencast) package allows you automate browser action and produce a video recording as output.
+The [`@browserless/screencast`](https://npm.im/@browserless/screencast) package allows you to automate browser action and produce a video recording as output.
 
 <div style="margin: auto;">
   <video poster="/static/screencast.png" loop="" controls="" src="https://github.com/microlinkhq/browserless/assets/2096101/81d3e7e2-bf12-4ce1-8d54-f7c36ce0b2c9" style="width: 100%;border-radius: 4px;" autoplay=""></video>
@@ -913,7 +913,7 @@ These options will be passed to [Page.startScreencast](https://chromedevtools.gi
 
 type: `object`
 
-These options will be passed to [goto#options](/#options-6) in order to resolve, prior to starting the recording.
+These options will be passed to [goto[#options](/#options-6) to resolve, before starting the recording.
 
 ##### timeout
 
@@ -927,7 +927,7 @@ Sets the maximum navigation time.
 type: `string`</br>
 default: `os.tmpdir()`
 
-The temporary directory for writing the video. This is necessary for ffmpeg, will be cleaned before the function finished.
+The temporary directory for writing the video. This is necessary for ffmpeg, and will be cleaned up before the function is finished.
 
 ##### withPage(page)
 
@@ -937,7 +937,7 @@ It sets the in-page browser action to perform during the video recording.
 
 ## Packages
 
-**browserless** is internally divided into multiple packages for ensuring just use the minimum quantity of code necessary for your use case.
+**browserless** is internally divided into multiple packages, this way you only use code you need.
 
 | Package                                                                                               | Version                                                                                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -958,13 +958,13 @@ It sets the in-page browser action to perform during the video recording.
 
 **Q: Why use `browserless` over `puppeteer`?**
 
-**browserless** not replace puppeteer, it complements. It's just a syntactic sugar layer over official Headless Chrome oriented for production scenarios.
+**browserless** does not replace puppeteer, it complements it. It's just a syntactic sugar layer over official Headless Chrome oriented for production scenarios.
 
 **Q: Why do you block ads scripts by default?**
 
-Headless navigation is expensive compared with just fetch the content from a website.
+Headless navigation is expensive compared to just fetching the content from a website.
 
-In order to speed up the process, we block ads scripts by default because they are so bloat.
+To speed up the process, we block ad scripts by default because most of them are resource-intensive.
 
 **Q: My output is different from the expected**
 
@@ -972,7 +972,7 @@ Probably **browserless** was too smart and it blocked a request that you need.
 
 You can active debug mode using `DEBUG=browserless` environment variable in order to see what is happening behind the code:
 
-Consider open an [issue](https://github.com/microlinkhq/browserless/issues/new) with the debug trace.
+Consider opening an [issue](https://github.com/microlinkhq/browserless/issues/new) with the debug trace.
 
 **Q: I want to use `browserless` with my AWS Lambda like project**
 
