@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@browserless/test": "^10.2.4",
-    "ava": "latest",
+    "ava": "5",
     "file-type": "16"
   },
   "engines": {

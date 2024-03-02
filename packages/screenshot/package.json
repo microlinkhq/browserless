@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@browserless/test": "^10.2.4",
-    "ava": "latest",
+    "ava": "5",
     "cheerio": "latest"
   },
   "engines": {
