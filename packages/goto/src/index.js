@@ -370,13 +370,15 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     for (const [key, value] of Object.entries({
       waitForSelector,
-      waitForFunction,
-      waitForTimeout
+      waitForFunction
     })) {
       if (value) {
-        const fn = key === 'waitForTimeout' ? () => setTimeout(value) : () => page[key](value)
-        await run({ fn, timeout: gotoTimeout, debug: { [key]: value } })
+        await run({ fn: page[key](value), timeout: gotoTimeout, debug: { [key]: value } })
       }
+    }
+
+    if (waitForTimeout) {
+      await setTimeout(waitForTimeout)
     }
 
     await inject(page, {
