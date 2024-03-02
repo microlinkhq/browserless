@@ -29,6 +29,7 @@
     "test"
   ],
   "devDependencies": {
+    "async-listen": "latest",
     "ava": "5",
     "browserless": "latest",
     "fs-extra": "latest",
