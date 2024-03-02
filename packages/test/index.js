@@ -2,7 +2,7 @@
 
 const { imgDiff } = require('img-diff-js')
 const { onExit } = require('signal-exit')
-const { createServer } = require('http')
+const { runServer } = require('./util')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const pdf = require('pdf-parse')
@@ -29,8 +29,8 @@ const imageComparison = async (t, expectedFilename, filename) => {
   return looksSame(expectedFilename, actualFilename)
 }
 
-const serverUrl = (() => {
-  const server = createServer((_, res) => {
+const getUrl = t =>
+  runServer(t, ({ res }) => {
     res.setHeader('Content-Type', 'text/html')
     return res.end(`<!DOCTYPE html>
     <html lang="en">
@@ -43,10 +43,7 @@ const serverUrl = (() => {
       <p>hello world</p>
     </body>
     </html>`)
-  }).listen()
-
-  return `http://[::]:${server.address().port}`
-})()
+  })
 
 module.exports = (browser, teardown = browser.close) => {
   onExit(teardown)
@@ -54,24 +51,33 @@ module.exports = (browser, teardown = browser.close) => {
   test('.html', async t => {
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    const html = await browserless.html(serverUrl, { adblock: false })
+    const url = await getUrl(t)
+    const html = await browserless.html(url, {
+      adblock: false
+    })
     t.snapshot(html)
   })
 
   test('.text', async t => {
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    const text = await browserless.text(serverUrl)
+    const url = await getUrl(t)
+    const text = await browserless.text(url)
 
     t.snapshot(text)
   })
 
   test('.screenshot (png)', async t => {
-    const filepath = temp.file({ extension: 'png' })
+    const filepath = temp.file({
+      extension: 'png'
+    })
 
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    await browserless.screenshot(serverUrl, { path: filepath })
+    const url = await getUrl(t)
+    await browserless.screenshot(url, {
+      path: filepath
+    })
 
     const { diffCount } = await imageComparison(t, filepath, 'example.png')
 
@@ -82,11 +88,17 @@ module.exports = (browser, teardown = browser.close) => {
   })
 
   test('.screenshot (jpeg)', async t => {
-    const filepath = temp.file({ extension: 'jpeg' })
+    const filepath = temp.file({
+      extension: 'jpeg'
+    })
 
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    await browserless.screenshot(serverUrl, { type: 'jpeg', path: filepath })
+    const url = await getUrl(t)
+    await browserless.screenshot(url, {
+      type: 'jpeg',
+      path: filepath
+    })
 
     const { diffCount } = await imageComparison(t, filepath, 'example.jpeg')
 
@@ -97,11 +109,17 @@ module.exports = (browser, teardown = browser.close) => {
   })
 
   test('.screenshot with device emulation', async t => {
-    const filepath = temp.file({ extension: 'png' })
+    const filepath = temp.file({
+      extension: 'png'
+    })
 
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    await browserless.screenshot(serverUrl, { device: 'iPhone 6', path: filepath })
+    const url = await getUrl(t)
+    await browserless.screenshot(url, {
+      device: 'iPhone 6',
+      path: filepath
+    })
 
     const { diffCount } = await imageComparison(t, filepath, 'iphone.png')
 
@@ -114,7 +132,8 @@ module.exports = (browser, teardown = browser.close) => {
   test('.pdf', async t => {
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    const buffer = await browserless.pdf(serverUrl)
+    const url = await getUrl(t)
+    const buffer = await browserless.pdf(url)
 
     const data = await pdf(buffer)
 

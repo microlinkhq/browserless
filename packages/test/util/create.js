@@ -1,6 +1,25 @@
 'use strict'
 
+const { default: listen } = require('async-listen')
+const { createServer } = require('http')
 const { onExit } = require('signal-exit')
+
+const closeServer = server => require('util').promisify(server.close.bind(server))()
+
+const runServer = async (t, handler) => {
+  const server = createServer(async (req, res) => {
+    try {
+      await handler({ req, res })
+    } catch (error) {
+      console.error(error)
+      res.statusCode = 500
+      res.end()
+    }
+  })
+  const url = await listen(server)
+  t.teardown(() => closeServer(server))
+  return url.toString()
+}
 
 module.exports = opts => {
   let _browser
@@ -36,6 +55,7 @@ module.exports = opts => {
     getBrowserContext,
     getBrowserWSEndpoint,
     getInternalBrowser,
-    getPage
+    getPage,
+    runServer
   }
 }

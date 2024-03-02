@@ -1,11 +1,17 @@
 'use strict'
 
-const { createBrowser, getBrowserContext, getBrowser } = require('@browserless/test/util')
-const { request, createServer } = require('http')
 const { setTimeout } = require('timers/promises')
+const { request } = require('http')
 const $ = require('tinyspawn')
 const path = require('path')
 const ava = require('ava')
+
+const {
+  runServer,
+  createBrowser,
+  getBrowserContext,
+  getBrowser
+} = require('@browserless/test/util')
 
 const test = process.env.CI ? ava.serial : ava
 
@@ -13,33 +19,36 @@ require('@browserless/test')(getBrowser())
 test('pass specific options to a context', async t => {
   const proxiedRequestUrls = []
 
-  const serverUrl = (() => {
-    const server = createServer((req, res) => {
-      proxiedRequestUrls.push(req.url)
+  const serverUrl = await runServer(t, async ({ req, res }) => {
+    proxiedRequestUrls.push(req.url)
 
-      const proxyRequest = request(
-        req.url,
-        {
-          method: req.method,
-          headers: req.headers
-        },
-        proxyResponse => {
-          res.writeHead(proxyResponse.statusCode, proxyResponse.headers)
-          proxyResponse.pipe(res, { end: true })
-        }
-      )
+    const proxyRequest = request(
+      req.url,
+      {
+        method: req.method,
+        headers: req.headers
+      },
+      proxyResponse => {
+        res.writeHead(proxyResponse.statusCode, proxyResponse.headers)
+        proxyResponse.pipe(res, {
+          end: true
+        })
+      }
+    )
 
-      req.pipe(proxyRequest, { end: true })
-    }).listen()
+    req.pipe(proxyRequest, {
+      end: true
+    })
+  })
 
-    return `http://[::]:${server.address().port}`
-  })()
-
-  const browserless = await getBrowserContext(t, { proxyServer: serverUrl })
+  const proxyServer = serverUrl.slice(0, -1)
+  const browserless = await getBrowserContext(t, { proxyServer })
   const page = await browserless.page()
   t.teardown(() => page.close())
 
-  await browserless.goto(page, { url: 'http://example.com' })
+  await browserless.goto(page, {
+    url: 'http://example.com'
+  })
 
   t.deepEqual(proxiedRequestUrls, ['http://example.com/', 'http://example.com/favicon.ico'])
 })
@@ -73,7 +82,9 @@ test('force to destroy a browser context', async t => {
 
   await setTimeout(500)
 
-  await browserless.destroyContext({ force: true })
+  await browserless.destroyContext({
+    force: true
+  })
 
   const error = await Promise.resolve(promise).catch(error => error)
 
