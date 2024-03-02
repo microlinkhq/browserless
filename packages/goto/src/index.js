@@ -2,6 +2,7 @@
 
 const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
 const { shallowEqualObjects } = require('shallow-equal')
+const { setTimeout } = require('node:timers/promises')
 const createDevices = require('@browserless/devices')
 const toughCookie = require('tough-cookie')
 const pReflect = require('p-reflect')
@@ -203,7 +204,6 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       waitForFunction,
       waitForSelector,
       waitForTimeout,
-      waitForXPath,
       waitUntil = 'auto',
       waitUntilAuto = _waitUntilAuto,
       onPageRequest,
@@ -370,13 +370,15 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     for (const [key, value] of Object.entries({
       waitForSelector,
-      waitForXPath,
-      waitForFunction,
-      waitForTimeout
+      waitForFunction
     })) {
       if (value) {
         await run({ fn: page[key](value), timeout: gotoTimeout, debug: { [key]: value } })
       }
+    }
+
+    if (waitForTimeout) {
+      await setTimeout(waitForTimeout)
     }
 
     await inject(page, {

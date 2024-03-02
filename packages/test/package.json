@@ -29,12 +29,12 @@
     "test"
   ],
   "devDependencies": {
-    "ava": "latest",
+    "ava": "5",
     "browserless": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "pdf-parse": "latest",
-    "puppeteer": "~21.10.0",
+    "puppeteer": "~22.0.0",
     "signal-exit": "latest",
     "temperment": "latest"
   },

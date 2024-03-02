@@ -182,7 +182,7 @@ Every browser context is isolated. They won't share cookies/cache with other bro
 
 #### options
 
-Any [browser.createIncognitoBrowserContext#options](https://pptr.dev/next/api/puppeteer.browsercontextoptions) can be passed.
+Any [browser.createBrowserContext#options](https://pptr.dev/next/api/puppeteer.browsercontextoptions) can be passed.
 
 Additionally, you can setup:
 
@@ -437,7 +437,7 @@ browserless.getDevice({ device: 'Macbook Pro 15' })
 // }
 ```
 
-It extends from [puppeteer.devices](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#puppeteerdevices), adding some missing devices there.
+It extends from [puppeteer.KnownDevices](https://pptr.dev/api/puppeteer.knowndevices/), adding some missing devices there.
 
 #### options
 
@@ -716,7 +716,7 @@ Wait a quantity of time, selector or function using [page.waitForSelector](https
 
 type:`number`
 
-Wait a quantity of time, selector or function using [page.waitForTimeout](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#pagewaitfortimeoutmilliseconds).
+Wait a quantity time in milliseconds.
 
 ##### waitUntil
 

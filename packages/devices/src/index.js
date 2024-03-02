@@ -10,7 +10,7 @@ module.exports = ({
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   lossyDeviceName = true
 } = {}) => {
-  const { devices: puppeteerDevices } = puppeteer
+  const { KnownDevices: puppeteerDevices } = puppeteer
   const devices = { ...puppeteerDevices, ...customDevices }
   const deviceDescriptors = Object.keys(devices)
 
