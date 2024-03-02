@@ -59,7 +59,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   let browserProcessPromise = spawn()
 
   const createBrowserContext = contextOpts =>
-    getBrowser().then(browser => browser.createIncognitoBrowserContext(contextOpts))
+    getBrowser().then(browser => browser.createBrowserContext(contextOpts))
 
   const getBrowser = async () => {
     if (isClosed) return browserProcessPromise
