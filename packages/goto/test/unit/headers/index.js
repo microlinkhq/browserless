@@ -4,18 +4,19 @@ const test = require('ava')
 
 const { runServer, getBrowserContext } = require('@browserless/test/util')
 
-const url = runServer(({ req, res }) => {
-  if (req.headers.cookie) {
-    const cookies = req.headers.cookie.split(';').map(cookie => cookie.trim())
-    res.setHeader('set-cookie', cookies)
-  }
-  res.setHeader('content-type', 'application/json')
-  res.end(
-    JSON.stringify({
-      headers: req.headers
-    })
-  )
-})
+const getUrl = t =>
+  runServer(t, ({ req, res }) => {
+    if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';').map(cookie => cookie.trim())
+      res.setHeader('set-cookie', cookies)
+    }
+    res.setHeader('content-type', 'application/json')
+    res.end(
+      JSON.stringify({
+        headers: req.headers
+      })
+    )
+  })
 
 const createPing = browserless =>
   browserless.evaluate(async (page, response) => {
@@ -34,10 +35,9 @@ const createPing = browserless =>
 
 test('set extra HTTP headers', async t => {
   const browserless = await getBrowserContext(t)
-
   const ping = createPing(browserless)
-
-  const { body, request } = await ping(await url, {
+  const url = await getUrl(t)
+  const { body, request } = await ping(url, {
     headers: {
       'x-foo': 'bar'
     }
@@ -49,10 +49,9 @@ test('set extra HTTP headers', async t => {
 
 test('set `uset agent` header', async t => {
   const browserless = await getBrowserContext(t)
-
   const ping = createPing(browserless)
-
-  const { userAgent, body, request } = await ping(await url, {
+  const url = await getUrl(t)
+  const { userAgent, body, request } = await ping(url, {
     headers: {
       'user-agent': 'googlebot'
     }
@@ -65,10 +64,9 @@ test('set `uset agent` header', async t => {
 
 test('set `cookie` header', async t => {
   const browserless = await getBrowserContext(t)
-
   const ping = createPing(browserless)
-
-  const { cookies, body, request } = await ping(await url, {
+  const url = await getUrl(t)
+  const { cookies, body, request } = await ping(url, {
     headers: {
       cookie: 'yummy_cookie=choco; tasty_cookie=strawberry'
     }

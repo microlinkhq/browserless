@@ -18,7 +18,7 @@ const runServer = async (t, handler) => {
   })
   const url = await listen(server)
   t.teardown(() => closeServer(server))
-  return url
+  return url.toString()
 }
 
 module.exports = opts => {

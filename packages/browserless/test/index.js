@@ -19,7 +19,7 @@ require('@browserless/test')(getBrowser())
 test('pass specific options to a context', async t => {
   const proxiedRequestUrls = []
 
-  const proxyServer = await runServer(t, async ({ req, res }) => {
+  const serverUrl = await runServer(t, async ({ req, res }) => {
     proxiedRequestUrls.push(req.url)
 
     const proxyRequest = request(
@@ -41,9 +41,8 @@ test('pass specific options to a context', async t => {
     })
   })
 
-  const browserless = await getBrowserContext(t, {
-    proxyServer
-  })
+  const proxyServer = serverUrl.slice(0, -1)
+  const browserless = await getBrowserContext(t, { proxyServer })
   const page = await browserless.page()
   t.teardown(() => page.close())
 

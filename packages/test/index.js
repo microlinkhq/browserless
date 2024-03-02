@@ -29,9 +29,10 @@ const imageComparison = async (t, expectedFilename, filename) => {
   return looksSame(expectedFilename, actualFilename)
 }
 
-const url = runServer(({ res }) => {
-  res.setHeader('Content-Type', 'text/html')
-  return res.end(`<!DOCTYPE html>
+const getUrl = t =>
+  runServer(t, ({ res }) => {
+    res.setHeader('Content-Type', 'text/html')
+    return res.end(`<!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
@@ -42,7 +43,7 @@ const url = runServer(({ res }) => {
       <p>hello world</p>
     </body>
     </html>`)
-})
+  })
 
 module.exports = (browser, teardown = browser.close) => {
   onExit(teardown)
@@ -50,7 +51,8 @@ module.exports = (browser, teardown = browser.close) => {
   test('.html', async t => {
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    const html = await browserless.html(await url, {
+    const url = await getUrl(t)
+    const html = await browserless.html(url, {
       adblock: false
     })
     t.snapshot(html)
@@ -59,7 +61,8 @@ module.exports = (browser, teardown = browser.close) => {
   test('.text', async t => {
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    const text = await browserless.text(await url)
+    const url = await getUrl(t)
+    const text = await browserless.text(url)
 
     t.snapshot(text)
   })
@@ -71,7 +74,8 @@ module.exports = (browser, teardown = browser.close) => {
 
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    await browserless.screenshot(await url, {
+    const url = await getUrl(t)
+    await browserless.screenshot(url, {
       path: filepath
     })
 
@@ -90,7 +94,8 @@ module.exports = (browser, teardown = browser.close) => {
 
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    await browserless.screenshot(await url, {
+    const url = await getUrl(t)
+    await browserless.screenshot(url, {
       type: 'jpeg',
       path: filepath
     })
@@ -110,7 +115,8 @@ module.exports = (browser, teardown = browser.close) => {
 
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    await browserless.screenshot(await url, {
+    const url = await getUrl(t)
+    await browserless.screenshot(url, {
       device: 'iPhone 6',
       path: filepath
     })
@@ -126,7 +132,8 @@ module.exports = (browser, teardown = browser.close) => {
   test('.pdf', async t => {
     const browserless = await browser.createContext()
     t.teardown(browserless.destroyContext)
-    const buffer = await browserless.pdf(await url)
+    const url = await getUrl(t)
+    const buffer = await browserless.pdf(url)
 
     const data = await pdf(buffer)
 
