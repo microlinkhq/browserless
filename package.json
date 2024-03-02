@@ -113,6 +113,7 @@
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard",
+    "postinstall": "node node_modules/puppeteer/install.mjs",
     "prerelease": "pnpm run update:check",
     "pretest": "pnpm run lint",
     "release": "lerna publish --yes --sort --conventional-commits -m \"chore(release): %s\" --create-release github",

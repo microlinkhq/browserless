@@ -5,6 +5,9 @@ on:
     branches:
       - master
 
+env:
+  PUPPETEER_SKIP_CHROME_HEADLESS_SHELL_DOWNLOAD: true
+
 jobs:
   contributors:
     if: "${{ github.event.head_commit.message != 'build: contributors' }}"
