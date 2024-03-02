@@ -36,7 +36,7 @@ test('graphics features', async t => {
           'Canvas out-of-process rasterization': 'Disabled',
           'Direct Rendering Display Compositor': 'Disabled',
           Compositing: 'Software only. Hardware acceleration disabled',
-          'Multiple Raster Threads': 'Disabled',
+          'Multiple Raster Threads': 'Enabled',
           OpenGL: 'Disabled',
           Rasterization: 'Software only. Hardware acceleration disabled',
           'Raw Draw': 'Disabled',
