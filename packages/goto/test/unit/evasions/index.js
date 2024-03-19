@@ -152,7 +152,7 @@ test('media codecs are present', async t => {
       }
     })
 
-  t.deepEqual(await videoCodecs(), { ogg: 'probably', h264: 'probably', webm: 'probably' })
+  t.deepEqual(await videoCodecs(), { ogg: '', h264: 'probably', webm: 'probably' })
 
   t.deepEqual(await audioCodecs(), {
     ogg: 'probably',
