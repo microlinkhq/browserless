@@ -864,76 +864,48 @@ This setting will change the default maximum navigation time.
 
 ### screencast
 
-The [`@browserless/screencast`](https://npm.im/@browserless/screencast) package allows you to automate browser action and produce a video recording as output.
+The [`@browserless/screencast`](https://npm.im/@browserless/screencast) package allows you to capture each frame of a browser navigation using puppeteer.
 
 <div style="margin: auto;">
-  <video poster="/static/screencast.png" loop="" controls="" src="https://github.com/microlinkhq/browserless/assets/2096101/81d3e7e2-bf12-4ce1-8d54-f7c36ce0b2c9" style="width: 100%;border-radius: 4px;" autoplay=""></video>
+  <video poster="/static/screencast.png" loop="" controls="" src="https://github.com/microlinkhq/browserless/assets/2096101/a1753a2f-d4bb-47f1-a457-a0b73bb9d65d" style="width: 100%;border-radius: 4px;" autoplay=""></video>
 </div>
 
-```js
-const screencast = require('@browserless/screencast')
+This API is similar to [screenshots](#screenshoturl-options), but you have a more granular control over the frame and the output:
 
-const buffer = await screencast({
-  getBrowserless: () => browserless,
-  format: 'webm',
-  ffmpegPath: await execa.command('which ffmpeg').then(({ stdout }) => stdout),
-  gotoOpts: {
-    url: 'https://vercel.com',
-    animations: true,
-    abortTypes: [],
-    waitUntil: 'load'
-  },
-  withPage: async page => {
-    await page.waitForTimeout(7000)
-  }
+```js
+const createScreencast = require('@browserless/screencast')
+const createBrowser = require('browserless')
+
+const browser = createBrowser()
+const browserless = await browser.createContext()
+const page = await browserless.page()
+
+const screencast = createScreencast(page, { 
+  maxWidth: 1280, 
+  maxHeight: 800 
 })
+
+const frames = []
+screencast.onFrame(data => frames.push(data))
+
+screencast.start()
+await browserless.goto(page, { url, waitForTimeout: 300 })
+await screencast.stop()
+
+console.log(frames)
 ```
 
-#### options
+Check a [full example](/blob/master/packages/screencast/examples/server.js) generating a GIF as output.
 
-##### ffmpegPath
-
-type: `string`
-
-The path for using `ffmpeg` binary.
-
-##### format
-
-type: `string`</br>
-values: `'mp4'` | `'gif' | 'webm'`</br>
-default: `'webm'`
-
-The video output format.
-
-##### frames
-
-These options will be passed to [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast)
-
-##### gotoOpts
+#### page
 
 type: `object`
 
-These options will be passed to [goto[#options](/#options-6) to resolve, before starting the recording.
+The [Page](https://pptr.dev/api/puppeteer.page) object.
 
-##### timeout
+#### options
 
-type: `number`</br>
-default: `30000`
-
-Sets the maximum navigation time.
-
-##### tmpPath
-
-type: `string`</br>
-default: `os.tmpdir()`
-
-The temporary directory for writing the video. This is necessary for ffmpeg, and will be cleaned up before the function is finished.
-
-##### withPage(page)
-
-type: `function`
-
-It sets the in-page browser action to perform during the video recording.
+See [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast) to know all the options and values supported.
 
 ## Packages
 
