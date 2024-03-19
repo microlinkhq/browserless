@@ -34,9 +34,11 @@
   ],
   "devDependencies": {
     "@browserless/test": "^10.3.0",
+    "@kikobeats/time-span": "latest",
+    "@skyra/gifenc": "latest",
     "ava": "5",
     "canvas": "latest",
-    "gifencoder": "latest",
+    "sharp": "latest",
     "tinyspawn": "latest"
   },
   "engines": {

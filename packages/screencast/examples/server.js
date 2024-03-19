@@ -1,12 +1,13 @@
 'use strict'
 
+const timeSpan = require('@kikobeats/time-span')({ format: n => `${n.toFixed(2)}ms` })
 const { createCanvas, Image } = require('canvas')
+const { GifEncoder } = require('@skyra/gifenc')
 const createBrowser = require('browserless')
-const GIFEncoder = require('gifencoder')
+const sharp = require('sharp')
 const http = require('http')
 
 const createScreencast = require('..')
-const ffmpeg = require('./ffmpeg')
 
 const browser = createBrowser({
   timeout: 25000,
@@ -18,6 +19,10 @@ const CACHE = Object.create(null)
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/favicon.ico') return res.end()
+
+  const duration = timeSpan()
+  let firstFrame = true
+
   const url = req.url.slice(1)
 
   if (CACHE[url]) {
@@ -35,36 +40,39 @@ const server = http.createServer(async (req, res) => {
 
   const width = 1280
   const height = 800
-  const resizeRatio = 0.5
+  const deviceScaleFactor = 0.5
 
-  const outputSize = { width: width * resizeRatio, height: height * resizeRatio }
+  const outputSize = { width: width * deviceScaleFactor, height: height * deviceScaleFactor }
 
-  const encoder = new GIFEncoder(outputSize.width, outputSize.height)
   const canvas = createCanvas(outputSize.width, outputSize.height)
   const ctx = canvas.getContext('2d')
 
-  encoder.createWriteStream({ repeat: -1, delay: 0 }).pipe(res)
+  const encoder = new GifEncoder(outputSize.width, outputSize.height)
+  encoder.createReadStream().pipe(res)
 
-  const screencast = createScreencast(page, {
-    quality: 0,
-    format: 'png',
-    everyNthFrame: 1
-  })
+  const screencast = createScreencast(page, { maxWidth: width, maxHeight: height })
 
   screencast.onFrame(async data => {
     const frame = Buffer.from(data, 'base64')
+    const buffer = await sharp(frame).resize(outputSize).toBuffer()
+
     const img = new Image()
-    img.src = await ffmpeg(frame, outputSize)
+    img.src = buffer
     ctx.drawImage(img, 0, 0, img.width, img.height)
     encoder.addFrame(ctx)
+
+    if (firstFrame === true) firstFrame = duration()
+
     lastCanvas = canvas
   })
 
   screencast.start()
   encoder.start()
-  await browserless.goto(page, { url, viewport: { width, height, deviceScaleFactor: 1 } })
+  await browserless.goto(page, { url })
   encoder.finish()
   await screencast.stop()
+
+  console.log(`\n  Resolved ${url}; first frame ${firstFrame}, total ${duration()}`)
 
   CACHE[url] = lastCanvas
 })
