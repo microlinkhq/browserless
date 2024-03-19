@@ -32,13 +32,14 @@
     "screencast",
     "video"
   ],
-  "dependencies": {
-    "tinyspawn": "~1.2.6"
-  },
   "devDependencies": {
     "@browserless/test": "^10.3.0",
+    "@kikobeats/time-span": "latest",
+    "@skyra/gifenc": "latest",
     "ava": "5",
-    "file-type": "16"
+    "canvas": "latest",
+    "sharp": "latest",
+    "tinyspawn": "latest"
   },
   "engines": {
     "node": ">= 12"
