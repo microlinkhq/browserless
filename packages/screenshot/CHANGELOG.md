@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.4.0](https://github.com/microlinkhq/browserless/compare/v10.3.0...v10.4.0) (2024-03-19)
+
+### Performance Improvements
+
+* **screenshot:** use sampling for `is-white` ([#570](https://github.com/microlinkhq/browserless/issues/570)) ([5f89406](https://github.com/microlinkhq/browserless/commit/5f89406b7bebba9a172cd36f94ed384263ac1f6d))
+
 # [10.3.0](https://github.com/microlinkhq/browserless/compare/v10.2.6...v10.3.0) (2024-03-02)
 
 **Note:** Version bump only for package @browserless/screenshot

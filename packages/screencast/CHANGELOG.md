@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.4.0](https://github.com/microlinkhq/browserless/compare/v10.3.0...v10.4.0) (2024-03-19)
+
+### Features
+
+* revamped screencast ([#571](https://github.com/microlinkhq/browserless/issues/571)) ([2cd5a20](https://github.com/microlinkhq/browserless/commit/2cd5a20d10659f078f1cd43b4233d671855019cb))
+
 # [10.3.0](https://github.com/microlinkhq/browserless/compare/v10.2.6...v10.3.0) (2024-03-02)
 
 **Note:** Version bump only for package @browserless/screencast
