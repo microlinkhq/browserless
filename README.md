@@ -747,6 +747,38 @@ console.log({ isIncognito: browserContext.isIncognito() })
 // => { isIncognito: true }
 ```
 
+### .withPage(fn, [options])
+
+It returns a higher-order function as convenient way to interact with a page:
+
+```js
+const getTitle = browserless.withPage((page, goto) => opts => {
+  const result = await goto(page, opts)
+  return page.title()
+})
+```
+
+The function will be invoked in the following way:
+
+```js
+const title = getTitle({ url: 'https://example.com' })
+```
+
+#### fn
+
+type: `function`
+
+The function to be executed. It receives `page, goto` as arguments.
+
+#### options
+
+##### timeout
+
+type: `number`</br>
+default: `browserless.timeout`
+
+This setting will change the default maximum navigation time.
+
 ### .page()
 
 It returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#class-page) associated with the current browser context.
