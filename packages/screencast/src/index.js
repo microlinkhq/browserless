@@ -15,6 +15,6 @@ module.exports = (page, opts) => {
     // https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast
     start: () => client.send('Page.startScreencast', opts),
     onFrame: fn => (onFrame = fn),
-    stop: async () => client.send('Page.stopScreencast')
+    stop: () => client.send('Page.stopScreencast').catch(() => {})
   }
 }
