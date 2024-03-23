@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.4.1](https://github.com/microlinkhq/browserless/compare/v10.4.0...v10.4.1) (2024-03-23)
+
+### Bug Fixes
+
+* **screencast:** stop idempotent ([6d75d4f](https://github.com/microlinkhq/browserless/commit/6d75d4f160efaaaa363c9c628385c2b0a1709bfa))
+
 # [10.4.0](https://github.com/microlinkhq/browserless/compare/v10.3.0...v10.4.0) (2024-03-19)
 
 ### Features
