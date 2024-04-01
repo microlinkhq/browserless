@@ -27,23 +27,6 @@
   --border-color: var(--gray2);
 }
 
-@keyframes octocat {
-  0%,
-  to {
-    transform: rotate(0);
-  }
-
-  20%,
-  60% {
-    transform: rotate(-25deg);
-  }
-
-  40%,
-  80% {
-    transform: rotate(10deg);
-  }
-}
-
 ::selection {
   background: #f9e4ac;
   /* WebKit/Blink Browsers */
@@ -86,25 +69,7 @@ img[src*='#gh-dark-mode-only'] {
   display: none;
 }
 
-.github-corner {
-  border-bottom: 0;
-  position: fixed;
-  right: 0;
-  text-decoration: none;
-  top: 0;
-  z-index: 1;
-}
 
-.github-corner svg {
-  color: #fff;
-  fill: var(--primary-color);
-  height: 80px;
-  width: 80px;
-}
-
-.github-corner:hover .octo-arm {
-  animation: octocat 0.5s ease-in-out;
-}
 
 main {
   display: block;
@@ -157,7 +122,7 @@ main {
   text-decoration: underline;
 }
 
-.sidebar ul li.active > a {
+.sidebar ul li.active>a {
   border-right: 2px solid var(--primary-color);
   color: var(--primary-color);
   font-weight: 700;
@@ -202,12 +167,12 @@ body.sticky .sidebar-toggle {
   position: relative;
 }
 
-.markdown-section > * {
+.markdown-section>* {
   box-sizing: border-box;
   font-size: inherit;
 }
 
-.markdown-section > :first-child {
+.markdown-section> :first-child {
   margin-top: 0 !important;
 }
 
@@ -231,6 +196,7 @@ body.sticky .sidebar-toggle {
 }
 
 @media print {
+
   .github-corner,
   .sidebar,
   .sidebar-toggle {
@@ -239,6 +205,7 @@ body.sticky .sidebar-toggle {
 }
 
 @media screen and (max-width: 768px) {
+
   .github-corner,
   .sidebar {
     position: fixed;
@@ -391,7 +358,7 @@ body {
   -webkit-font-smoothing: initial;
 }
 
-.markdown-section pre > code {
+.markdown-section pre>code {
   border: 0;
   display: block;
   font-family: var(--code-font);
@@ -428,4 +395,44 @@ body {
 
 .token.comment {
   color: var(--gray7);
+}
+
+/* github corner */
+
+@keyframes b {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+
+  20%,
+  60% {
+    transform: rotate(-25deg);
+  }
+
+  40%,
+  80% {
+    transform: rotate(10deg);
+  }
+}
+
+.github-corner svg {
+  border-bottom: 0;
+  position: fixed;
+  right: 0;
+  text-decoration: none;
+  top: 0;
+  z-index: 1;
+}
+
+.github-corner:hover svg .octo-arm {
+  opacity: 1;
+  animation: b 560ms ease-in-out;
+}
+
+.github-corner svg {
+  color: white;
+  fill: black;
+  height: 80px;
+  width: 80px;
 }
