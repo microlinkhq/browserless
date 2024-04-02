@@ -26,7 +26,7 @@ const styles = () =>
       postcss([
         require('postcss-focus'),
         require('cssnano')({
-          preset: ['cssnano-preset-advanced']
+          preset: [require('cssnano-preset-advanced')]
         })
       ])
     )

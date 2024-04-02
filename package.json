@@ -95,7 +95,7 @@
     "cssnano-preset-advanced": "latest",
     "finepack": "latest",
     "git-authors-cli": "latest",
-    "gulp": "5",
+    "gulp": "latest",
     "gulp-concat": "latest",
     "gulp-postcss": "latest",
     "gulp-uglify": "latest",
