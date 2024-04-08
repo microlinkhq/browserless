@@ -15,8 +15,8 @@
   --gray8: #6c6c6c;
   --gray9: #3f3f3f;
   --blue: #067df7;
-  --green: #42b983;
-  --red: #f66;
+  --green: #00A995;
+  --red: #F23342;
   /* theme */
   --primary-color: var(--base);
   --secondary-color: var(--blue);
@@ -378,7 +378,6 @@ body {
 
 .token.keyword {
   color: #ff0078;
-  font-weight: bolder;
 }
 
 .token:is(.class-name, .function, .number) {
@@ -386,7 +385,7 @@ body {
 }
 
 .token.string {
-  color: #028265;
+  color: var(--green);
 }
 
 .token:is(.boolean, .constant) {
