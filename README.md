@@ -8,7 +8,7 @@
 [![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> **browserless** is an efficient way to interact with a headless browser built on top of [puppeteer](https://github.com/GoogleChrome/puppeteer).
+> **Browserless** provides an efficient and improved experience for working with headless browsers. It achieves this by layering and extending [Puppeteer](https://github.com/GoogleChrome/puppeteer).
 
 ## Highlights
 
@@ -24,31 +24,31 @@
 You can install it via npm:
 
 ```bash
-$ npm install browserless puppeteer --save
+npm install browserless puppeteer --save
 ```
 
-**browserless** is backed by [puppeteer](https://github.com/GoogleChrome/puppeteer), so you need to install it as well.
+**Browserless** runs on top of [Puppeteer](https://github.com/GoogleChrome/puppeteer), so you need that installed as well.
 
-You can use it next to [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) or [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox), interchangeably.
+You can choose between [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core), and [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox) depending on your use case.
 
 ## Usage
 
-This is a full example showcasing all the **browserless** capabilities:
+Here is a complete example showcasing all of **Browserless** capabilities:
 
 ```js
 const createBrowser = require('browserless')
 const termImg = require('term-img')
 
 // First, create a browserless factory
-// that it will keep a singleton process running
+// This is similar to opening a browser for the first time
 const browser = createBrowser()
 
-// After that, you can create as many browser context
-// as you need. The browser contexts won't share cookies/cache
-// with other browser contexts.
+// Browser contexts are like browser tabs
+// You can create as many as your resources can support
+// Cookies/caches are limited to their respective browser contexts, just like tabs
 const browserless = await browser.createContext()
 
-// Perform the action you want, e.g., getting the HTML markup
+// Perform your required browser actions, e.g., fetching HTML markup
 const buffer = await browserless.screenshot('http://example.com', {
   device: 'iPhone 6'
 })
@@ -62,29 +62,31 @@ await browserless.destroyContext()
 await browser.close()
 ```
 
-As you can see, **browserless** is implemented using a single browser process and creating/destroying specific browser contexts.
+As you can see, **Browserless** is implemented using a single browser process and creating/destroying specific browser contexts.
 
-If you're already using puppeteer, you can upgrade to use **browserless** instead almost with no effort.
+If you're already using Puppeteer in your project, you can layer **Browserless** on top of that by simply installing it.
 
-Additionally, you can use some specific [packages](#packages) in your codebase, interacting with them from puppeteer.
+You can also pull in additional **Browserless** [packages](#packages) for your specific needs, all of which work well with Puppeteer.
 
 ## CLI
 
-With the command-line interface (CLI) you can interact with browserless methods using a terminal, or through an automated system:
+Using the **Browserless** command-line tool, you can interact with Browserless through a terminal window, or use it as part of an automated process:
 
 <div style="margin: auto;">
   <video poster="/static/cli.png" loop="" controls="" src="https://github.com/microlinkhq/browserless/assets/2096101/5200b2c5-d930-40e7-b128-6d23a6974c28" style="width: 100%;border-radius: 4px;" autoplay=""></video>
 </div>
 
-Just install [`@browserless/cli`](https://npm.im/@browserless/cli) globally in your system using your favorite package manager:
+Start by installing [`@browserless/cli`](https://npm.im/@browserless/cli) globally on your system using your favorite package manager:
 
 ```
 npm install -g @browserless/cli
 ```
 
+Then run `browserless` in your terminal to see the list of available commands.
+
 ## Initializing a browser
 
-The **browserless** main method is for creating a headless browser.
+Initializing **Browserless** creates a headless browser instance.
 
 ```js
 const createBrowser = require('browserless')
@@ -96,15 +98,17 @@ const browser = createBrowser({
 })
 ```
 
-Once the browser is initialized, some browser high-level methods are available:
+This instance provides several high-level methods. 
+
+For example:
 
 ```js
-// Now, just call `createContext` for creating a browser tab
+// Call `createContext` to create a browser tab
 const browserless = await browser.createContext({ retry: 2 })
 
 const buffer = await browserless.screenshot('https://example.com')
 
-// You call `destroyContext` to close the browser tab.
+// Call `destroyContext` to close the browser tab.
 await browserless.destroyContext()
 ```
 
@@ -117,34 +121,48 @@ await browser.close()
 
 ### .constructor(options)
 
-You can pass any [puppeteer.launch#options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+The `createBrowser` method supports [puppeteer.launch#options](https://github.com/puppeteer/puppeteer/blob/main/docs/api/puppeteer.launchoptions.md).
 
-Additionally, you can setup:
+
+**Browserless** also provides additional options you can use when creating a browser instance:
 
 ##### defaultDevice
+
+This will set your browser viewport to that of the specified device:
 
 type: `string`</br>
 default: `'Macbook Pro 13'`
 
-Sets a consistent device viewport for each page.
+
 
 ##### lossyDeviceName
 
 type: `boolean`</br>
 default: `false`
 
-It enables lossy detection over the device descriptor input.
+This allows for a margin of error when setting the device name.
 
 ```js
-const browserless = require('browserless')({ lossyDeviceName: true })
 
-browserless.getDevice({ device: 'macbook pro 13' })
-browserless.getDevice({ device: 'MACBOOK PRO 13' })
-browserless.getDevice({ device: 'macbook pro' })
-browserless.getDevice({ device: 'macboo pro' })
+// Initialize browser instance
+const browser = require('browserless')({ lossyDeviceName: true });
+
+(async () => {
+    // Create context/tab
+    const tabInstance = await browser.createContext();
+
+    // The device property is consistently set to that of a MacBook Pro even when misspelt
+    console.log(tabInstance.getDevice({ device: 'MacBook Pro' }))
+    console.log(tabInstance.getDevice({ device: 'macbook pro 13' }))
+    console.log(tabInstance.getDevice({ device: 'MACBOOK PRO 13' }))
+    console.log(tabInstance.getDevice({ device: 'macbook pro' }))
+    console.log(tabInstance.getDevice({ device: 'macboo pro' }))
+})()
 ```
 
-This setting is oriented for find the device even if the descriptor device name is not exactly the same.
+The provided name will be resolved to closest matching device.
+
+This comes in handy in situations where the device name is set by a third-party.
 
 ##### mode
 
@@ -152,7 +170,7 @@ type: `string`</br>
 default: `launch`</br>
 values: `'launch'` | `'connect'`
 
-It defines if a browser should be spawned using [puppeteer.launch](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerlaunchoptions) or [puppeteer.connect](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerconnectoptions)
+This specifies if the browser instance should be spawned using [Puppeteer.launch](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerlaunchoptions) or [puppeteer.connect](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerconnectoptions).
 
 ##### timeout
 
@@ -166,7 +184,7 @@ This setting will change the default maximum navigation time.
 type: `Puppeteer`</br>
 default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
 
-It's automatically detected based on your `dependencies` being supported [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox).
+By default, it's automatically detects which libary is installed (thus either [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox)) based on your installed dependecies.
 
 ### .createContext(options)
 
@@ -178,13 +196,13 @@ const browserless = browser.createContext({
 })
 ```
 
-Every browser context is isolated. They won't share cookies/cache with other browser contexts. They also can contain specific options.
+Each browser context is isolated, thus cookies/cache stay within its corresponding browser contexts just like with browser tabs. Each context can also have different options during its creation.
 
 #### options
 
-Any [browser.createBrowserContext#options](https://pptr.dev/next/api/puppeteer.browsercontextoptions) can be passed.
+All of Puppeteer's [browser.createBrowserContext#options](https://pptr.dev/next/api/puppeteer.browsercontextoptions) are supported.
 
-Additionally, you can setup:
+Browserless also provides additional browser Context options:
 
 ##### retry
 
@@ -221,7 +239,7 @@ This method is an implementation detail, normally you don't need to call it.
 
 ### .close()
 
-It will close the internal browser.
+Used to close the internal browser.
 
 ```js
 const { onExit } = require('signal-exit')
@@ -234,7 +252,7 @@ onExit(browser.close)
 
 ### .html(url, options)
 
-It serializes the content from the target `url` into HTML.
+Used to serialize the content of a target `url` into HTML.
 
 ```js
 const html = await browserless.html('https://example.com')
@@ -245,11 +263,11 @@ console.log(html)
 
 #### options
 
-See [browserless.goto](/#gotopage-options) to know all the options and values supported.
+See [browserless.goto](/#gotopage-options) to see the full list of supported values and options.
 
 ### .text(url, options)
 
-It serializes the content from the target `url` into plain text.
+Used to serialize the content from the target `url` into plain text.
 
 ```js
 const text = await browserless.text('https://example.com')
@@ -284,9 +302,9 @@ This method uses the following options by default:
 }
 ```
 
-See [browserless.goto](/#gotopage-options) to know all the options and values supported.
+See [browserless.goto](/#gotopage-options) to see the full list of supported values and options.
 
-Also, any [page.pdf](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagepdfoptions) option is supported.
+Also, all of Puppeteer's [page.pdf](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagepdfoptions) options are supported.
 
 Additionally, you can setup:
 
@@ -295,14 +313,14 @@ Additionally, you can setup:
 type: `string` | `string[]`</br>
 default: `'0.35cm'`
 
-It sets paper margins. All possible units are:
+Used to set screen margins. All supported units include:
 
 - `px` for pixel.
 - `in` for inches.
 - `cm` for centimeters.
 - `mm` for millimeters.
 
-You can pass an `object` object specifying each corner side of the paper:
+You can set the margin properties by passing them in as an `object`:
 
 ```js
 const buffer = await browserless.pdf(url.toString(), {
@@ -315,7 +333,7 @@ const buffer = await browserless.pdf(url.toString(), {
 })
 ```
 
-Or, in case you pass a `string`, it will be used for all the sides:
+In case a single margin value is provided, this will be used for all sides:
 
 ```js
 const buffer = await browserless.pdf(url.toString(), {
@@ -325,7 +343,7 @@ const buffer = await browserless.pdf(url.toString(), {
 
 ### .screenshot(url, options)
 
-It takes a screenshot from the target `url`.
+Use for generating screenshots from a target `url`.
 
 ```js
 const buffer = await browserless.screenshot('https://example.com')
@@ -343,47 +361,46 @@ This method uses the following options by default:
 }
 ```
 
-See [browserless.goto](/#gotopage-options) to know all the options and values supported.
+See [browserless.goto](/#gotopage-options) to see the full list of supported values and options.
 
-Also, any [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagescreenshotoptions) option is supported.
+Also, all of Puppeteer's [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagescreenshotoptions) options are supported.
 
-Additionally, you can setup:
+Additionally, **Browserless** provides the following options:
 
 ##### codeScheme
 
 type: `string`</br>
 default: `'atom-dark'`
 
-When this value is present and the response `'Content-Type'` header is `'json'`, it beautifies HTML markup using [Prism](https://prismjs.com).
+Whenever the response `'Content-Type'` is set to `'json'`, it will be presented a formatted JSON string object, beautified using the provided `codeScheme` theme or by default `atom-dark`. 
+
+The color schemes is based on the [Prism library](https://prismjs.com).
 
 ![](https://i.imgur.com/uFfviX7.png)
 
-The syntax highlight theme can be customized, during setup:
-
-- A [prism-themes](https://github.com/PrismJS/prism-themes/tree/master/themes) identifier (e.g., `'dracula'`).
-- A remote URL (e.g., `'https://unpkg.com/prism-theme-night-owl'`).
+The [Prism repository](https://github.com/PrismJS/prism-themes/tree/master?tab=readme-ov-file#available-themes) offers a wide range of themes to choose from as well as a [CDN option](https://unpkg.com/browse/prismjs@1.29.0/themes).
 
 ##### element
 
 type: `string` </br>
 
-Capture the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors). It will wait for the element to appear in the page and to be visible.
+Returns the first instance of a matching DOM element based on a [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors). This operation remains unresolved until the element is displayed on screen or the specified maximum [timeout](#timeout) is reached.
 
 ##### overlay
 
 type: `object`
 
-After the screenshot has been taken, this option allows you to place the screenshot into a fancy overlay
+Once the screenshot has been taken, this option allows you to apply a overlay\backdrop.
 
 ![](https://i.imgur.com/GBa6Mj7.png)
 
-You can configure the overlay by specifying:
+You can configure the overlay by specifying the following:
 
-- **browser**: It sets the browser image overlay to use, being `light` and `dark` supported values.
-- **background**: It sets the background to use, being supported to pass:
-  - An hexadecimal/rgb/rgba color code, eg. `#c1c1c1`.
-  - A [CSS gradient](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
-  - An image URL, eg. `https://source.unsplash.com/random/1920x1080`.
+- **browser**: Specifies the color of the browser stencil to use, thus either `light` or `dark` for light and dark mode respecitively.
+- **background**: Specifies the background to use. A number of value types are supported:
+  - Hexadecimal/RGB/RGBA color codes, eg. `#c1c1c1`.
+  - [CSS gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
+  - Image URLs, eg. `https://source.unsplash.com/random/1920x1080`.
 
 ```js
 const buffer = await browserless.screenshot(url.toString(), {
@@ -398,7 +415,7 @@ const buffer = await browserless.screenshot(url.toString(), {
 
 ### .destroyContext(options)
 
-It will destroy the current browser context.
+Destroys the current browser context.
 
 ```js
 const browserless = await browser.createContext({ retry: 0 })
@@ -415,11 +432,11 @@ await browserless.destroyContext()
 type: `string` </br>
 default: `'force'`
 
-When force is passed, it avoids recreating the context in case a browser action is being executed.
+When force is set, it prevents the recreation of the context in case a browser action is being executed.
 
 ### .getDevice(options)
 
-Used to set specific device descriptions, this method will be the device's settings.
+Used to set a specific device type, this method sets the device properties.
 
 ```js
 browserless.getDevice({ device: 'Macbook Pro 15' })
@@ -437,7 +454,7 @@ browserless.getDevice({ device: 'Macbook Pro 15' })
 // }
 ```
 
-It extends from [puppeteer.KnownDevices](https://pptr.dev/api/puppeteer.knowndevices/), adding some missing devices there.
+This method extends the [Puppeteer.KnownDevices](https://pptr.dev/api/puppeteer.knowndevices/) list by adding some missing devices.
 
 #### options
 
@@ -445,7 +462,7 @@ It extends from [puppeteer.KnownDevices](https://pptr.dev/api/puppeteer.knowndev
 
 type: `string` </br>
 
-The device descriptor name. It's used to find the rest presets associated with it.
+The device descriptor name. It's used to fetch preset values associated with the device.
 
 When [lossyDeviceName](#lossydevicename) is enabled, a fuzzy search rather than a strict search will be performed in order to maximize getting a result back.
 
@@ -453,7 +470,7 @@ When [lossyDeviceName](#lossydevicename) is enabled, a fuzzy search rather than 
 
 type: `object` </br>
 
-An extra viewport settings that will be merged with the device presets.
+Used to set extra viewport settings. These settings will be merged with the preset settings.
 
 ```js
 browserless.getDevice({
@@ -502,7 +519,7 @@ await ping('https://example.com')
 
 You don't need to close the page; It will be closed automatically.
 
-Internally, the method performs a [browserless.[goto](#gotopage-options), making it possible to pass extra arguments as a second parameter:
+Internally, the method performs a [browserless.goto](#gotopage-options), making it possible to pass extra arguments as a second parameter:
 
 ```js
 const serialize = browserless.evaluate(page => page.evaluate(() => document.body.innerText), {
@@ -515,7 +532,7 @@ await serialize('https://example.com')
 
 ### .goto(page, options)
 
-It performs a [page.goto](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagegotourl-options) with a lot of extra capabilities:
+It performs a [page.goto](https://github.com/puppeteer/puppeteer/blob/main/docs/api/puppeteer.gotooptions.md) with a lot of extra capabilities:
 
 ```js
 const page = await browserless.page()
