@@ -8,7 +8,7 @@
 [![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
 [![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
 
-> **Browserless** enhances and streamlines the experience of working with headless browsers by building upon and extending [Puppeteer](https://github.com/GoogleChrome/puppeteer).
+> The headless Chrome/Chromium driver on top of [Puppeteer](https://github.com/GoogleChrome/puppeteer).
 
 ## Highlights
 
