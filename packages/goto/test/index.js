@@ -61,3 +61,14 @@ test('handle page disconnections', async t => {
 
   await intercept('chrome://version')
 })
+
+test('handle page.goto hanging', async t => {
+  const browserless = await getBrowserContext(t)
+
+  const html = await browserless.html('https://test-timeout.vercel.app/', {
+    timeout: 5000,
+    animations: true
+  })
+
+  t.is(html, '<html><head></head><body></body></html>')
+})

@@ -197,7 +197,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       scripts,
       scroll,
       styles,
-      timeout = globalTimeout,
+      timeout,
       timezone,
       url,
       username,
@@ -210,7 +210,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       ...args
     }
   ) => {
-    const baseTimeout = timeouts.base(globalTimeout)
+    const baseTimeout = timeouts.base(timeout || globalTimeout)
     const actionTimeout = timeouts.action(baseTimeout)
     const gotoTimeout = timeouts.goto(baseTimeout)
 
@@ -363,7 +363,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     const { value: response, reason: error } = await run({
       fn: html
         ? page.setContent(html, { waitUntil, ...args })
-        : page.goto(url, { waitUntil, ...args }),
+        : Promise.race([
+          page.goto(url, { waitUntil, ...args }),
+          setTimeout(gotoTimeout).then(() => page._client().send('Page.stopLoading'))
+        ]),
       timeout: gotoTimeout,
       debug: { fn: html ? 'html' : 'url', waitUntil }
     })
