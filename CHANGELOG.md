@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.5.0-alpha.0](https://github.com/microlinkhq/browserless/compare/v10.4.1...v10.5.0-alpha.0) (2024-04-22)
+
+### Bug Fixes
+
+* **goto:** abort page.goto after timeout ([638fa4e](https://github.com/microlinkhq/browserless/commit/638fa4efadf59ddde2cd772fbc2d012ae9535f68))
+
 ## [10.4.1](https://github.com/microlinkhq/browserless/compare/v10.4.0...v10.4.1) (2024-03-23)
 
 ### Bug Fixes
