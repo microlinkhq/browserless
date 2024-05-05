@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.5.0](https://github.com/microlinkhq/browserless/compare/v10.4.1...v10.5.0) (2024-05-05)
+
+### Bug Fixes
+
+* **goto:** abort page.goto after timeout ([#580](https://github.com/microlinkhq/browserless/issues/580)) ([fe19832](https://github.com/microlinkhq/browserless/commit/fe19832495c6bc19c222e93eb46d48974f477449))
+
 # [10.5.0-alpha.0](https://github.com/microlinkhq/browserless/compare/v10.4.1...v10.5.0-alpha.0) (2024-04-22)
 
 **Note:** Version bump only for package @browserless/cli
