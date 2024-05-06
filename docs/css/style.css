@@ -69,8 +69,6 @@ img[src*='#gh-dark-mode-only'] {
   display: none;
 }
 
-
-
 main {
   display: block;
   position: relative;
@@ -81,9 +79,12 @@ main {
 
 .sidebar {
   font-family: var(--sans-serif-font);
-  padding: 40px;
+  padding-top: 72px;
+  padding-bottom: 40px;
+  padding-left: 36px;
+  padding-right: 0;
   width: 300px;
-  transition: transform 0.25s ease-out;
+  transition: transform 0.3s ease-out;
   overflow: auto;
   height: 100vh;
 }
@@ -112,7 +113,7 @@ main {
 }
 
 .sidebar ul li a {
-  color: var(--gray8);
+  color: var(--primary-color);
   display: block;
   font-size: 14px;
   text-decoration: none;
@@ -138,16 +139,15 @@ main {
 }
 
 .sidebar:hover::-webkit-scrollbar-thumb {
-  background: hsla(0, 0%, 53%, 0.4);
+  background: var(--gray-100);
 }
 
-.sidebar:hover::-webkit-scrollbar-track {
-  background: hsla(0, 0%, 53%, 0.1);
-}
-
-body.sticky .sidebar,
-body.sticky .sidebar-toggle {
+.sidebar {
   position: fixed;
+}
+
+.sidebar-toggle {
+  display: none;
 }
 
 .content {
@@ -196,7 +196,6 @@ body.sticky .sidebar-toggle {
 }
 
 @media print {
-
   .github-corner,
   .sidebar,
   .sidebar-toggle {
@@ -205,15 +204,56 @@ body.sticky .sidebar-toggle {
 }
 
 @media screen and (max-width: 768px) {
-
-  .github-corner,
   .sidebar {
     position: fixed;
   }
 
-  .sidebar,
+  .github-corner svg {
+    height: 62px !important;
+    width: 62px !important;
+  }
+
+  .sidebar {
+    left: -300px;
+  }
+
   .sidebar-toggle {
+    cursor: pointer;
+    display: inherit;
+    border: 0;
+    outline: none;
+    padding: 0 10px;
+    left: 6px;
+    transition: opacity 0.3s;
+    z-index: 4;
+    position: fixed;
+    top: 0;
+    height: 62px;
+    width: 100%;
+    background: var(--bg-color);
+  }
+
+  .sidebar-toggle span {
+    background-color: var(--primary-color);
+    display: block;
+    margin-bottom: 5px;
+    width: 24px;
+    height: 3px;
+  }
+
+  body.sidebar-toggle {
     display: none;
+  }
+
+  body.close .sidebar,
+  body.close .content  {
+    transform: translateX(280px);
+  }
+
+  body.close .sidebar-toggle {
+    background: var(--background-color);
+    transition: background-color 0.3s;
+    width: 284px;
   }
 
   main {
@@ -416,22 +456,19 @@ body {
 }
 
 .github-corner svg {
+  z-index: 1;
   border-bottom: 0;
   position: fixed;
   right: 0;
   text-decoration: none;
   top: 0;
-  z-index: 1;
+  color: white;
+  fill: black;
+  height: 80px;
+  width: 80px;
 }
 
 .github-corner:hover svg .octo-arm {
   opacity: 1;
   animation: b 560ms ease-in-out;
-}
-
-.github-corner svg {
-  color: white;
-  fill: black;
-  height: 80px;
-  width: 80px;
 }
