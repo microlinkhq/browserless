@@ -50,7 +50,7 @@ const compactJSON = payload => {
     return truncate(value, JSON_MAX_LENGTH)
   })
 
-  const SPACE = 2
+  const SPACE = 4
   const SPACE_IDENTATION = ' '.repeat(SPACE)
 
   return (
