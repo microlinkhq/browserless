@@ -38,8 +38,7 @@
     "@skyra/gifenc": "latest",
     "ava": "5",
     "canvas": "latest",
-    "sharp": "latest",
-    "tinyspawn": "latest"
+    "sharp": "latest"
   },
   "engines": {
     "node": ">= 12"
