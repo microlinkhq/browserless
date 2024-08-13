@@ -40,7 +40,7 @@ test('graphics features', async t => {
           OpenGL: 'Disabled',
           Rasterization: 'Software only. Hardware acceleration disabled',
           'Raw Draw': 'Disabled',
-          'Skia Graphite': 'Enabled',
+          'Skia Graphite': 'Disabled',
           'Video Decode': 'Software only. Hardware acceleration disabled',
           'Video Encode': 'Software only. Hardware acceleration disabled',
           Vulkan: 'Disabled',
