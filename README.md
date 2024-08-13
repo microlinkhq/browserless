@@ -220,6 +220,7 @@ It returns the internal [Browser](https://github.com/puppeteer/puppeteer/blob/v1
 const headlessBrowser = await browser.browser()
 
 console.log('My headless browser PID is', headlessBrowser.process().pid)
+console.log('My headless browser version is', await headlessBrowser.version())
 ```
 
 ### .respawn()
@@ -761,8 +762,8 @@ It returns the [BrowserContext](https://github.com/puppeteer/puppeteer/blob/main
 ```js
 const browserContext = await browserless.context()
 
-console.log({ isIncognito: browserContext.isIncognito() })
-// => { isIncognito: true }
+console.log(browserContext.id)
+// => 'D2CD28FDECB1859772B9C5919E563C84'
 ```
 
 ### .withPage(fn, [options])
