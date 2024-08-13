@@ -2,8 +2,8 @@
 
 const jimp = require('jimp')
 
-module.exports = async buffer => {
-  const image = await jimp.read(buffer)
+module.exports = async uint8array => {
+  const image = await jimp.read(Buffer.from(uint8array))
   const firstPixel = image.getPixelColor(0, 0)
   const height = image.getHeight()
   const width = image.getWidth()
