@@ -58,12 +58,13 @@ test('graphics features', async t => {
           OpenGL: 'Enabled',
           Rasterization: 'Hardware accelerated',
           'Raw Draw': 'Disabled',
-          'Skia Graphite': 'Disabled',
+          'Skia Graphite': 'Enabled',
           'Video Decode': 'Hardware accelerated',
           'Video Encode': 'Hardware accelerated',
           WebGL: 'Hardware accelerated',
           WebGL2: 'Hardware accelerated',
-          WebGPU: 'Hardware accelerated'
+          WebGPU: 'Hardware accelerated',
+          WebNN: 'Disabled'
         }
   )
 })
