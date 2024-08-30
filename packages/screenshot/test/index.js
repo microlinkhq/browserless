@@ -47,7 +47,7 @@ test('graphics features', async t => {
           WebGL: 'Software only, hardware acceleration unavailable',
           WebGL2: 'Software only, hardware acceleration unavailable',
           WebGPU: 'Disabled',
-          WebNN: 'Disabled'
+          WebNN: 'Software only, hardware acceleration unavailable'
         }
       : {
           Canvas: 'Hardware accelerated',
