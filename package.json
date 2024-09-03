@@ -100,6 +100,7 @@
     "gulp-postcss": "latest",
     "gulp-uglify": "latest",
     "nano-staged": "latest",
+    "npm-check-updates": "latest",
     "postcss": "latest",
     "postcss-focus": "latest",
     "simple-git-hooks": "latest",
