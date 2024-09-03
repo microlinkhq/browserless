@@ -1,12 +1,12 @@
 'use strict'
 
-const jimp = require('jimp')
+const { Jimp } = require('jimp')
 
 module.exports = async uint8array => {
-  const image = await jimp.read(Buffer.from(uint8array))
+  const image = await Jimp.fromBuffer(Buffer.from(uint8array))
   const firstPixel = image.getPixelColor(0, 0)
-  const height = image.getHeight()
-  const width = image.getWidth()
+  const height = image.bitmap.height
+  const width = image.bitmap.width
 
   const samplePercentage = 0.25 // Sample 25% of the image
   const sampleSize = Math.floor(width * height * samplePercentage) // Calculate sample size based on percentage
