@@ -31,13 +31,10 @@
   "dependencies": {
     "@browserless/errors": "^10.5.2",
     "debug-logfmt": "~1.2.1",
-    "deepmerge": "~4.3.1",
-    "p-reflect": "~2.1.0",
+    "isolated-function": "~0.1.4",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
-    "require-one-of": "~1.0.19",
-    "serialize-error": "~8.1.0",
-    "vm2": "~3.9.19"
+    "require-one-of": "~1.0.19"
   },
   "devDependencies": {
     "@browserless/test": "^10.5.2",

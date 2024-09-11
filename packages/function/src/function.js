@@ -1,51 +1,28 @@
 'use strict'
 
-const path = require('path')
-
-const createVm = require('./vm')
-
-const scriptPath = path.resolve(__dirname, 'function.js')
+const isolatedFunction = require('isolated-function')
 
 const createFn = code => `
-async ({ url, gotoOpts, browserWSEndpoint, ...opts }) => {
-  const { serializeError } = require('serialize-error')
-
-  const getBrowserless = require('browserless')
-  const browserless = await getBrowserless({ mode: 'connect', browserWSEndpoint }).createContext()
-  const fnWrapper = fn => (page, response) => {
-    if (!response && opts.response) {
-      const { status, statusText, headers, html } = opts.response
-      response = {
-        ok: () => status === 0 || (status >= 200 && opts.status <= 299),
-        fromCache: () => false,
-        fromServiceWorker: () => false,
-        url: () => url,
-        text: () => html,
-        statusText: () => statusText,
-        json: () => JSON.parse(html),
-        headers: () => headers,
-        status: () => status
-      }
-    }
-
-    return fn({ ...opts, page, response, url })
-  }
-  const browserFn = browserless.evaluate(fnWrapper(${code}), gotoOpts)
-
+async (url, browserWSEndpoint, opts) => {
+  const puppeteer = require('@cloudflare/puppeteer')
+  const browser = await puppeteer.connect({ browserWSEndpoint })
+  const page = (await browser.pages())[1]
   try {
-    const value = await browserFn(url)
-    return { isFulfilled: true, isRejected: false, value }
-  } catch (error) {
-    return { isFulfilled: false, isRejected: true, reason: serializeError(error) }
+    return await (${code})({ page, ...opts })
   } finally {
-    await browserless.destroyContext()
-    await browserless.browser().then(browser => browser.disconnect())
+    await browser.disconnect()
   }
 }`
 
-module.exports = ({ url, code, vmOpts, gotoOpts, browserWSEndpoint, ...opts }) => {
-  const vm = createVm(vmOpts)
-  const fn = createFn(code)
-  const run = vm(fn, scriptPath)
-  return run({ url, gotoOpts, browserWSEndpoint, ...opts })
+module.exports = async ({ url, code, vmOpts, browserWSEndpoint, ...opts }) => {
+  const [fn, teardown] = isolatedFunction(createFn(code), {
+    ...vmOpts,
+    throwError: false
+  })
+
+  const result = await fn(url, browserWSEndpoint, opts)
+
+  await teardown()
+
+  return result
 }
