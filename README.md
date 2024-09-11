@@ -771,7 +771,7 @@ console.log(browserContext.id)
 It returns a higher-order function as convenient way to interact with a page:
 
 ```js
-const getTitle = browserless.withPage((page, goto) => opts => {
+const getTitle = browserless.withPage((page, goto) => async opts => {
   const result = await goto(page, opts)
   return page.title()
 })
