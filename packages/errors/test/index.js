@@ -3,6 +3,13 @@
 const test = require('ava')
 const errors = require('..')
 
+test('avoid parse ensureError twice', t => {
+  const error = errors.ensureError({
+    message: 'Protocol error (Runtime.callFunctionOn): Target closed.'
+  })
+  t.true(error.__parsed)
+})
+
 test('protocolError', t => {
   const parsedError = errors.ensureError({
     message: 'Protocol error (Runtime.callFunctionOn): Target closed.'
