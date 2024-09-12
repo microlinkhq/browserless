@@ -23,7 +23,7 @@ module.exports =
       const browserless = await browser.createContext()
 
       return browserless.withPage((page, goto) => async () => {
-        const { device } = await goto(page, { url, ...gotoOpts })
+        const { device } = await goto(page, { url, timeout, ...gotoOpts })
         const result = await runFunction({
           url,
           code: stringify(fn),
