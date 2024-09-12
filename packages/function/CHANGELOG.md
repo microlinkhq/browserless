@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.6.0](https://github.com/microlinkhq/browserless/compare/v10.5.4...v10.6.0) (2024-09-12)
+
+### Features
+
+* **functions:** use isolated-function ([#591](https://github.com/microlinkhq/browserless/issues/591)) ([de8dad0](https://github.com/microlinkhq/browserless/commit/de8dad08a3a1f85fc0d9b8fd9ebf0c9982022a4b))
+
 ## [10.5.4](https://github.com/microlinkhq/browserless/compare/v10.5.3...v10.5.4) (2024-09-03)
 
 **Note:** Version bump only for package @browserless/function
