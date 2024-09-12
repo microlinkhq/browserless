@@ -1,6 +1,6 @@
 'use strict'
 
-const { ensureError, browserTimeout } = require('@browserless/errors')
+const { isBrowserlessError, ensureError, browserTimeout } = require('@browserless/errors')
 const debug = require('debug-logfmt')('browserless:function')
 const requireOneOf = require('require-one-of')
 const pTimeout = require('p-timeout')
@@ -45,7 +45,9 @@ module.exports =
 
         const result = await withVM()
         if (result.isFulfilled) return result
-        throw ensureError(result.value)
+        const error = ensureError(result.value)
+        if (isBrowserlessError(error)) throw ensureError(error)
+        return result
       }
 
       const task = () =>

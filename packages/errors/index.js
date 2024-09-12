@@ -80,4 +80,7 @@ browserlessError.ensureError = rawError => {
   return require('ensure-error')(error)
 }
 
+const isBrowserlessError = error => error.name === ERROR_NAME
+
 module.exports = browserlessError
+module.exports.isBrowserlessError = isBrowserlessError
