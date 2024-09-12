@@ -4,7 +4,9 @@ const debug = require('debug-logfmt')('browserless:error')
 const { serializeError } = require('serialize-error')
 const whoops = require('whoops')
 
-const createErrorFactory = opts => whoops('BrowserlessError', opts)
+const ERROR_NAME = 'BrowserlessError'
+
+const createErrorFactory = opts => whoops(ERROR_NAME, opts)
 
 const markAsProcessed = error => {
   Object.defineProperty(error, '__parsed', {

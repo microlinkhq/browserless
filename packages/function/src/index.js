@@ -1,13 +1,7 @@
 'use strict'
 
-const { isBrowserlessError, ensureError, browserTimeout } = require('@browserless/errors')
-const debug = require('debug-logfmt')('browserless:function')
+const { isBrowserlessError, ensureError } = require('@browserless/errors')
 const requireOneOf = require('require-one-of')
-const pTimeout = require('p-timeout')
-const pRetry = require('p-retry')
-
-const { AbortError } = pRetry
-
 const runFunction = require('./function')
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
@@ -25,48 +19,23 @@ module.exports =
   ) =>
     async (url, fnOpts = {}) => {
       const browserlessPromise = getBrowserless()
-      let isRejected = false
+      const browser = await browserlessPromise
+      const browserless = await browser.createContext()
 
-      async function run () {
-        const browser = await browserlessPromise
-        const browserless = await browser.createContext()
-
-        const withVM = browserless.withPage((page, goto) => async () => {
-          const { device } = await goto(page, { url, ...gotoOpts })
-          return runFunction({
-            url,
-            code: stringify(fn),
-            browserWSEndpoint: (await browserless.browser()).wsEndpoint(),
-            device,
-            ...opts,
-            ...fnOpts
-          })
+      return browserless.withPage((page, goto) => async () => {
+        const { device } = await goto(page, { url, ...gotoOpts })
+        const result = await runFunction({
+          url,
+          code: stringify(fn),
+          browserWSEndpoint: (await browserless.browser()).wsEndpoint(),
+          device,
+          ...opts,
+          ...fnOpts
         })
 
-        const result = await withVM()
         if (result.isFulfilled) return result
         const error = ensureError(result.value)
-        if (isBrowserlessError(error)) throw ensureError(error)
+        if (isBrowserlessError(error)) throw error
         return result
-      }
-
-      const task = () =>
-        pRetry(run, {
-          retries: retry,
-          onFailedAttempt: async error => {
-            if (error.name === 'AbortError') throw error
-            if (isRejected) throw new AbortError()
-            await (await browserlessPromise).respawn()
-            const { message, attemptNumber, retriesLeft } = error
-            debug('retry', { attemptNumber, retriesLeft, message })
-          }
-        })
-
-      // main
-      const result = await pTimeout(task(), timeout, () => {
-        isRejected = true
-        throw browserTimeout({ timeout })
-      })
-
-      return result
+      })()
     }

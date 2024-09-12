@@ -15,14 +15,8 @@ async (url, browserWSEndpoint, opts) => {
 }`
 
 module.exports = async ({ url, code, vmOpts, browserWSEndpoint, ...opts }) => {
-  const [fn, teardown] = isolatedFunction(createFn(code), {
-    ...vmOpts,
-    throwError: false
-  })
-
+  const [fn, teardown] = isolatedFunction(createFn(code), { ...vmOpts, throwError: false })
   const result = await fn(url, browserWSEndpoint, opts)
-
   await teardown()
-
   return result
 }
