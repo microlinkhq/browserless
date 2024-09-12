@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.6.1](https://github.com/microlinkhq/browserless/compare/v10.6.0...v10.6.1) (2024-09-12)
+
+### Bug Fixes
+
+* **function:** pass timeout down ([7920429](https://github.com/microlinkhq/browserless/commit/7920429d71122941e77e41d20a64f02da6870f5a))
+
 # [10.6.0](https://github.com/microlinkhq/browserless/compare/v10.5.4...v10.6.0) (2024-09-12)
 
 ### Features
