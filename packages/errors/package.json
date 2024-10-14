@@ -28,7 +28,7 @@
     "qualified"
   ],
   "dependencies": {
-    "debug-logfmt": "~1.2.1",
+    "debug-logfmt": "~1.2.3",
     "ensure-error": "~3.0.1",
     "serialize-error": "~8.1.0",
     "whoops": "~4.1.7"
