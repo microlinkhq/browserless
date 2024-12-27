@@ -192,7 +192,7 @@ By default, it automatically detects which libary is installed (thus either [pup
 After initializing the browser, you can create a browser context which is equivalent to opening a tab:
 
 ```js
-const browserless = browser.createContext({
+const browserless = await browser.createContext({
   retry: 2
 })
 ```
