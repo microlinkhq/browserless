@@ -33,7 +33,7 @@
     "debug-logfmt": "~1.2.3",
     "got": "~11.8.6",
     "is-html-content": "~1.0.0",
-    "is-url-http": "~2.3.8",
+    "is-url-http": "~2.3.9",
     "jimp": "~1.6.0",
     "map-values-deep": "~1.0.2",
     "mime": "~3.0.0",

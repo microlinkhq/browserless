@@ -29,13 +29,13 @@
     "serverless"
   ],
   "dependencies": {
-    "isolated-function": "~0.1.24",
+    "isolated-function": "~0.1.26",
     "p-retry": "~4.6.1",
     "require-one-of": "~1.0.19"
   },
   "devDependencies": {
     "@browserless/test": "^10.6.3",
-    "acorn": "~8.12.1",
+    "acorn": "~8.14.0",
     "acorn-walk": "~8.3.4",
     "ava": "5",
     "browserless": "^10.6.3",
