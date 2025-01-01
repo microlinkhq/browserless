@@ -1,6 +1,6 @@
 'use strict'
 
-const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
+const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { shallowEqualObjects } = require('shallow-equal')
 const { setTimeout } = require('node:timers/promises')
 const createDevices = require('@browserless/devices')

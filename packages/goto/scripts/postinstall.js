@@ -1,6 +1,6 @@
 'use strict'
 
-const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer')
+const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { promisify } = require('util')
 const got = require('got')
 const fs = require('fs')
