@@ -186,6 +186,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       abortTypes = [],
       adblock = true,
       animations = false,
+      authenticate,
       click,
       colorScheme,
       headers = {},
@@ -193,14 +194,12 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       javascript = true,
       mediaType,
       modules,
-      password,
       scripts,
       scroll,
       styles,
       timeout,
       timezone,
       url,
-      username,
       waitForFunction,
       waitForSelector,
       waitForTimeout,
@@ -219,10 +218,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     const prePromises = []
 
-    if (username || password) {
+    if (authenticate) {
       prePromises.push(
         run({
-          fn: page.authenticate({ username, password }),
+          fn: page.authenticate(authenticate),
           timeout: actionTimeout,
           debug: 'authenticate'
         })

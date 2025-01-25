@@ -568,6 +568,12 @@ default: `false`
 
 Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition), also it sets [prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) consequently.
 
+##### authenticate
+
+type: `object`<br>
+
+It will be passed down to [page.authenticate](https://pptr.dev/api/puppeteer.page.authenticate).
+
 ##### click
 
 type: `string` | `string[]`</br>
