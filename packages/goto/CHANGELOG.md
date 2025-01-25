@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.7.0](https://github.com/microlinkhq/browserless/compare/v10.6.3...v10.7.0) (2025-01-25)
+
+### Features
+
+* **goto:** add authenticate ([#599](https://github.com/microlinkhq/browserless/issues/599)) ([64876ab](https://github.com/microlinkhq/browserless/commit/64876ab9a878661fba5e17eac776c878bd7c0544))
+
 ## [10.6.3](https://github.com/microlinkhq/browserless/compare/v10.6.2...v10.6.3) (2024-10-14)
 
 **Note:** Version bump only for package @browserless/goto
