@@ -11,7 +11,7 @@ const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
-const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
+const timeSpan = require('@kikobeats/time-span')({ format: require('ms') })
 
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 

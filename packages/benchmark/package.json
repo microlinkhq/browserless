@@ -35,11 +35,11 @@
     "debug-logfmt": "latest",
     "measured": "latest",
     "meow": "9",
+    "ms": "latest",
     "nanobench": "latest",
     "p-all": "3",
     "percentile": "latest",
     "picocolors": "latest",
-    "pretty-ms": "7",
     "process-stats": "latest",
     "sieve-of-eratosthenes": "latest",
     "term-img": "latest"
