@@ -196,6 +196,7 @@ main {
 }
 
 @media print {
+
   .github-corner,
   .sidebar,
   .sidebar-toggle {
@@ -246,7 +247,7 @@ main {
   }
 
   body.close .sidebar,
-  body.close .content  {
+  body.close .content {
     transform: translateX(280px);
   }
 
@@ -439,6 +440,7 @@ body {
 /* github corner */
 
 @keyframes b {
+
   0%,
   100% {
     transform: rotate(0);
@@ -455,8 +457,11 @@ body {
   }
 }
 
-.github-corner svg {
+a.github-corner {
   z-index: 1;
+}
+
+.github-corner svg {
   border-bottom: 0;
   position: fixed;
   right: 0;
@@ -466,6 +471,7 @@ body {
   fill: black;
   height: 80px;
   width: 80px;
+  z-index: 1;
 }
 
 .github-corner:hover svg .octo-arm {
