@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.7.1](https://github.com/microlinkhq/browserless/compare/v10.7.0...v10.7.1) (2025-01-28)
+
+### Bug Fixes
+
+* **docs:** corner github link ([c48d7c8](https://github.com/microlinkhq/browserless/commit/c48d7c874d68848dd2c8b1f2ab616f5b492f3cc7))
+
 # [10.7.0](https://github.com/microlinkhq/browserless/compare/v10.6.3...v10.7.0) (2025-01-25)
 
 ### Bug Fixes
