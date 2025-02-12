@@ -41,16 +41,19 @@ test('pass specific options to a context', async t => {
     })
   })
 
-  const targetUrl = await runServer(t, ({ res }) => res.end())
+  const url = await runServer(t, ({ res }) => {
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end('<html><body><h1>origin server reached</h1></body></html>')
+  })
 
-  const { host: proxyServer } = new URL(proxyUrl)
-  const browserless = await getBrowserContext(t, { proxyServer })
-  const page = await browserless.page()
-  t.teardown(() => page.close())
+  const browserless = await getBrowserContext(t, { proxyServer: proxyUrl.slice(0, -1) })
+  const text = await browserless.text(url)
 
-  await browserless.goto(page, { url: targetUrl })
-
-  t.deepEqual(proxiedRequestUrls, [targetUrl, new URL('/favicon.ico', targetUrl).toString()])
+  t.is(text, 'origin server reached')
+  t.deepEqual(proxiedRequestUrls, [
+    new URL(url).toString(),
+    new URL('/favicon.ico', url).toString()
+  ])
 })
 
 test('ensure to destroy browser contexts', async t => {
