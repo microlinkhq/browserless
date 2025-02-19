@@ -60,6 +60,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -70,20 +72,21 @@ jobs:
           version: latest
           run_install: true
       - name: Test
-        run: pnpm run test --scope "${{ matrix.package }}"
+        run: pnpm --filter "${{ matrix.package }}" exec c8 pnpm test
         env:
           PROXY_USERNAME: ${{ secrets.PROXY_USERNAME }}
           PROXY_PASSWORD: ${{ secrets.PROXY_PASSWORD }}
           PROXY_HOST: ${{ secrets.PROXY_HOST }}
       - name: Coverage
-        run: pnpm run coverage
+        run: pnpm --filter "${{ matrix.package }}" exec c8 report --reporter=lcov --report-dir=coverage
       - name: Upload
         uses: coverallsapp/github-action@main
         with:
           flag-name: ${{ matrix.package }}
           parallel: true
-          allow-empty: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: $(pnpm --filter "${{ matrix.package }}" exec pwd)/coverage/lcov.info
+
   finish:
     needs: test
     runs-on: ubuntu-latest
