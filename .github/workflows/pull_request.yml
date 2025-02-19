@@ -32,8 +32,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup ffmpeg
         uses: FedericoCarboni/setup-ffmpeg@v3
       - name: Setup Node.js
@@ -47,10 +45,6 @@ jobs:
           run_install: true
       - name: Test
         run: pnpm --filter "${{ matrix.package }}" exec c8 pnpm test
-        env:
-          PROXY_USERNAME: ${{ secrets.PROXY_USERNAME }}
-          PROXY_PASSWORD: ${{ secrets.PROXY_PASSWORD }}
-          PROXY_HOST: ${{ secrets.PROXY_HOST }}
       - name: Coverage
         run: pnpm --filter "${{ matrix.package }}" exec c8 report --reporter=lcov --report-dir=coverage
       - name: Upload
@@ -58,7 +52,6 @@ jobs:
         with:
           flag-name: ${{ matrix.package }}
           parallel: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           file: $(pnpm --filter "${{ matrix.package }}" exec pwd)/coverage/lcov.info
 
   finish:
