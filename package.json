@@ -122,7 +122,7 @@
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard",
-    "postinstall": "node node_modules/puppeteer/install.mjs",
+    "postinstall": "npx puppeteer browsers install chrome",
     "postrelease": "github-generate-release",
     "prerelease": "pnpm run update:check",
     "pretest": "pnpm run lint",
