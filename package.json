@@ -122,7 +122,6 @@
     "dev": "concurrently \"gulp\" \"npm run dev:server\"",
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard",
-    "postinstall": "npx puppeteer browsers install chrome",
     "postrelease": "github-generate-release",
     "prerelease": "pnpm run update:check",
     "pretest": "pnpm run lint",
@@ -151,6 +150,9 @@
     "package.json": [
       "finepack"
     ]
+  },
+  "pnpm": {
+    "neverBuiltDependencies": []
   },
   "simple-git-hooks": {
     "commit-msg": "npx commitlint --edit",
