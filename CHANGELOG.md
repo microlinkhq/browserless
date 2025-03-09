@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.7.5](https://github.com/microlinkhq/browserless/compare/v10.7.4...v10.7.5) (2025-03-09)
+
+### Bug Fixes
+
+* **screenshot:** trim content-type ([0604c5f](https://github.com/microlinkhq/browserless/commit/0604c5f0af8ee7d3493aeaa4760e8fde28e526d6))
+
 ## [10.7.4](https://github.com/microlinkhq/browserless/compare/v10.7.3...v10.7.4) (2025-03-08)
 
 ### Bug Fixes
