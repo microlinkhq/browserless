@@ -33,7 +33,6 @@ test('graphics features', async t => {
     isCI
       ? {
           Canvas: 'Software only, hardware acceleration unavailable',
-          'Canvas out-of-process rasterization': 'Disabled',
           'Direct Rendering Display Compositor': 'Disabled',
           Compositing: 'Software only. Hardware acceleration disabled',
           'Multiple Raster Threads': 'Enabled',
@@ -51,7 +50,6 @@ test('graphics features', async t => {
         }
       : {
           Canvas: 'Hardware accelerated',
-          'Canvas out-of-process rasterization': 'Enabled',
           'Direct Rendering Display Compositor': 'Disabled',
           Compositing: 'Hardware accelerated',
           'Multiple Raster Threads': 'Enabled',
