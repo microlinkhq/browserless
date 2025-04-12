@@ -111,7 +111,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage = (fn, { timeout: evaluateTimeout } = {}) => {
+    /**
+     * FIXME: Apparently there is a kind of race condition if you have more than one context and you close the page,
+     * the browser context is closed but the browser process is broken
+     * Related: https://github.com/search?q=repo%3Apuppeteer%2Fpuppeteer%20waitForScreenshotOperations&type=code
+     */
+    const withPage = (fn, { closePage: withClosePage = true, timeout: evaluateTimeout } = {}) => {
       const name = fn.name || 'anonymous'
 
       return async (...args) => {
@@ -122,12 +127,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
           try {
             page = await createPage(name)
-            setTimeout(() => closePage(page, name), timeout).unref()
+            setTimeout(() => closePage(page, `${name}:timeout`), timeout).unref()
             const value = await fn(page, goto)(...args)
-            await closePage(page, `${name}:success`)
+            if (withClosePage) await closePage(page, `${name}:success`)
             return value
           } catch (error) {
-            await closePage(page, `${name}:error`)
+            if (withClosePage) await closePage(page, `${name}:error`)
             if (!isRejected) throw ensureError(error)
           }
         }
@@ -192,7 +197,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       html: evaluate(page => page.content()),
       page: createPage,
       pdf: withPage(createPdf({ goto })),
-      screenshot: withPage(createScreenshot({ goto })),
+      screenshot: withPage(createScreenshot({ goto }), { closePage: false }),
       text: evaluate(page => page.evaluate(() => document.body.innerText)),
       getDevice: goto.getDevice,
       destroyContext,
