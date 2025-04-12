@@ -1,20 +1,18 @@
 'use strict'
 
-const getCDPClient = page => page._client()
-
 module.exports = (page, opts) => {
-  const client = getCDPClient(page)
+  const cdp = page._client()
   let onFrame
 
-  client.on('Page.screencastFrame', ({ data, metadata, sessionId }) => {
-    client.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
+  cdp.on('Page.screencastFrame', ({ data, metadata, sessionId }) => {
+    cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
     if (metadata.timestamp) onFrame(data, metadata)
   })
 
   return {
     // https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast
-    start: () => client.send('Page.startScreencast', opts),
+    start: () => cdp.send('Page.startScreencast', opts),
     onFrame: fn => (onFrame = fn),
-    stop: () => client.send('Page.stopScreencast').catch(() => {})
+    stop: () => cdp.send('Page.stopScreencast').catch(() => {})
   }
 }

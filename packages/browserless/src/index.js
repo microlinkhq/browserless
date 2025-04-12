@@ -84,7 +84,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         getBrowserContext()
       ])
       const page = await browserContext.newPage()
-      debug('createPage', { pid: driver.pid(browserProcess), id: browserContext.id })
+      debug('createPage', {
+        id: page._client().id(),
+        contextId: browserContext.id,
+        browserPid: driver.pid(browserProcess)
+      })
       return page
     }
 
@@ -95,7 +99,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           getBrowserContext(),
           pReflect(page.close())
         ])
-        debug('closePage', { pid: driver.pid(browserProcess), id: browserContext.id })
+        debug('closePage', {
+          id: page._client().id(),
+          contextId: browserContext.id,
+          browserPid: driver.pid(browserProcess)
+        })
       }
     }
 
