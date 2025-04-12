@@ -48,8 +48,8 @@ const waitForElement = async (page, element) => {
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
-  return page =>
-    async (
+  return function screenshot (page) {
+    return async (
       url,
       {
         element,
@@ -120,4 +120,5 @@ module.exports = ({ goto, ...gotoOpts }) => {
         ? screenshot
         : overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
     }
+  }
 }

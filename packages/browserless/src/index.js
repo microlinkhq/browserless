@@ -78,13 +78,14 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     const getBrowserContext = () => _contextPromise
 
-    const createPage = async () => {
+    const createPage = async name => {
       const [browserProcess, browserContext] = await Promise.all([
         getBrowser(),
         getBrowserContext()
       ])
       const page = await browserContext.newPage()
       debug('createPage', {
+        name,
         id: page._client().id(),
         contextId: browserContext.id,
         browserPid: driver.pid(browserProcess)
@@ -92,7 +93,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       return page
     }
 
-    const closePage = async page => {
+    const closePage = async (page, name) => {
       if (page && !page.isClosed()) {
         const [browserProcess, browserContext] = await Promise.all([
           getBrowser(),
@@ -100,6 +101,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           pReflect(page.close())
         ])
         debug('closePage', {
+          name,
           id: page._client().id(),
           contextId: browserContext.id,
           browserPid: driver.pid(browserProcess)
@@ -116,13 +118,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             let page
 
             try {
-              page = await createPage(args)
-              setTimeout(() => closePage(page), timeout).unref()
+              page = await createPage(fn.name)
+              setTimeout(() => closePage(page, fn.name), timeout).unref()
               const value = await fn(page, goto)(...args)
-              await closePage(page)
+              await closePage(page, fn.name)
               return value
             } catch (error) {
-              await closePage(page)
+              await closePage(page, fn.name)
               if (!isRejected) throw ensureError(error)
             }
           }
@@ -152,10 +154,17 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     const evaluate = (fn, gotoOpts) =>
       withPage(
-        (page, goto) => async (url, opts) => {
-          const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
-          return fn(page, response, error)
-        },
+        Object.defineProperty(
+          (page, goto) => async (url, opts) => {
+            const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
+            return fn(page, response, error)
+          },
+          'name',
+          {
+            value: fn.name || 'evaluate',
+            writable: false
+          }
+        ),
         gotoOpts
       )
 
