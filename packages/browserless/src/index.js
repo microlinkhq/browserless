@@ -79,12 +79,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const getBrowserContext = () => _contextPromise
 
     const createPage = async name => {
+      const duration = debug.duration('createPage')
       const [browserProcess, browserContext] = await Promise.all([
         getBrowser(),
         getBrowserContext()
       ])
       const page = await browserContext.newPage()
-      debug('createPage', {
+      duration({
         name,
         id: page._client().id(),
         contextId: browserContext.id,
@@ -95,12 +96,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     const closePage = async (page, name) => {
       if (page && !page.isClosed()) {
+        const duration = debug.duration('closePage')
         const [browserProcess, browserContext] = await Promise.all([
           getBrowser(),
           getBrowserContext(),
           pReflect(page.close())
         ])
-        debug('closePage', {
+        duration({
           name,
           id: page._client().id(),
           contextId: browserContext.id,
@@ -109,48 +111,50 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage =
-      (fn, { timeout: evaluateTimeout } = {}) =>
-        async (...args) => {
-          let isRejected = false
+    const withPage = (fn, { timeout: evaluateTimeout } = {}) => {
+      const name = fn.name || 'anonymous'
 
-          async function run () {
-            let page
+      return async (...args) => {
+        let isRejected = false
 
-            try {
-              page = await createPage(fn.name)
-              setTimeout(() => closePage(page, fn.name), timeout).unref()
-              const value = await fn(page, goto)(...args)
-              await closePage(page, fn.name)
-              return value
-            } catch (error) {
-              await closePage(page, fn.name)
-              if (!isRejected) throw ensureError(error)
-            }
+        async function run () {
+          let page
+
+          try {
+            page = await createPage(name)
+            setTimeout(() => closePage(page, name), timeout).unref()
+            const value = await fn(page, goto)(...args)
+            await closePage(page, `${name}:success`)
+            return value
+          } catch (error) {
+            await closePage(page, `${name}:error`)
+            if (!isRejected) throw ensureError(error)
           }
-
-          const task = () =>
-            pRetry(run, {
-              retries: retry,
-              onFailedAttempt: async error => {
-                debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
-                if (error.name === 'AbortError') throw error
-                if (isRejected || isDestroyedForced) throw new AbortError()
-                if (error.code === 'EBRWSRCONTEXTCONNRESET') {
-                  _contextPromise = createBrowserContext(contextOpts)
-                }
-                const { message, attemptNumber, retriesLeft } = error
-                debug('retry', { attemptNumber, retriesLeft, message })
-              }
-            })
-
-          const timeout = evaluateTimeout || contextTimeout || globalTimeout
-
-          return pTimeout(task(), timeout, () => {
-            isRejected = true
-            throw browserTimeout({ timeout })
-          })
         }
+
+        const task = () =>
+          pRetry(run, {
+            retries: retry,
+            onFailedAttempt: async error => {
+              debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
+              if (error.name === 'AbortError') throw error
+              if (isRejected || isDestroyedForced) throw new AbortError()
+              if (error.code === 'EBRWSRCONTEXTCONNRESET') {
+                _contextPromise = createBrowserContext(contextOpts)
+              }
+              const { message, attemptNumber, retriesLeft } = error
+              debug('retry', { attemptNumber, retriesLeft, message })
+            }
+          })
+
+        const timeout = evaluateTimeout || contextTimeout || globalTimeout
+
+        return pTimeout(task(), timeout, () => {
+          isRejected = true
+          throw browserTimeout({ timeout })
+        })
+      }
+    }
 
     const evaluate = (fn, gotoOpts) =>
       withPage(
