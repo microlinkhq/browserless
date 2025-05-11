@@ -29,7 +29,7 @@
     "serverless"
   ],
   "dependencies": {
-    "isolated-function": "~0.1.26",
+    "isolated-function": "~0.1.30",
     "p-retry": "~4.6.1",
     "require-one-of": "~1.0.20"
   },
