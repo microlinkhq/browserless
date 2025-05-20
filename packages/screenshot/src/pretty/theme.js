@@ -1,10 +1,11 @@
 'use strict'
 
+const NullProtoObj = require('null-prototype-object')
 const { readFile } = require('fs/promises')
 const isHttpUrl = require('is-url-http')
 const path = require('path')
 
-const CACHE = Object.create(null)
+const CACHE = new NullProtoObj()
 
 const GET_THEME_PATH = () => require('prism-themes').themesDirectory
 
