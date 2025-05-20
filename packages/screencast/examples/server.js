@@ -1,6 +1,7 @@
 'use strict'
 
 const timeSpan = require('@kikobeats/time-span')({ format: n => `${n.toFixed(2)}ms` })
+const NullProtoObj = require('null-prototype-object')
 const { createCanvas, Image } = require('canvas')
 const { GifEncoder } = require('@skyra/gifenc')
 const createBrowser = require('browserless')
@@ -15,7 +16,7 @@ const browser = createBrowser({
   ignoreHTTPSErrors: true
 })
 
-const CACHE = Object.create(null)
+const CACHE = new NullProtoObj()
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/favicon.ico') return res.end()
