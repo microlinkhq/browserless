@@ -2,7 +2,7 @@
   "name": "@browserless/screencast",
   "description": "Browserless frame capturing using puppeteer",
   "homepage": "https://browserless.js.org/#/?id=screencasturl-options",
-  "version": "10.7.10",
+  "version": "10.7.11",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
