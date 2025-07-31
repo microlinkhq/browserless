@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.7.12](https://github.com/microlinkhq/browserless/compare/v10.7.11...v10.7.12) (2025-07-31)
+
+### Bug Fixes
+
+* **lighthouse:** pass flags ([bf61770](https://github.com/microlinkhq/browserless/commit/bf6177073a862fa39d1cbbbda9e04642865534ed))
+
 ## [10.7.10](https://github.com/microlinkhq/browserless/compare/v10.7.9...v10.7.10) (2025-05-11)
 
 **Note:** Version bump only for package @browserless/lighthouse
