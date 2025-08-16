@@ -30,16 +30,16 @@
   ],
   "dependencies": {
     "@browserless/devices": "^10.7.0",
-    "@ghostery/adblocker-puppeteer": "~2.5.2",
-    "@kikobeats/time-span": "~1.0.5",
-    "debug-logfmt": "~1.2.3",
     "got": "~11.8.6",
-    "is-url-http": "~2.3.9",
     "p-reflect": "~2.1.0",
     "p-timeout": "~4.1.0",
     "pretty-ms": "~7.0.1",
+    "@ghostery/adblocker-puppeteer": "~2.11.3",
+    "@kikobeats/time-span": "~1.0.8",
+    "debug-logfmt": "~1.4.0",
+    "is-url-http": "~2.3.10",
     "shallow-equal": "~3.1.0",
-    "tough-cookie": "~5.1.0"
+    "tough-cookie": "~6.0.0"
   },
   "devDependencies": {
     "@browserless/test": "^10.7.10",

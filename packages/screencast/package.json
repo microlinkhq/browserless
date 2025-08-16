@@ -58,6 +58,6 @@
     "workerThreads": false
   },
   "dependencies": {
-    "null-prototype-object": "~1.0.0"
+    "null-prototype-object": "~1.2.2"
   }
 }

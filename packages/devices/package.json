@@ -30,7 +30,7 @@
   "dependencies": {
     "didyoumean3": "~1.2.5",
     "memoize-one": "~6.0.0",
-    "require-one-of": "~1.0.20"
+    "require-one-of": "~1.0.24"
   },
   "devDependencies": {
     "ava": "5",
