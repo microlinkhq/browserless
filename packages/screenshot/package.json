@@ -2,7 +2,7 @@
   "name": "@browserless/screenshot",
   "description": "Take a clean screenshot of any website",
   "homepage": "https://browserless.js.org/#/?id=screenshoturl-options",
-  "version": "10.7.11",
+  "version": "10.7.13",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -28,24 +28,24 @@
     "screenshot"
   ],
   "dependencies": {
-    "@browserless/goto": "^10.7.10",
-    "got": "~11.8.6",
+    "@browserless/goto": "^10.7.13",
     "@kikobeats/time-span": "~1.0.8",
     "debug-logfmt": "~1.4.0",
+    "got": "~11.8.6",
     "is-html-content": "~1.0.0",
     "is-url-http": "~2.3.10",
     "jimp": "~1.6.0",
     "map-values-deep": "~1.0.2",
     "mime": "~3.0.0",
+    "null-prototype-object": "~1.2.2",
     "p-reflect": "~2.1.0",
     "pretty-ms": "~7.0.1",
-    "null-prototype-object": "~1.2.2",
     "prism-themes": "~1.9.0",
     "sharp": "~0.34.3",
     "svg-gradient": "~1.0.3"
   },
   "devDependencies": {
-    "@browserless/test": "^10.7.10",
+    "@browserless/test": "^10.7.13",
     "ava": "5",
     "cheerio": "latest"
   },
