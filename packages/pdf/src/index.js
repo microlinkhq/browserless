@@ -1,6 +1,6 @@
 'use strict'
 
-const { takeScreenshot } = require('@browserless/screenshot')
+const { isWhiteScreenshot } = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless:pdf')
 const createGoto = require('@browserless/goto')
 const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
@@ -43,24 +43,22 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       } else {
         await goto(page, { ...opts, url, waitUntil, waitUntilAuto })
         async function waitUntilAuto (page) {
+          const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
           let isWhite = false
-          let retryCount = 0
-          const maxRetries = 3
+          let retry = -1
 
           do {
-            const screenshotResult = await takeScreenshot({ page, goto, opts })
-            isWhite = screenshotResult.isWhite
-
-            if (isWhite && retryCount < maxRetries) {
-              retryCount++
-              debug('screenshot:retry', { waitUntil, isWhite, retryCount, maxRetries })
-              await setTimeout(500)
+            const screenshotTime = timeSpan()
+            isWhite = await isWhiteScreenshot(await page.screenshot(opts))
+            debug('screenshot', { waitUntil, isWhite, retry, duration: screenshotTime() })
+            if (++retry > 0) {
+              await setTimeout(100)
               await goto.waitUntilAuto(page, { timeout: opts.timeout })
             }
-          } while (isWhite && retryCount < maxRetries)
+          } while (isWhite && timePdf() < timeout)
 
           pdfBuffer = await generatePdf(page)
-          debug('screenshot', { waitUntil, isWhite, retryCount, duration: timePdf() })
+          debug({ waitUntil, isWhite, retry, duration: timePdf() })
         }
       }
 

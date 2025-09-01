@@ -129,3 +129,4 @@ module.exports = ({ goto, ...gotoOpts }) => {
 }
 
 module.exports.takeScreenshot = takeScreenshot
+module.exports.isWhiteScreenshot = isWhiteScreenshot
