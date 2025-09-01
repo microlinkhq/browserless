@@ -40,7 +40,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       } else {
         await goto(page, { ...opts, url, waitUntil, waitUntilAuto })
         async function waitUntilAuto (page) {
-          const timeout = goto.timeouts.base(goto.timeouts.base(opts.timeout))
+          const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
           // const timeout = goto.timeouts.action(opts.timeout)
           let isWhite = false
           let retry = -1
