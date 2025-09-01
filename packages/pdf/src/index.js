@@ -3,7 +3,6 @@
 const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
 const { isWhiteScreenshot } = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless:pdf')
-const { setTimeout } = require('node:timers/promises')
 const createGoto = require('@browserless/goto')
 
 const getMargin = unit => {
@@ -50,22 +49,21 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           do {
             ++retry
             const screenshotTime = timeSpan()
-            isWhite = await isWhiteScreenshot(
-              await page.screenshot({
-                ...opts,
-                optimizeForSpeed: true,
-                type: 'jpeg',
-                quality: 30
-              })
-            )
+            ;[isWhite, pdfBuffer] = await Promise.all([
+              isWhiteScreenshot(
+                await page.screenshot({
+                  ...opts,
+                  optimizeForSpeed: true,
+                  type: 'jpeg',
+                  quality: 30
+                })
+              ),
+              generatePdf(page),
+              retry === 1 ? goto.waitUntilAuto(page, { timeout: opts.timeout }) : Promise.resolve()
+            ])
             debug('screenshot', { waitUntil, isWhite, retry, duration: screenshotTime() })
-            if (retry > 0) {
-              if (retry === 1) await goto.waitUntilAuto(page, { timeout: opts.timeout })
-              else await setTimeout(500)
-            }
           } while (isWhite && timePdf() < timeout)
 
-          pdfBuffer = await generatePdf(page)
           debug({ waitUntil, isWhite, retry, timeout, duration: require('pretty-ms')(timePdf()) })
         }
       }
