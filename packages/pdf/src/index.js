@@ -52,8 +52,8 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             isWhite = await isWhiteScreenshot(await page.screenshot(opts))
             debug('screenshot', { waitUntil, isWhite, retry, duration: screenshotTime() })
             if (++retry > 0) {
-              await setTimeout(100)
-              await goto.waitUntilAuto(page, { timeout: opts.timeout })
+              if (retry === 1) await goto.waitUntilAuto(page, { timeout: opts.timeout })
+              else await setTimeout(100)
             }
           } while (isWhite && timePdf() < timeout)
 
