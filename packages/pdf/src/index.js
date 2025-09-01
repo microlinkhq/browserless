@@ -55,8 +55,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             if (retry > 0) {
               if (retry === 1) await goto.waitUntilAuto(page, { timeout: opts.timeout })
               else await setTimeout(50)
-            } else {
-              console.log('no retry', retry)
             }
           } while (isWhite && timePdf() < timeout)
 
