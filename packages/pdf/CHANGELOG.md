@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.8.0-beta.6](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.5...v10.8.0-beta.6) (2025-09-01)
+
+### Bug Fixes
+
+* **pdf:** add missing dependencies ([23b9236](https://github.com/microlinkhq/browserless/commit/23b92362c5fb46d7dc290e22a69d88dee41482b1))
+* **pdf:** retry ([2b1d71e](https://github.com/microlinkhq/browserless/commit/2b1d71e2c85e6797672b0c5954136603a22104c1))
+
 # [10.8.0-beta.5](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.4...v10.8.0-beta.5) (2025-09-01)
 
 **Note:** Version bump only for package @browserless/pdf
