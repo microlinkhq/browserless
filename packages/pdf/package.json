@@ -25,7 +25,10 @@
   ],
   "dependencies": {
     "@browserless/goto": "^10.8.0-beta.4",
-    "@browserless/screenshot": "^10.8.0-beta.4"
+    "@browserless/screenshot": "^10.8.0-beta.4",
+    "@kikobeats/time-span": "~1.0.8",
+    "debug-logfmt": "~1.4.0",
+    "pretty-ms": "~7.0.1"
   },
   "engines": {
     "node": ">= 12"
