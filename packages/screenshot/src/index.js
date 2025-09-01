@@ -122,3 +122,5 @@ module.exports = ({ goto, ...gotoOpts }) => {
     }
   }
 }
+
+module.exports.isWhiteScreenshot = isWhiteScreenshot

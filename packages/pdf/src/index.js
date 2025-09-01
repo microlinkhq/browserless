@@ -1,5 +1,8 @@
 'use strict'
 
+const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
+const { isWhiteScreenshot } = require('@browserless/screenshot')
+const debug = require('debug-logfmt')('browserless:pdf')
 const createGoto = require('@browserless/goto')
 
 const getMargin = unit => {
@@ -16,15 +19,56 @@ const getMargin = unit => {
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
-  return page =>
-    async (url, { margin = '0.35cm', scale = 0.65, printBackground = true, ...opts } = {}) => {
-      await goto(page, { ...opts, url })
+  return function pdf (page) {
+    return async (
+      url,
+      { margin = '0.35cm', scale = 0.65, printBackground = true, waitUntil = 'auto', ...opts } = {}
+    ) => {
+      let pdfBuffer
 
-      return page.pdf({
-        ...opts,
-        margin: getMargin(margin),
-        printBackground,
-        scale
-      })
+      const generatePdf = page =>
+        page.pdf({
+          ...opts,
+          margin: getMargin(margin),
+          printBackground,
+          scale
+        })
+
+      if (waitUntil !== 'auto') {
+        await goto(page, { ...opts, url, waitUntil })
+        pdfBuffer = await generatePdf(page)
+      } else {
+        await goto(page, { ...opts, url, waitUntil, waitUntilAuto })
+        async function waitUntilAuto (page) {
+          const timeout = goto.timeouts.action(opts.timeout)
+          let isWhite = false
+          let retry = -1
+
+          const timePdf = timeSpan()
+
+          do {
+            ++retry
+            const screenshotTime = timeSpan()
+            ;[isWhite, pdfBuffer] = await Promise.all([
+              isWhiteScreenshot(
+                await page.screenshot({
+                  ...opts,
+                  optimizeForSpeed: true,
+                  type: 'jpeg',
+                  quality: 30
+                })
+              ),
+              generatePdf(page),
+              retry === 1 ? goto.waitUntilAuto(page, { timeout: opts.timeout }) : Promise.resolve()
+            ])
+            debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
+          } while (isWhite && timePdf() < timeout)
+
+          debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(timePdf()) })
+        }
+      }
+
+      return pdfBuffer
     }
+  }
 }

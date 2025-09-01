@@ -3,6 +3,77 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.8.0-beta.15](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.14...v10.8.0-beta.15) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.14](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.13...v10.8.0-beta.14) (2025-09-01)
+
+### Bug Fixes
+
+* timeout value ([3b3883c](https://github.com/microlinkhq/browserless/commit/3b3883c7c8645c2a5055ec449ed0baa894b31380))
+
+# [10.8.0-beta.13](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.12...v10.8.0-beta.13) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.12](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.11...v10.8.0-beta.12) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.11](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.10...v10.8.0-beta.11) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.10](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.9...v10.8.0-beta.10) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.9](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.8...v10.8.0-beta.9) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.8](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.7...v10.8.0-beta.8) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.7](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.6...v10.8.0-beta.7) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.6](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.5...v10.8.0-beta.6) (2025-09-01)
+
+### Bug Fixes
+
+* **pdf:** add missing dependencies ([23b9236](https://github.com/microlinkhq/browserless/commit/23b92362c5fb46d7dc290e22a69d88dee41482b1))
+* **pdf:** retry ([2b1d71e](https://github.com/microlinkhq/browserless/commit/2b1d71e2c85e6797672b0c5954136603a22104c1))
+
+# [10.8.0-beta.5](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.4...v10.8.0-beta.5) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.4](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.3...v10.8.0-beta.4) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.3](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.2...v10.8.0-beta.3) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.2](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.1...v10.8.0-beta.2) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.1](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.0...v10.8.0-beta.1) (2025-09-01)
+
+**Note:** Version bump only for package @browserless/pdf
+
+# [10.8.0-beta.0](https://github.com/microlinkhq/browserless/compare/v10.7.13...v10.8.0-beta.0) (2025-09-01)
+
+### Features
+
+* **pdf:** better waitUntil as auto ([921722c](https://github.com/microlinkhq/browserless/commit/921722c0a03c4e736a31a6df7aefabeef2ec3c86))
+
 ## [10.7.13](https://github.com/microlinkhq/browserless/compare/v10.7.12...v10.7.13) (2025-08-16)
 
 **Note:** Version bump only for package @browserless/pdf

@@ -159,9 +159,9 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
   const timeouts = {
-    base: (milliseconds = globalTimeout) => milliseconds * (2 / 3),
-    action: (milliseconds = globalTimeout) => milliseconds * (1 / 11),
-    goto: (milliseconds = globalTimeout) => milliseconds * (7 / 8)
+    base: (milliseconds = globalTimeout) => Math.round(milliseconds * (2 / 3)),
+    action: (milliseconds = globalTimeout) => Math.round(milliseconds * (1 / 11)),
+    goto: (milliseconds = globalTimeout) => Math.round(milliseconds * (7 / 8))
   }
 
   // related https://github.com/puppeteer/puppeteer/issues/1353
