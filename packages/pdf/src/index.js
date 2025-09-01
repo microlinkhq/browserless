@@ -50,7 +50,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           do {
             const screenshotTime = timeSpan()
             isWhite = await isWhiteScreenshot(await page.screenshot(opts))
-            debug('screenshot', { waitUntil, isWhite, retry, duration: screenshotTime() })
+            debug('screenshot', { waitUntil, isWhite, retry, timeout, duration: screenshotTime() })
             if (++retry > 0) {
               if (retry === 1) await goto.waitUntilAuto(page, { timeout: opts.timeout })
               else await setTimeout(100)
