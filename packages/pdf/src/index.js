@@ -3,7 +3,7 @@
 const { isWhiteScreenshot } = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless:pdf')
 const createGoto = require('@browserless/goto')
-const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
+const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
 const { setTimeout } = require('node:timers/promises')
 
 const getMargin = unit => {
@@ -35,8 +35,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           scale
         })
 
-      const timePdf = timeSpan()
-
       if (waitUntil !== 'auto') {
         await goto(page, { ...opts, url, waitUntil })
         pdfBuffer = await generatePdf(page)
@@ -47,18 +45,23 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           let isWhite = false
           let retry = -1
 
+          const timePdf = timeSpan()
+
           do {
+            ++retry
             const screenshotTime = timeSpan()
             isWhite = await isWhiteScreenshot(await page.screenshot(opts))
             debug('screenshot', { waitUntil, isWhite, retry, timeout, duration: screenshotTime() })
-            if (++retry > 0) {
+            if (retry > 0) {
               if (retry === 1) await goto.waitUntilAuto(page, { timeout: opts.timeout })
-              else await setTimeout(100)
+              else await setTimeout(50)
+            } else {
+              console.log('no retry', retry)
             }
           } while (isWhite && timePdf() < timeout)
 
           pdfBuffer = await generatePdf(page)
-          debug({ waitUntil, isWhite, retry, duration: timePdf() })
+          debug({ waitUntil, isWhite, retry, duration: require('pretty-ms')(timePdf()) })
         }
       }
 
