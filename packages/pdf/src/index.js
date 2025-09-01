@@ -4,6 +4,7 @@ const { takeScreenshot } = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless:pdf')
 const createGoto = require('@browserless/goto')
 const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
+const { setTimeout } = require('node:timers/promises')
 
 const getMargin = unit => {
   if (!unit) return unit
@@ -53,6 +54,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             if (isWhite && retryCount < maxRetries) {
               retryCount++
               debug('screenshot:retry', { waitUntil, isWhite, retryCount, maxRetries })
+              await setTimeout(500)
               await goto.waitUntilAuto(page, { timeout: opts.timeout })
             }
           } while (isWhite && retryCount < maxRetries)
