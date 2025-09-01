@@ -42,9 +42,23 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       } else {
         await goto(page, { ...opts, url, waitUntil, waitUntilAuto })
         async function waitUntilAuto (page) {
-          const { isWhite } = await takeScreenshot({ page, goto, opts })
+          let isWhite = false
+          let retryCount = 0
+          const maxRetries = 3
+
+          do {
+            const screenshotResult = await takeScreenshot({ page, goto, opts })
+            isWhite = screenshotResult.isWhite
+
+            if (isWhite && retryCount < maxRetries) {
+              retryCount++
+              debug('screenshot:retry', { waitUntil, isWhite, retryCount, maxRetries })
+              await goto.waitUntilAuto(page, { timeout: opts.timeout })
+            }
+          } while (isWhite && retryCount < maxRetries)
+
           pdfBuffer = await generatePdf(page)
-          debug('screenshot', { waitUntil, isWhite, duration: timePdf() })
+          debug('screenshot', { waitUntil, isWhite, retryCount, duration: timePdf() })
         }
       }
 
