@@ -1,10 +1,10 @@
 'use strict'
 
+const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
 const { isWhiteScreenshot } = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless:pdf')
-const createGoto = require('@browserless/goto')
-const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
 const { setTimeout } = require('node:timers/promises')
+const createGoto = require('@browserless/goto')
 
 const getMargin = unit => {
   if (!unit) return unit

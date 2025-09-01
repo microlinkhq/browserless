@@ -14,17 +14,6 @@ const getBoundingClientRect = element => {
   return { top, left, height, width, x, y }
 }
 
-const takeScreenshot = async ({ page, goto, opts }) => {
-  let screenshot
-  screenshot = await page.screenshot(opts)
-  const isWhite = await isWhiteScreenshot(screenshot)
-  if (isWhite) {
-    await goto.waitUntilAuto(page, opts)
-    screenshot = await page.screenshot(opts)
-  }
-  return { isWhite }
-}
-
 const waitForImagesOnViewport = page =>
   page.$$eval('img[src]:not([aria-hidden="true"])', elements =>
     Promise.all(
@@ -93,6 +82,16 @@ module.exports = ({ goto, ...gotoOpts }) => {
         )
       }
 
+      const takeScreenshot = async opts => {
+        screenshot = await page.screenshot(opts)
+        const isWhite = await isWhiteScreenshot(screenshot)
+        if (isWhite) {
+          await goto.waitUntilAuto(page, opts)
+          screenshot = await page.screenshot(opts)
+        }
+        return { isWhite }
+      }
+
       page.on('dialog', dialog => pReflect(dialog.dismiss()))
 
       const timeScreenshot = timeSpan()
@@ -112,11 +111,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
             waitForElement(page, element),
             beforeScreenshot(response)
           ])
-          const { isWhite } = await takeScreenshot({
-            page,
-            goto,
-            opts: { ...opts, ...screenshotOpts }
-          })
+          const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
           debug('screenshot', { waitUntil, isWhite, duration: timeScreenshot() })
         }
       }
@@ -128,5 +123,4 @@ module.exports = ({ goto, ...gotoOpts }) => {
   }
 }
 
-module.exports.takeScreenshot = takeScreenshot
 module.exports.isWhiteScreenshot = isWhiteScreenshot
