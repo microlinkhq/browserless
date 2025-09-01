@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.8.0-beta.16](https://github.com/microlinkhq/browserless/compare/v10.7.13...v10.8.0-beta.16) (2025-09-01)
+
+### Features
+
+* **pdf:** better waitUntil as auto ([#618](https://github.com/microlinkhq/browserless/issues/618)) ([fdc3085](https://github.com/microlinkhq/browserless/commit/fdc308533e140be2e033e2a74abdb11e8bc39884))
+
 # [10.8.0-beta.15](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.14...v10.8.0-beta.15) (2025-09-01)
 
 **Note:** Version bump only for package browserless
