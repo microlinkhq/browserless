@@ -61,10 +61,10 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
               generatePdf(page),
               retry === 1 ? goto.waitUntilAuto(page, { timeout: opts.timeout }) : Promise.resolve()
             ])
-            debug('screenshot', { waitUntil, isWhite, retry, duration: screenshotTime() })
+            debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
           } while (isWhite && timePdf() < timeout)
 
-          debug({ waitUntil, isWhite, retry, timeout, duration: require('pretty-ms')(timePdf()) })
+          debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(timePdf()) })
         }
       }
 
