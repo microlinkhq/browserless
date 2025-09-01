@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.8.0-beta.14](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.13...v10.8.0-beta.14) (2025-09-01)
+
+### Bug Fixes
+
+* timeout value ([3b3883c](https://github.com/microlinkhq/browserless/commit/3b3883c7c8645c2a5055ec449ed0baa894b31380))
+
 # [10.8.0-beta.13](https://github.com/microlinkhq/browserless/compare/v10.8.0-beta.12...v10.8.0-beta.13) (2025-09-01)
 
 **Note:** Version bump only for package browserless
