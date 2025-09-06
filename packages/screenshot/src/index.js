@@ -32,6 +32,47 @@ const waitForImagesOnViewport = page =>
     )
   )
 
+const scrollFullPageToLoadContent = async (page, timeout) => {
+  await page.evaluate(timeout => {
+    return new Promise(resolve => {
+      let totalHeight = 0
+      const distance = Math.floor(window.innerHeight * 0.33)
+      const waitForContent = () => {
+        const startTime = Date.now()
+        const checkContent = () => {
+          const scrollHeight = document.body ? document.body.scrollHeight : 0
+          const viewportHeight = window.innerHeight
+          const elapsed = Date.now() - startTime
+
+          if (scrollHeight > viewportHeight) {
+            startScrolling()
+          } else if (elapsed >= timeout / 2) {
+            startScrolling()
+          } else {
+            setTimeout(checkContent, 50)
+          }
+        }
+        checkContent()
+      }
+
+      const startScrolling = async () => {
+        const scrollHeight = document.body.scrollHeight
+        const expectedSteps = Math.ceil(scrollHeight / distance)
+        const scrollDelay = timeout / 2 / expectedSteps
+        while (totalHeight < document.body.scrollHeight) {
+          window.scrollBy(0, distance)
+          totalHeight += distance
+          await new Promise(resolve => setTimeout(resolve, scrollDelay))
+        }
+        resolve()
+      }
+
+      waitForContent()
+    })
+  }, timeout)
+  await page.evaluate(() => window.scrollTo(0, 0))
+}
+
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
 
@@ -62,24 +103,32 @@ module.exports = ({ goto, ...gotoOpts }) => {
       let screenshot
       let response
 
-      const beforeScreenshot = response => {
+      const beforeScreenshot = (response, isFullPage = false) => {
         const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
-        return Promise.all(
-          [
-            {
-              fn: () => page.evaluate('document.fonts.ready'),
-              debug: 'beforeScreenshot:fontsReady'
-            },
-            {
-              fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
-              debug: 'beforeScreenshot:waitForPrism'
-            },
-            {
-              fn: () => waitForImagesOnViewport(page),
-              debug: 'beforeScreenshot:waitForImagesOnViewport'
-            }
-          ].map(({ fn, ...opts }) => goto.run({ fn: fn(), ...opts, timeout }))
-        )
+        const tasks = [
+          {
+            fn: () => page.evaluate('document.fonts.ready'),
+            debug: 'beforeScreenshot:fontsReady'
+          },
+          {
+            fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
+            debug: 'beforeScreenshot:waitForPrism'
+          },
+          {
+            fn: () => waitForImagesOnViewport(page),
+            debug: 'beforeScreenshot:waitForImagesOnViewport'
+          }
+        ]
+
+        // Add full page scrolling for better content loading when taking full page screenshots
+        if (isFullPage) {
+          tasks.push({
+            fn: () => scrollFullPageToLoadContent(page, timeout),
+            debug: 'beforeScreenshot:scrollFullPageToLoadContent'
+          })
+        }
+
+        return Promise.all(tasks.map(({ fn, ...opts }) => goto.run({ fn: fn(), ...opts, timeout })))
       }
 
       const takeScreenshot = async opts => {
@@ -100,7 +149,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         ;({ response } = await goto(page, { ...opts, url, waitUntil }))
         const [screenshotOpts] = await Promise.all([
           waitForElement(page, element),
-          beforeScreenshot(response)
+          beforeScreenshot(response, !element && opts.fullPage !== false)
         ])
         screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
         debug('screenshot', { waitUntil, duration: timeScreenshot() })
@@ -109,7 +158,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         async function waitUntilAuto (page, { response }) {
           const [screenshotOpts] = await Promise.all([
             waitForElement(page, element),
-            beforeScreenshot(response)
+            beforeScreenshot(response, !element && opts.fullPage !== false)
           ])
           const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
           debug('screenshot', { waitUntil, isWhite, duration: timeScreenshot() })
