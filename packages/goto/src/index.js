@@ -34,8 +34,8 @@ const castArray = value => [].concat(value).filter(Boolean)
 const run = async ({ fn, timeout, debug: props }) => {
   const duration = debug.duration()
   const result = await pReflect(timeout ? pTimeout(fn, timeout) : fn)
-  if (result.isRejected) props.error = result.reason.message || result.reason
-  duration(props)
+  const errorProps = result.isRejected ? { error: result.reason.message || result.reason } : ''
+  duration(props, errorProps)
   return result
 }
 

@@ -63,7 +63,7 @@ const waitForDomStability = ({ idle, timeout } = {}) =>
     })()
   })
 
-const scrollFullPageToLoadContent = async (page, timeout, goto) => {
+const scrollFullPageToLoadContent = async (page, timeout) => {
   const debug = require('debug-logfmt')('browserless:goto')
 
   const duration = debug.duration()
@@ -119,7 +119,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
       let response
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
-        const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
+        const timeout = goto.timeouts.action(opts.timeout)
 
         let screenshotOpts = {}
         const tasks = [
