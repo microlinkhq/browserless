@@ -32,54 +32,68 @@ const waitForImagesOnViewport = page =>
     )
   )
 
-const scrollFullPageToLoadContent = async (page, timeout) => {
-  // Wait for initial content to be ready
-  await page.evaluate(timeout => {
-    return new Promise(resolve => {
-      const startTime = Date.now()
-      const maxWaitTime = timeout / 2
+const waitForDomStability = ({ idle, timeout } = {}) =>
+  new Promise(resolve => {
+    const target = document.body
+    if (!target) return resolve({ status: 'no-body' })
 
-      const checkContent = () => {
-        const scrollHeight = document.body?.scrollHeight || 0
-        const viewportHeight = window.innerHeight
-        const elapsed = Date.now() - startTime
-        if (scrollHeight > viewportHeight || elapsed >= maxWaitTime) {
-          resolve()
-        } else {
-          setTimeout(checkContent, 100)
-        }
-      }
-
-      checkContent()
+    let lastChange = performance.now()
+    const observer = new window.MutationObserver(() => {
+      lastChange = performance.now()
     })
-  }, timeout)
+    observer.observe(target, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false
+    })
 
-  // then, scroll the page to load the content
+    const deadline = performance.now() + timeout
+
+    ;(function check () {
+      const now = performance.now()
+      if (now - lastChange >= idle) {
+        observer.disconnect()
+        return resolve({ status: 'idle' })
+      }
+      if (now >= deadline) {
+        observer.disconnect()
+        return resolve({ status: 'timeout' })
+      }
+      window.requestAnimationFrame(check)
+    })()
+  })
+
+const scrollFullPageToLoadContent = async (page, timeout, goto) => {
+  const debug = require('debug-logfmt')('browserless:goto')
+
+  const duration = debug.duration()
+  const result = await page.evaluate(waitForDomStability, {
+    idle: timeout / 2 / 2,
+    timeout: timeout / 2
+  })
+
+  duration('waitForDomStability', result)
+
   await page.evaluate(timeout => {
     return new Promise(resolve => {
       let currentScrollPosition = 0
-      const scrollStep = Math.floor(window.innerHeight * 0.5) // 50% of viewport
+      const scrollStep = Math.floor(window.innerHeight)
       const pageHeight = document.body.scrollHeight
       const totalSteps = Math.ceil(pageHeight / scrollStep)
       const stepDelay = timeout / 2 / totalSteps
-
       const scrollNext = async () => {
         if (currentScrollPosition >= pageHeight) {
           resolve()
           return
         }
-
         window.scrollBy(0, scrollStep)
         currentScrollPosition += scrollStep
-
         setTimeout(scrollNext, stepDelay)
       }
-
       scrollNext()
     })
   }, timeout)
-
-  // finally, scroll back to top
   await page.evaluate(() => window.scrollTo(0, 0))
 }
 
@@ -107,6 +121,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
+
         let screenshotOpts = {}
         const tasks = [
           {
@@ -128,7 +143,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
         if (fullPage) {
           tasks.push({
-            fn: () => scrollFullPageToLoadContent(page, timeout),
+            fn: () => scrollFullPageToLoadContent(page, timeout, goto),
             debug: 'beforeScreenshot:scrollFullPageToLoadContent'
           })
         } else if (element) {
@@ -140,7 +155,16 @@ module.exports = ({ goto, ...gotoOpts }) => {
           })
         }
 
-        await Promise.all(tasks.map(({ fn, ...opts }) => goto.run({ fn: fn(), ...opts, timeout })))
+        await Promise.all(
+          tasks.map(({ fn, ...opts }) =>
+            goto.run({
+              fn: fn(),
+              ...opts,
+              timeout: fullPage ? timeout * 2 : timeout
+            })
+          )
+        )
+
         return screenshotOpts
       }
 
