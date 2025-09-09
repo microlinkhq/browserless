@@ -34,14 +34,13 @@ const waitForImagesOnViewport = page =>
 
 const waitForDomStability = ({ idle, timeout } = {}) =>
   new Promise(resolve => {
-    const target = document.body
-    if (!target) return resolve({ status: 'no-body' })
+    if (!document.body) return resolve({ status: 'no-body' })
 
     let lastChange = performance.now()
     const observer = new window.MutationObserver(() => {
       lastChange = performance.now()
     })
-    observer.observe(target, {
+    observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: false,
