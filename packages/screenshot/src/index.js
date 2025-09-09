@@ -74,25 +74,27 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
 
   duration('waitForDomStability', result)
 
-  await page.evaluate(timeout => {
-    return new Promise(resolve => {
-      let currentScrollPosition = 0
-      const scrollStep = Math.floor(window.innerHeight)
-      const pageHeight = document.body.scrollHeight
-      const totalSteps = Math.ceil(pageHeight / scrollStep)
-      const stepDelay = timeout / 2 / totalSteps
-      const scrollNext = async () => {
-        if (currentScrollPosition >= pageHeight) {
-          resolve()
-          return
+  await page.evaluate(
+    timeout =>
+      new Promise(resolve => {
+        let currentScrollPosition = 0
+        const scrollStep = Math.floor(window.innerHeight)
+        const pageHeight = document.body.scrollHeight
+        const totalSteps = Math.ceil(pageHeight / scrollStep)
+        const stepDelay = timeout / 2 / totalSteps
+        const scrollNext = async () => {
+          if (currentScrollPosition >= pageHeight) {
+            resolve()
+            return
+          }
+          window.scrollBy(0, scrollStep)
+          currentScrollPosition += scrollStep
+          setTimeout(scrollNext, stepDelay)
         }
-        window.scrollBy(0, scrollStep)
-        currentScrollPosition += scrollStep
-        setTimeout(scrollNext, stepDelay)
-      }
-      scrollNext()
-    })
-  }, timeout)
+        scrollNext()
+      }),
+    timeout
+  )
   await page.evaluate(() => window.scrollTo(0, 0))
 }
 
