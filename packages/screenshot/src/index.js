@@ -33,43 +33,53 @@ const waitForImagesOnViewport = page =>
   )
 
 const scrollFullPageToLoadContent = async (page, timeout) => {
+  // Wait for initial content to be ready
   await page.evaluate(timeout => {
     return new Promise(resolve => {
-      let totalHeight = 0
-      const distance = Math.floor(window.innerHeight * 0.33)
-      const waitForContent = () => {
-        const startTime = Date.now()
-        const checkContent = () => {
-          const scrollHeight = document.body ? document.body.scrollHeight : 0
-          const viewportHeight = window.innerHeight
-          const elapsed = Date.now() - startTime
+      const startTime = Date.now()
+      const maxWaitTime = timeout / 2
 
-          if (scrollHeight > viewportHeight) {
-            startScrolling()
-          } else if (elapsed >= timeout / 2) {
-            startScrolling()
-          } else {
-            setTimeout(checkContent, 50)
-          }
+      const checkContent = () => {
+        const scrollHeight = document.body?.scrollHeight || 0
+        const viewportHeight = window.innerHeight
+        const elapsed = Date.now() - startTime
+        if (scrollHeight > viewportHeight || elapsed >= maxWaitTime) {
+          resolve()
+        } else {
+          setTimeout(checkContent, 100)
         }
-        checkContent()
       }
 
-      const startScrolling = async () => {
-        const scrollHeight = document.body.scrollHeight
-        const expectedSteps = Math.ceil(scrollHeight / distance)
-        const scrollDelay = timeout / 2 / expectedSteps
-        while (totalHeight < document.body.scrollHeight) {
-          window.scrollBy(0, distance)
-          totalHeight += distance
-          await new Promise(resolve => setTimeout(resolve, scrollDelay))
-        }
-        resolve()
-      }
-
-      waitForContent()
+      checkContent()
     })
   }, timeout)
+
+  // then, scroll the page to load the content
+  await page.evaluate(timeout => {
+    return new Promise(resolve => {
+      let currentScrollPosition = 0
+      const scrollStep = Math.floor(window.innerHeight * 0.5) // 50% of viewport
+      const pageHeight = document.body.scrollHeight
+      const totalSteps = Math.ceil(pageHeight / scrollStep)
+      const stepDelay = timeout / 2 / totalSteps
+
+      const scrollNext = async () => {
+        if (currentScrollPosition >= pageHeight) {
+          resolve()
+          return
+        }
+
+        window.scrollBy(0, scrollStep)
+        currentScrollPosition += scrollStep
+
+        setTimeout(scrollNext, stepDelay)
+      }
+
+      scrollNext()
+    })
+  }, timeout)
+
+  // finally, scroll back to top
   await page.evaluate(() => window.scrollTo(0, 0))
 }
 
