@@ -32,16 +32,80 @@ const waitForImagesOnViewport = page =>
     )
   )
 
+const waitForDomStability = ({ idle, timeout } = {}) =>
+  new Promise(resolve => {
+    if (!document.body) return resolve({ status: 'no-body' })
+
+    let lastChange = performance.now()
+    const observer = new window.MutationObserver(() => {
+      lastChange = performance.now()
+    })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false
+    })
+
+    const deadline = performance.now() + timeout
+
+    ;(function check () {
+      const now = performance.now()
+      if (now - lastChange >= idle) {
+        observer.disconnect()
+        return resolve({ status: 'idle' })
+      }
+      if (now >= deadline) {
+        observer.disconnect()
+        return resolve({ status: 'timeout' })
+      }
+      window.requestAnimationFrame(check)
+    })()
+  })
+
+const scrollFullPageToLoadContent = async (page, timeout) => {
+  const debug = require('debug-logfmt')('browserless:goto')
+
+  const duration = debug.duration()
+  const result = await page.evaluate(waitForDomStability, {
+    idle: timeout / 2 / 2,
+    timeout: timeout / 2
+  })
+
+  duration('waitForDomStability', result)
+
+  await page.evaluate(
+    timeout =>
+      new Promise(resolve => {
+        let currentScrollPosition = 0
+        const scrollStep = Math.floor(window.innerHeight)
+        const pageHeight = document.body.scrollHeight
+        const totalSteps = Math.ceil(pageHeight / scrollStep)
+        const stepDelay = timeout / 2 / totalSteps
+        const scrollNext = async () => {
+          if (currentScrollPosition >= pageHeight) {
+            resolve()
+            return
+          }
+          window.scrollBy(0, scrollStep)
+          currentScrollPosition += scrollStep
+          setTimeout(scrollNext, stepDelay)
+        }
+        scrollNext()
+      }),
+    timeout
+  )
+  await page.evaluate(() => window.scrollTo(0, 0))
+}
+
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
-
   if (element) {
     await page.waitForSelector(element, { visible: true })
     screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
     screenshotOpts.fullPage = false
     return screenshotOpts
   }
-
   return screenshotOpts
 }
 
@@ -51,35 +115,58 @@ module.exports = ({ goto, ...gotoOpts }) => {
   return function screenshot (page) {
     return async (
       url,
-      {
-        element,
-        codeScheme = 'atom-dark',
-        overlay: overlayOpts = {},
-        waitUntil = 'auto',
-        ...opts
-      } = {}
+      { codeScheme = 'atom-dark', overlay: overlayOpts = {}, waitUntil = 'auto', ...opts } = {}
     ) => {
       let screenshot
       let response
 
-      const beforeScreenshot = response => {
-        const timeout = goto.timeouts.action(goto.timeouts.base(opts.timeout))
-        return Promise.all(
-          [
-            {
-              fn: () => page.evaluate('document.fonts.ready'),
-              debug: 'beforeScreenshot:fontsReady'
+      const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
+        const timeout = goto.timeouts.action(opts.timeout)
+
+        let screenshotOpts = {}
+        const tasks = [
+          {
+            fn: () => page.evaluate('document.fonts.ready'),
+            debug: 'beforeScreenshot:fontsReady'
+          },
+          {
+            fn: () => waitForImagesOnViewport(page),
+            debug: 'beforeScreenshot:waitForImagesOnViewport'
+          }
+        ]
+
+        if (codeScheme && response) {
+          tasks.push({
+            fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
+            debug: 'beforeScreenshot:waitForPrism'
+          })
+        }
+
+        if (fullPage) {
+          tasks.push({
+            fn: () => scrollFullPageToLoadContent(page, timeout, goto),
+            debug: 'beforeScreenshot:scrollFullPageToLoadContent'
+          })
+        } else if (element) {
+          tasks.push({
+            fn: async () => {
+              screenshotOpts = await waitForElement(page, element)
             },
-            {
-              fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
-              debug: 'beforeScreenshot:waitForPrism'
-            },
-            {
-              fn: () => waitForImagesOnViewport(page),
-              debug: 'beforeScreenshot:waitForImagesOnViewport'
-            }
-          ].map(({ fn, ...opts }) => goto.run({ fn: fn(), ...opts, timeout }))
+            debug: 'beforeScreenshot:waitForElement'
+          })
+        }
+
+        await Promise.all(
+          tasks.map(({ fn, ...opts }) =>
+            goto.run({
+              fn: fn(),
+              ...opts,
+              timeout: fullPage ? timeout * 2 : timeout
+            })
+          )
         )
+
+        return screenshotOpts
       }
 
       const takeScreenshot = async opts => {
@@ -98,19 +185,13 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       if (waitUntil !== 'auto') {
         ;({ response } = await goto(page, { ...opts, url, waitUntil }))
-        const [screenshotOpts] = await Promise.all([
-          waitForElement(page, element),
-          beforeScreenshot(response)
-        ])
+        const screenshotOpts = await beforeScreenshot(page, response, opts)
         screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
         debug('screenshot', { waitUntil, duration: timeScreenshot() })
       } else {
         ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
         async function waitUntilAuto (page, { response }) {
-          const [screenshotOpts] = await Promise.all([
-            waitForElement(page, element),
-            beforeScreenshot(response)
-          ])
+          const screenshotOpts = await beforeScreenshot(page, response, opts)
           const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
           debug('screenshot', { waitUntil, isWhite, duration: timeScreenshot() })
         }

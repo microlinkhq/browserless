@@ -11,8 +11,6 @@ const isUrl = require('is-url-http')
 const path = require('path')
 const fs = require('fs')
 
-const timeSpan = require('@kikobeats/time-span')({ format: require('pretty-ms') })
-
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 
 const debug = require('debug-logfmt')('browserless:goto')
@@ -34,11 +32,10 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 const castArray = value => [].concat(value).filter(Boolean)
 
 const run = async ({ fn, timeout, debug: props }) => {
-  const debugProps = { duration: timeSpan() }
+  const duration = debug.duration()
   const result = await pReflect(timeout ? pTimeout(fn, timeout) : fn)
-  debugProps.duration = debugProps.duration()
-  if (result.isRejected) debugProps.error = result.reason.message || result.reason
-  debug(props, debugProps)
+  const errorProps = result.isRejected ? { error: result.reason.message || result.reason } : {}
+  duration(props, errorProps)
   return result
 }
 

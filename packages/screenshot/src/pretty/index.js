@@ -32,8 +32,6 @@ const JSONParse = input => {
 }
 
 module.exports = async (page, response, { timeout, codeScheme, styles, scripts, modules }) => {
-  if (!response || !codeScheme) return
-
   let [theme, content, prism] = await Promise.all([getTheme(codeScheme), response.text(), getPrism])
 
   if (isHtmlContent(content)) return
