@@ -37,7 +37,6 @@
     "is-url-http": "~2.3.10",
     "p-reflect": "~2.1.0",
     "p-timeout": "~4.1.0",
-    "pretty-ms": "~7.0.1",
     "shallow-equal": "~3.1.0",
     "tough-cookie": "~6.0.0"
   },
