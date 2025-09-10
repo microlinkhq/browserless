@@ -264,6 +264,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     }
 
     if (adblock) {
+      page.disableAdblock = async () => {
+        await engine.disableBlockingInPage(page)
+        debug.adblock('disabled')
+      }
       prePromises.push(
         run({
           fn: engine.enableBlockingInPage(page),
