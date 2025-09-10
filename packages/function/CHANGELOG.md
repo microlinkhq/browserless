@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.9.3](https://github.com/microlinkhq/browserless/compare/v10.9.2...v10.9.3) (2025-09-10)
+
+### Bug Fixes
+
+* **function:** get page with no default context ([#625](https://github.com/microlinkhq/browserless/issues/625)) ([0653b84](https://github.com/microlinkhq/browserless/commit/0653b84cf3f1fecebfdbe594e597536e53612ed5))
+
 # [10.9.0](https://github.com/microlinkhq/browserless/compare/v10.8.0...v10.9.0) (2025-09-09)
 
 **Note:** Version bump only for package @browserless/function
