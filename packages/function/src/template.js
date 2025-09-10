@@ -31,7 +31,8 @@ module.exports = code => {
     async (url, browserWSEndpoint, opts) => {
       const puppeteer = require('@cloudflare/puppeteer')
       const browser = await puppeteer.connect({ browserWSEndpoint })
-      const page = (await browser.pages())[1]
+      const pages = await browser.pages()
+      const page = pages[pages.length - 1]
       try {
         return await (${code})({ page, ...opts })
       } finally {
