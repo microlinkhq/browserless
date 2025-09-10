@@ -235,12 +235,21 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
+    // TODO: drop this when https://github.com/ghostery/adblocker/pull/5161 is merged
+    let isRequestInterceptionEnabled = false
+    page.isRequestInterceptionEnabled = () => isRequestInterceptionEnabled
+
     const enableInterception =
       (onPageRequest || abortTypes.length > 0) &&
-      run({ fn: page.setRequestInterception(true), debug: 'enableInterception' })
+      run({
+        fn: page.setRequestInterception(true).then(() => (isRequestInterceptionEnabled = true)),
+        debug: 'enableInterception'
+      })
 
     if (onPageRequest) {
-      Promise.resolve(enableInterception).then(() => page.on('request', onPageRequest))
+      Promise.resolve(enableInterception).then(() =>
+        page.on('request', req => onPageRequest(req, page))
+      )
     }
 
     if (abortTypes.length > 0) {
@@ -266,8 +275,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     if (adblock) {
       page.disableAdblock = async () => {
         await engine.disableBlockingInPage(page)
+        isRequestInterceptionEnabled = false
         debug.adblock('disabled')
       }
+
       prePromises.push(
         run({
           fn: engine.enableBlockingInPage(page),
