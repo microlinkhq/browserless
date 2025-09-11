@@ -97,7 +97,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const closePage = async (page, name) => {
       if (page && !page.isClosed()) {
         const duration = debug.duration('closePage')
-        if (page.disableAdblock) await page.disableAdblock()
+        if (page.disableAdblock) page.disableAdblock()
         const [browserProcess, browserContext] = await Promise.all([
           getBrowser(),
           getBrowserContext(),

@@ -235,14 +235,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
-    // TODO: drop this when https://github.com/ghostery/adblocker/pull/5161 is merged
-    let isRequestInterceptionEnabled = false
-    page.isRequestInterceptionEnabled = () => isRequestInterceptionEnabled
-
     const enableInterception =
       (onPageRequest || abortTypes.length > 0) &&
       run({
-        fn: page.setRequestInterception(true).then(() => (isRequestInterceptionEnabled = true)),
+        fn: page.setRequestInterception(true),
         debug: 'enableInterception'
       })
 
@@ -273,15 +269,28 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     }
 
     if (adblock) {
-      page.disableAdblock = async () => {
-        await engine.disableBlockingInPage(page)
-        isRequestInterceptionEnabled = false
+      let adblockContext
+
+      page.disableAdblock = () => {
+        // TODO: drop this when https://github.com/ghostery/adblocker/pull/5161 is merged
+
+        engine.contexts.delete(page)
+
+        if (adblockContext.blocker.config.loadNetworkFilters) {
+          adblockContext.page.off('request', adblockContext.onRequest)
+        }
+
+        if (adblockContext.blocker.config.loadCosmeticFilters) {
+          adblockContext.page.off('frameattached', adblockContext.onFrameNavigated)
+          adblockContext.page.off('domcontentloaded', adblockContext.onDomContentLoaded)
+        }
+
         debug.adblock('disabled')
       }
 
       prePromises.push(
         run({
-          fn: engine.enableBlockingInPage(page),
+          fn: engine.enableBlockingInPage(page).then(context => (adblockContext = context)),
           timeout: actionTimeout,
           debug: 'adblock'
         })
