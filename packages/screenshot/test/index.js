@@ -51,7 +51,7 @@ test('graphics features', async t => {
         }
       : {
           Canvas: 'Hardware accelerated',
-          'Direct Rendering Display Compositor': 'Disabled',
+          'Direct Rendering Display Compositor': 'Enabled',
           Compositing: 'Hardware accelerated',
           'Multiple Raster Threads': 'Enabled',
           OpenGL: 'Enabled',
