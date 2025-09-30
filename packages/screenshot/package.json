@@ -29,6 +29,7 @@
   ],
   "dependencies": {
     "@browserless/goto": "^10.9.4",
+    "@kikobeats/content-type": "~1.0.0",
     "@kikobeats/time-span": "~1.0.8",
     "debug-logfmt": "~1.4.0",
     "got": "~11.8.6",

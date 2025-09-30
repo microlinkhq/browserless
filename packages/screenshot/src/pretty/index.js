@@ -16,7 +16,7 @@ const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
 const { inject } = require('@browserless/goto')
 
 const getContentType = headers => {
-  const contentType = getExtension(headers['content-type']?.split(';')[0].trim().toLowerCase())
+  const contentType = getExtension(require('@kikobeats/content-type')(headers['content-type']))
   return contentType === 'txt' ? 'text' : contentType
 }
 
