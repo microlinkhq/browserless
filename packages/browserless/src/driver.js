@@ -27,10 +27,11 @@ const defaultArgs = [
   '--no-default-browser-check', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoDefaultBrowserCheck&ss=chromium
   '--no-pings', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoPings&ss=chromium
   '--no-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoSandbox&ss=chromium
+  '--no-startup-window',
+  `--enable-features=${['SharedArrayBuffer'].join(',')}`,
   '--no-zygote', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium
   '--use-angle=swiftshader', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
   '--use-gl=angle', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
-  `--enable-features=${['SharedArrayBuffer'].join(',')}`,
   `--disable-features=${[
     'AudioServiceOutOfProcess',
     'CalculateNativeWinOcclusion',
@@ -44,12 +45,21 @@ const defaultArgs = [
 ]
 
 const spawn = ({
-  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
-  mode = 'launch',
   args = defaultArgs,
   headless = true,
+  ignoreHTTPSErrors = true,
+  mode = 'launch',
+  puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
+  waitForInitialPage = false,
   ...launchOpts
-} = {}) => puppeteer[mode]({ ignoreHTTPSErrors: true, args, headless, ...launchOpts })
+} = {}) =>
+  puppeteer[mode]({
+    args,
+    headless,
+    ignoreHTTPSErrors,
+    waitForInitialPage,
+    ...launchOpts
+  })
 
 const getPid = subprocess => {
   if ('pid' in subprocess) return subprocess.pid
