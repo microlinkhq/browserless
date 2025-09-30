@@ -32,22 +32,22 @@ test('graphics features', async t => {
     await getGpu(),
     isCI
       ? {
-          Canvas: 'Software only, hardware acceleration unavailable',
+          Canvas: 'Hardware accelerated',
           'Direct Rendering Display Compositor': 'Disabled',
-          Compositing: 'Software only. Hardware acceleration disabled',
+          Compositing: 'Hardware accelerated',
           'Multiple Raster Threads': 'Enabled',
-          OpenGL: 'Disabled',
-          Rasterization: 'Software only. Hardware acceleration disabled',
+          OpenGL: 'Enabled',
+          Rasterization: 'Hardware accelerated',
           'Raw Draw': 'Disabled',
           'Skia Graphite': 'Disabled',
           TreesInViz: 'Disabled',
-          'Video Decode': 'Software only. Hardware acceleration disabled',
+          'Video Decode': 'Hardware accelerated',
           'Video Encode': 'Software only. Hardware acceleration disabled',
           Vulkan: 'Disabled',
-          WebGL: 'Software only, hardware acceleration unavailable',
-          WebGL2: 'Software only, hardware acceleration unavailable',
+          WebGL: 'Hardware accelerated',
+          WebGL2: 'Hardware accelerated',
           WebGPU: 'Disabled',
-          WebNN: 'Software only, hardware acceleration unavailable'
+          WebNN: 'Disabled'
         }
       : {
           Canvas: 'Hardware accelerated',
@@ -63,7 +63,7 @@ test('graphics features', async t => {
           'Video Encode': 'Hardware accelerated',
           WebGL: 'Hardware accelerated',
           WebGL2: 'Hardware accelerated',
-          WebGPU: 'Hardware accelerated',
+          WebGPU: 'Software only, hardware acceleration unavailable',
           WebNN: 'Disabled'
         }
   )

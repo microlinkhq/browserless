@@ -21,7 +21,6 @@ const defaultArgs = [
   '--disable-site-isolation-trials', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSiteIsolation&ss=chromium
   '--disable-speech-api', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSpeechAPI&ss=chromium
   '--disk-cache-size=33554432', // https://source.chromium.org/search?q=lang:cpp+symbol:kDiskCacheSize&ss=chromium
-  `--enable-features=${['SharedArrayBuffer'].join(',')}`,
   '--font-render-hinting=none', // https://github.com/puppeteer/puppeteer/issues/2410#issuecomment-2886054614
   '--ignore-gpu-blocklist', // https://source.chromium.org/search?q=lang:cpp+symbol:kIgnoreGpuBlocklist&ss=chromium
   '--in-process-gpu', // https://github.com/search?q=repo%3Achromium%2Fchromium%20in-process-gpu&type=code
@@ -29,6 +28,9 @@ const defaultArgs = [
   '--no-pings', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoPings&ss=chromium
   '--no-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoSandbox&ss=chromium
   '--no-zygote', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium
+  '--use-angle=swiftshader', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
+  '--use-gl=angle', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
+  `--enable-features=${['SharedArrayBuffer'].join(',')}`,
   `--disable-features=${[
     'AudioServiceOutOfProcess',
     'CalculateNativeWinOcclusion',
