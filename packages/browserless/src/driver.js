@@ -39,8 +39,6 @@ const defaultArgs = [
     'IsolateOrigins',
     'PushMessaging',
     'site-per-process', // Disables OOPIF. https://www.chromium.org/Home/chromium-security/site-isolation
-    'Vulkan',
-    'WebGPU',
     'WebPayments'
   ].join(',')}`
 ]
