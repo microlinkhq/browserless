@@ -30,6 +30,7 @@ const defaultArgs = [
   '--no-startup-window',
   `--enable-features=${['SharedArrayBuffer'].join(',')}`,
   '--no-zygote', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium
+  '--disable-gpu',
   '--use-angle=swiftshader', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
   '--use-gl=angle', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
   `--disable-features=${[

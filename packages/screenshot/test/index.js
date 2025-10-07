@@ -34,7 +34,7 @@ test('graphics features', async t => {
       ? {
           Canvas: 'Hardware accelerated',
           'Direct Rendering Display Compositor': 'Disabled',
-          Compositing: 'Hardware accelerated',
+          Compositing: 'Software only. Hardware acceleration disabled',
           'Multiple Raster Threads': 'Enabled',
           OpenGL: 'Enabled',
           Rasterization: 'Hardware accelerated',
@@ -44,25 +44,25 @@ test('graphics features', async t => {
           'Video Decode': 'Hardware accelerated',
           'Video Encode': 'Software only. Hardware acceleration disabled',
           Vulkan: 'Disabled',
-          WebGL: 'Hardware accelerated',
-          WebGL2: 'Hardware accelerated',
+          WebGL: 'Hardware accelerated but at reduced performance',
+          WebGL2: 'Hardware accelerated but at reduced performance',
           WebGPU: 'Disabled',
           WebNN: 'Disabled'
         }
       : {
           Canvas: 'Hardware accelerated',
-          'Direct Rendering Display Compositor': 'Enabled',
-          Compositing: 'Hardware accelerated',
+          'Direct Rendering Display Compositor': 'Disabled',
+          Compositing: 'Software only. Hardware acceleration disabled',
           'Multiple Raster Threads': 'Enabled',
           OpenGL: 'Enabled',
           Rasterization: 'Hardware accelerated',
           'Raw Draw': 'Disabled',
-          'Skia Graphite': 'Enabled',
+          'Skia Graphite': 'Disabled',
           TreesInViz: 'Disabled',
           'Video Decode': 'Hardware accelerated',
           'Video Encode': 'Hardware accelerated',
-          WebGL: 'Hardware accelerated',
-          WebGL2: 'Hardware accelerated',
+          WebGL: 'Hardware accelerated but at reduced performance',
+          WebGL2: 'Hardware accelerated but at reduced performance',
           WebGPU: 'Software only, hardware acceleration unavailable',
           WebNN: 'Disabled'
         }
