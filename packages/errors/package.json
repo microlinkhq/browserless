@@ -28,10 +28,10 @@
     "qualified"
   ],
   "dependencies": {
-    "debug-logfmt": "~1.4.0",
+    "debug-logfmt": "~1.4.5",
     "ensure-error": "~3.0.1",
     "serialize-error": "~8.1.0",
-    "whoops": "~5.0.2"
+    "whoops": "~5.0.3"
   },
   "devDependencies": {
     "ava": "5"

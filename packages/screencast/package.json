@@ -32,6 +32,9 @@
     "screencast",
     "video"
   ],
+  "dependencies": {
+    "null-prototype-object": "~1.2.3"
+  },
   "devDependencies": {
     "@browserless/test": "^10.9.0",
     "@kikobeats/time-span": "latest",
@@ -56,8 +59,5 @@
     "serial": true,
     "timeout": "2m",
     "workerThreads": false
-  },
-  "dependencies": {
-    "null-prototype-object": "~1.2.2"
   }
 }

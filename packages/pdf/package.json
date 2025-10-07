@@ -26,8 +26,8 @@
   "dependencies": {
     "@browserless/goto": "^10.9.4",
     "@browserless/screenshot": "^10.9.6",
-    "@kikobeats/time-span": "~1.0.8",
-    "debug-logfmt": "~1.4.0",
+    "@kikobeats/time-span": "~1.0.9",
+    "debug-logfmt": "~1.4.5",
     "pretty-ms": "~7.0.1"
   },
   "engines": {
