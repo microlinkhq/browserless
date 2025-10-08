@@ -34,7 +34,7 @@
     "browserless": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
-    "pdf-parse": "2.1.6",
+    "pdf-parse": "latest",
     "puppeteer": "24.23.0",
     "signal-exit": "latest",
     "temperment": "latest"
