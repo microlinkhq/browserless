@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.9.8](https://github.com/microlinkhq/browserless/compare/v10.9.7...v10.9.8) (2025-10-19)
+
+### Bug Fixes
+
+* **screenshot:** white sampling ([#636](https://github.com/microlinkhq/browserless/issues/636)) ([e12515a](https://github.com/microlinkhq/browserless/commit/e12515a2c435620bedec26f62f91296b96d6d2b1))
+
 ## [10.9.7](https://github.com/microlinkhq/browserless/compare/v10.9.6...v10.9.7) (2025-10-07)
 
 **Note:** Version bump only for package browserless
