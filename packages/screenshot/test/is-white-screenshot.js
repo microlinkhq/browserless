@@ -62,3 +62,19 @@ test('sampling algorithm correctly samples ~25% of pixels', async t => {
     Jimp.fromBuffer = originalFromBuffer
   }
 })
+
+test('handles memory errors gracefully on very large images', async t => {
+  const { createCanvas } = require('canvas')
+
+  const width = 10000
+  const height = 10000
+  const canvas = createCanvas(width, height)
+  const ctx = canvas.getContext('2d')
+
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, width, height)
+
+  const largeImageBuffer = canvas.toBuffer('image/jpeg', { quality: 0.9 })
+  const result = await isWhite(largeImageBuffer)
+  t.is(typeof result, 'boolean', 'Should return a boolean, not throw an error')
+})
