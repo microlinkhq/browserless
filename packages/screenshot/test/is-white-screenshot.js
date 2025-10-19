@@ -3,7 +3,35 @@
 const test = require('ava')
 const { readFile } = require('fs/promises')
 
+const { Jimp } = require('jimp')
+
 const isWhite = require('../src/is-white-screenshot')
+
+const createJimpSpy = () => {
+  const originalFromBuffer = Jimp.fromBuffer
+  const spy = { callCount: 0 }
+
+  const wrappedFromBuffer = async function (buffer, options) {
+    const image = await originalFromBuffer.call(this, buffer, options)
+    const originalGetPixelColor = image.getPixelColor.bind(image)
+
+    image.getPixelColor = function (x, y) {
+      spy.callCount++
+      return originalGetPixelColor(x, y)
+    }
+
+    return image
+  }
+
+  Jimp.fromBuffer = wrappedFromBuffer
+
+  return {
+    spy,
+    restore: () => {
+      Jimp.fromBuffer = originalFromBuffer
+    }
+  }
+}
 
 test('true', async t => {
   t.true(await isWhite(await readFile('./test/fixtures/white-5k.jpg')))
@@ -16,51 +44,22 @@ test('false', async t => {
 })
 
 test('sampling algorithm correctly samples ~25% of pixels', async t => {
-  // This test validates that the isWhiteScreenshot implementation actually samples
-  // approximately 25% of pixels, not just that the math formula is correct.
-  // It tracks how many pixels are actually checked by the implementation.
-
-  const { Jimp } = require('jimp')
-
-  // Use an existing white image from test fixtures
   const imageBuffer = await readFile('./test/fixtures/white-5k.png')
+  const tempImage = await Jimp.fromBuffer(imageBuffer)
+  const totalPixels = tempImage.bitmap.width * tempImage.bitmap.height
+  const { spy, restore } = createJimpSpy()
 
-  // Monkey-patch getPixelColor to count how many times it's called
-  const originalFromBuffer = Jimp.fromBuffer
-  let pixelCheckCount = 0
+  await isWhite(imageBuffer)
+  restore()
 
-  Jimp.fromBuffer = async function (buffer, options) {
-    const image = await originalFromBuffer.call(this, buffer, options)
-    const originalGetPixelColor = image.getPixelColor.bind(image)
+  const percentageChecked = (spy.callCount / totalPixels) * 100
 
-    image.getPixelColor = function (x, y) {
-      pixelCheckCount++
-      return originalGetPixelColor(x, y)
-    }
-
-    return image
-  }
-
-  const isWhite = require('../src/is-white-screenshot')
-
-  try {
-    await isWhite(imageBuffer)
-
-    // For a 5000x5000 image (25,000,000 pixels), should check ~6,250,000 pixels (25%)
-    // With the buggy implementation, it checks only ~1,562,500 pixels (6.25%)
-    const totalPixels = 5000 * 5000
-    const percentageChecked = (pixelCheckCount / totalPixels) * 100
-
-    t.true(
-      percentageChecked >= 10 && percentageChecked <= 30,
-      `Expected to check ~25% of pixels (at least 10% with early exits), but checked ${percentageChecked.toFixed(
-        2
-      )}% (${pixelCheckCount}/${totalPixels})`
-    )
-  } finally {
-    // Restore original
-    Jimp.fromBuffer = originalFromBuffer
-  }
+  t.true(
+    percentageChecked >= 20 && percentageChecked <= 30,
+    `Expected to check ~25% of pixels, but checked ${percentageChecked.toFixed(2)}% (${
+      spy.callCount
+    }/${totalPixels})`
+  )
 })
 
 test('handles memory errors gracefully on very large images', async t => {
