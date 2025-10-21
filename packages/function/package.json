@@ -30,7 +30,7 @@
   ],
   "dependencies": {
     "@browserless/errors": "^10.9.7",
-    "isolated-function": "~0.1.38",
+    "isolated-function": "~0.1.39",
     "require-one-of": "~1.0.24"
   },
   "devDependencies": {
