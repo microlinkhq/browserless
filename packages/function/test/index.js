@@ -267,3 +267,17 @@ test('interact with npm modules', async t => {
   t.true(!!profiling)
   t.true(!!logging)
 })
+
+test('throws error when browser is launched with pipe mode', async t => {
+  const createTestUtil = require('@browserless/test/util/create')
+  const { getBrowser } = createTestUtil({ pipe: true })
+
+  const code = ({ page }) => page.title()
+
+  const myFn = browserlessFunction(code, {
+    getBrowserless: () => getBrowser()
+  })
+
+  const error = await t.throwsAsync(myFn(fileUrl))
+  t.is(error.message, 'Browser WebSocket endpoint not found')
+})
