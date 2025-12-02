@@ -3,25 +3,8 @@
 const { default: listen } = require('async-listen')
 const { onExit } = require('signal-exit')
 const { createServer } = require('http')
-const os = require('os')
 
 const closeServer = server => require('util').promisify(server.close.bind(server))()
-
-let HOSTNAME = os.hostname()
-
-// Hostname might not be always accessible in environments other than GitHub
-// Actions. Therefore, we try to find an external IPv4 address to be used as a
-// hostname in these tests.
-const networkInterfaces = os.networkInterfaces()
-for (const key of Object.keys(networkInterfaces)) {
-  const interfaces = networkInterfaces[key]
-  for (const net of interfaces || []) {
-    if (net.family === 'IPv4' && !net.internal) {
-      HOSTNAME = net.address
-      break
-    }
-  }
-}
 
 const runServer = async (t, handler) => {
   const server = createServer(async (req, res) => {
@@ -35,7 +18,7 @@ const runServer = async (t, handler) => {
   })
 
   const url = await listen(server)
-  url.hostname = HOSTNAME
+  url.hostname = '127.0.0.1'
 
   t.teardown(() => closeServer(server))
   return url.toString()

@@ -1,9 +1,9 @@
 'use strict'
 
 const { imgDiff } = require('img-diff-js')
+const { PDFParse } = require('pdf-parse')
 const { onExit } = require('signal-exit')
 const { runServer } = require('./util')
-const { pdf } = require('pdf-parse')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const path = require('path')
@@ -135,7 +135,9 @@ module.exports = (browser, teardown = browser.close) => {
     const url = await getUrl(t)
     const buffer = await browserless.pdf(url)
 
-    const data = await pdf(buffer)
+    const parser = new PDFParse({ data: buffer })
+    await parser.load()
+    const data = await parser.getText()
 
     t.snapshot(data.text.trim())
   })

@@ -46,7 +46,10 @@ test('pass specific options to a context', async t => {
     res.end('<html><body><h1>origin server reached</h1></body></html>')
   })
 
-  const browserless = await getBrowserContext(t, { proxyServer: proxyUrl.slice(0, -1) })
+  const browserless = await getBrowserContext(t, {
+    proxyServer: proxyUrl.slice(0, -1),
+    proxyBypassList: ['<-loopback>']
+  })
   const text = await browserless.text(url)
 
   t.is(text, 'origin server reached')
