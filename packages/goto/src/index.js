@@ -326,6 +326,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     const headersKeys = Object.keys(headers)
 
     if (headersKeys.length > 0) {
+      const { cookie, ...headersWithoutCookie } = headers
+
       if (headers.cookie) {
         const cookies = parseCookies(url, headers.cookie)
         prePromises.push(
@@ -337,6 +339,9 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         )
       }
 
+      const extraHTTPHeaders = headers.cookie ? headersWithoutCookie : headers
+      const extraHTTPHeadersKeys = Object.keys(extraHTTPHeaders)
+
       if (headers['user-agent']) {
         prePromises.push(
           run({
@@ -347,13 +352,15 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         )
       }
 
-      prePromises.push(
-        run({
-          fn: page.setExtraHTTPHeaders(headers),
-          timeout: actionTimeout,
-          debug: { headers: headersKeys }
-        })
-      )
+      if (extraHTTPHeadersKeys.length > 0) {
+        prePromises.push(
+          run({
+            fn: page.setExtraHTTPHeaders(extraHTTPHeaders),
+            timeout: actionTimeout,
+            debug: { headers: extraHTTPHeadersKeys }
+          })
+        )
+      }
     }
 
     if (timezone) {
