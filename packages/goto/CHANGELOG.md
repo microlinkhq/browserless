@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.9.13](https://github.com/microlinkhq/browserless/compare/v10.9.12...v10.9.13) (2025-12-09)
+
+### Bug Fixes
+
+* **goto:** skip cookies from headers ([#642](https://github.com/microlinkhq/browserless/issues/642)) ([fa74106](https://github.com/microlinkhq/browserless/commit/fa7410643a233f61953ec87cc24f28be4f363a2e))
+
 ## [10.9.11](https://github.com/microlinkhq/browserless/compare/v10.9.10...v10.9.11) (2025-12-02)
 
 **Note:** Version bump only for package @browserless/goto
