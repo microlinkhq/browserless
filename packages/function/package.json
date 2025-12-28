@@ -2,7 +2,7 @@
   "name": "@browserless/function",
   "description": "Run abritrary JavaScript inside a browser sandbox",
   "homepage": "https://browserless.js.org",
-  "version": "10.9.12",
+  "version": "10.9.14",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -34,7 +34,7 @@
     "require-one-of": "~1.0.24"
   },
   "devDependencies": {
-    "@browserless/test": "^10.9.11",
+    "@browserless/test": "^10.9.14",
     "acorn": "~8.15.0",
     "acorn-walk": "~8.3.4",
     "ava": "5",
