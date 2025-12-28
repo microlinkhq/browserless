@@ -1,6 +1,6 @@
 'use strict'
 
-const { getBrowserContext } = require('@browserless/test/util')
+const { getBrowserContext } = require('@browserless/test')
 const cheerio = require('cheerio')
 const test = require('ava')
 

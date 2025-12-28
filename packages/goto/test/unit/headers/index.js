@@ -2,7 +2,7 @@
 
 const test = require('ava')
 
-const { runServer, getBrowserContext } = require('@browserless/test/util')
+const { runServer, getBrowserContext } = require('@browserless/test')
 
 const getUrl = t =>
   runServer(t, ({ req, res }) => {

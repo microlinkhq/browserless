@@ -1,6 +1,6 @@
 'use strict'
 
-const { getBrowser } = require('@browserless/test/util')
+const { getBrowser } = require('@browserless/test')
 const path = require('path')
 const test = require('ava')
 
@@ -269,7 +269,7 @@ test('interact with npm modules', async t => {
 })
 
 test('throws error when browser is launched with pipe mode', async t => {
-  const createTestUtil = require('@browserless/test/util/create')
+  const createTestUtil = require('@browserless/test/create')
   const { getBrowser } = createTestUtil({ pipe: true })
 
   const code = ({ page }) => page.title()
