@@ -1,6 +1,6 @@
 'use strict'
 
-const { createBrowser } = require('@browserless/test/util')
+const { createBrowser } = require('@browserless/test')
 const psList = require('ps-list')
 const test = require('ava')
 

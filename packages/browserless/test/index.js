@@ -6,16 +6,11 @@ const $ = require('tinyspawn')
 const path = require('path')
 const ava = require('ava')
 
-const {
-  runServer,
-  createBrowser,
-  getBrowserContext,
-  getBrowser
-} = require('@browserless/test/util')
+const { runServer, createBrowser, getBrowserContext, getBrowser } = require('@browserless/test')
 
 const test = process.env.CI ? ava.serial : ava
 
-require('@browserless/test')(getBrowser())
+require('@browserless/test/suite')(getBrowser())
 test('pass specific options to a context', async t => {
   const proxiedRequestUrls = []
 

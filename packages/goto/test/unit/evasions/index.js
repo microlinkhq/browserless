@@ -1,6 +1,6 @@
 'use strict'
 
-const { getPage } = require('@browserless/test/util')
+const { getPage } = require('@browserless/test')
 const path = require('path')
 const test = require('ava')
 

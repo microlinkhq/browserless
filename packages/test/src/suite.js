@@ -3,12 +3,13 @@
 const { imgDiff } = require('img-diff-js')
 const { PDFParse } = require('pdf-parse')
 const { onExit } = require('signal-exit')
-const { runServer } = require('./util')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const path = require('path')
 const test = require('ava')
 const fs = require('fs')
+
+const { runServer } = require('.')
 
 const isCI = !!process.env.CI
 

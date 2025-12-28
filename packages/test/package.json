@@ -3,7 +3,11 @@
   "description": "A test suite for browserless API",
   "homepage": "https://browserless.js.org",
   "version": "10.9.11",
-  "main": "index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./create": "./src/create.js",
+    "./suite": "./src/suite.js"
+  },
   "author": {
     "email": "hello@microlink.io",
     "name": "microlink.io",
