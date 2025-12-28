@@ -47,8 +47,7 @@
     "node": ">= 12"
   },
   "files": [
-    "fixtures",
-    "index.js"
+    "src"
   ],
   "scripts": {
     "coverage": "exit 0",
