@@ -2,7 +2,7 @@
   "name": "@browserless/test",
   "description": "A test suite for browserless API",
   "homepage": "https://browserless.js.org",
-  "version": "10.9.14",
+  "version": "10.9.15",
   "exports": {
     ".": "./src/index.js",
     "./create": "./src/create.js",

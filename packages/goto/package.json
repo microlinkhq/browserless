@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Go to a page aborting unnecessary requests",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
-  "version": "10.9.14",
+  "version": "10.9.15",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -40,7 +40,7 @@
     "tough-cookie": "~6.0.0"
   },
   "devDependencies": {
-    "@browserless/test": "^10.9.14",
+    "@browserless/test": "^10.9.15",
     "ava": "5",
     "p-wait-for": "3"
   },
