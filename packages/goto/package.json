@@ -30,10 +30,10 @@
   ],
   "dependencies": {
     "@browserless/devices": "^10.7.13",
-    "@ghostery/adblocker-puppeteer": "~2.12.3",
-    "debug-logfmt": "~1.4.5",
+    "@ghostery/adblocker-puppeteer": "~2.13.4",
+    "debug-logfmt": "~1.4.7",
     "got": "~11.8.6",
-    "is-url-http": "~2.3.11",
+    "is-url-http": "~2.3.13",
     "p-reflect": "~2.1.0",
     "p-timeout": "~4.1.0",
     "shallow-equal": "~3.1.0",
