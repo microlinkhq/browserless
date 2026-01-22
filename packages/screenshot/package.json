@@ -43,7 +43,7 @@
     "pretty-ms": "~7.0.1",
     "prism-themes": "~1.9.0",
     "sharp": "~0.34.5",
-    "svg-gradient": "~1.0.3"
+    "svg-gradient": "~1.0.4"
   },
   "devDependencies": {
     "@browserless/test": "^10.9.16",
