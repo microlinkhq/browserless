@@ -12,11 +12,8 @@ for (const packagePath of await readdir(packagesPath)) {
   const pkg = join(packagesPath, packagePath, 'package.json')
   const { name, scripts } = JSON.parse(await readFile(pkg))
   if (scripts && scripts.test && scripts.test !== 'exit 0') {
-    packages.push({
-      name,
-      path: `./packages/${packagePath}`
-    })
+    packages.push(name)
   }
 }
 
-console.log(JSON.stringify({ package: packages }))
+console.log(`{"package":${JSON.stringify(packages)}}`)
