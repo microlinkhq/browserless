@@ -1,13 +1,15 @@
 <div align="center">
-  <br>
   <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://github.com/microlinkhq/browserless/raw/master/static/logo-banner.png#gh-light-mode-only" alt="browserless">
   <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://github.com/microlinkhq/browserless/raw/master/static/logo-banner-light.png#gh-dark-mode-only" alt="browserless">
-  <br>
-  <br>
-  <p align="center"><strong>@browserless/test</strong>: A test suite for browserless API.</p>
-  <p align="center">See our <a href="https://browserless.js.org" target='_blank' rel='noopener noreferrer'>website</a> for more information.</p>
-  <br>
+  <br><br>
+  <a href="https://microlink.io"><img src="https://img.shields.io/badge/powered_by-microlink.io-blue?style=flat-square&color=%23EA407B" alt="Powered by microlink.io"></a>
+  <img src="https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square" alt="Last version">
+  <a href="https://coveralls.io/github/microlinkhq/browserless"><img src="https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square" alt="Coverage Status"></a>
+  <a href="https://www.npmjs.org/package/browserless"><img src="https://img.shields.io/npm/dm/browserless.svg?style=flat-square" alt="NPM Status"></a>
+  <br><br>
 </div>
+
+> A test suite for the **browserless** api
 
 ## Install
 
