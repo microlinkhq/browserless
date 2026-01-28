@@ -155,6 +155,8 @@ const result = await getjQueryVersion('https://example.com')
 #### Use npm modules in sandbox
 
 ```js
+const createFunction = require('@browserless/function')
+
 const code = async ({ page }) => {
   const _ = require('lodash')
   const text = await page.evaluate(() => document.body.innerText)
@@ -168,6 +170,8 @@ const result = await countWords('https://example.com')
 #### Handle errors
 
 ```js
+const createFunction = require('@browserless/function')
+
 const code = () => {
   throw new Error('Something went wrong')
 }
