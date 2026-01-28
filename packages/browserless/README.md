@@ -21,23 +21,23 @@ npm install browserless puppeteer --save
 
 This is the **core package** of the browserless monorepo. It provides a high-level, performance-oriented API for headless Chrome/Chromium automation built on top of [Puppeteer](https://github.com/puppeteer/puppeteer).
 
-### What This Package Does
+### What this package does
 
 The `browserless` package serves as the main entry point and orchestrator for the entire browserless ecosystem. It handles:
 
-- **Browser Process Management**: Spawns and manages headless Chrome/Chromium processes with optimized flags for performance and stability. Includes automatic respawning when the browser disconnects.
+- **Browser process management**: Spawns and manages headless Chrome/Chromium processes with optimized flags for performance and stability. Includes automatic respawning when the browser disconnects.
 
-- **Browser Context Isolation**: Creates isolated browser contexts (similar to browser tabs) with separate cookies and cache, enabling concurrent operations without cross-contamination.
+- **Browser context isolation**: Creates isolated browser contexts (similar to browser tabs) with separate cookies and cache, enabling concurrent operations without cross-contamination.
 
-- **Built-in Methods**: Provides ready-to-use methods for common tasks:
+- **Built-in methods**: Provides ready-to-use methods for common tasks:
   - `html(url)` – Serialize page content to HTML
   - `text(url)` – Extract plain text from a page
   - `pdf(url)` – Generate PDF documents
   - `screenshot(url)` – Capture screenshots with device emulation and overlay support
 
-- **Reliability Features**: Built-in retry logic, timeout handling, and graceful error recovery for production environments.
+- **Reliability features**: Built-in retry logic, timeout handling, and graceful error recovery for production environments.
 
-### How It Fits in the Monorepo
+### How it fits in the monorepo
 
 This package integrates and re-exports functionality from other `@browserless/*` packages:
 
