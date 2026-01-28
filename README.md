@@ -435,7 +435,7 @@ type: `object`
 
 Once the screenshot has been taken, this option allows you to apply an overlay (backdrop).
 
-![](https://i.imgur.com/GBa6Mj7.png)
+![Overlay example](/static/ml-landing.png)
 
 You can configure the overlay by specifying the following:
 
