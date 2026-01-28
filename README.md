@@ -10,6 +10,37 @@
 </div>
 
 > The headless Chrome/Chromium driver on top of [Puppeteer](https://github.com/GoogleChrome/puppeteer).
+- [Highlights](#highlights)
+- [Installation](#installation)
+- [Usage](#usage)
+- [The cloud API solution](#the-cloud-api-solution)
+- [CLI](#cli)
+- [Initializing a browser](#initializing-a-browser)
+  - [.constructor(options)](#constructoroptions)
+  - [.createContext(options)](#createcontextoptions)
+  - [.browser()](#browser)
+  - [.respawn()](#respawn)
+  - [.close()](#close)
+- [Built-in](#built-in)
+  - [.html(url, options)](#htmlurl-options)
+  - [.text(url, options)](#texturl-options)
+  - [.pdf(url, options)](#pdfurl-options)
+  - [.screenshot(url, options)](#screenshoturl-options)
+  - [.destroyContext(options)](#destroycontextoptions)
+  - [.getDevice(options)](#getdeviceoptions)
+  - [.evaluate(fn, gotoOpts)](#evaluatefn-gotoopts)
+  - [.goto(page, options)](#gotopage-options)
+  - [.context()](#context)
+  - [.withPage(fn, \[options\])](#withpagefn-options)
+  - [.page()](#page)
+- [Extended](#extended)
+  - [function](#function)
+  - [lighthouse](#lighthouse)
+  - [screencast](#screencast)
+- [Packages](#packages)
+- [FAQ](#faq)
+- [License](#license)
+
 
 ## Highlights
 
