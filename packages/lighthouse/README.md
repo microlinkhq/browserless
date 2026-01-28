@@ -138,14 +138,6 @@ report.audits['total-blocking-time'].numericValue      // TBT in ms
 report.configSettings
 ```
 
-### CLI usage
-
-The `@browserless/cli` package includes a lighthouse command:
-
-```bash
-browserless lighthouse https://example.com > report.json
-```
-
 ### How it fits in the monorepo
 
 This is an **extended functionality package** for performance auditing:
