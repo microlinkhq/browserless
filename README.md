@@ -41,6 +41,7 @@
 - [FAQ](#faq)
 - [License](#license)
 
+---
 
 ## Highlights
 
