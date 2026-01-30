@@ -50,6 +50,11 @@ The `@browserless/cli` package allows you to:
 | `status <url>` | Get the HTTP status code |
 | `goto <url>` | Navigate to a URL and return page/response info |
 
+> **Note:** The `lighthouse` command requires an extra installation.  
+> 
+> Please make sure to install the standalone package by running:<br>
+> <kbd>npm install -g @browserless/lighthouse</kbd>
+
 ### How it fits in the monorepo
 This package depends on:
 
