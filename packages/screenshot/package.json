@@ -1,6 +1,6 @@
 {
   "name": "@browserless/screenshot",
-  "description": "Take a clean screenshot of any website",
+  "description": "Capture high-quality screenshots of websites with overlay support, device emulation, and automated image optimization.",
   "homepage": "https://browserless.js.org/#/?id=screenshoturl-options",
   "version": "10.9.17",
   "main": "src/index.js",
@@ -18,14 +18,18 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
-    "core",
+    "screenshot",
     "headless",
+    "chrome",
     "puppeteer",
-    "screenshot"
+    "automation",
+    "web-capture",
+    "image",
+    "overlay",
+    "device-emulation",
+    "png",
+    "jpeg"
   ],
   "dependencies": {
     "@browserless/goto": "^10.9.16",

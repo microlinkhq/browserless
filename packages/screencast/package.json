@@ -1,6 +1,6 @@
 {
   "name": "@browserless/screencast",
-  "description": "Browserless frame capturing using puppeteer",
+  "description": "Capture website interactions frame-by-frame to create videos and GIFs. Perfect for demos, tutorials, and automated testing.",
   "homepage": "https://browserless.js.org/#/?id=screencasturl-options",
   "version": "10.9.16",
   "main": "src/index.js",
@@ -18,19 +18,18 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
-    "core",
-    "headless",
-    "media",
-    "mediarecorder",
-    "puppeteer",
-    "recorder",
-    "recording",
     "screencast",
-    "video"
+    "video",
+    "gif",
+    "recording",
+    "headless",
+    "chrome",
+    "puppeteer",
+    "frame-capture",
+    "automation",
+    "demo",
+    "tutorial"
   ],
   "dependencies": {
     "null-prototype-object": "~1.2.5"

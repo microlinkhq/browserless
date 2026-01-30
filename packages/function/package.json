@@ -1,6 +1,6 @@
 {
   "name": "@browserless/function",
-  "description": "Run abritrary JavaScript inside a browser sandbox",
+  "description": "Execute arbitrary JavaScript code in a secure browser sandbox with access to page DOM and network.",
   "homepage": "https://browserless.js.org",
   "version": "10.9.16",
   "main": "src/index.js",
@@ -18,15 +18,17 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
-    "core",
     "function",
+    "javascript",
     "headless",
+    "chrome",
     "puppeteer",
-    "serverless"
+    "sandbox",
+    "execution",
+    "serverless",
+    "vm",
+    "isolate"
   ],
   "dependencies": {
     "@browserless/errors": "^10.9.16",

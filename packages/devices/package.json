@@ -1,6 +1,6 @@
 {
   "name": "@browserless/devices",
-  "description": "A collection of different devices for emulation purposes",
+  "description": "Comprehensive device database for browser testing. Emulate mobile phones, tablets, and desktops with accurate viewport and user agent data.",
   "homepage": "https://browserless.js.org/#/?id=devices",
   "version": "10.7.13",
   "main": "src/index.js",
@@ -18,14 +18,16 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
-    "device",
     "devices",
-    "headless",
-    "puppeteer"
+    "emulation",
+    "mobile",
+    "tablet",
+    "desktop",
+    "viewport",
+    "user-agent",
+    "responsive",
+    "testing"
   ],
   "dependencies": {
     "didyoumean3": "~1.2.5",

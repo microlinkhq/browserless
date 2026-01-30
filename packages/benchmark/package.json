@@ -1,6 +1,6 @@
 {
   "name": "@browserless/benchmark",
-  "description": "Benchmarking tool for testing different browserless configurations",
+  "description": "Performance benchmarking tool for headless browser automation. Measure CPU, GPU, timing, and screenshot performance across configurations.",
   "homepage": "https://browserless.js.org/#/?id=benchmark",
   "version": "10.2.6",
   "main": "src/index.js",
@@ -18,15 +18,17 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "bench",
-    "benchmark",
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
+    "benchmark",
+    "performance",
     "headless",
-    "perf",
-    "puppeteer"
+    "chrome",
+    "puppeteer",
+    "profiling",
+    "cpu",
+    "gpu",
+    "metrics",
+    "optimization"
   ],
   "devDependencies": {
     "@kikobeats/time-span": "latest",

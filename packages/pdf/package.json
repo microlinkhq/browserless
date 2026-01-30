@@ -1,27 +1,33 @@
 {
   "name": "@browserless/pdf",
-  "description": "Sensible good defaults for exporting a website as PDF",
+  "description": "Convert websites to high-quality PDFs with customizable margins, background printing, and optimized scaling.",
   "homepage": "https://browserless.js.org/#/?id=pdfurl-options",
   "version": "10.9.17",
   "main": "src",
+  "author": {
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
+  },
   "repository": {
     "directory": "packages/pdf",
     "type": "git",
     "url": "git+https://github.com/microlinkhq/browserless.git#master"
   },
   "bugs": {
-    "url": "https://github.com/microlinkhq/browserless"
+    "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
-    "export",
-    "headless",
-    "media",
     "pdf",
-    "screen"
+    "headless",
+    "chrome",
+    "puppeteer",
+    "export",
+    "website-to-pdf",
+    "print",
+    "document",
+    "conversion"
   ],
   "dependencies": {
     "@browserless/goto": "^10.9.16",

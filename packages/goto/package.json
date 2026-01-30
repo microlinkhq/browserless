@@ -1,6 +1,6 @@
 {
   "name": "@browserless/goto",
-  "description": "Go to a page aborting unnecessary requests",
+  "description": "Navigate to web pages with built-in ad blocking, device emulation, and optimized loading for faster automation.",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
   "version": "10.9.16",
   "main": "src/index.js",
@@ -18,15 +18,16 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
-    "core",
     "goto",
+    "navigation",
     "headless",
-    "page",
-    "puppeteer"
+    "chrome",
+    "puppeteer",
+    "adblock",
+    "automation",
+    "device-emulation",
+    "performance"
   ],
   "dependencies": {
     "@browserless/devices": "^10.7.13",
