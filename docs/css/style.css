@@ -15,8 +15,8 @@
   --gray8: #6c6c6c;
   --gray9: #3f3f3f;
   --blue: #067df7;
-  --green: #00A995;
-  --red: #F23342;
+  --green: #00a995;
+  --red: #f23342;
   /* theme */
   --primary-color: var(--base);
   --secondary-color: var(--blue);
@@ -44,6 +44,12 @@
   -webkit-text-size-adjust: none;
   -webkit-touch-callout: none;
   box-sizing: border-box;
+}
+
+/* Hide the TOC and hr in the main content since it's already in the sidebar */
+.markdown-section > blockquote + ul,
+.markdown-section > blockquote + ul + hr {
+  display: none;
 }
 
 body,
@@ -123,7 +129,7 @@ main {
   text-decoration: underline;
 }
 
-.sidebar ul li.active>a {
+.sidebar ul li.active > a {
   border-right: 2px solid var(--primary-color);
   color: var(--primary-color);
   font-weight: 700;
@@ -167,12 +173,12 @@ main {
   position: relative;
 }
 
-.markdown-section>* {
+.markdown-section > * {
   box-sizing: border-box;
   font-size: inherit;
 }
 
-.markdown-section> :first-child {
+.markdown-section > :first-child {
   margin-top: 0 !important;
 }
 
@@ -196,7 +202,6 @@ main {
 }
 
 @media print {
-
   .github-corner,
   .sidebar,
   .sidebar-toggle {
@@ -399,7 +404,7 @@ body {
   -webkit-font-smoothing: initial;
 }
 
-.markdown-section pre>code {
+.markdown-section pre > code {
   border: 0;
   display: block;
   font-family: var(--code-font);
@@ -440,7 +445,6 @@ body {
 /* github corner */
 
 @keyframes b {
-
   0%,
   100% {
     transform: rotate(0);

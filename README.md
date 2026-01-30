@@ -1,20 +1,53 @@
-<h1 align="center">
+<div align="center">
   <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://github.com/microlinkhq/browserless/raw/master/static/logo-banner.png#gh-light-mode-only" alt="browserless">
   <img style="width: 500px; margin:3rem 0 1.5rem;" src="https://github.com/microlinkhq/browserless/raw/master/static/logo-banner-light.png#gh-dark-mode-only" alt="browserless">
-  <br>
-</h1>
-
-![Last version](https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square)
-[![Coverage Status](https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square)](https://coveralls.io/github/microlinkhq/browserless)
-[![NPM Status](https://img.shields.io/npm/dm/browserless.svg?style=flat-square)](https://www.npmjs.org/package/browserless)
+  <br><br>
+  <a href="https://microlink.io"><img src="https://img.shields.io/badge/powered_by-microlink.io-blue?style=flat-square&color=%23EA407B" alt="Powered by microlink.io"></a>
+  <img src="https://img.shields.io/github/tag/microlinkhq/browserless.svg?style=flat-square" alt="Last version">
+  <a href="https://coveralls.io/github/microlinkhq/browserless"><img src="https://img.shields.io/coveralls/microlinkhq/browserless.svg?style=flat-square" alt="Coverage Status"></a>
+  <a href="https://www.npmjs.org/package/browserless"><img src="https://img.shields.io/npm/dm/browserless.svg?style=flat-square" alt="NPM Status"></a>
+  <br><br>
+</div>
 
 > The headless Chrome/Chromium driver on top of [Puppeteer](https://github.com/GoogleChrome/puppeteer).
+- [Highlights](#highlights)
+- [Installation](#installation)
+- [Usage](#usage)
+- [The cloud API solution](#the-cloud-api-solution)
+- [CLI](#cli)
+- [Initializing a browser](#initializing-a-browser)
+  - [.constructor(options)](#constructoroptions)
+  - [.createContext(options)](#createcontextoptions)
+  - [.browser()](#browser)
+  - [.respawn()](#respawn)
+  - [.close()](#close)
+- [Built-in](#built-in)
+  - [.html(url, options)](#htmlurl-options)
+  - [.text(url, options)](#texturl-options)
+  - [.pdf(url, options)](#pdfurl-options)
+  - [.screenshot(url, options)](#screenshoturl-options)
+  - [.destroyContext(options)](#destroycontextoptions)
+  - [.getDevice(options)](#getdeviceoptions)
+  - [.evaluate(fn, gotoOpts)](#evaluatefn-gotoopts)
+  - [.goto(page, options)](#gotopage-options)
+  - [.context()](#context)
+  - [.withPage(fn, \[options\])](#withpagefn-options)
+  - [.page()](#page)
+- [Extended](#extended)
+  - [function](#function)
+  - [lighthouse](#lighthouse)
+  - [screencast](#screencast)
+- [Packages](#packages)
+- [FAQ](#faq)
+- [License](#license)
+
+---
 
 ## Highlights
 
-- Compatible with Puppeteer API ([text](texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
+- Compatible with Puppeteer API ([text](#texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
-- Shell interaction via [Browserless CLI](command-line-interface).
+- Shell interaction via [Browserless CLI](#cli).
 - Easy [Google Lighthouse](#lighthouse) integration.
 - Automatic retry & error handling.
 - Sensible good defaults.
@@ -29,11 +62,11 @@ npm install browserless puppeteer --save
 
 **Browserless** runs on top of [Puppeteer](https://github.com/GoogleChrome/puppeteer), so you need that installed to get started.
 
-You can choose between [`puppeteer`](https://www.npmjs.com/package/puppeteer), [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core), and [`puppeteer-firefox`](https://www.npmjs.com/package/puppeteer-firefox) depending on your use case.
+You can choose between [`puppeteer`](https://www.npmjs.com/package/puppeteer) and [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) depending on your use case.
 
 ## Usage
 
-Here is a complete example showcasing some of **Browserless** capabilities:
+Here is a complete example showcasing some **Browserless** capabilities:
 
 ```js
 const createBrowser = require('browserless')
@@ -63,11 +96,20 @@ await browserless.destroyContext()
 await browser.close()
 ```
 
-As you can see, **Browserless** is implemented using a single browser process which allows you to create and destroy several browser contexts all within that process.
+As you can see, **Browserless** uses a single browser process, allowing you to create and destroy multiple browser contexts within that same process.
 
-If you're already using Puppeteer in your project, you can layer **Browserless** on top of that by simply installing it.
+If you're already using Puppeteer in your project, you can layer **Browserless** on top simply by installing it.
 
-You can also pull in additional **Browserless** [packages](#packages) for your specific needs, all of which work well with Puppeteer.
+You can also include additional **Browserless** [packages](#packages) to suit your specific needs, all of which work well with Puppeteer.
+
+## The cloud API solution
+
+If you don’t want to manage that infrastructure, you can use the fully managed
+[Microlink API](https://microlink.io/docs/api/getting-started/overview).
+
+It covers every **browserless** use case but automatically handles proxy rotation, paywalls, bot detection, and restricted platforms such as major social networks, while scaling on demand.
+
+Pricing is pay-as-you-go and [starts for free](https://microlink.io/#pricing).
 
 ## CLI
 
@@ -77,7 +119,7 @@ Using the **Browserless** command-line tool, you can interact with Browserless t
   <video poster="/static/cli.png" loop="" controls="" src="https://github.com/microlinkhq/browserless/assets/2096101/5200b2c5-d930-40e7-b128-6d23a6974c28" style="width: 100%;border-radius: 4px;" autoplay=""></video>
 </div>
 
-Start by installing [`@browserless/cli`](https://npm.im/@browserless/cli) globally on your system using your favorite package manager:
+Install [`@browserless/cli`](https://npm.im/@browserless/cli) globally using your favorite package manager:
 
 ```
 npm install -g @browserless/cli
@@ -125,23 +167,23 @@ await browser.close()
 The `createBrowser` method supports [puppeteer.launch#options](https://github.com/puppeteer/puppeteer/blob/main/docs/api/puppeteer.launchoptions.md).
 
 
-**Browserless** provides additional options you can use when creating a browser instance:
+**Browserless** provides additional options for creating a browser instance:
 
 ##### defaultDevice
 
-This will set your browser viewport to that of the specified device:
+Sets your browser viewport to that of the specified device:
 
-type: `string`</br>
+type: `string`<br/>
 default: `'Macbook Pro 13'`
 
 
 
 ##### lossyDeviceName
 
-type: `boolean`</br>
+type: `boolean`<br/>
 default: `false`
 
-This allows for a margin of error when setting the device name.
+Allows for a margin of error when setting the device name.
 
 ```js
 
@@ -152,7 +194,7 @@ const browser = require('browserless')({ lossyDeviceName: true });
     // Create context/tab
     const tabInstance = await browser.createContext();
 
-    // The device property is consistently set to that of a MacBook Pro even when misspelt
+    // Even if the device name is misspelled, the property will default to 'MacBook Pro'
     console.log(tabInstance.getDevice({ device: 'MacBook Pro' }))
     console.log(tabInstance.getDevice({ device: 'macbook pro 13' }))
     console.log(tabInstance.getDevice({ device: 'MACBOOK PRO 13' }))
@@ -167,25 +209,25 @@ This comes in handy in situations where the device name is set by a third-party.
 
 ##### mode
 
-type: `string`</br>
-default: `launch`</br>
+type: `string`<br/>
+default: `launch`<br/>
 values: `'launch'` | `'connect'`
 
-This specifies if the browser instance should be spawned using [puppeteer.launch](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerlaunchoptions) or [puppeteer.connect](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerconnectoptions).
+Specifies if the browser instance should be spawned using [puppeteer.launch](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerlaunchoptions) or [puppeteer.connect](https://github.com/puppeteer/puppeteer/blob/v5.5.0/docs/api.md#puppeteerconnectoptions).
 
 ##### timeout
 
-type: `number`</br>
+type: `number`<br/>
 default: `30000`
 
-This setting will change the default maximum navigation time.
+Changes the default maximum navigation time.
 
 ##### puppeteer
 
-type: `Puppeteer`</br>
+type: `Puppeteer`<br/>
 default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
 
-By default, it automatically detects which libary is installed (thus either [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox)) based on your installed dependecies.
+By default, it automatically detects which libary is installed (thus either [puppeteer](https://www.npmjs.com/package/puppeteer) or [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) based on your installed dependecies.
 
 ### .createContext(options)
 
@@ -197,7 +239,7 @@ const browserless = await browser.createContext({
 })
 ```
 
-Each browser context is isolated, thus cookies/cache stay within its corresponding browser contexts just like with browser tabs. Each context can also have different options during its creation.
+Each browser context is isolated, thus cookies/cache stay within its corresponding browser contexts, just like browser tabs. Each context can be initialized with its own set of options.
 
 #### options
 
@@ -207,14 +249,14 @@ Browserless provides additional browser context options:
 
 ##### retry
 
-type: `number`</br>
+type: `number`<br/>
 default: `2`
 
 The number of retries that can be performed before considering a navigation as failed.
 
 ### .browser()
 
-It returns the internal [Browser](https://github.com/puppeteer/puppeteer/blob/v10.0.0/docs/api.md#class-browser) instance.
+Returns the internal [Browser](https://github.com/puppeteer/puppeteer/blob/v10.0.0/docs/api.md#class-browser) instance.
 
 ```js
 const headlessBrowser = await browser.browser()
@@ -225,7 +267,7 @@ console.log('My headless browser version is', await headlessBrowser.version())
 
 ### .respawn()
 
-It will respawn the internal browser.
+Respawns the internal browser.
 
 ```js
 const getPID = promise => (await promise).process().pid
@@ -241,7 +283,7 @@ This method is an implementation detail, normally you don't need to call it.
 
 ### .close()
 
-Used to close the internal browser.
+Closes the internal browser.
 
 ```js
 const { onExit } = require('signal-exit')
@@ -254,7 +296,7 @@ onExit(browser.close)
 
 ### .html(url, options)
 
-Used to serialize the content of a target `url` into HTML.
+Serializes the content of a target `url` into HTML.
 
 ```js
 const html = await browserless.html('https://example.com')
@@ -265,11 +307,11 @@ console.log(html)
 
 #### options
 
-Check out [browserless.goto](/#gotopage-options) to see the full list of supported values and options.
+See [browserless.goto](/#gotopage-options) for all the options and supported values.
 
 ### .text(url, options)
 
-Used to serialize the content from the target `url` into plain text.
+Serializes the content from the target `url` into plain text.
 
 ```js
 const text = await browserless.text('https://example.com')
@@ -280,11 +322,11 @@ console.log(text)
 
 #### options
 
-See [browserless.goto](/#gotopage-options) to know all the options and values supported.
+See [browserless.goto](/#gotopage-options) for all the options and supported values.
 
 ### .pdf(url, options)
 
-It generates the PDF version of a website behind a `url`.
+Generates the PDF version of a website behind a `url`.
 
 ```js
 const buffer = await browserless.pdf('https://example.com')
@@ -304,7 +346,7 @@ This method uses the following options by default:
 }
 ```
 
-Check out [browserless.goto](/#gotopage-options) to see the full list of supported values and options.
+See [browserless.goto](/#gotopage-options) for all the options and supported values.
 
 Also, all of Puppeteer's [page.pdf](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagepdfoptions) options are supported.
 
@@ -312,10 +354,10 @@ Additionally, you can setup:
 
 ##### margin
 
-type: `string` | `string[]`</br>
+type: `string` | `string[]`<br/>
 default: `'0.35cm'`
 
-Used to set screen margins. Supported units include:
+Sets screen margins. Supported units include:
 
 - `px` for pixel.
 - `in` for inches.
@@ -345,7 +387,7 @@ const buffer = await browserless.pdf(url.toString(), {
 
 ### .screenshot(url, options)
 
-Used to generate screenshots based on a specified `url`.
+Generates screenshots based on a specified `url`.
 
 ```js
 const buffer = await browserless.screenshot('https://example.com')
@@ -363,7 +405,7 @@ This method uses the following options by default:
 }
 ```
 
-Check out [browserless.goto](/#gotopage-options) to see the full list of supported values and options.
+See [browserless.goto](/#gotopage-options) for all the options and supported values.
 
 Also, all of Puppeteer's [page.screenshot](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#pagescreenshotoptions) options are supported.
 
@@ -371,10 +413,10 @@ Additionally, **Browserless** provides the following options:
 
 ##### codeScheme
 
-type: `string`</br>
+type: `string`<br/>
 default: `'atom-dark'`
 
-Whenever the incoming response `'Content-Type'` is set to `'json'`, The JSON payload will be presented as a formatted JSON string, beautified using the provided `codeScheme` theme or by default `atom-dark`. 
+Whenever the incoming response `'Content-Type'` is set to `'json'`, the JSON payload will be presented as a formatted JSON string, beautified using the provided `codeScheme` theme or by default `atom-dark`. 
 
 The color schemes is based on the [Prism library](https://prismjs.com).
 
@@ -384,7 +426,7 @@ The [Prism repository](https://github.com/PrismJS/prism-themes/tree/master?tab=r
 
 ##### element
 
-type: `string` </br>
+type: `string` <br/>
 
 Returns the first instance of a matching DOM element based on a [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors). This operation remains unresolved until the element is displayed on screen or the specified maximum [timeout](#timeout) is reached.
 
@@ -392,13 +434,13 @@ Returns the first instance of a matching DOM element based on a [CSS selector](h
 
 type: `object`
 
-Once the screenshot has been taken, this option allows you to apply an overlay(backdrop).
+Once the screenshot has been taken, this option allows you to apply an overlay (backdrop).
 
-![](https://i.imgur.com/GBa6Mj7.png)
+![Overlay example](/static/ml-landing.jpeg)
 
 You can configure the overlay by specifying the following:
 
-- **browser**: Specifies the color of the browser stencil to use, thus either `light` or `dark` for light and dark mode respecitively.
+- **browser**: Specifies the color of the browser stencil to use, thus either `light` or `dark` for light and dark mode respectively.
 - **background**: Specifies the background to use. A number of value types are supported:
   - Hexadecimal/RGB/RGBA color codes, eg. `#c1c1c1`.
   - [CSS gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
@@ -431,7 +473,7 @@ await browserless.destroyContext()
 
 ##### force
 
-type: `string` </br>
+type: `string` <br/>
 default: `'force'`
 
 When `force` is set, it prevents the recreation of the context in case a browser action is being executed.
@@ -462,17 +504,17 @@ This method extends the [Puppeteer.KnownDevices](https://pptr.dev/api/puppeteer.
 
 ##### device
 
-type: `string` </br>
+type: `string` <br/>
 
 The device descriptor name. It's used to fetch preset values associated with a device.
 
-When [lossyDeviceName](#lossydevicename) is enabled, a fuzzy search rather than a strict search will be performed in order to maximize getting a result back.
+When [lossyDeviceName](#lossydevicename) is enabled, a fuzzy search is performed instead of a strict search to maximize the likelihood of finding a match.
 
 ##### viewport
 
 type: `object` </br>
 
-Used to set extra viewport settings. These settings will be merged with the preset settings.
+Sets extra viewport settings. These settings will be merged with the preset settings.
 
 ```js
 browserless.getDevice({
@@ -500,7 +542,7 @@ browserless.getDevice({
 
 ### .evaluate(fn, gotoOpts)
 
-It exposes an interface for creating your own `evaluate` function, passing you the `page` and `response`.
+It exposes an interface for creating your own `evaluate` function, providing access to `page` and `response`.
 
 The `fn` will receive `page` and `response` as arguments:
 
@@ -519,7 +561,7 @@ await ping('https://example.com')
 // }
 ```
 
-You don't need to close the page; It will be closed automatically.
+You don't need to close the page, it will be closed automatically.
 
 Internally, the method performs a [browserless.goto](#gotopage-options), making it possible to pass extra arguments as a second parameter:
 
@@ -534,7 +576,7 @@ await serialize('https://example.com')
 
 ### .goto(page, options)
 
-It performs a [page.goto](https://github.com/puppeteer/puppeteer/blob/main/docs/api/puppeteer.gotooptions.md) with a lot of extra capabilities:
+Performs a [page.goto](https://github.com/puppeteer/puppeteer/blob/main/docs/api/puppeteer.gotooptions.md) with a lot of extra capabilities:
 
 ```js
 const page = await browserless.page()
@@ -549,56 +591,56 @@ Additionally, you can setup:
 
 ##### abortTypes
 
-type: `array`</br>
+type: `array`<br/>
 default: `[]`
 
-It sets the ability to abort requests based on the [ResourceType](https://github.com/puppeteer/puppeteer/blob/3db7d55d261b1e1fead7228a7ebf9825a0bcbe72/packages/puppeteer-core/src/common/HTTPRequest.ts#L68).
+Sets the ability to abort requests based on the [ResourceType](https://github.com/puppeteer/puppeteer/blob/3db7d55d261b1e1fead7228a7ebf9825a0bcbe72/packages/puppeteer-core/src/common/HTTPRequest.ts#L68).
 
 ##### adblock
 
-type: `boolean`</br>
+type: `boolean`<br/>
 default: `true`
 
-It enabled the built-in [adblocker by](https://www.npmjs.com/package/@cliqz/adblocker) [Cliqz](https://www.npmjs.com/package/@cliqz/adblocker) that aborts unnecessary third-party requests associated with ads services.
+Enables the built-in [adblocker by](https://www.npmjs.com/package/@cliqz/adblocker) [Cliqz](https://www.npmjs.com/package/@cliqz/adblocker) that aborts unnecessary third-party requests associated with ads services.
 
 ##### animations
 
-type: `boolean`<br>
+type: `boolean`<br/>
 default: `false`
 
-Disable CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition), also it sets [prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) consequently.
+Disables CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) and [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/transition), also it sets [prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) consequently.
 
 ##### authenticate
 
-type: `object`<br>
+type: `object`<br/>
 
 It will be passed down to [page.authenticate](https://pptr.dev/api/puppeteer.page.authenticate).
 
 ##### click
 
-type: `string` | `string[]`</br>
+type: `string` | `string[]`<br/>
 
-Click the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+Clicks the DOM element matching the [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
 ##### colorScheme
 
-type: `string`</br>
+type: `string`<br/>
 default: `'no-preference'`
 
 Sets [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme) CSS media feature, used to detect if the user has requested the system use a `'light'` or `'dark'` color theme.
 
 ##### device
 
-type: `string`</br>
+type: `string`<br/>
 default: `'macbook pro 13'`
 
-It specifies the [device](#devices) descriptor used to retrieve `userAgent`` and `viewport`.
+It specifies the [device](#devices) descriptor used to retrieve `userAgent` and `viewport`.
 
 ##### headers
 
 type: `object`
 
-An object containing additional HTTP headers to be sent with every request.
+An object containing additional HTTP headers to send with every request.
 
 ```js
 const browserless = require('browserless')
@@ -617,20 +659,20 @@ This sets [`visibility: hidden`](https://stackoverflow.com/a/133064/64949) on th
 
 ##### html
 
-type: `string` </br>
+type: `string` <br/>
 
 In case you provide HTML markup, a [page.setContent](https://github.com/puppeteer/puppeteer/blob/v5.2.1/docs/api.md#pagesetcontenthtml-options) avoiding fetch the content from the target URL.
 
 ##### javascript
 
-type: `boolean`<br>
+type: `boolean`<br/>
 default: `true`
 
 When it's `false`, it disables JavaScript on the current page.
 
 ##### mediaType
 
-type: `string`</br>
+type: `string`<br/>
 default: `'screen'`
 
 Changes the CSS media type of the page using [page.emulateMediaType](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageemulatemediamediatype).
@@ -661,7 +703,7 @@ const buffer = await browserless.screenshot(url.toString(), {
 
 type:`function`
 
-Associate a handler for every request in the page.
+Associates a handler for every request in the page.
 
 ##### scripts
 
@@ -672,7 +714,7 @@ Injects [&lt;script&gt;](https://developer.mozilla.org/en-US/docs/Web/HTML/Eleme
 It can accept:
 
 - Absolute URLs (e.g., `'https://cdn.jsdelivr.net/npm/@microlink/mql@0.3.12/src/browser.js'`).
-- Local file (e.g., `'local-file.js').
+- Local files (e.g., `'local-file.js').
 - Inline code (e.g., `"document.body.style.backgroundColor = 'red'"`).
 
 ```js
@@ -685,13 +727,13 @@ const buffer = await browserless.screenshot(url.toString(), {
 })
 ```
 
-Prefer to use [modules](#modules) whenever possible.
+Use [modules](#modules) whenever possible.
 
 ##### scroll
 
 type: `string`
 
-Scroll to the DOM element matching the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
+Scrolls to the DOM element matching the [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors).
 
 ##### styles
 
@@ -719,7 +761,7 @@ const buffer = await browserless.screenshot(url.toString(), {
 
 type: `string`
 
-It changes the [timezone](https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2Fchromium%2Fsrc%2Fthird_party%2Ficu%2Fsource%2Fdata%2Fmisc%2FmetaZones.txt) of the page.
+Changes the [timezone](https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2Fchromium%2Fsrc%2Fthird_party%2Ficu%2Fsource%2Fdata%2Fmisc%2FmetaZones.txt) of the page.
 
 ##### url
 
@@ -729,29 +771,29 @@ The target URL.
 
 ##### viewport
 
-It will setup a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
+Setups a custom viewport, using [page.setViewport](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagesetviewportviewport) method.
 
 ##### waitForSelector
 
 type:`string`
 
-Wait a quantity of time, selector or function using [page.waitForSelector](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#pagewaitforselectorselector-options).
+Waits a quantity of time, selector or function using [page.waitForSelector](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#pagewaitforselectorselector-options).
 
 ##### waitForTimeout
 
 type:`number`
 
-Wait a quantity time in milliseconds.
+Waits a quantity time in milliseconds.
 
 ##### waitUntil
 
-type: `string` | `string[]`</br>
-default: `'auto'`</br>
+type: `string` | `string[]`<br/>
+default: `'auto'`<br/>
 values: `'auto'` | `'load'` | `'domcontentloaded'` | `'networkidle0'` | `'networkidle2'`
 
-When to consider navigation successful.
+Determines when the navigation is considered successful.
 
-If you provide an array of event strings, navigation is considered to be successful after all events have been fired.
+If an array of event strings is provided, navigation is considered successful once all events have fired.
 
 Events can be either:
 
@@ -763,7 +805,7 @@ Events can be either:
 
 ### .context()
 
-It returns the [BrowserContext](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#class-browsercontext) associated with your instance.
+Returns the [BrowserContext](https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#class-browsercontext) associated with your instance.
 
 ```js
 const browserContext = await browserless.context()
@@ -774,7 +816,7 @@ console.log(browserContext.id)
 
 ### .withPage(fn, [options])
 
-It returns a higher-order function as convenient way to interact with a page:
+Returns a higher-order function as convenient way to interact with a page:
 
 ```js
 const getTitle = browserless.withPage((page, goto) => async opts => {
@@ -806,7 +848,7 @@ This setting will change the default maximum navigation time.
 
 ### .page()
 
-It returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#class-page) associated with the current browser context.
+Returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#class-page) associated with the current browser context.
 
 ```js
 const page = await browserless.page()
@@ -898,16 +940,16 @@ The lighthouse execution runs as a [worker thread](https://nodejs.org/api/worker
 
 ##### logLevel
 
-type: `string`</br>
-default: `'error'`</br>
+type: `string`<br/>
+default: `'error'`<br/>
 values: `'silent'` | `'error'` | `'info'` | `'verbose'` </br>
 
 The level of logging to enable.
 
 ##### output
 
-type: `string` | `string[]`</br>
-default: `'json'`</br>
+type: `string` | `string[]`<br/>
+default: `'json'`<br/>
 values: `'json'` | `'csv'` | `'html'`
 
 The type(s) of report output to be produced.
@@ -917,7 +959,7 @@ The type(s) of report output to be produced.
 type: `number`</br>
 default: `browserless.timeout`
 
-This setting will change the default maximum navigation time.
+Changes the default maximum navigation time.
 
 ### screencast
 
@@ -952,7 +994,7 @@ await screencast.stop()
 console.log(frames)
 ```
 
-Check a [full example](/blob/master/packages/screencast/examples/server.js) generating a GIF as output.
+See a [full example](/blob/master/packages/screencast/examples/server.js) that generates a GIF.
 
 #### page
 
@@ -987,7 +1029,13 @@ See [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/to
 
 **Q: Why use `browserless` over `puppeteer`?**
 
-**browserless** does not replace puppeteer, it complements it. It's just a syntactic sugar layer over official Headless Chrome oriented for production scenarios.
+**browserless** does not replace Puppeteer; it complements it. It acts as a syntactic sugar layer over official Headless Chrome, optimized for production scenarios.
+
+**Q: Is there a hosted cloud solution?**
+
+Yes. If you don't want to manage the infrastructure of headless browsers, proxies, and antibot workarounds, use the [Microlink API](https://microlink.io) we've built.
+
+It scales on demand, and pricing [starts for free](https://microlink.io/#pricing).
 
 **Q: Why do you block ads scripts by default?**
 
@@ -997,9 +1045,9 @@ To speed up the process, we block ad scripts by default because most of them are
 
 **Q: My output is different from the expected**
 
-Probably **browserless** was too smart and it blocked a request that you need.
+**Browserless** might have been too smart and blocked a request that you need.
 
-You can active debug mode using `DEBUG=browserless` environment variable in order to see what is happening behind the code:
+You can activate debug mode using `DEBUG=browserless` environment variable in order to see what is happening under the hood:
 
 Consider opening an [issue](https://github.com/microlinkhq/browserless/issues/new) with the debug trace.
 

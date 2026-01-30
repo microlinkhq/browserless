@@ -81,5 +81,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(3000, () =>
   console.log(`
   Listen: http://localhost:3000/{URL}
- Example: http://localhost:3000/https://browserless.js.org\n`)
+  Example: http://localhost:3000/https://browserless.js.org\n`)
 )
