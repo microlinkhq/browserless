@@ -1,6 +1,6 @@
 {
   "name": "@browserless/errors",
-  "description": "A collection of qualified errors for Puppeteer",
+  "description": "Enhanced error handling for headless browser automation. Provides detailed, actionable error messages for debugging Puppeteer issues.",
   "homepage": "https://browserless.js.org",
   "version": "10.9.16",
   "main": "index.js",
@@ -15,17 +15,18 @@
     "url": "git+https://github.com/microlinkhq/browserless.git#master"
   },
   "bugs": {
-    "url": "https://github.com/microlinkhq/browserless"
+    "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
     "errors",
+    "error-handling",
     "headless",
+    "chrome",
     "puppeteer",
-    "qualified"
+    "debugging",
+    "logging",
+    "exception"
   ],
   "dependencies": {
     "debug-logfmt": "~1.4.7",

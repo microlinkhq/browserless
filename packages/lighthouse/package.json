@@ -1,27 +1,35 @@
 {
   "name": "@browserless/lighthouse",
-  "description": "Browserless Lighthouse integration using puppeteer.",
+  "description": "Run Google Lighthouse audits on websites using headless Chrome. Get performance, accessibility, and SEO metrics.",
   "homepage": "https://browserless.js.org",
   "version": "10.9.16",
   "main": "src",
+  "author": {
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
+  },
   "repository": {
+    "directory": "packages/lighthouse",
     "type": "git",
     "url": "git+https://github.com/microlinkhq/browserless.git#master"
   },
   "bugs": {
-    "url": "https://github.com/microlinkhq/browserless"
+    "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
     "browserless",
-    "chromeless",
+    "lighthouse",
     "headless",
-    "httpstat",
-    "httpstats",
-    "lighhouse",
-    "metrics",
+    "chrome",
     "puppeteer",
+    "performance",
+    "audit",
+    "seo",
+    "accessibility",
+    "metrics",
     "pwa",
-    "stats"
+    "web-vitals"
   ],
   "dependencies": {
     "lighthouse": "~13.0.1"

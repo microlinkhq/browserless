@@ -1,6 +1,6 @@
 {
   "name": "@browserless/cli",
-  "description": "CLI to interact with Browserless capabilities",
+  "description": "Command-line interface for headless browser automation. Take screenshots, generate PDFs, and extract content from websites.",
   "homepage": "https://browserless.js.org",
   "version": "10.9.17",
   "bin": {
@@ -20,15 +20,18 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browser",
     "browserless",
-    "chrome",
-    "chromeless",
     "cli",
-    "example",
-    "examples",
+    "command-line",
     "headless",
-    "puppeteer"
+    "chrome",
+    "puppeteer",
+    "screenshot",
+    "pdf",
+    "automation",
+    "web-scraping",
+    "terminal",
+    "tool"
   ],
   "dependencies": {
     "beauty-error": "~1.2.21",
