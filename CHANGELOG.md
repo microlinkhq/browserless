@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.9.18](https://github.com/microlinkhq/browserless/compare/v10.9.17...v10.9.18) (2026-02-02)
+
+### Bug Fixes
+
+* add missing lodash dependency ([ba08369](https://github.com/microlinkhq/browserless/commit/ba08369e973a4acab204b88c6e63df03cb3a3c5b))
+
 ## [10.9.17](https://github.com/microlinkhq/browserless/compare/v10.9.16...v10.9.17) (2026-01-22)
 
 **Note:** Version bump only for package browserless

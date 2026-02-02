@@ -2,7 +2,7 @@
   "name": "@browserless/test",
   "description": "Testing utilities for headless browser automation. Includes test helpers, screenshot comparison, and PDF validation tools.",
   "homepage": "https://browserless.js.org",
-  "version": "10.9.16",
+  "version": "10.9.18",
   "exports": {
     ".": "./src/index.js",
     "./create": "./src/create.js",

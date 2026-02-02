@@ -2,7 +2,7 @@
   "name": "@browserless/pdf",
   "description": "Convert websites to high-quality PDFs with customizable margins, background printing, and optimized scaling.",
   "homepage": "https://browserless.js.org/#/?id=pdfurl-options",
-  "version": "10.9.17",
+  "version": "10.9.18",
   "main": "src",
   "author": {
     "email": "hello@microlink.io",
@@ -30,8 +30,8 @@
     "conversion"
   ],
   "dependencies": {
-    "@browserless/goto": "^10.9.16",
-    "@browserless/screenshot": "^10.9.17",
+    "@browserless/goto": "^10.9.18",
+    "@browserless/screenshot": "^10.9.18",
     "@kikobeats/time-span": "~1.0.11",
     "debug-logfmt": "~1.4.7",
     "pretty-ms": "~7.0.1"

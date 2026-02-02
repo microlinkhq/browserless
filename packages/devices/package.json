@@ -2,7 +2,7 @@
   "name": "@browserless/devices",
   "description": "Comprehensive device database for browser testing. Emulate mobile phones, tablets, and desktops with accurate viewport and user agent data.",
   "homepage": "https://browserless.js.org/#/?id=devices",
-  "version": "10.7.13",
+  "version": "10.9.18",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",

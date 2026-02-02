@@ -2,7 +2,7 @@
   "name": "@browserless/errors",
   "description": "Enhanced error handling for headless browser automation. Provides detailed, actionable error messages for debugging Puppeteer issues.",
   "homepage": "https://browserless.js.org",
-  "version": "10.9.16",
+  "version": "10.9.18",
   "main": "index.js",
   "author": {
     "email": "hello@microlink.io",
