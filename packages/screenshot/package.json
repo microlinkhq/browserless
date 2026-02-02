@@ -40,6 +40,7 @@
     "is-html-content": "~1.0.0",
     "is-url-http": "~2.3.13",
     "jimp": "~1.6.0",
+    "lodash": "~4.17.23",
     "map-values-deep": "~1.0.2",
     "mime": "~3.0.0",
     "null-prototype-object": "~1.2.5",
