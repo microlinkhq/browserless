@@ -1,7 +1,7 @@
 'use strict'
 
 const uniqueRandomArray = require('unique-random-array')
-const { gray, yellow } = require('picocolors')
+const { gray, yellow } = require('../colors')
 const darkMode = require('dark-mode')
 const termImg = require('term-img')
 const { dset } = require('dset')

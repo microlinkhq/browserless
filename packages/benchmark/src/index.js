@@ -3,7 +3,7 @@
 const createBrowserless = require('browserless')
 const processStats = require('process-stats')
 const asciichart = require('asciichart')
-const { gray } = require('picocolors')
+const { gray } = require('./colors')
 const prettyMs = require('pretty-ms')
 const Measured = require('measured')
 const pAll = require('p-all')
