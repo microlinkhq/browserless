@@ -27,6 +27,74 @@ const engine = PuppeteerBlocker.deserialize(
 engine.on('request-blocked', ({ url }) => debug.adblock('block', url))
 engine.on('request-redirected', ({ url }) => debug.adblock('redirect', url))
 
+const autoconsentPlaywrightScript = fs.readFileSync(
+  path.resolve(
+    path.dirname(require.resolve('@duckduckgo/autoconsent')),
+    'autoconsent.playwright.js'
+  ),
+  'utf8'
+)
+
+const autoconsentConfig = Object.freeze({
+  enabled: true,
+  autoAction: 'optOut',
+  enablePrehide: true,
+  enableCosmeticRules: true,
+  enableFilterList: false,
+  detectRetries: 20,
+  logs: {
+    lifecycle: false,
+    rulesteps: false,
+    evals: false,
+    errors: false,
+    messages: false
+  }
+})
+
+const isExposeFunctionAlreadyExistsError = error =>
+  error &&
+  error.name === 'Error' &&
+  /already exists/i.test(error.message) &&
+  /window/i.test(error.message)
+
+const setupAutoConsent = async page => {
+  if (page._autoconsentSetup) return
+
+  const onAutoConsentMessage = async message => {
+    if (!message || typeof message !== 'object') return
+
+    try {
+      if (message.type === 'init') {
+        await page.evaluate(config => {
+          if (window.autoconsentReceiveMessage) {
+            return window.autoconsentReceiveMessage({ type: 'initResp', config })
+          }
+        }, autoconsentConfig)
+      }
+
+      if (message.type === 'eval' && message.id) {
+        await page.evaluate(id => {
+          if (window.autoconsentReceiveMessage) {
+            return window.autoconsentReceiveMessage({ type: 'evalResp', id, result: false })
+          }
+        }, message.id)
+      }
+    } catch (_) {}
+  }
+
+  try {
+    await page.exposeFunction('autoconsentSendMessage', onAutoConsentMessage)
+  } catch (error) {
+    if (!isExposeFunctionAlreadyExistsError(error)) throw error
+  }
+
+  await page.evaluateOnNewDocument(autoconsentPlaywrightScript)
+
+  page._autoconsentSetup = true
+}
+
+const runAutoConsent = page => page.evaluate(autoconsentPlaywrightScript).catch(() => {})
+
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const castArray = value => [].concat(value).filter(Boolean)
@@ -215,6 +283,16 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     const prePromises = []
 
+    if (adblock) {
+      prePromises.push(
+        run({
+          fn: setupAutoConsent(page),
+          timeout: actionTimeout,
+          debug: 'autoconsent:setup'
+        })
+      )
+    }
+
     if (authenticate) {
       prePromises.push(
         run({
@@ -397,6 +475,14 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       timeout: gotoTimeout,
       debug: { fn: html ? 'html' : 'url', waitUntil }
     })
+
+    if (adblock) {
+      await run({
+        fn: runAutoConsent(page),
+        timeout: actionTimeout,
+        debug: 'autoconsent:run'
+      })
+    }
 
     for (const [key, value] of Object.entries({
       waitForSelector,
