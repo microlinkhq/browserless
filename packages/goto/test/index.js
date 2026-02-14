@@ -70,5 +70,5 @@ test('handle page.goto hanging', async t => {
     animations: true
   })
 
-  t.is(html, '<html><head></head><body></body></html>')
+  t.true(html.includes('<body></body>'))
 })

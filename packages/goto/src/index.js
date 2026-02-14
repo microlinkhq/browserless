@@ -1,6 +1,5 @@
 'use strict'
 
-const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { shallowEqualObjects } = require('shallow-equal')
 const { setTimeout } = require('node:timers/promises')
 const createDevices = require('@browserless/devices')
@@ -8,92 +7,16 @@ const toughCookie = require('tough-cookie')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const isUrl = require('is-url-http')
-const path = require('path')
-const fs = require('fs')
 
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
+
+const adblock = require('./adblock')
 
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
 debug.abort = require('debug-logfmt')('browserless:goto:abort')
-debug.adblock = require('debug-logfmt')('browserless:goto:adblock')
 
 const truncate = (str, n = 80) => (str.length > n ? str.substr(0, n - 1) + '…' : str)
-
-const engine = PuppeteerBlocker.deserialize(
-  new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
-)
-
-engine.on('request-blocked', ({ url }) => debug.adblock('block', url))
-engine.on('request-redirected', ({ url }) => debug.adblock('redirect', url))
-
-const autoconsentPlaywrightScript = fs.readFileSync(
-  path.resolve(
-    path.dirname(require.resolve('@duckduckgo/autoconsent')),
-    'autoconsent.playwright.js'
-  ),
-  'utf8'
-)
-
-const autoconsentConfig = Object.freeze({
-  enabled: true,
-  autoAction: 'optOut',
-  enablePrehide: true,
-  enableCosmeticRules: true,
-  enableFilterList: false,
-  detectRetries: 20,
-  logs: {
-    lifecycle: false,
-    rulesteps: false,
-    evals: false,
-    errors: false,
-    messages: false
-  }
-})
-
-const isExposeFunctionAlreadyExistsError = error =>
-  error &&
-  error.name === 'Error' &&
-  /already exists/i.test(error.message) &&
-  /window/i.test(error.message)
-
-const setupAutoConsent = async page => {
-  if (page._autoconsentSetup) return
-
-  const onAutoConsentMessage = async message => {
-    if (!message || typeof message !== 'object') return
-
-    try {
-      if (message.type === 'init') {
-        await page.evaluate(config => {
-          if (window.autoconsentReceiveMessage) {
-            return window.autoconsentReceiveMessage({ type: 'initResp', config })
-          }
-        }, autoconsentConfig)
-      }
-
-      if (message.type === 'eval' && message.id) {
-        await page.evaluate(id => {
-          if (window.autoconsentReceiveMessage) {
-            return window.autoconsentReceiveMessage({ type: 'evalResp', id, result: false })
-          }
-        }, message.id)
-      }
-    } catch (_) {}
-  }
-
-  try {
-    await page.exposeFunction('autoconsentSendMessage', onAutoConsentMessage)
-  } catch (error) {
-    if (!isExposeFunctionAlreadyExistsError(error)) throw error
-  }
-
-  await page.evaluateOnNewDocument(autoconsentPlaywrightScript)
-
-  page._autoconsentSetup = true
-}
-
-const runAutoConsent = page => page.evaluate(autoconsentPlaywrightScript).catch(() => {})
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
@@ -249,7 +172,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     page,
     {
       abortTypes = [],
-      adblock = true,
+      adblock: withAdblock = true,
       animations = false,
       authenticate,
       click,
@@ -282,16 +205,6 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     if (isWaitUntilAuto) waitUntil = 'load'
 
     const prePromises = []
-
-    if (adblock) {
-      prePromises.push(
-        run({
-          fn: setupAutoConsent(page),
-          timeout: actionTimeout,
-          debug: 'autoconsent:setup'
-        })
-      )
-    }
 
     if (authenticate) {
       prePromises.push(
@@ -346,33 +259,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       })
     }
 
-    if (adblock) {
-      let adblockContext
-
-      page.disableAdblock = () => {
-        // TODO: drop this when https://github.com/ghostery/adblocker/pull/5161 is merged
-
-        engine.contexts.delete(page)
-
-        if (adblockContext.blocker.config.loadNetworkFilters) {
-          adblockContext.page.off('request', adblockContext.onRequest)
-        }
-
-        if (adblockContext.blocker.config.loadCosmeticFilters) {
-          adblockContext.page.off('frameattached', adblockContext.onFrameNavigated)
-          adblockContext.page.off('domcontentloaded', adblockContext.onDomContentLoaded)
-        }
-
-        debug.adblock('disabled')
-      }
-
-      prePromises.push(
-        run({
-          fn: engine.enableBlockingInPage(page).then(context => (adblockContext = context)),
-          timeout: actionTimeout,
-          debug: 'adblock'
-        })
-      )
+    if (withAdblock) {
+      prePromises.push(...adblock.enableBlockingInPage(page, run, actionTimeout))
     }
 
     if (javascript === false) {
@@ -476,9 +364,9 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       debug: { fn: html ? 'html' : 'url', waitUntil }
     })
 
-    if (adblock) {
+    if (withAdblock) {
       await run({
-        fn: runAutoConsent(page),
+        fn: adblock.runAutoConsent(page),
         timeout: actionTimeout,
         debug: 'autoconsent:run'
       })
