@@ -30,6 +30,7 @@
     "performance"
   ],
   "dependencies": {
+    "@duckduckgo/autoconsent": "~14.53.0",
     "@browserless/devices": "^10.9.18",
     "@ghostery/adblocker-puppeteer": "~2.13.4",
     "debug-logfmt": "~1.4.7",

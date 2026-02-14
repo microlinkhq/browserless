@@ -113,6 +113,8 @@ await goto(page, { url: 'https://example.com', adblock: false })
 page.disableAdblock()
 ```
 
+Cookie consent handling (opt-out) is included as part of `adblock: true` and powered by [duckduckgo/autoconsent](https://github.com/duckduckgo/autoconsent).
+
 ### Script and style injection
 
 Inject external resources or inline code:

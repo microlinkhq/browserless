@@ -1,6 +1,5 @@
 'use strict'
 
-const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { shallowEqualObjects } = require('shallow-equal')
 const { setTimeout } = require('node:timers/promises')
 const createDevices = require('@browserless/devices')
@@ -8,24 +7,16 @@ const toughCookie = require('tough-cookie')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const isUrl = require('is-url-http')
-const path = require('path')
-const fs = require('fs')
 
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
+
+const adblock = require('./adblock')
 
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
 debug.abort = require('debug-logfmt')('browserless:goto:abort')
-debug.adblock = require('debug-logfmt')('browserless:goto:adblock')
 
 const truncate = (str, n = 80) => (str.length > n ? str.substr(0, n - 1) + '…' : str)
-
-const engine = PuppeteerBlocker.deserialize(
-  new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
-)
-
-engine.on('request-blocked', ({ url }) => debug.adblock('block', url))
-engine.on('request-redirected', ({ url }) => debug.adblock('redirect', url))
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
@@ -181,7 +172,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     page,
     {
       abortTypes = [],
-      adblock = true,
+      adblock: withAdblock = true,
       animations = false,
       authenticate,
       click,
@@ -268,33 +259,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       })
     }
 
-    if (adblock) {
-      let adblockContext
-
-      page.disableAdblock = () => {
-        // TODO: drop this when https://github.com/ghostery/adblocker/pull/5161 is merged
-
-        engine.contexts.delete(page)
-
-        if (adblockContext.blocker.config.loadNetworkFilters) {
-          adblockContext.page.off('request', adblockContext.onRequest)
-        }
-
-        if (adblockContext.blocker.config.loadCosmeticFilters) {
-          adblockContext.page.off('frameattached', adblockContext.onFrameNavigated)
-          adblockContext.page.off('domcontentloaded', adblockContext.onDomContentLoaded)
-        }
-
-        debug.adblock('disabled')
-      }
-
-      prePromises.push(
-        run({
-          fn: engine.enableBlockingInPage(page).then(context => (adblockContext = context)),
-          timeout: actionTimeout,
-          debug: 'adblock'
-        })
-      )
+    if (withAdblock) {
+      prePromises.push(...adblock.enableBlockingInPage(page, run, actionTimeout))
     }
 
     if (javascript === false) {
@@ -397,6 +363,14 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       timeout: gotoTimeout,
       debug: { fn: html ? 'html' : 'url', waitUntil }
     })
+
+    if (withAdblock) {
+      await run({
+        fn: adblock.runAutoConsent(page),
+        timeout: actionTimeout,
+        debug: 'autoconsent:run'
+      })
+    }
 
     for (const [key, value] of Object.entries({
       waitForSelector,
