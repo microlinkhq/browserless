@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.10.0](https://github.com/microlinkhq/browserless/compare/v10.9.18...v10.10.0) (2026-02-14)
+
+### Features
+
+* **goto:** auto close cookie banners ([#651](https://github.com/microlinkhq/browserless/issues/651)) ([4e05f82](https://github.com/microlinkhq/browserless/commit/4e05f824e5180b0687dc34347b9b12fe685bc691))
+
 ## [10.9.18](https://github.com/microlinkhq/browserless/compare/v10.9.17...v10.9.18) (2026-02-02)
 
 **Note:** Version bump only for package @browserless/goto

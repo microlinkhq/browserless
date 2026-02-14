@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Navigate to web pages with built-in ad blocking, device emulation, and optimized loading for faster automation.",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
-  "version": "10.9.18",
+  "version": "10.10.0",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -30,8 +30,8 @@
     "performance"
   ],
   "dependencies": {
-    "@duckduckgo/autoconsent": "~14.53.0",
     "@browserless/devices": "^10.9.18",
+    "@duckduckgo/autoconsent": "~14.53.0",
     "@ghostery/adblocker-puppeteer": "~2.13.4",
     "debug-logfmt": "~1.4.7",
     "got": "~11.8.6",

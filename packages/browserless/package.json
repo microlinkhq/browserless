@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "The headless Chrome/Chromium driver on top of Puppeteer. Take screenshots, generate PDFs, extract text and HTML with a production-ready API.",
   "homepage": "https://browserless.js.org",
-  "version": "10.9.18",
+  "version": "10.10.0",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -35,9 +35,9 @@
   ],
   "dependencies": {
     "@browserless/errors": "^10.9.18",
-    "@browserless/goto": "^10.9.18",
-    "@browserless/pdf": "^10.9.18",
-    "@browserless/screenshot": "^10.9.18",
+    "@browserless/goto": "^10.10.0",
+    "@browserless/pdf": "^10.10.0",
+    "@browserless/screenshot": "^10.10.0",
     "debug-logfmt": "~1.4.7",
     "kill-process-group": "~1.0.13",
     "p-reflect": "~2.1.0",

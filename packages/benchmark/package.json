@@ -2,7 +2,7 @@
   "name": "@browserless/benchmark",
   "description": "Performance benchmarking tool for headless browser automation. Measure CPU, GPU, timing, and screenshot performance across configurations.",
   "homepage": "https://browserless.js.org/#/?id=benchmark",
-  "version": "10.9.18",
+  "version": "10.10.0",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
