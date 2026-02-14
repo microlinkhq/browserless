@@ -55,38 +55,31 @@ const autoconsentConfig = Object.freeze({
   }
 })
 
-const noop = () => {}
+const sendMessage = (page, message) =>
+  page
+    .evaluate(msg => {
+      if (window.autoconsentReceiveMessage) {
+        return window.autoconsentReceiveMessage(msg)
+      }
+    }, message)
+    .catch(() => {})
 
 const setupAutoConsent = async page => {
   if (page._autoconsentSetup) return
 
-  const onAutoConsentMessage = async message => {
+  await page.exposeFunction('autoconsentSendMessage', async message => {
     if (!message || typeof message !== 'object') return
 
     if (message.type === 'init') {
-      await page
-        .evaluate(config => {
-          if (window.autoconsentReceiveMessage) {
-            return window.autoconsentReceiveMessage({ type: 'initResp', config })
-          }
-        }, autoconsentConfig)
-        .catch(noop)
+      return sendMessage(page, { type: 'initResp', config: autoconsentConfig })
     }
 
-    if (message.type === 'eval' && message.id) {
-      await page
-        .evaluate(id => {
-          if (window.autoconsentReceiveMessage) {
-            return window.autoconsentReceiveMessage({ type: 'evalResp', id, result: false })
-          }
-        }, message.id)
-        .catch(noop)
+    if (message.type === 'eval') {
+      return sendMessage(page, { type: 'evalResp', id: message.id, result: false })
     }
-  }
+  })
 
-  await page.exposeFunction('autoconsentSendMessage', onAutoConsentMessage)
   await page.evaluateOnNewDocument(autoconsentPlaywrightScript)
-
   page._autoconsentSetup = true
 }
 
