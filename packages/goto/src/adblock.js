@@ -86,23 +86,11 @@ const setupAutoConsent = async page => {
 const runAutoConsent = page => page.evaluate(autoconsentPlaywrightScript)
 
 const enableBlockingInPage = (page, run, actionTimeout) => {
-  let adblockContext
-
-  page.disableAdblock = () => {
-    // TODO: drop this when https://github.com/ghostery/adblocker/pull/5161 is merged
-    engine.contexts.delete(page)
-
-    if (adblockContext.blocker.config.loadNetworkFilters) {
-      adblockContext.page.off('request', adblockContext.onRequest)
-    }
-
-    if (adblockContext.blocker.config.loadCosmeticFilters) {
-      adblockContext.page.off('frameattached', adblockContext.onFrameNavigated)
-      adblockContext.page.off('domcontentloaded', adblockContext.onDomContentLoaded)
-    }
-
-    debug('disabled')
-  }
+  page.disableAdblock = () =>
+    engine
+      .disableBlockingInPage(page, { keepRequestInterception: true })
+      .then(() => debug('disabled'))
+      .catch(() => {})
 
   return [
     run({
@@ -111,7 +99,7 @@ const enableBlockingInPage = (page, run, actionTimeout) => {
       debug: 'autoconsent:setup'
     }),
     run({
-      fn: engine.enableBlockingInPage(page).then(context => (adblockContext = context)),
+      fn: engine.enableBlockingInPage(page),
       timeout: actionTimeout,
       debug: 'adblock'
     })
