@@ -55,11 +55,7 @@ const autoconsentConfig = Object.freeze({
   }
 })
 
-const isExposeFunctionAlreadyExistsError = error =>
-  error &&
-  error.name === 'Error' &&
-  /already exists/i.test(error.message) &&
-  /window/i.test(error.message)
+const noop = () => {}
 
 const setupAutoConsent = async page => {
   if (page._autoconsentSetup) return
@@ -67,37 +63,34 @@ const setupAutoConsent = async page => {
   const onAutoConsentMessage = async message => {
     if (!message || typeof message !== 'object') return
 
-    try {
-      if (message.type === 'init') {
-        await page.evaluate(config => {
+    if (message.type === 'init') {
+      await page
+        .evaluate(config => {
           if (window.autoconsentReceiveMessage) {
             return window.autoconsentReceiveMessage({ type: 'initResp', config })
           }
         }, autoconsentConfig)
-      }
+        .catch(noop)
+    }
 
-      if (message.type === 'eval' && message.id) {
-        await page.evaluate(id => {
+    if (message.type === 'eval' && message.id) {
+      await page
+        .evaluate(id => {
           if (window.autoconsentReceiveMessage) {
             return window.autoconsentReceiveMessage({ type: 'evalResp', id, result: false })
           }
         }, message.id)
-      }
-    } catch (_) {}
+        .catch(noop)
+    }
   }
 
-  try {
-    await page.exposeFunction('autoconsentSendMessage', onAutoConsentMessage)
-  } catch (error) {
-    if (!isExposeFunctionAlreadyExistsError(error)) throw error
-  }
-
+  await page.exposeFunction('autoconsentSendMessage', onAutoConsentMessage)
   await page.evaluateOnNewDocument(autoconsentPlaywrightScript)
 
   page._autoconsentSetup = true
 }
 
-const runAutoConsent = page => page.evaluate(autoconsentPlaywrightScript).catch(() => {})
+const runAutoConsent = page => page.evaluate(autoconsentPlaywrightScript)
 
 const enableBlockingInPage = (page, run, actionTimeout) => {
   let adblockContext
