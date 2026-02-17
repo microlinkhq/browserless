@@ -13,7 +13,6 @@
 
 See the [pdf section](https://browserless.js.org/#/?id=screencast) on our website for more information.
 
-
 ## Install
 
 Using npm:

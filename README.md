@@ -166,7 +166,6 @@ await browser.close()
 
 The `createBrowser` method supports [puppeteer.launch#options](https://github.com/puppeteer/puppeteer/blob/main/docs/api/puppeteer.launchoptions.md).
 
-
 **Browserless** provides additional options for creating a browser instance:
 
 ##### defaultDevice
@@ -175,8 +174,6 @@ Sets your browser viewport to that of the specified device:
 
 type: `string`<br/>
 default: `'Macbook Pro 13'`
-
-
 
 ##### lossyDeviceName
 
