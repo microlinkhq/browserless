@@ -11,7 +11,7 @@
 
 > @browserless/screencast: Browserless video recording using puppeteer.
 
-See the [pdf section](https://browserless.js.org/#/?id=screencast) on our website for more information.
+See the [screencast section](https://browserless.js.org/#/?id=screencast) on our website for more information.
 
 ## Install
 
