@@ -30,6 +30,7 @@ This package provides a **command-line interface** for interacting with browserl
 The `@browserless/cli` package allows you to:
 
 - **Take screenshots** from URLs with gradient backgrounds, browser overlays, and device emulation
+- **Record captures** as video/audio using the `tabCapture` extension flow
 - **Generate PDFs** from web pages
 - **Extract content** as HTML or plain text
 - **Run Lighthouse audits** for performance analysis
@@ -40,6 +41,7 @@ The `@browserless/cli` package allows you to:
 
 | Command | Description |
 |---------|-------------|
+| `capture <url>` | Record a page and return video buffer (use `--path` to save file) |
 | `screenshot <url>` | Capture a screenshot with optional overlay and background |
 | `pdf <url>` | Generate a PDF document from a web page |
 | `html <url>` | Serialize the page content to HTML |
@@ -49,6 +51,16 @@ The `@browserless/cli` package allows you to:
 | `ping <url>` | Get response info: status code, redirects, headers |
 | `status <url>` | Get the HTTP status code |
 | `goto <url>` | Navigate to a URL and return page/response info |
+
+### Capture examples
+
+```sh
+# webm (default)
+browserless capture https://example.com --path=./capture.webm
+
+# mp4 using friendly output type
+browserless capture https://example.com --type=mp4 --path=./capture.mp4
+```
 
 > **Note:** The `lighthouse` command requires an extra installation.  
 > 
@@ -60,6 +72,7 @@ This package depends on:
 
 | Dependency                | Purpose                                                 |
 |---------------------------|---------------------------------------------------------|
+| @browserless/capture      | Extension-based tab capture for CLI video recording     |
 | browserless               | Core API for all browser automation operations          |
 | @browserless/lighthouse   | Lighthouse audit integration (used by lighthouse command) |
 

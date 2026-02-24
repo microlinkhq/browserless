@@ -1,0 +1,56 @@
+{
+  "name": "@browserless/capture",
+  "description": "Record browser pages as videos with browserless-style API: createCapture({ goto })(page)(url, opts).",
+  "homepage": "https://browserless.js.org/#/?id=capturepage-options",
+  "version": "10.10.0",
+  "main": "src/index.js",
+  "author": {
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
+  },
+  "repository": {
+    "directory": "packages/capture",
+    "type": "git",
+    "url": "git+https://github.com/microlinkhq/browserless.git#master"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless/issues"
+  },
+  "keywords": [
+    "browserless",
+    "capture",
+    "video",
+    "recording",
+    "webm",
+    "mp4",
+    "headless",
+    "chrome",
+    "puppeteer",
+    "automation"
+  ],
+  "dependencies": {
+    "@browserless/goto": "^10.10.0",
+    "ws": "~8.18.3"
+  },
+  "devDependencies": {
+    "ava": "5"
+  },
+  "engines": {
+    "node": ">= 12"
+  },
+  "files": [
+    "extension",
+    "src"
+  ],
+  "scripts": {
+    "coverage": "exit 0",
+    "test": "ava"
+  },
+  "license": "MIT",
+  "ava": {
+    "serial": true,
+    "timeout": "2m",
+    "workerThreads": false
+  }
+}

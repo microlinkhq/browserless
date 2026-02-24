@@ -34,6 +34,7 @@
     "tool"
   ],
   "dependencies": {
+    "@browserless/capture": "^10.10.0",
     "beauty-error": "~1.2.21",
     "browserless": "^10.10.0",
     "dark-mode": "~3.0.0",
