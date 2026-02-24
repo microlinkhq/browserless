@@ -1,6 +1,7 @@
 'use strict'
 
 const { ensureError, browserTimeout } = require('@browserless/errors')
+const createCapture = require('@browserless/capture')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -192,6 +193,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       goto,
       html: evaluate(page => page.content()),
       page: createPage,
+      capture: withPage(createCapture({ goto })),
       pdf: withPage(createPdf({ goto })),
       screenshot: withPage(createScreenshot({ goto })),
       text: evaluate(page => page.evaluate(() => document.body.innerText)),

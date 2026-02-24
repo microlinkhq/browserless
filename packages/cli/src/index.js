@@ -47,7 +47,24 @@ const run = async () => {
   const [command, rawUrl] = cli.input
   const url = new URL(rawUrl).toString()
   const fn = require(`./commands/${command}`)
-  const browser = createBrowser({ headless })
+  const launchOpts = { headless }
+
+  if (command === 'capture') {
+    const capture = require('@browserless/capture')
+
+    launchOpts.headless = headless === false ? false : 'new'
+    launchOpts.ignoreDefaultArgs = ['--disable-extensions']
+    launchOpts.args = [
+      '--autoplay-policy=no-user-gesture-required',
+      '--auto-accept-this-tab-capture',
+      '--screen-info={2560x1600 devicePixelRatio=2}',
+      `--allowlisted-extension-id=${capture.extensionId}`,
+      `--disable-extensions-except=${capture.extensionPath}`,
+      `--load-extension=${capture.extensionPath}`
+    ]
+  }
+
+  const browser = createBrowser(launchOpts)
   onExit(browser.close)
   const browserless = await browser.createContext()
   return fn({ url, browserless, opts: nestie(opts) })
