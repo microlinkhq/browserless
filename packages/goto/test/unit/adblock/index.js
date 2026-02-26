@@ -1,5 +1,7 @@
 'use strict'
 
+const { spawnSync } = require('child_process')
+const path = require('path')
 const test = require('ava')
 
 const { runServer, getBrowserContext } = require('@browserless/test')
@@ -9,6 +11,31 @@ const getUrl = t =>
     res.setHeader('content-type', 'text/html')
     res.end('<html><body><h1>hello</h1></body></html>')
   })
+
+test('adblock assets are lazy loaded at require time', t => {
+  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
+  const script = `
+    const fs = require('fs')
+    const path = require('path')
+    const targetFiles = new Set(['engine.bin', 'autoconsent.playwright.js'])
+    let targetedSyncReads = 0
+    const originalReadFileSync = fs.readFileSync
+    fs.readFileSync = (...args) => {
+      const filePath = typeof args[0] === 'string' ? args[0] : String(args[0])
+      if (targetFiles.has(path.basename(filePath))) targetedSyncReads += 1
+      return originalReadFileSync(...args)
+    }
+    require(${JSON.stringify(adblockPath)})
+    process.stdout.write(String(targetedSyncReads))
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  t.is(stdout.trim(), '0')
+})
 
 test('setup autoconsent when `adblock` is enabled', async t => {
   const browserless = await getBrowserContext(t)
