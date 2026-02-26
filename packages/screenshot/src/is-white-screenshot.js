@@ -38,7 +38,9 @@ const getWorker = () => {
   })
 
   worker.on('exit', code => {
-    if (code !== 0) rejectPending(new Error(`is-white-screenshot worker exited with code ${code}`))
+    if (pending.size > 0) {
+      rejectPending(new Error(`is-white-screenshot worker exited with code ${code}`))
+    }
     worker = undefined
   })
 
