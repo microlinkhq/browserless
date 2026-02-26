@@ -122,7 +122,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
           try {
             page = await createPage(name)
-            setTimeout(() => pReflect(closePage(page, name)), timeout).unref()
+            setTimeout(() => {
+              closePage(page, name).catch(error => {
+                const { message, code, name } = ensureError(error)
+                debug('closePage:timeout:error', { message, code, name })
+              })
+            }, timeout).unref()
             const value = await fn(page, goto)(...args)
             await closePage(page, `${name}:success`)
             return value
