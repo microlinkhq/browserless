@@ -6,25 +6,41 @@ const fs = require('fs')
 
 const debug = require('debug-logfmt')('browserless:goto:adblock')
 
-const engine = PuppeteerBlocker.deserialize(
-  new Uint8Array(fs.readFileSync(path.resolve(__dirname, './engine.bin')))
-)
+let enginePromise
 
-engine.on('request-blocked', ({ url }) => debug('block', url))
-engine.on('request-redirected', ({ url }) => debug('redirect', url))
+const getEngine = () => {
+  if (enginePromise) return enginePromise
+
+  enginePromise = fs.promises.readFile(path.resolve(__dirname, './engine.bin')).then(buffer => {
+    const engine = PuppeteerBlocker.deserialize(new Uint8Array(buffer))
+    engine.on('request-blocked', ({ url }) => debug('block', url))
+    engine.on('request-redirected', ({ url }) => debug('redirect', url))
+    return engine
+  })
+
+  return enginePromise
+}
 
 /**
  * autoconsent.playwright.js is the only browser-injectable IIFE bundle in the package.
  * It is not in the package's "exports" map, so pin @duckduckgo/autoconsent with ~ to
  * avoid breakage from internal restructuring on minor/patch bumps.
  */
-const autoconsentPlaywrightScript = fs.readFileSync(
-  path.resolve(
-    path.dirname(require.resolve('@duckduckgo/autoconsent')),
-    'autoconsent.playwright.js'
-  ),
-  'utf8'
-)
+let autoconsentPlaywrightScriptPromise
+
+const getAutoconsentPlaywrightScript = () => {
+  if (autoconsentPlaywrightScriptPromise) return autoconsentPlaywrightScriptPromise
+
+  autoconsentPlaywrightScriptPromise = fs.promises.readFile(
+    path.resolve(
+      path.dirname(require.resolve('@duckduckgo/autoconsent')),
+      'autoconsent.playwright.js'
+    ),
+    'utf8'
+  )
+
+  return autoconsentPlaywrightScriptPromise
+}
 
 /* Configuration passed to autoconsent's `initResp` message.
    See https://github.com/duckduckgo/autoconsent/blob/main/api.md */
@@ -66,6 +82,7 @@ const sendMessage = (page, message) =>
 
 const setupAutoConsent = async page => {
   if (page._autoconsentSetup) return
+  const autoconsentPlaywrightScript = await getAutoconsentPlaywrightScript()
 
   await page.exposeFunction('autoconsentSendMessage', async message => {
     if (!message || typeof message !== 'object') return
@@ -83,12 +100,12 @@ const setupAutoConsent = async page => {
   page._autoconsentSetup = true
 }
 
-const runAutoConsent = page => page.evaluate(autoconsentPlaywrightScript)
+const runAutoConsent = async page => page.evaluate(await getAutoconsentPlaywrightScript())
 
 const enableBlockingInPage = (page, run, actionTimeout) => {
   page.disableAdblock = () =>
-    engine
-      .disableBlockingInPage(page, { keepRequestInterception: true })
+    getEngine()
+      .then(engine => engine.disableBlockingInPage(page, { keepRequestInterception: true }))
       .then(() => debug('disabled'))
       .catch(() => {})
 
@@ -99,7 +116,7 @@ const enableBlockingInPage = (page, run, actionTimeout) => {
       debug: 'autoconsent:setup'
     }),
     run({
-      fn: engine.enableBlockingInPage(page),
+      fn: getEngine().then(engine => engine.enableBlockingInPage(page)),
       timeout: actionTimeout,
       debug: 'adblock'
     })
