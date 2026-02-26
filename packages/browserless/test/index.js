@@ -332,6 +332,128 @@ test('withPage clears timeout cleanup timer after success', async t => {
   )
 })
 
+test('withPage does not retry non-transient errors', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let pid = 3000
+
+  driver.spawn = () => {
+    let isClosed = false
+
+    const page = {
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    const browserContext = {
+      id: 'ctx-3',
+      close: () => Promise.resolve(),
+      newPage: () => Promise.resolve(page)
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 500 })
+  t.teardown(browser.close)
+  const browserless = await browser.createContext({ retry: 2 })
+
+  let attempts = 0
+  const evaluate = browserless.withPage(
+    () => async () => {
+      attempts += 1
+      throw new Error('boom')
+    },
+    { timeout: 500 }
+  )
+
+  const error = await evaluate().catch(error => error)
+
+  t.is(attempts, 1)
+  t.is(error.message, 'boom')
+})
+
+test('withPage retries transient context disconnections', async t => {
+  const browserlessFactory = require('..')
+  const { contextDisconnected } = require('@browserless/errors')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let pid = 4000
+
+  driver.spawn = () => {
+    let isClosed = false
+
+    const page = {
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    const browserContext = {
+      id: `ctx-${pid}`,
+      close: () => Promise.resolve(),
+      newPage: () => Promise.resolve(page)
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 3000 })
+  t.teardown(browser.close)
+  const browserless = await browser.createContext({ retry: 1 })
+
+  let attempts = 0
+  const evaluate = browserless.withPage(
+    () => async () => {
+      attempts += 1
+      if (attempts === 1) throw contextDisconnected()
+      return 'ok'
+    },
+    { timeout: 3000 }
+  )
+
+  const result = await evaluate()
+
+  t.is(result, 'ok')
+  t.is(attempts, 2)
+})
+
 test('lock is scoped per browserless instance', async t => {
   const browserlessFactory = require('..')
   const { driver } = browserlessFactory
