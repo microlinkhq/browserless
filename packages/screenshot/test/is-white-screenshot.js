@@ -5,8 +5,8 @@ const { readFile } = require('fs/promises')
 
 const { Jimp } = require('jimp')
 
-process.env.BROWSERLESS_SCREENSHOT_DISABLE_WORKER = '1'
 const isWhite = require('../src/is-white-screenshot')
+const analyze = require('../src/is-white-screenshot-analyze')
 
 const createJimpSpy = () => {
   const originalFromBuffer = Jimp.fromBuffer
@@ -50,7 +50,7 @@ test('sampling algorithm correctly samples ~25% of pixels', async t => {
   const totalPixels = tempImage.bitmap.width * tempImage.bitmap.height
   const { spy, restore } = createJimpSpy()
 
-  await isWhite(imageBuffer)
+  await analyze(imageBuffer)
   restore()
 
   const percentageChecked = (spy.callCount / totalPixels) * 100

@@ -22,7 +22,6 @@ test('uses worker thread path when available', t => {
       }
     }
 
-    delete process.env.BROWSERLESS_SCREENSHOT_DISABLE_WORKER
     const isWhite = require(${JSON.stringify(isWhitePath)})
 
     Promise.all([
