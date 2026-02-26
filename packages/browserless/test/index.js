@@ -187,3 +187,47 @@ test('respawn under `Protocol error (Target.createTarget): Failed to find browse
   t.true(pid === anotherPid)
   t.false(contextId === anotherContextId)
 })
+
+test('lock is scoped per browserless instance', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+
+  let pid = 1000
+
+  driver.spawn = ({ instance } = {}) =>
+    setTimeout(instance === 'slow' ? 500 : 0).then(() => ({
+      pid: ++pid,
+      close: () => Promise.resolve(),
+      isConnected: () => true,
+      once: () => {},
+      version: () => Promise.resolve('mock')
+    }))
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const slow = browserlessFactory({ instance: 'slow' })
+  const fast = browserlessFactory({ instance: 'fast' })
+
+  t.teardown(slow.close)
+  t.teardown(fast.close)
+
+  const slowBrowser = slow.browser()
+
+  await setTimeout(50)
+
+  const startedAt = Date.now()
+  await fast.browser()
+  const elapsed = Date.now() - startedAt
+
+  await slowBrowser
+
+  t.true(elapsed < 150, `fast instance was blocked for ${elapsed}ms`)
+})
