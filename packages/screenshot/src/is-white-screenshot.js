@@ -16,11 +16,12 @@ const rejectPending = error => {
 const getWorker = () => {
   if (worker) return worker
 
-  worker = new Worker(path.resolve(__dirname, './is-white-screenshot-worker.js'))
+  const instance = new Worker(path.resolve(__dirname, './is-white-screenshot-worker.js'))
+  worker = instance
 
-  if (typeof worker.unref === 'function') worker.unref()
+  if (typeof instance.unref === 'function') instance.unref()
 
-  worker.on('message', ({ id, value, error }) => {
+  instance.on('message', ({ id, value, error }) => {
     const resolver = pending.get(id)
     if (!resolver) return
     pending.delete(id)
@@ -32,19 +33,23 @@ const getWorker = () => {
     resolver.resolve(value)
   })
 
-  worker.on('error', error => {
-    rejectPending(error)
-    worker = undefined
-  })
-
-  worker.on('exit', code => {
-    if (pending.size > 0) {
-      rejectPending(new Error(`is-white-screenshot worker exited with code ${code}`))
+  instance.on('error', error => {
+    if (worker === instance) {
+      rejectPending(error)
+      worker = undefined
     }
-    worker = undefined
   })
 
-  return worker
+  instance.on('exit', code => {
+    if (worker === instance) {
+      if (pending.size > 0) {
+        rejectPending(new Error(`is-white-screenshot worker exited with code ${code}`))
+      }
+      worker = undefined
+    }
+  })
+
+  return instance
 }
 
 module.exports = async uint8array => {
