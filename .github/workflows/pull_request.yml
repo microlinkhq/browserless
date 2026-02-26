@@ -49,6 +49,7 @@ jobs:
           flag-name: ${{ matrix.package.name }}
           parallel: true
           file: $(pnpm --filter "${{ matrix.package.filter }}" exec pwd)/coverage/lcov.info
+          fail-on-error: false
 
   finish:
     needs: test
@@ -58,3 +59,4 @@ jobs:
         uses: coverallsapp/github-action@main
         with:
           parallel-finished: true
+          fail-on-error: false

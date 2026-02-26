@@ -14,9 +14,8 @@ const { AbortError } = pRetry
 
 const driver = require('./driver')
 
-const lock = withLock()
-
 module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
+  const lock = withLock()
   const goto = createGoto({ timeout: globalTimeout, ...launchOpts })
   const { defaultViewport } = goto
 
