@@ -256,6 +256,82 @@ test('withPage timeout cleanup should not emit unhandled rejections', async t =>
   t.falsy(unhandledError, unhandledError && unhandledError.message)
 })
 
+test('withPage clears timeout cleanup timer after success', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  const originalSetTimeout = global.setTimeout
+  const originalClearTimeout = global.clearTimeout
+
+  const closePageTimers = new Set()
+  const clearedClosePageTimers = new Set()
+  let pid = 2000
+
+  global.setTimeout = (fn, timeout, ...args) => {
+    const timer = originalSetTimeout(fn, timeout, ...args)
+    if (typeof fn === 'function' && fn.toString().includes('closePage(page, name)')) {
+      closePageTimers.add(timer)
+    }
+    return timer
+  }
+
+  global.clearTimeout = timer => {
+    if (closePageTimers.has(timer)) clearedClosePageTimers.add(timer)
+    return originalClearTimeout(timer)
+  }
+
+  driver.spawn = () => {
+    let isClosed = false
+
+    const page = {
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    const browserContext = {
+      id: 'ctx-2',
+      close: () => Promise.resolve(),
+      newPage: () => Promise.resolve(page)
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+    global.setTimeout = originalSetTimeout
+    global.clearTimeout = originalClearTimeout
+  })
+
+  const browser = browserlessFactory({ timeout: 1000 })
+  t.teardown(browser.close)
+
+  const browserless = await browser.createContext({ retry: 0 })
+  const evaluate = browserless.withPage(() => async () => 'ok', { timeout: 1000 })
+  const result = await evaluate()
+
+  t.is(result, 'ok')
+  t.true(closePageTimers.size > 0)
+  t.true(
+    [...closePageTimers].every(timer => clearedClosePageTimers.has(timer)),
+    `all cleanup timers should be cleared: created=${closePageTimers.size}, cleared=${clearedClosePageTimers.size}`
+  )
+})
+
 test('lock is scoped per browserless instance', async t => {
   const browserlessFactory = require('..')
   const { driver } = browserlessFactory

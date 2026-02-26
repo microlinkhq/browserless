@@ -119,21 +119,25 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
         async function run () {
           let page
+          let closePageTimeout
 
           try {
             page = await createPage(name)
-            setTimeout(() => {
+            closePageTimeout = setTimeout(() => {
               closePage(page, name).catch(error => {
                 const { message, code, name } = ensureError(error)
                 debug('closePage:timeout:error', { message, code, name })
               })
-            }, timeout).unref()
+            }, timeout)
+            if (typeof closePageTimeout.unref === 'function') closePageTimeout.unref()
             const value = await fn(page, goto)(...args)
             await closePage(page, `${name}:success`)
             return value
           } catch (error) {
             await closePage(page, `${name}:error`)
             if (!isRejected) throw ensureError(error)
+          } finally {
+            if (closePageTimeout) clearTimeout(closePageTimeout)
           }
         }
 
