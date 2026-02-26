@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.10.1](https://github.com/microlinkhq/browserless/compare/v10.10.0...v10.10.1) (2026-02-26)
+
+### Bug Fixes
+
+* **browserless:** disconnect connect-mode browser on close ([#654](https://github.com/microlinkhq/browserless/issues/654)) ([adbb8d3](https://github.com/microlinkhq/browserless/commit/adbb8d367b85c5e9833e86d4eb5a2afd84e7bdc5))
+* **browserless:** scope browser lock per instance ([#655](https://github.com/microlinkhq/browserless/issues/655)) ([49a4b71](https://github.com/microlinkhq/browserless/commit/49a4b710092e837c6cec64a771bd2c2918f4ddee))
+* **browserless:** swallow timeout cleanup close failures ([#657](https://github.com/microlinkhq/browserless/issues/657)) ([a3d3b81](https://github.com/microlinkhq/browserless/commit/a3d3b8130e2c30b37443341e7d4917d69fb78808))
+* **errors:** guard ensureError against non-object throws ([#656](https://github.com/microlinkhq/browserless/issues/656)) ([526f62f](https://github.com/microlinkhq/browserless/commit/526f62ffd7f927bf4b7af08545f1802b0ba9c4c1))
+
+### Performance Improvements
+
+* **goto:** lazy load adblock assets ([#659](https://github.com/microlinkhq/browserless/issues/659)) ([0b1ff2d](https://github.com/microlinkhq/browserless/commit/0b1ff2d284caf6bf4c58f717cc1678388b7b629d))
+* **goto:** reuse cookie jar while parsing headers ([#660](https://github.com/microlinkhq/browserless/issues/660)) ([f9d4654](https://github.com/microlinkhq/browserless/commit/f9d46540bf0fa2d1d72828b574fc9c2a69715a08))
+* **pdf:** render final pdf once in auto wait mode ([#658](https://github.com/microlinkhq/browserless/issues/658)) ([54718b3](https://github.com/microlinkhq/browserless/commit/54718b320ebd3e474d1987f2868cd37c20f3150f))
+
 # [10.10.0](https://github.com/microlinkhq/browserless/compare/v10.9.18...v10.10.0) (2026-02-14)
 
 ### Features

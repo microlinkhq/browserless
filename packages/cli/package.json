@@ -2,7 +2,7 @@
   "name": "@browserless/cli",
   "description": "Command-line interface for headless browser automation. Take screenshots, generate PDFs, and extract content from websites.",
   "homepage": "https://browserless.js.org",
-  "version": "10.10.0",
+  "version": "10.10.1",
   "bin": {
     "browserless": "src/index.js"
   },
@@ -35,7 +35,7 @@
   ],
   "dependencies": {
     "beauty-error": "~1.2.21",
-    "browserless": "^10.10.0",
+    "browserless": "^10.10.1",
     "dark-mode": "~3.0.0",
     "dset": "~3.1.4",
     "mri": "~1.2.0",

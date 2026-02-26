@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.10.1](https://github.com/microlinkhq/browserless/compare/v10.10.0...v10.10.1) (2026-02-26)
+
+### Performance Improvements
+
+* **pdf:** render final pdf once in auto wait mode ([#658](https://github.com/microlinkhq/browserless/issues/658)) ([54718b3](https://github.com/microlinkhq/browserless/commit/54718b320ebd3e474d1987f2868cd37c20f3150f))
+
 # [10.10.0](https://github.com/microlinkhq/browserless/compare/v10.9.18...v10.10.0) (2026-02-14)
 
 **Note:** Version bump only for package @browserless/pdf

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.10.1](https://github.com/microlinkhq/browserless/compare/v10.10.0...v10.10.1) (2026-02-26)
+
+### Performance Improvements
+
+* **goto:** lazy load adblock assets ([#659](https://github.com/microlinkhq/browserless/issues/659)) ([0b1ff2d](https://github.com/microlinkhq/browserless/commit/0b1ff2d284caf6bf4c58f717cc1678388b7b629d))
+* **goto:** reuse cookie jar while parsing headers ([#660](https://github.com/microlinkhq/browserless/issues/660)) ([f9d4654](https://github.com/microlinkhq/browserless/commit/f9d46540bf0fa2d1d72828b574fc9c2a69715a08))
+
 # [10.10.0](https://github.com/microlinkhq/browserless/compare/v10.9.18...v10.10.0) (2026-02-14)
 
 ### Features
