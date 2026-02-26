@@ -5,6 +5,7 @@ const { readFile } = require('fs/promises')
 
 const { Jimp } = require('jimp')
 
+process.env.BROWSERLESS_SCREENSHOT_DISABLE_WORKER = '1'
 const isWhite = require('../src/is-white-screenshot')
 
 const createJimpSpy = () => {
