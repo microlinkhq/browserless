@@ -188,6 +188,74 @@ test('respawn under `Protocol error (Target.createTarget): Failed to find browse
   t.false(contextId === anotherContextId)
 })
 
+test('withPage timeout cleanup should not emit unhandled rejections', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+
+  let pid = 1000
+
+  driver.spawn = () => {
+    let clientCalls = 0
+    let isClosed = false
+
+    const page = {
+      _client: () => {
+        clientCalls += 1
+        if (clientCalls === 1) return { id: () => 'page-id' }
+        throw new Error('client disposed')
+      },
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    const browserContext = {
+      id: 'ctx-1',
+      close: () => Promise.resolve(),
+      newPage: () => Promise.resolve(page)
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 30 })
+  t.teardown(browser.close)
+
+  const browserless = await browser.createContext({ retry: 0 })
+
+  let unhandledError
+  const onUnhandledRejection = error => {
+    unhandledError = error
+  }
+  process.once('unhandledRejection', onUnhandledRejection)
+
+  const evaluate = browserless.withPage(() => async () => new Promise(() => {}), { timeout: 30 })
+  const error = await evaluate().catch(error => error)
+
+  await setTimeout(60)
+  process.removeListener('unhandledRejection', onUnhandledRejection)
+
+  t.is(error.code, 'EBRWSRTIMEOUT')
+  t.falsy(unhandledError, unhandledError && unhandledError.message)
+})
+
 test('lock is scoped per browserless instance', async t => {
   const browserlessFactory = require('..')
   const { driver } = browserlessFactory
