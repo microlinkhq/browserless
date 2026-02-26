@@ -2,6 +2,7 @@
 
 const debug = require('debug-logfmt')('browserless:error')
 const { serializeError } = require('serialize-error')
+const ensureError = require('ensure-error')
 const whoops = require('whoops')
 
 const ERROR_NAME = 'BrowserlessError'
@@ -23,6 +24,8 @@ const createBrowserlessError = opts => {
   return (...args) => markAsProcessed(createError(...args))
 }
 
+const isObject = value => value !== null && typeof value === 'object'
+
 const browserlessError = {}
 
 browserlessError.browserTimeout = createBrowserlessError({
@@ -43,13 +46,13 @@ browserlessError.contextDisconnected = createBrowserlessError({
 })
 
 browserlessError.ensureError = rawError => {
-  if (rawError.__parsed) return rawError
+  if (isObject(rawError) && rawError.__parsed) return rawError
 
   debug('ensureError', serializeError(rawError))
 
-  const error = 'error' in rawError ? rawError.error : rawError
+  const error = isObject(rawError) && 'error' in rawError ? rawError.error : rawError
 
-  const { message: errorMessage = '' } = error
+  const errorMessage = isObject(error) && typeof error.message === 'string' ? error.message : ''
 
   if (
     [
@@ -79,7 +82,7 @@ browserlessError.ensureError = rawError => {
     })
   }
 
-  return require('ensure-error')(error)
+  return ensureError(error)
 }
 
 const isBrowserlessError = error => error.name === ERROR_NAME
