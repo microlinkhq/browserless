@@ -94,3 +94,17 @@ test('evaluationFailed', t => {
     t.is(error.message, 'EFAILEDEVAL, version is not defined')
   }
 })
+
+test('ensureError handles non-object input', t => {
+  const errorFromString = errors.ensureError('boom')
+  t.true(errorFromString instanceof Error)
+  t.true(errorFromString.message.includes('boom'))
+
+  const errorFromNull = errors.ensureError(null)
+  t.true(errorFromNull instanceof Error)
+  t.is(errorFromNull.message, 'null')
+
+  const errorFromNestedString = errors.ensureError({ error: 'nested boom' })
+  t.true(errorFromNestedString instanceof Error)
+  t.true(errorFromNestedString.message.includes('nested boom'))
+})
