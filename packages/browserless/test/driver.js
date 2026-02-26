@@ -3,6 +3,7 @@
 const { createBrowser } = require('@browserless/test')
 const psList = require('ps-list')
 const test = require('ava')
+const browserless = require('..')
 
 const isCI = !!process.env.CI
 
@@ -46,4 +47,23 @@ const getChromiumPs = async () => {
 
   await browserlessFactory.close()
   t.is(await getChromiumPs(), initialPs)
+})
+
+test('.close() disconnect in connect mode', async t => {
+  const remoteBrowser = await browserless.driver.spawn()
+  t.teardown(() => browserless.driver.close(remoteBrowser))
+
+  const browserlessFactory = browserless({
+    mode: 'connect',
+    browserWSEndpoint: remoteBrowser.wsEndpoint()
+  })
+  t.teardown(browserlessFactory.close)
+
+  const browser = await browserlessFactory.browser()
+
+  t.true(browser.isConnected())
+
+  await browserlessFactory.close()
+
+  t.false(browser.isConnected())
 })
