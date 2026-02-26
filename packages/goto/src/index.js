@@ -30,15 +30,13 @@ const run = async ({ fn, timeout, debug: props }) => {
   return result
 }
 
-const parseCookies = (url, str) =>
-  str.split(';').reduce((acc, cookieStr) => {
-    const jar = new toughCookie.CookieJar(undefined, { rejectPublicSuffixes: false })
-    jar.setCookieSync(cookieStr.trim(), url)
-    const parsedCookie = jar.serializeSync().cookies[0]
+const parseCookies = (url, str) => {
+  const jar = new toughCookie.CookieJar(undefined, { rejectPublicSuffixes: false })
 
-    // Use this instead of the above when the following issue is fixed:
-    // https://github.com/salesforce/tough-cookie/issues/149
-    // const ret = toughCookie.parse(cookie).serializeSync();
+  return str.split(';').reduce((acc, cookieStr) => {
+    const cookie = jar.setCookieSync(cookieStr.trim(), url)
+    if (!cookie) return acc
+    const parsedCookie = cookie.toJSON()
 
     parsedCookie.name = parsedCookie.key
     delete parsedCookie.key
@@ -50,6 +48,7 @@ const parseCookies = (url, str) =>
     acc.push(parsedCookie)
     return acc
   }, [])
+}
 
 const getMediaFeatures = ({ animations, colorScheme }) => {
   const prefers = []
