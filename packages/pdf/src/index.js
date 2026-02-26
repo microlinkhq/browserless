@@ -49,23 +49,20 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           do {
             ++retry
             const screenshotTime = timeSpan()
-            ;[isWhite, pdfBuffer] = await Promise.all([
-              isWhiteScreenshot(
-                await page.screenshot({
-                  ...opts,
-                  optimizeForSpeed: true,
-                  type: 'jpeg',
-                  quality: 30
-                })
-              ),
-              generatePdf(page),
-              retry === 1 ? goto.waitUntilAuto(page, { timeout: opts.timeout }) : Promise.resolve()
-            ])
+            const screenshot = await page.screenshot({
+              ...opts,
+              optimizeForSpeed: true,
+              type: 'jpeg',
+              quality: 30
+            })
+            isWhite = await isWhiteScreenshot(screenshot)
+            if (retry === 1) await goto.waitUntilAuto(page, { timeout: opts.timeout })
             debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
           } while (isWhite && timePdf() < timeout)
 
           debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(timePdf()) })
         }
+        pdfBuffer = await generatePdf(page)
       }
 
       return pdfBuffer
