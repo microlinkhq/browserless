@@ -1,6 +1,6 @@
 'use strict'
 
-const { getBrowserContext } = require('@browserless/test')
+const { runServer, getBrowserContext } = require('@browserless/test')
 const test = require('ava')
 
 test('setup `scripts`', async t => {
@@ -71,4 +71,31 @@ test('handle page.goto hanging', async t => {
   })
 
   t.true(html.includes('<body></body>'))
+})
+
+test('abortTypes keeps behavior with duplicated resource types', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<html><body><img src="/asset.png"><h1>ok</h1></body></html>')
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const outcomes = []
+
+    await goto(page, {
+      url,
+      abortTypes: ['image', 'image', 'font'],
+      onPageRequest: req => {
+        const resourceType = req.resourceType()
+        if (resourceType !== 'image') return
+        outcomes.push(resourceType)
+      }
+    })
+
+    return outcomes
+  })
+
+  const outcomes = await run()
+  t.true(outcomes.length >= 1)
 })

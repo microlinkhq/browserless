@@ -225,6 +225,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
+    const abortTypesSet = abortTypes.length > 0 ? new Set(abortTypes) : null
+
     const enableInterception =
       (onPageRequest || abortTypes.length > 0) &&
       run({
@@ -245,7 +247,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
           const resourceType = req.resourceType()
           const url = truncate(req.url())
 
-          if (!abortTypes.includes(resourceType)) {
+          if (!abortTypesSet.has(resourceType)) {
             debug.continue({ url, resourceType })
             return req.continue(
               req.continueRequestOverrides(),
