@@ -281,3 +281,28 @@ test('throws error when browser is launched with pipe mode', async t => {
   const error = await t.throwsAsync(myFn(fileUrl))
   t.is(error.message, 'Browser WebSocket endpoint not found')
 })
+
+test('retrieve browser websocket endpoint once per invocation', async t => {
+  let browserCalls = 0
+
+  const fakeBrowserless = {
+    withPage: fn => async () =>
+      fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
+    browser: async () => {
+      browserCalls += 1
+      return { wsEndpoint: () => 'ws://example' }
+    }
+  }
+
+  const fn = browserlessFunction(() => 'ok', {
+    getBrowserless: async () => ({
+      createContext: async () => fakeBrowserless
+    })
+  })
+
+  const result = await fn('https://example.com')
+
+  t.true(result.isFulfilled)
+  t.is(result.value, 'ok')
+  t.is(browserCalls, 1)
+})
