@@ -108,6 +108,7 @@ test('stale worker exit does not reject new worker promises', t => {
     const OriginalWorker = workerThreads.Worker
 
     let callCount = 0
+    let firstErrorMessage
 
     workerThreads.Worker = class WorkerCrashOnce extends OriginalWorker {
       constructor (...args) {
@@ -129,30 +130,89 @@ test('stale worker exit does not reject new worker promises', t => {
     const screenshot = fs.readFileSync(${JSON.stringify(whiteFixture)})
 
     const timeout = setTimeout(() => {
-      process.stdout.write(JSON.stringify({ timedOut: true }))
+      process.stdout.write(JSON.stringify({ timedOut: true, callCount }))
       process.exit(1)
     }, 5000)
 
+    process.on('uncaughtException', error => {
+      clearTimeout(timeout)
+      process.stdout.write(
+        JSON.stringify({
+          ok: false,
+          uncaughtException: true,
+          message: error.message,
+          stack: error.stack,
+          callCount,
+          firstErrorMessage
+        })
+      )
+      process.exit(1)
+    })
+
+    process.on('unhandledRejection', error => {
+      clearTimeout(timeout)
+      process.stdout.write(
+        JSON.stringify({
+          ok: false,
+          unhandledRejection: true,
+          message: error && error.message,
+          stack: error && error.stack,
+          callCount,
+          firstErrorMessage
+        })
+      )
+      process.exit(1)
+    })
+
     isWhite(screenshot)
-      .catch(() => isWhite(screenshot))
+      .catch(error => {
+        firstErrorMessage = error && error.message
+        return isWhite(screenshot)
+      })
       .then(result => {
         clearTimeout(timeout)
-        process.stdout.write(JSON.stringify({ ok: true, result, callCount }))
+        process.stdout.write(JSON.stringify({ ok: true, result, callCount, firstErrorMessage }))
         process.exit(0)
       })
       .catch(error => {
         clearTimeout(timeout)
-        process.stdout.write(JSON.stringify({ ok: false, message: error.message, callCount }))
+        process.stdout.write(
+          JSON.stringify({
+            ok: false,
+            message: error.message,
+            stack: error.stack,
+            callCount,
+            firstErrorMessage
+          })
+        )
         process.exit(1)
       })
   `
 
-  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+  const { status, stdout, stderr, signal, error } = spawnSync(process.execPath, ['-e', script], {
     encoding: 'utf8',
     timeout: 10000
   })
 
-  t.is(status, 0, stderr)
+  const debugPayload = JSON.stringify(
+    {
+      status,
+      signal,
+      error: error
+        ? {
+            message: error.message,
+            name: error.name,
+            code: error.code
+          }
+        : null,
+      stdout: stdout.trim(),
+      stderr: stderr.trim()
+    },
+    null,
+    2
+  )
+
+  t.is(status, 0, debugPayload)
   const result = JSON.parse(stdout.trim())
   t.false(Boolean(result.timedOut), 'retry should not hang')
   t.true(result.ok, `retry should succeed, got: ${result.message || 'no error'}`)
