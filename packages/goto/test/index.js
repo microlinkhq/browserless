@@ -100,6 +100,83 @@ test('abortTypes keeps behavior with duplicated resource types', async t => {
   t.true(outcomes.length >= 1)
 })
 
+test('abortTypes is scoped per goto call on the same page', async t => {
+  const browserless = await getBrowserContext(t)
+  const imageData =
+    'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEUlEQVR4AWP8DwQMQMDEAAUAPfgEADYYS7QAAAAASUVORK5CYII='
+  let imageRequests = 0
+
+  const url = await runServer(t, ({ req, res }) => {
+    if (req.url === '/asset.png') imageRequests += 1
+
+    if (req.url === '/') {
+      res.setHeader('content-type', 'text/html')
+      return res.end('<html><body><img src="/asset.png"/><h1>ok</h1></body></html>')
+    }
+
+    if (req.url === '/asset.png') {
+      res.setHeader('content-type', 'image/png')
+      return res.end(Buffer.from(imageData, 'base64'))
+    }
+
+    res.statusCode = 204
+    return res.end()
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const listenersBefore = page.listenerCount('request')
+
+    await goto(page, {
+      url,
+      waitUntil: 'load',
+      abortTypes: ['image'],
+      adblock: false,
+      timeout: 2000
+    })
+
+    const listenersAfterFirst = page.listenerCount('request')
+    const afterFirst = imageRequests
+
+    await goto(page, { url, waitUntil: 'load', adblock: false, timeout: 2000 })
+    const afterSecond = imageRequests
+
+    await goto(page, {
+      url,
+      waitUntil: 'load',
+      abortTypes: ['image'],
+      adblock: false,
+      timeout: 2000
+    })
+
+    const listenersAfterThird = page.listenerCount('request')
+    const afterThird = imageRequests
+
+    return {
+      listenersBefore,
+      listenersAfterFirst,
+      listenersAfterThird,
+      afterFirst,
+      afterSecond,
+      afterThird
+    }
+  })
+
+  const {
+    listenersBefore,
+    listenersAfterFirst,
+    listenersAfterThird,
+    afterFirst,
+    afterSecond,
+    afterThird
+  } = await run()
+
+  t.is(afterFirst, 0)
+  t.true(afterSecond > afterFirst)
+  t.is(afterThird, afterSecond)
+  t.is(listenersAfterFirst, listenersBefore)
+  t.is(listenersAfterThird, listenersBefore)
+})
+
 test('waits interception setup before starting navigation', async t => {
   const browserless = await getBrowserContext(t)
   const imageData =
