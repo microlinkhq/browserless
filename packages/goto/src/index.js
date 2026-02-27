@@ -245,6 +245,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     const abortTypesSet = abortTypes.length > 0 ? new Set(abortTypes) : null
 
     const requestHandlers = []
+    let abortTypesHandler
+    let disableInterceptionForAbortTypes = false
 
     if (onPageRequest) {
       const onPageRequestHandler = req => onPageRequest(req, page)
@@ -253,7 +255,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     }
 
     if (abortTypes.length > 0) {
-      const abortTypesHandler = req => {
+      abortTypesHandler = req => {
         if (req.isInterceptResolutionHandled()) return
         const resourceType = req.resourceType()
         const url = truncate(req.url())
@@ -279,6 +281,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
           // If interception setup fails, remove handlers to avoid keeping dead listeners.
           if (result.isRejected) {
             requestHandlers.forEach(handler => page.off('request', handler))
+          } else if (abortTypesHandler && !withAdblock) {
+            disableInterceptionForAbortTypes = true
           }
           return result
         })
@@ -377,77 +381,84 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
-    await Promise.all(prePromises)
+    try {
+      await Promise.all(prePromises)
 
-    let clearStopLoadingTimer = () => {}
-    const navigationPromise = html
-      ? page.setContent(html, { waitUntil, ...args })
-      : (() => {
-          const { promise, clear } = stopLoadingOnTimeout(page, gotoTimeout)
-          clearStopLoadingTimer = clear
-          return Promise.race([page.goto(url, { waitUntil, ...args }), promise])
-        })()
+      let clearStopLoadingTimer = () => {}
+      const navigationPromise = html
+        ? page.setContent(html, { waitUntil, ...args })
+        : (() => {
+            const { promise, clear } = stopLoadingOnTimeout(page, gotoTimeout)
+            clearStopLoadingTimer = clear
+            return Promise.race([page.goto(url, { waitUntil, ...args }), promise])
+          })()
 
-    const { value: response, reason: error } = await run({
-      fn: navigationPromise,
-      timeout: gotoTimeout,
-      debug: { fn: html ? 'html' : 'url', waitUntil }
-    })
-    clearStopLoadingTimer()
-
-    if (withAdblock) {
-      await run({
-        fn: adblock.runAutoConsent(page),
-        timeout: actionTimeout,
-        debug: 'autoconsent:run'
+      const { value: response, reason: error } = await run({
+        fn: navigationPromise,
+        timeout: gotoTimeout,
+        debug: { fn: html ? 'html' : 'url', waitUntil }
       })
-    }
+      clearStopLoadingTimer()
 
-    for (const [key, value] of Object.entries({
-      waitForSelector,
-      waitForFunction
-    })) {
-      if (value) {
-        await run({ fn: page[key](value), timeout: gotoTimeout, debug: { [key]: value } })
-      }
-    }
-
-    if (waitForTimeout) {
-      await setTimeout(waitForTimeout)
-    }
-
-    await inject(page, {
-      timeout: actionTimeout,
-      mediaType,
-      animations,
-      modules,
-      scripts,
-      styles
-    })
-
-    if (click) {
-      for (const selector of castArray(click)) {
+      if (withAdblock) {
         await run({
-          fn: page.click(selector),
+          fn: adblock.runAutoConsent(page),
           timeout: actionTimeout,
-          debug: { click: selector }
+          debug: 'autoconsent:run'
         })
       }
-    }
 
-    if (scroll) {
-      await run({
-        fn: page.$eval(scroll, el => el.scrollIntoView()),
+      for (const [key, value] of Object.entries({
+        waitForSelector,
+        waitForFunction
+      })) {
+        if (value) {
+          await run({ fn: page[key](value), timeout: gotoTimeout, debug: { [key]: value } })
+        }
+      }
+
+      if (waitForTimeout) {
+        await setTimeout(waitForTimeout)
+      }
+
+      await inject(page, {
         timeout: actionTimeout,
-        debug: { scroll }
+        mediaType,
+        animations,
+        modules,
+        scripts,
+        styles
       })
-    }
 
-    if (isWaitUntilAuto) {
-      await waitUntilAuto(page, { response, timeout: actionTimeout * 2 })
-    }
+      if (click) {
+        for (const selector of castArray(click)) {
+          await run({
+            fn: page.click(selector),
+            timeout: actionTimeout,
+            debug: { click: selector }
+          })
+        }
+      }
 
-    return { response, device, error }
+      if (scroll) {
+        await run({
+          fn: page.$eval(scroll, el => el.scrollIntoView()),
+          timeout: actionTimeout,
+          debug: { scroll }
+        })
+      }
+
+      if (isWaitUntilAuto) {
+        await waitUntilAuto(page, { response, timeout: actionTimeout * 2 })
+      }
+
+      return { response, device, error }
+    } finally {
+      if (abortTypesHandler) page.off('request', abortTypesHandler)
+      if (disableInterceptionForAbortTypes) {
+        await pReflect(page.setRequestInterception(false))
+      }
+    }
   }
 
   goto.getDevice = getDevice
