@@ -80,15 +80,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     const createPage = async name => {
       const duration = debug.duration('createPage')
-      const [browserProcess, browserContext] = await Promise.all([
-        getBrowser(),
-        getBrowserContext()
-      ])
+      const browserContext = await getBrowserContext()
       const page = await browserContext.newPage()
+      const browser = typeof page.browser === 'function' ? page.browser() : undefined
       const metadata = {
         id: page._client().id(),
         contextId: browserContext.id,
-        browserPid: driver.pid(browserProcess)
+        browserPid: browser ? driver.pid(browser) : undefined
       }
       pageMetadata.set(page, metadata)
       duration({ name, ...metadata })
