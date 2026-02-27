@@ -5,8 +5,14 @@ const template = require('./template')
 
 const [nodeMajor] = process.version.slice(1).split('.').map(Number)
 
-module.exports = async ({ url, code, vmOpts, browserWSEndpoint, ...opts }) => {
-  const needsNetwork = template.isUsingPage(code)
+module.exports = async ({
+  url,
+  code,
+  vmOpts,
+  browserWSEndpoint,
+  needsNetwork = template.isUsingPage(code),
+  ...opts
+}) => {
   const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
   const [fn, teardown] = isolatedFunction(template(code, needsNetwork), {
     ...vmOpts,
@@ -17,3 +23,5 @@ module.exports = async ({ url, code, vmOpts, browserWSEndpoint, ...opts }) => {
   await teardown()
   return result
 }
+
+module.exports.isUsingPage = template.isUsingPage

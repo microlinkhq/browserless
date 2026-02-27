@@ -1,6 +1,7 @@
 'use strict'
 
 const { getBrowser } = require('@browserless/test')
+const { spawnSync } = require('child_process')
 const path = require('path')
 const test = require('ava')
 
@@ -305,4 +306,61 @@ test('retrieve browser websocket endpoint once per invocation', async t => {
   t.true(result.isFulfilled)
   t.is(result.value, 'ok')
   t.is(browserCalls, 1)
+})
+
+test('reuse function code analysis across invocations', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+    let parseCalls = 0
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return () => [async () => ({ isFulfilled: true, value: 'ok' }), async () => {}]
+      }
+
+      if (request === 'acorn') {
+        const acorn = originalLoad(request, parent, isMain)
+        return {
+          ...acorn,
+          parse (...args) {
+            parseCalls += 1
+            return acorn.parse(...args)
+          }
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+
+    const fakeBrowserless = {
+      withPage: fn => async () =>
+        fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
+      browser: async () => ({ wsEndpoint: () => 'ws://example' })
+    }
+
+    const fn = browserlessFunction(() => 'ok', {
+      getBrowserless: async () => ({
+        createContext: async () => fakeBrowserless
+      })
+    })
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(() => fn('https://example.com'))
+      .then(() => process.stdout.write(String(parseCalls)))
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  t.is(stdout.trim(), '1')
 })
