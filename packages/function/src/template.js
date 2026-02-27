@@ -29,8 +29,8 @@ const isUsingPage = code => {
   return result
 }
 
-const template = code => {
-  if (!isUsingPage(code)) return `async (url, _, opts) => (${code})(opts)`
+const template = (code, usesPage = isUsingPage(code)) => {
+  if (!usesPage) return `async (url, _, opts) => (${code})(opts)`
   return `
     async (url, browserWSEndpoint, opts) => {
       const puppeteer = require('@cloudflare/puppeteer')

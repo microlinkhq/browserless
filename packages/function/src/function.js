@@ -8,7 +8,7 @@ const [nodeMajor] = process.version.slice(1).split('.').map(Number)
 module.exports = async ({ url, code, vmOpts, browserWSEndpoint, ...opts }) => {
   const needsNetwork = template.isUsingPage(code)
   const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
-  const [fn, teardown] = isolatedFunction(template(code), {
+  const [fn, teardown] = isolatedFunction(template(code, needsNetwork), {
     ...vmOpts,
     allow: { permissions },
     throwError: false
