@@ -6,40 +6,49 @@ const runFunction = require('./function')
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
-module.exports =
-  (
-    fn,
-    {
-      getBrowserless = requireOneOf(['browserless']),
-      retry = 2,
-      timeout = 30000,
-      gotoOpts,
-      ...opts
-    } = {}
-  ) =>
-    async (url, fnOpts = {}) => {
-      const browserlessPromise = getBrowserless()
-      const browser = await browserlessPromise
-      const browserless = await browser.createContext()
+module.exports = (
+  fn,
+  {
+    getBrowserless = requireOneOf(['browserless']),
+    retry = 2,
+    timeout = 30000,
+    gotoOpts,
+    ...opts
+  } = {}
+) => {
+  const code = stringify(fn)
+  const needsNetwork = runFunction.isUsingPage(code)
 
-      return browserless.withPage((page, goto) => async () => {
-        const { device } = await goto(page, { url, timeout, ...gotoOpts })
+  return async (url, fnOpts = {}) => {
+    const browserlessPromise = getBrowserless()
+    const browser = await browserlessPromise
+    const browserless = await browser.createContext()
 
-        const browserWSEndpoint = (await browserless.browser()).wsEndpoint()
-        if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
+    return browserless.withPage((page, goto) => async () => {
+      const { device } = await goto(page, { url, timeout, ...gotoOpts })
 
-        const result = await runFunction({
-          url,
-          code: stringify(fn),
-          browserWSEndpoint,
-          device,
-          ...opts,
-          ...fnOpts
-        })
+      const browserWSEndpoint = (await browserless.browser()).wsEndpoint()
+      if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
 
-        if (result.isFulfilled) return result
-        const error = ensureError(result.value)
-        if (isBrowserlessError(error)) throw error
-        return result
-      })()
-    }
+      const runFunctionOpts = {
+        url,
+        code,
+        browserWSEndpoint,
+        device,
+        ...opts,
+        ...fnOpts
+      }
+
+      if (runFunctionOpts.code === code) {
+        runFunctionOpts.needsNetwork = needsNetwork
+      }
+
+      const result = await runFunction(runFunctionOpts)
+
+      if (result.isFulfilled) return result
+      const error = ensureError(result.value)
+      if (isBrowserlessError(error)) throw error
+      return result
+    })()
+  }
+}
