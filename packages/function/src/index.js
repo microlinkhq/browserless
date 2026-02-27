@@ -18,10 +18,20 @@ module.exports = (
 ) => {
   const code = stringify(fn)
   const needsNetwork = runFunction.isUsingPage(code)
+  let browserPromise
+
+  const getBrowser = async () => {
+    if (!browserPromise) {
+      browserPromise = Promise.resolve(getBrowserless()).catch(error => {
+        browserPromise = undefined
+        throw error
+      })
+    }
+    return browserPromise
+  }
 
   return async (url, fnOpts = {}) => {
-    const browserlessPromise = getBrowserless()
-    const browser = await browserlessPromise
+    const browser = await getBrowser()
     const browserless = await browser.createContext()
 
     return browserless.withPage((page, goto) => async () => {
