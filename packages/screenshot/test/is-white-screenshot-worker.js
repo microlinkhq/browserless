@@ -4,7 +4,7 @@ const { spawnSync } = require('child_process')
 const path = require('path')
 const test = require('ava')
 
-test('uses worker thread path when available', t => {
+test.serial('uses worker thread path when available', t => {
   const isWhitePath = path.resolve(__dirname, '../src/is-white-screenshot.js')
   const whiteFixture = path.resolve(__dirname, './fixtures/white-5k.png')
   const nonWhiteFixture = path.resolve(__dirname, './fixtures/no-white-5k.png')
@@ -49,12 +49,11 @@ test('uses worker thread path when available', t => {
   t.false(result.nonWhite)
 })
 
-test('rejects in-flight requests when worker exits with code 0', t => {
+test.serial('rejects in-flight requests when worker exits with code 0', t => {
   const isWhitePath = path.resolve(__dirname, '../src/is-white-screenshot.js')
   const whiteFixture = path.resolve(__dirname, './fixtures/white-5k.png')
 
   const script = `
-    const fs = require('fs')
     const workerThreads = require('worker_threads')
     const OriginalWorker = workerThreads.Worker
 
@@ -98,9 +97,10 @@ test('rejects in-flight requests when worker exits with code 0', t => {
   t.regex(result.message, /exited with code 0/)
 })
 
-test('stale worker exit does not reject new worker promises', t => {
+test.serial('stale worker exit does not reject new worker promises', t => {
   const isWhitePath = path.resolve(__dirname, '../src/is-white-screenshot.js')
-  const whiteFixture = path.resolve(__dirname, './fixtures/white-5k.png')
+  const tinyWhitePngBase64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEUlEQVR4AWP8DwQMQMDEAAUAPfgEADYYS7QAAAAASUVORK5CYII='
 
   const script = `
     const fs = require('fs')
@@ -127,7 +127,7 @@ test('stale worker exit does not reject new worker promises', t => {
     }
 
     const isWhite = require(${JSON.stringify(isWhitePath)})
-    const screenshot = fs.readFileSync(${JSON.stringify(whiteFixture)})
+    const screenshot = Buffer.from(${JSON.stringify(tinyWhitePngBase64)}, 'base64')
 
     const timeout = setTimeout(() => {
       process.stdout.write(JSON.stringify({ timedOut: true, callCount }))
