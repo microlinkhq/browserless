@@ -31,7 +31,7 @@ module.exports =
         const result = await runFunction({
           url,
           code: stringify(fn),
-          browserWSEndpoint: (await browserless.browser()).wsEndpoint(),
+          browserWSEndpoint,
           device,
           ...opts,
           ...fnOpts
