@@ -14,12 +14,6 @@ const { AbortError } = pRetry
 
 const driver = require('./driver')
 
-const getPageId = page => {
-  try {
-    return page._client().id()
-  } catch {}
-}
-
 module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const lock = withLock()
   const goto = createGoto({ timeout: globalTimeout, ...launchOpts })
@@ -92,7 +86,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       ])
       const page = await browserContext.newPage()
       const metadata = {
-        id: getPageId(page),
+        id: page._client().id(),
         contextId: browserContext.id,
         browserPid: driver.pid(browserProcess)
       }
@@ -106,7 +100,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         const duration = debug.duration('closePage')
         if (page.disableAdblock) page.disableAdblock()
         await pReflect(page.close())
-        duration({ name, ...(pageMetadata.get(page) || { id: getPageId(page) }) })
+        duration({ name, ...(pageMetadata.get(page) || {}) })
         pageMetadata.delete(page)
       }
     }
