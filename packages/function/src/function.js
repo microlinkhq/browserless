@@ -11,10 +11,11 @@ module.exports = async ({
   vmOpts,
   browserWSEndpoint,
   needsNetwork = template.isUsingPage(code),
+  source = template(code, needsNetwork),
   ...opts
 }) => {
   const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
-  const [fn, teardown] = isolatedFunction(template(code, needsNetwork), {
+  const [fn, teardown] = isolatedFunction(source, {
     ...vmOpts,
     allow: { permissions },
     throwError: false
@@ -25,3 +26,4 @@ module.exports = async ({
 }
 
 module.exports.isUsingPage = template.isUsingPage
+module.exports.buildTemplate = template
