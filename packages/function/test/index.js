@@ -307,6 +307,63 @@ test('skip browser websocket endpoint lookup for non-page functions', async t =>
   t.is(result.value, 'ok')
   t.is(browserCalls, 0)
 })
+
+test('prefer page browser websocket endpoint when available', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+    let browserCalls = 0
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return () => [async () => ({ isFulfilled: true, value: 'ok' }), async () => {}]
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+
+    const fakeBrowserless = {
+      withPage: fn => async () =>
+        fn(
+          { browser: () => ({ wsEndpoint: () => 'ws://from-page' }) },
+          async () => ({ device: { viewport: {}, userAgent: 'ua' } })
+        )(),
+      browser: async () => {
+        browserCalls += 1
+        return { wsEndpoint: () => 'ws://from-browserless' }
+      }
+    }
+
+    const fn = browserlessFunction(({ page }) => page.title(), {
+      getBrowserless: async () => ({
+        createContext: async () => fakeBrowserless
+      })
+    })
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(result => {
+        process.stdout.write(JSON.stringify({ browserCalls, result }))
+      })
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  const { browserCalls, result } = JSON.parse(stdout.trim())
+  t.is(browserCalls, 0)
+  t.true(result.isFulfilled)
+  t.is(result.value, 'ok')
+})
+
 test('reuse function code analysis across invocations', t => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `

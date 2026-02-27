@@ -52,7 +52,12 @@ module.exports = (
       }
 
       if (runFunctionOpts.needsNetwork !== false) {
-        const browserWSEndpoint = (await browserless.browser()).wsEndpoint()
+        const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
+        const browserWSEndpoint =
+          browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
+            ? browserFromPage.wsEndpoint()
+            : undefined
+
         if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
         runFunctionOpts.browserWSEndpoint = browserWSEndpoint
       }
