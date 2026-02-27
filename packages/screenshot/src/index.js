@@ -179,27 +179,32 @@ module.exports = ({ goto, ...gotoOpts }) => {
         return { isWhite }
       }
 
-      page.on('dialog', dialog => pReflect(dialog.dismiss()))
+      const onDialog = dialog => pReflect(dialog.dismiss())
+      page.on('dialog', onDialog)
 
-      const timeScreenshot = timeSpan()
+      try {
+        const timeScreenshot = timeSpan()
 
-      if (waitUntil !== 'auto') {
-        ;({ response } = await goto(page, { ...opts, url, waitUntil }))
-        const screenshotOpts = await beforeScreenshot(page, response, opts)
-        screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
-        debug('screenshot', { waitUntil, duration: timeScreenshot() })
-      } else {
-        ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
-        async function waitUntilAuto (page, { response }) {
+        if (waitUntil !== 'auto') {
+          ;({ response } = await goto(page, { ...opts, url, waitUntil }))
           const screenshotOpts = await beforeScreenshot(page, response, opts)
-          const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
-          debug('screenshot', { waitUntil, isWhite, duration: timeScreenshot() })
+          screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
+          debug('screenshot', { waitUntil, duration: timeScreenshot() })
+        } else {
+          ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
+          async function waitUntilAuto (page, { response }) {
+            const screenshotOpts = await beforeScreenshot(page, response, opts)
+            const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
+            debug('screenshot', { waitUntil, isWhite, duration: timeScreenshot() })
+          }
         }
-      }
 
-      return Object.keys(overlayOpts).length === 0
-        ? screenshot
-        : overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
+        return Object.keys(overlayOpts).length === 0
+          ? screenshot
+          : overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
+      } finally {
+        page.off('dialog', onDialog)
+      }
     }
   }
 }

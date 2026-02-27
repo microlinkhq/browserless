@@ -1,6 +1,7 @@
 'use strict'
 
-const { getBrowserContext } = require('@browserless/test')
+const { getBrowserContext, runServer } = require('@browserless/test')
+const createScreenshot = require('..')
 const cheerio = require('cheerio')
 const test = require('ava')
 
@@ -65,4 +66,31 @@ test('graphics features', async t => {
           WebNN: 'Disabled'
         }
   )
+})
+
+test('dialog listener is cleaned up between screenshot calls on same page', async t => {
+  const browserless = await getBrowserContext(t)
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<html><body><h1>ok</h1></body></html>')
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const screenshot = createScreenshot({ goto })(page)
+    const listenersBefore = page.listenerCount('dialog')
+
+    await screenshot(url, { waitUntil: 'load', adblock: false, timeout: 2000 })
+    const listenersAfterFirst = page.listenerCount('dialog')
+
+    await screenshot(url, { waitUntil: 'load', adblock: false, timeout: 2000 })
+    const listenersAfterSecond = page.listenerCount('dialog')
+
+    return { listenersBefore, listenersAfterFirst, listenersAfterSecond }
+  })
+
+  const { listenersBefore, listenersAfterFirst, listenersAfterSecond } = await run()
+
+  t.is(listenersAfterFirst, listenersBefore)
+  t.is(listenersAfterSecond, listenersBefore)
 })
