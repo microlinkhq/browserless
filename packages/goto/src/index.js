@@ -22,6 +22,34 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const castArray = value => [].concat(value).filter(Boolean)
 
+const getDefaultPath = pathname => {
+  if (!pathname || pathname[0] !== '/') return '/'
+  if (pathname === '/') return '/'
+
+  const rightSlash = pathname.lastIndexOf('/')
+  return rightSlash === 0 ? '/' : pathname.slice(0, rightSlash)
+}
+
+const parseCookiesWithJar = (url, str) => {
+  const jar = new toughCookie.CookieJar(undefined, { rejectPublicSuffixes: false })
+
+  return str.split(';').reduce((acc, cookieStr) => {
+    const cookie = jar.setCookieSync(cookieStr.trim(), url)
+    if (!cookie) return acc
+    const parsedCookie = cookie.toJSON()
+
+    parsedCookie.name = parsedCookie.key
+    delete parsedCookie.key
+
+    if (parsedCookie.expires) {
+      parsedCookie.expires = Math.floor(new Date(parsedCookie.expires) / 1000)
+    }
+
+    acc.push(parsedCookie)
+    return acc
+  }, [])
+}
+
 const run = async ({ fn, timeout, debug: props }) => {
   const duration = debug.duration()
   const result = await pReflect(timeout ? pTimeout(fn, timeout) : fn)
@@ -48,23 +76,53 @@ const stopLoadingOnTimeout = (page, timeout) => {
 }
 
 const parseCookies = (url, str) => {
-  const jar = new toughCookie.CookieJar(undefined, { rejectPublicSuffixes: false })
+  let parsedURL
 
-  return str.split(';').reduce((acc, cookieStr) => {
-    const cookie = jar.setCookieSync(cookieStr.trim(), url)
-    if (!cookie) return acc
-    const parsedCookie = cookie.toJSON()
+  try {
+    parsedURL = new URL(url)
+  } catch {
+    return parseCookiesWithJar(url, str)
+  }
 
-    parsedCookie.name = parsedCookie.key
-    delete parsedCookie.key
+  const domain = parsedURL.hostname
 
-    if (parsedCookie.expires) {
-      parsedCookie.expires = Math.floor(new Date(parsedCookie.expires) / 1000)
+  if (!domain) {
+    return parseCookiesWithJar(url, str)
+  }
+
+  const path = getDefaultPath(parsedURL.pathname)
+  const chunks = str.split(';')
+  const cookies = new Array(chunks.length)
+  let index = 0
+
+  for (const chunk of chunks) {
+    const cookieStr = chunk.trim()
+
+    if (cookieStr.length === 0) {
+      return parseCookiesWithJar(url, str)
     }
 
-    acc.push(parsedCookie)
-    return acc
-  }, [])
+    const separatorIndex = cookieStr.indexOf('=')
+
+    if (separatorIndex === -1) {
+      return parseCookiesWithJar(url, str)
+    }
+
+    const name = cookieStr.slice(0, separatorIndex).trim()
+
+    if (name.length === 0) {
+      return parseCookiesWithJar(url, str)
+    }
+
+    cookies[index++] = {
+      name,
+      value: cookieStr.slice(separatorIndex + 1).trim(),
+      domain,
+      path
+    }
+  }
+
+  return cookies
 }
 
 const getMediaFeatures = ({ animations, colorScheme }) => {
