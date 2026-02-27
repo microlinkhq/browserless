@@ -98,6 +98,37 @@ test('ensure to close browser', async t => {
   t.true(browser.isClosed())
 })
 
+test('spawn telemetry does not emit unhandled rejections on spawn failure', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+
+  driver.spawn = () => Promise.reject(new Error('spawn failed'))
+  driver.close = () => Promise.resolve()
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  let unhandledError
+  const onUnhandledRejection = error => {
+    unhandledError = error
+  }
+  process.once('unhandledRejection', onUnhandledRejection)
+
+  const browserless = browserlessFactory()
+  const error = await browserless.browser().catch(error => error)
+
+  await setTimeout(20)
+  process.removeListener('unhandledRejection', onUnhandledRejection)
+
+  t.is(error.message, 'spawn failed')
+  t.falsy(unhandledError, unhandledError && unhandledError.message)
+})
+
 test("don't respawn after close", async t => {
   const script = path.join(__dirname, '../../../packages/benchmark/src/screenshot/speed.js')
   const { exitCode } = await $(`node ${script}`)
