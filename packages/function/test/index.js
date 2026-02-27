@@ -283,7 +283,7 @@ test('throws error when browser is launched with pipe mode', async t => {
   t.is(error.message, 'Browser WebSocket endpoint not found')
 })
 
-test('retrieve browser websocket endpoint once per invocation', async t => {
+test('skip browser websocket endpoint lookup for non-page functions', async t => {
   let browserCalls = 0
 
   const fakeBrowserless = {
@@ -305,7 +305,7 @@ test('retrieve browser websocket endpoint once per invocation', async t => {
 
   t.true(result.isFulfilled)
   t.is(result.value, 'ok')
-  t.is(browserCalls, 1)
+  t.is(browserCalls, 0)
 })
 test('reuse function code analysis across invocations', t => {
   const browserlessFunctionPath = require.resolve('..')
