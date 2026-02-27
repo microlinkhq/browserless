@@ -14,6 +14,12 @@ const { AbortError } = pRetry
 
 const driver = require('./driver')
 
+const getPageId = page => {
+  try {
+    return page._client().id()
+  } catch {}
+}
+
 module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const lock = withLock()
   const goto = createGoto({ timeout: globalTimeout, ...launchOpts })
@@ -74,6 +80,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
     let _contextPromise = createBrowserContext(contextOpts)
     let isDestroyedForced = false
+    const pageMetadata = new WeakMap()
 
     const getBrowserContext = () => _contextPromise
 
@@ -84,12 +91,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         getBrowserContext()
       ])
       const page = await browserContext.newPage()
-      duration({
-        name,
-        id: page._client().id(),
+      const metadata = {
+        id: getPageId(page),
         contextId: browserContext.id,
         browserPid: driver.pid(browserProcess)
-      })
+      }
+      pageMetadata.set(page, metadata)
+      duration({ name, ...metadata })
       return page
     }
 
@@ -97,17 +105,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       if (page && !page.isClosed()) {
         const duration = debug.duration('closePage')
         if (page.disableAdblock) page.disableAdblock()
-        const [browserProcess, browserContext] = await Promise.all([
-          getBrowser(),
-          getBrowserContext(),
-          pReflect(page.close())
-        ])
-        duration({
-          name,
-          id: page._client().id(),
-          contextId: browserContext.id,
-          browserPid: driver.pid(browserProcess)
-        })
+        await pReflect(page.close())
+        duration({ name, ...(pageMetadata.get(page) || { id: getPageId(page) }) })
+        pageMetadata.delete(page)
       }
     }
 
