@@ -244,37 +244,45 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     const abortTypesSet = abortTypes.length > 0 ? new Set(abortTypes) : null
 
-    const enableInterception =
-      (onPageRequest || abortTypes.length > 0) &&
-      run({
-        fn: page.setRequestInterception(true),
-        debug: 'enableInterception'
-      })
+    const requestHandlers = []
 
     if (onPageRequest) {
-      Promise.resolve(enableInterception).then(() =>
-        page.on('request', req => onPageRequest(req, page))
-      )
+      const onPageRequestHandler = req => onPageRequest(req, page)
+      page.on('request', onPageRequestHandler)
+      requestHandlers.push(onPageRequestHandler)
     }
 
     if (abortTypes.length > 0) {
-      Promise.resolve(enableInterception).then(() => {
-        page.on('request', req => {
-          if (req.isInterceptResolutionHandled()) return
-          const resourceType = req.resourceType()
-          const url = truncate(req.url())
+      const abortTypesHandler = req => {
+        if (req.isInterceptResolutionHandled()) return
+        const resourceType = req.resourceType()
+        const url = truncate(req.url())
 
-          if (!abortTypesSet.has(resourceType)) {
-            debug.continue({ url, resourceType })
-            return req.continue(
-              req.continueRequestOverrides(),
-              DEFAULT_INTERCEPT_RESOLUTION_PRIORITY
-            )
+        if (!abortTypesSet.has(resourceType)) {
+          debug.continue({ url, resourceType })
+          return req.continue(req.continueRequestOverrides(), DEFAULT_INTERCEPT_RESOLUTION_PRIORITY)
+        }
+        debug.abort({ url, resourceType })
+        return req.abort('blockedbyclient', DEFAULT_INTERCEPT_RESOLUTION_PRIORITY)
+      }
+
+      page.on('request', abortTypesHandler)
+      requestHandlers.push(abortTypesHandler)
+    }
+
+    if (requestHandlers.length > 0) {
+      prePromises.push(
+        run({
+          fn: page.setRequestInterception(true),
+          debug: 'enableInterception'
+        }).then(result => {
+          // If interception setup fails, remove handlers to avoid keeping dead listeners.
+          if (result.isRejected) {
+            requestHandlers.forEach(handler => page.off('request', handler))
           }
-          debug.abort({ url, resourceType })
-          return req.abort('blockedbyclient', DEFAULT_INTERCEPT_RESOLUTION_PRIORITY)
+          return result
         })
-      })
+      )
     }
 
     if (withAdblock) {
