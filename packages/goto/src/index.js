@@ -281,7 +281,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
           // If interception setup fails, remove handlers to avoid keeping dead listeners.
           if (result.isRejected) {
             requestHandlers.forEach(handler => page.off('request', handler))
-          } else if (abortTypesHandler && !withAdblock) {
+          } else if (abortTypesHandler && !withAdblock && !onPageRequest) {
             disableInterceptionForAbortTypes = true
           }
           return result
