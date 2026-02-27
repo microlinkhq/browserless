@@ -364,6 +364,66 @@ test('reuse function code analysis across invocations', t => {
   t.is(stdout.trim(), '1')
 })
 
+test('reuse compiled template source across invocations', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+    let templateCalls = 0
+    let parseCalls = 0
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return () => [async () => ({ isFulfilled: true, value: 'ok' }), async () => {}]
+      }
+
+      if (request === './template') {
+        const template = originalLoad(request, parent, isMain)
+        const wrapped = (...args) => {
+          templateCalls += 1
+          return template(...args)
+        }
+        wrapped.isUsingPage = (...args) => {
+          parseCalls += 1
+          return template.isUsingPage(...args)
+        }
+        return wrapped
+      }
+
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+    const fakeBrowserless = {
+      withPage: fn => async () =>
+        fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
+      browser: async () => ({ wsEndpoint: () => 'ws://example' })
+    }
+
+    const fn = browserlessFunction(() => 'ok', {
+      getBrowserless: async () => ({
+        createContext: async () => fakeBrowserless
+      })
+    })
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(() => fn('https://example.com'))
+      .then(() => process.stdout.write(JSON.stringify({ templateCalls, parseCalls })))
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  t.deepEqual(JSON.parse(stdout.trim()), { templateCalls: 1, parseCalls: 1 })
+})
+
 test('reuse browserless instance across invocations', async t => {
   let getBrowserlessCalls = 0
   let createContextCalls = 0

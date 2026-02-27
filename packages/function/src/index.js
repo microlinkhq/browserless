@@ -18,6 +18,7 @@ module.exports = (
 ) => {
   const code = stringify(fn)
   const needsNetwork = runFunction.isUsingPage(code)
+  const source = runFunction.buildTemplate(code, needsNetwork)
   let browserPromise
 
   const getBrowser = async () => {
@@ -51,6 +52,7 @@ module.exports = (
 
       if (runFunctionOpts.code === code) {
         runFunctionOpts.needsNetwork = needsNetwork
+        runFunctionOpts.source = source
       }
 
       const result = await runFunction(runFunctionOpts)
