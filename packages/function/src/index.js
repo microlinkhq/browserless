@@ -38,13 +38,9 @@ module.exports = (
     return browserless.withPage((page, goto) => async () => {
       const { device } = await goto(page, { url, timeout, ...gotoOpts })
 
-      const browserWSEndpoint = (await browserless.browser()).wsEndpoint()
-      if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
-
       const runFunctionOpts = {
         url,
         code,
-        browserWSEndpoint,
         device,
         ...opts,
         ...fnOpts
@@ -53,6 +49,12 @@ module.exports = (
       if (runFunctionOpts.code === code) {
         runFunctionOpts.needsNetwork = needsNetwork
         runFunctionOpts.source = source
+      }
+
+      if (runFunctionOpts.needsNetwork !== false) {
+        const browserWSEndpoint = (await browserless.browser()).wsEndpoint()
+        if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
+        runFunctionOpts.browserWSEndpoint = browserWSEndpoint
       }
 
       const result = await runFunction(runFunctionOpts)
