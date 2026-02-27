@@ -512,6 +512,64 @@ test('withPage close does not respawn browser for metadata logging', async t => 
   t.is(spawnCount, 1)
 })
 
+test('withPage create does not respawn browser for metadata logging', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let pid = 5000
+  let spawnCount = 0
+  let isConnected = true
+
+  driver.spawn = () => {
+    spawnCount += 1
+    let isClosed = false
+
+    const page = {
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    const browserContext = {
+      id: `ctx-${pid}`,
+      close: () => Promise.resolve(),
+      newPage: () => Promise.resolve(page)
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => isConnected,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 500 })
+  t.teardown(browser.close)
+
+  const browserless = await browser.createContext({ retry: 0 })
+  await browserless.context()
+
+  isConnected = false
+  const evaluate = browserless.withPage(() => async () => 'ok', { timeout: 500 })
+  const result = await evaluate()
+
+  t.is(result, 'ok')
+  t.is(spawnCount, 1)
+})
+
 test('lock is scoped per browserless instance', async t => {
   const browserlessFactory = require('..')
   const { driver } = browserlessFactory
