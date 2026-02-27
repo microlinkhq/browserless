@@ -100,6 +100,49 @@ test('abortTypes keeps behavior with duplicated resource types', async t => {
   t.true(outcomes.length >= 1)
 })
 
+test('waits interception setup before starting navigation', async t => {
+  const browserless = await getBrowserContext(t)
+  const imageData =
+    'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEUlEQVR4AWP8DwQMQMDEAAUAPfgEADYYS7QAAAAASUVORK5CYII='
+  let imageRequests = 0
+
+  const url = await runServer(t, ({ req, res }) => {
+    if (req.url === '/asset.png') imageRequests += 1
+
+    if (req.url === '/') {
+      res.setHeader('content-type', 'text/html')
+      return res.end('<html><body><img src="/asset.png"/><h1>ok</h1></body></html>')
+    }
+
+    if (req.url === '/asset.png') {
+      res.setHeader('content-type', 'image/png')
+      return res.end(Buffer.from(imageData, 'base64'))
+    }
+
+    res.statusCode = 204
+    return res.end()
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const originalSetRequestInterception = page.setRequestInterception.bind(page)
+
+    page.setRequestInterception = (...args) =>
+      new Promise(resolve => setTimeout(resolve, 200)).then(() =>
+        originalSetRequestInterception(...args)
+      )
+
+    await goto(page, {
+      url,
+      waitUntil: 'load',
+      abortTypes: ['image'],
+      adblock: false
+    })
+  })
+
+  await run()
+  t.is(imageRequests, 0)
+})
+
 test('does not call stopLoading after successful navigation', async t => {
   const browserless = await getBrowserContext(t)
   const url = await runServer(t, ({ res }) => {
