@@ -99,3 +99,30 @@ test('abortTypes keeps behavior with duplicated resource types', async t => {
   const outcomes = await run()
   t.true(outcomes.length >= 1)
 })
+
+test('does not call stopLoading after successful navigation', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ res }) => {
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end('<html><body><h1>ok</h1></body></html>')
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const client = page._client()
+    const originalSend = client.send.bind(client)
+    let stopLoadingCalls = 0
+
+    client.send = (...args) => {
+      if (args[0] === 'Page.stopLoading') stopLoadingCalls += 1
+      return originalSend(...args)
+    }
+
+    await goto(page, { url, waitUntil: 'load', timeout: 900, adblock: false })
+    await new Promise(resolve => setTimeout(resolve, 700))
+
+    client.send = originalSend
+    return stopLoadingCalls
+  })
+
+  t.is(await run(), 0)
+})

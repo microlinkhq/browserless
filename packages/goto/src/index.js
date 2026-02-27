@@ -30,6 +30,23 @@ const run = async ({ fn, timeout, debug: props }) => {
   return result
 }
 
+const stopLoadingOnTimeout = (page, timeout) => {
+  let timeoutId
+
+  return {
+    promise: new Promise(resolve => {
+      timeoutId = globalThis.setTimeout(() => {
+        pReflect(page._client().send('Page.stopLoading')).then(resolve)
+      }, timeout)
+
+      if (typeof timeoutId.unref === 'function') timeoutId.unref()
+    }),
+    clear: () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }
+}
+
 const parseCookies = (url, str) => {
   const jar = new toughCookie.CookieJar(undefined, { rejectPublicSuffixes: false })
 
@@ -354,16 +371,21 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     await Promise.all(prePromises)
 
+    let clearStopLoadingTimer = () => {}
+    const navigationPromise = html
+      ? page.setContent(html, { waitUntil, ...args })
+      : (() => {
+          const { promise, clear } = stopLoadingOnTimeout(page, gotoTimeout)
+          clearStopLoadingTimer = clear
+          return Promise.race([page.goto(url, { waitUntil, ...args }), promise])
+        })()
+
     const { value: response, reason: error } = await run({
-      fn: html
-        ? page.setContent(html, { waitUntil, ...args })
-        : Promise.race([
-          page.goto(url, { waitUntil, ...args }),
-          setTimeout(gotoTimeout).then(() => page._client().send('Page.stopLoading'))
-        ]),
+      fn: navigationPromise,
       timeout: gotoTimeout,
       debug: { fn: html ? 'html' : 'url', waitUntil }
     })
+    clearStopLoadingTimer()
 
     if (withAdblock) {
       await run({
