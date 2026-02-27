@@ -307,7 +307,6 @@ test('retrieve browser websocket endpoint once per invocation', async t => {
   t.is(result.value, 'ok')
   t.is(browserCalls, 1)
 })
-
 test('reuse function code analysis across invocations', t => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `
@@ -363,4 +362,64 @@ test('reuse function code analysis across invocations', t => {
 
   t.is(status, 0, stderr)
   t.is(stdout.trim(), '1')
+})
+
+test('reuse browserless instance across invocations', async t => {
+  let getBrowserlessCalls = 0
+  let createContextCalls = 0
+
+  const fakeBrowserless = {
+    withPage: fn => async () =>
+      fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
+    browser: async () => ({ wsEndpoint: () => 'ws://example' })
+  }
+
+  const fn = browserlessFunction(() => 'ok', {
+    getBrowserless: async () => {
+      getBrowserlessCalls += 1
+      return {
+        createContext: async () => {
+          createContextCalls += 1
+          return fakeBrowserless
+        }
+      }
+    }
+  })
+
+  const first = await fn('https://example.com')
+  const second = await fn('https://example.com')
+
+  t.true(first.isFulfilled)
+  t.true(second.isFulfilled)
+  t.is(getBrowserlessCalls, 1)
+  t.is(createContextCalls, 2)
+})
+
+test('retry getBrowserless on next call when initial creation fails', async t => {
+  let getBrowserlessCalls = 0
+
+  const fakeBrowserless = {
+    withPage: fn => async () =>
+      fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
+    browser: async () => ({ wsEndpoint: () => 'ws://example' })
+  }
+
+  const fn = browserlessFunction(() => 'ok', {
+    getBrowserless: async () => {
+      getBrowserlessCalls += 1
+      if (getBrowserlessCalls === 1) {
+        throw new Error('temporary failure')
+      }
+      return {
+        createContext: async () => fakeBrowserless
+      }
+    }
+  })
+
+  const firstError = await t.throwsAsync(fn('https://example.com'))
+  t.is(firstError.message, 'temporary failure')
+
+  const second = await fn('https://example.com')
+  t.true(second.isFulfilled)
+  t.is(getBrowserlessCalls, 2)
 })
