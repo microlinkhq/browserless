@@ -512,6 +512,56 @@ test('withPage close does not respawn browser for metadata logging', async t => 
   t.is(spawnCount, 1)
 })
 
+test('spawn metadata logging does not call browser.version', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+
+  let versionCallCount = 0
+  let pid = 5000
+
+  driver.spawn = () =>
+    Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => true,
+      once: () => {},
+      version: () => {
+        versionCallCount += 1
+        return Promise.resolve('mock')
+      },
+      createBrowserContext: () =>
+        Promise.resolve({
+          id: `ctx-${pid}`,
+          close: () => Promise.resolve(),
+          newPage: () =>
+            Promise.resolve({
+              _client: () => ({ id: () => 'page-id' }),
+              close: () => Promise.resolve(),
+              isClosed: () => false
+            })
+        }),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 500 })
+  t.teardown(browser.close)
+
+  await browser.browser()
+  await setTimeout(0)
+
+  t.is(versionCallCount, 0)
+})
+
 test('lock is scoped per browserless instance', async t => {
   const browserlessFactory = require('..')
   const { driver } = browserlessFactory
