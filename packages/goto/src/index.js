@@ -384,10 +384,11 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     const headersKeys = Object.keys(headers)
 
     if (headersKeys.length > 0) {
-      const { cookie, ...headersWithoutCookie } = headers
+      const cookie = headers.cookie
+      const userAgent = headers['user-agent']
 
-      if (headers.cookie) {
-        const cookies = parseCookies(url, headers.cookie)
+      if (cookie) {
+        const cookies = parseCookies(url, cookie)
         prePromises.push(
           run({
             fn: page.setCookie(...cookies),
@@ -397,25 +398,41 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         )
       }
 
-      const extraHTTPHeaders = headers.cookie ? headersWithoutCookie : headers
-      const extraHTTPHeadersKeys = Object.keys(extraHTTPHeaders)
-
-      if (headers['user-agent']) {
+      if (userAgent) {
         prePromises.push(
           run({
-            fn: page.setUserAgent(headers['user-agent']),
+            fn: page.setUserAgent(userAgent),
             timeout: actionTimeout,
-            debug: { 'user-agent': headers['user-agent'] }
+            debug: { 'user-agent': userAgent }
           })
         )
       }
 
-      if (extraHTTPHeadersKeys.length > 0) {
+      if (cookie) {
+        const extraHTTPHeaders = {}
+        const extraHTTPHeadersKeys = []
+
+        for (const key of headersKeys) {
+          if (key === 'cookie') continue
+          extraHTTPHeaders[key] = headers[key]
+          extraHTTPHeadersKeys.push(key)
+        }
+
+        if (extraHTTPHeadersKeys.length > 0) {
+          prePromises.push(
+            run({
+              fn: page.setExtraHTTPHeaders(extraHTTPHeaders),
+              timeout: actionTimeout,
+              debug: { headers: extraHTTPHeadersKeys }
+            })
+          )
+        }
+      } else if (!(userAgent && headersKeys.length === 1)) {
         prePromises.push(
           run({
-            fn: page.setExtraHTTPHeaders(extraHTTPHeaders),
+            fn: page.setExtraHTTPHeaders(headers),
             timeout: actionTimeout,
-            debug: { headers: extraHTTPHeadersKeys }
+            debug: { headers: headersKeys }
           })
         )
       }
