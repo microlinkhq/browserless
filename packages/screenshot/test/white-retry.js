@@ -44,7 +44,7 @@ const createGoto = ({ timeout = 1000 } = {}) => {
   }
 
   goto.run = async ({ fn }) => ({ isRejected: false, value: await fn })
-  goto.timeouts = { action: () => timeout }
+  goto.timeouts = { action: () => timeout, goto: () => timeout }
   goto.waitUntilAuto = async () => {
     waitUntilAutoCalls += 1
   }
@@ -53,15 +53,29 @@ const createGoto = ({ timeout = 1000 } = {}) => {
   return goto
 }
 
-const createPage = screenshots => {
+const createPage = (screenshots, { verificationSnapshots = [] } = {}) => {
   let screenshotCalls = 0
+  let verificationCall = 0
 
   return {
     on: () => {},
     off: () => {},
-    evaluate: async () => undefined,
+    evaluate: async expression => {
+      if (expression === 'document.fonts.ready') return undefined
+      if (typeof expression === 'function') {
+        return (
+          verificationSnapshots[verificationCall++] || {
+            title: '',
+            bodyText: '',
+            url: 'https://example.com'
+          }
+        )
+      }
+      return undefined
+    },
     $$eval: async () => undefined,
-    screenshot: async () => screenshots[screenshotCalls++]
+    screenshot: async () => screenshots[screenshotCalls++],
+    getScreenshotCalls: () => screenshotCalls
   }
 }
 
@@ -96,4 +110,39 @@ test('stops white screenshot retries after max attempts', async t => {
 
   t.deepEqual(result, screenshots[createScreenshot.MAX_WHITE_RETRIES])
   t.is(goto.getWaitUntilAutoCalls(), createScreenshot.MAX_WHITE_RETRIES)
+})
+
+test('waits for verification interstitial to resolve before screenshot', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const goto = createGoto({ timeout: 10000 })
+  const screenshots = [Buffer.from('shot1')]
+  const page = createPage(screenshots, {
+    verificationSnapshots: [
+      {
+        title: 'Verifying you are human',
+        bodyText: 'Please wait while we verify that you are not a robot.',
+        url: 'https://augen.pro/'
+      },
+      {
+        title: 'Verifying you are human',
+        bodyText: 'Please wait while we verify that you are not a robot.',
+        url: 'https://augen.pro/'
+      },
+      {
+        title: 'AUGEN',
+        bodyText: 'Beyond Humanware.',
+        url: 'https://augen.pro/'
+      }
+    ]
+  })
+
+  const screenshot = createScreenshot({ goto })(page)
+  const result = await screenshot('https://example.com', { waitUntil: 'auto', codeScheme: false })
+
+  t.deepEqual(result, screenshots[0])
+  t.is(goto.getWaitUntilAutoCalls(), 2)
+  t.is(page.getScreenshotCalls(), 1)
 })
