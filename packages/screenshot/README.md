@@ -231,8 +231,7 @@ This is a **core functionality package** for screenshot capture:
 | Package | Purpose |
 |---------|---------|
 | `@browserless/goto` | Page navigation with ad blocking |
-| `sharp` | Image composition for overlays |
-| `jimp` | White/blank screenshot detection |
+| `sharp` | Image composition for overlays; White/blank screenshot detection |
 | `prism-themes` | Syntax highlighting themes |
 | `svg-gradient` | Generate gradient backgrounds |
 | `got` | Fetch remote background images |

@@ -3,35 +3,7 @@
 const test = require('ava')
 const { readFile } = require('fs/promises')
 
-const { Jimp } = require('jimp')
-
 const isWhite = require('../src/is-white-screenshot')
-
-const createJimpSpy = () => {
-  const originalFromBuffer = Jimp.fromBuffer
-  const spy = { callCount: 0 }
-
-  const wrappedFromBuffer = async function (buffer, options) {
-    const image = await originalFromBuffer.call(this, buffer, options)
-    const originalGetPixelColor = image.getPixelColor.bind(image)
-
-    image.getPixelColor = function (x, y) {
-      spy.callCount++
-      return originalGetPixelColor(x, y)
-    }
-
-    return image
-  }
-
-  Jimp.fromBuffer = wrappedFromBuffer
-
-  return {
-    spy,
-    restore: () => {
-      Jimp.fromBuffer = originalFromBuffer
-    }
-  }
-}
 
 test('true', async t => {
   t.true(await isWhite(await readFile('./test/fixtures/white-5k.jpg')))
@@ -44,22 +16,58 @@ test('false', async t => {
 })
 
 test('sampling algorithm correctly samples ~25% of pixels', async t => {
-  const imageBuffer = await readFile('./test/fixtures/white-5k.png')
-  const tempImage = await Jimp.fromBuffer(imageBuffer)
-  const totalPixels = tempImage.bitmap.width * tempImage.bitmap.height
-  const { spy, restore } = createJimpSpy()
-
-  await isWhite(imageBuffer)
-  restore()
-
-  const percentageChecked = (spy.callCount / totalPixels) * 100
+  const width = 5000
+  const height = 5000
+  const totalPixels = width * height
+  const sampledPixels =
+    Math.ceil(width / isWhite.SAMPLE_STEP_SIZE) * Math.ceil(height / isWhite.SAMPLE_STEP_SIZE)
+  const percentageChecked = (sampledPixels / totalPixels) * 100
 
   t.true(
     percentageChecked >= 20 && percentageChecked <= 30,
-    `Expected to check ~25% of pixels, but checked ${percentageChecked.toFixed(2)}% (${
-      spy.callCount
-    }/${totalPixels})`
+    `Expected to check ~25% of pixels, but checked ${percentageChecked.toFixed(
+      2
+    )}% (${sampledPixels}/${totalPixels})`
   )
+})
+
+test('sampling skips non-grid pixels', t => {
+  const width = 4
+  const height = 4
+  const channels = 4
+  const data = Buffer.alloc(width * height * channels, 253)
+
+  // (1, 1) is not sampled when step size is 2.
+  const unsampledOffset = (1 * width + 1) * channels
+  data[unsampledOffset] = 0
+
+  t.true(isWhite.isWhiteSampledImage(data, { width, height, channels }))
+})
+
+test('sampling detects differences on sampled grid pixels', t => {
+  const width = 4
+  const height = 4
+  const channels = 4
+  const data = Buffer.alloc(width * height * channels, 253)
+
+  // (2, 2) is sampled when step size is 2.
+  const sampledOffset = (2 * width + 2) * channels
+  data[sampledOffset] = 0
+
+  t.false(isWhite.isWhiteSampledImage(data, { width, height, channels }))
+})
+
+test('sampling tolerates tiny near-white channel variance', t => {
+  const width = 4
+  const height = 4
+  const channels = 4
+  const data = Buffer.alloc(width * height * channels, 253)
+
+  // Sampled pixel with +1 blue difference should still be treated as white.
+  const sampledOffset = (2 * width + 2) * channels
+  data[sampledOffset + 2] = 254
+
+  t.true(isWhite.isWhiteSampledImage(data, { width, height, channels }))
 })
 
 test('handles memory errors gracefully on very large images', async t => {
