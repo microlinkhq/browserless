@@ -8,6 +8,7 @@ const isWhite = require('../src/is-white-screenshot')
 test('true', async t => {
   t.true(await isWhite(await readFile('./test/fixtures/white-5k.jpg')))
   t.true(await isWhite(await readFile('./test/fixtures/white-5k.png')))
+  t.true(await isWhite(await readFile('./test/fixtures/capture-near-white.png')))
 })
 
 test('false', async t => {
