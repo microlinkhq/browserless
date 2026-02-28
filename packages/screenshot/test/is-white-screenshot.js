@@ -35,26 +35,39 @@ test('sampling skips non-grid pixels', t => {
   const width = 4
   const height = 4
   const channels = 4
-  const data = Buffer.alloc(width * height * channels, 255)
+  const data = Buffer.alloc(width * height * channels, 253)
 
   // (1, 1) is not sampled when step size is 2.
   const unsampledOffset = (1 * width + 1) * channels
   data[unsampledOffset] = 0
 
-  t.true(isWhite.isUniformSampledImage(data, { width, height, channels }))
+  t.true(isWhite.isWhiteSampledImage(data, { width, height, channels }))
 })
 
 test('sampling detects differences on sampled grid pixels', t => {
   const width = 4
   const height = 4
   const channels = 4
-  const data = Buffer.alloc(width * height * channels, 255)
+  const data = Buffer.alloc(width * height * channels, 253)
 
   // (2, 2) is sampled when step size is 2.
   const sampledOffset = (2 * width + 2) * channels
   data[sampledOffset] = 0
 
-  t.false(isWhite.isUniformSampledImage(data, { width, height, channels }))
+  t.false(isWhite.isWhiteSampledImage(data, { width, height, channels }))
+})
+
+test('sampling tolerates tiny near-white channel variance', t => {
+  const width = 4
+  const height = 4
+  const channels = 4
+  const data = Buffer.alloc(width * height * channels, 253)
+
+  // Sampled pixel with +1 blue difference should still be treated as white.
+  const sampledOffset = (2 * width + 2) * channels
+  data[sampledOffset + 2] = 254
+
+  t.true(isWhite.isWhiteSampledImage(data, { width, height, channels }))
 })
 
 test('handles memory errors gracefully on very large images', async t => {

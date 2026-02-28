@@ -9,6 +9,8 @@ const waitForPrism = require('./pretty')
 const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 
+const MAX_WHITE_RETRIES = 5
+
 const getBoundingClientRect = element => {
   const { top, left, height, width, x, y } = element.getBoundingClientRect()
   return { top, left, height, width, x, y }
@@ -170,13 +172,22 @@ module.exports = ({ goto, ...gotoOpts }) => {
       }
 
       const takeScreenshot = async opts => {
-        screenshot = await page.screenshot(opts)
-        const isWhite = await isWhiteScreenshot(screenshot)
-        if (isWhite) {
-          await goto.waitUntilAuto(page, opts)
+        const timeout = goto.timeouts.action(opts.timeout)
+        const elapsed = timeSpan()
+        let retry = 0
+        let isWhite = false
+
+        do {
           screenshot = await page.screenshot(opts)
-        }
-        return { isWhite }
+          isWhite = await isWhiteScreenshot(screenshot)
+
+          if (!isWhite || retry >= MAX_WHITE_RETRIES || elapsed() >= timeout) break
+
+          retry += 1
+          await goto.waitUntilAuto(page, { timeout })
+        } while (isWhite)
+
+        return { isWhite, retry }
       }
 
       const onDialog = dialog => pReflect(dialog.dismiss())
@@ -194,8 +205,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
           ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
           async function waitUntilAuto (page, { response }) {
             const screenshotOpts = await beforeScreenshot(page, response, opts)
-            const { isWhite } = await takeScreenshot({ ...opts, ...screenshotOpts })
-            debug('screenshot', { waitUntil, isWhite, duration: timeScreenshot() })
+            const { isWhite, retry } = await takeScreenshot({ ...opts, ...screenshotOpts })
+            debug('screenshot', { waitUntil, isWhite, retry, duration: timeScreenshot() })
           }
         }
 
@@ -210,3 +221,4 @@ module.exports = ({ goto, ...gotoOpts }) => {
 }
 
 module.exports.isWhiteScreenshot = isWhiteScreenshot
+module.exports.MAX_WHITE_RETRIES = MAX_WHITE_RETRIES
