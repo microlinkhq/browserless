@@ -361,7 +361,11 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
-    const device = getDevice({ headers, ...args, device: args.device ?? defaultDevice })
+    const device = getDevice({
+      headers,
+      device: args.device ?? defaultDevice,
+      viewport: args.viewport
+    })
 
     if (device.userAgent && !headers['user-agent']) {
       headers['user-agent'] = device.userAgent
