@@ -62,6 +62,40 @@ test('set `uset agent` header', async t => {
   t.is(userAgent, 'googlebot')
 })
 
+test('does not call setExtraHTTPHeaders when only `user-agent` header is provided', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+  let setExtraHTTPHeadersCalls = 0
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const originalSetExtraHTTPHeaders = page.setExtraHTTPHeaders.bind(page)
+    page.setExtraHTTPHeaders = headers => {
+      setExtraHTTPHeadersCalls += 1
+      return originalSetExtraHTTPHeaders(headers)
+    }
+
+    const { response } = await goto(page, {
+      url,
+      headers: {
+        'user-agent': 'googlebot'
+      }
+    })
+
+    return {
+      body: await response.json(),
+      requestHeaders: response.request().headers(),
+      userAgent: await page.evaluate(() => window.navigator.userAgent)
+    }
+  })
+
+  const { body, requestHeaders, userAgent } = await run()
+
+  t.is(setExtraHTTPHeadersCalls, 0)
+  t.is(requestHeaders['user-agent'], 'googlebot')
+  t.is(body.headers['user-agent'], 'googlebot')
+  t.is(userAgent, 'googlebot')
+})
+
 test('set `cookie` header', async t => {
   const browserless = await getBrowserContext(t)
   const ping = createPing(browserless)
