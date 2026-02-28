@@ -24,20 +24,13 @@ const isUniformSampledImage = (data, { width, height, channels }) => {
 }
 
 module.exports = async uint8array => {
-  try {
-    const input = Buffer.isBuffer(uint8array) ? uint8array : Buffer.from(uint8array)
-    const { data, info } = await sharp(input)
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true })
+  const input = Buffer.isBuffer(uint8array) ? uint8array : Buffer.from(uint8array)
+  const { data, info } = await sharp(input)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 
-    return isUniformSampledImage(data, info)
-  } catch (error) {
-    if (error.message.includes('maxMemoryUsageInMB')) {
-      return false
-    }
-    throw error
-  }
+  return isUniformSampledImage(data, info)
 }
 
 module.exports.SAMPLE_PERCENTAGE = SAMPLE_PERCENTAGE
