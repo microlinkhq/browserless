@@ -246,3 +246,39 @@ test('does not call stopLoading after successful navigation', async t => {
 
   t.is(await run(), 0)
 })
+
+test('supports waitForSelector and waitForFunction in the same navigation', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ res }) => {
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(`
+      <html>
+        <body>
+          <script>
+            setTimeout(() => {
+              const el = document.createElement('div')
+              el.id = 'late'
+              document.body.appendChild(el)
+              window.__ready = true
+            }, 60)
+          </script>
+        </body>
+      </html>
+    `)
+  })
+
+  const run = browserless.withPage(
+    (page, goto) => async () =>
+      goto(page, {
+        url,
+        waitUntil: 'load',
+        adblock: false,
+        waitForSelector: '#late',
+        waitForFunction: () => window.__ready === true,
+        timeout: 2000
+      })
+  )
+
+  const { response } = await run()
+  t.true(response.ok())
+})
