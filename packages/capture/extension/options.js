@@ -14,7 +14,10 @@ const START_RECORDING = async ({
   videoConstraints,
   audioConstraints
 }) => {
-  const client = new WebSocket(`ws://localhost:${window.location.hash.slice(1)}/?index=${index}`, [])
+  const client = new WebSocket(
+    `ws://localhost:${window.location.hash.slice(1)}/?index=${index}`,
+    []
+  )
 
   await new Promise(resolve => {
     if (client.readyState === WebSocket.OPEN) return resolve()
@@ -45,7 +48,7 @@ const START_RECORDING = async ({
     bitsPerSecond,
     mimeType
   })
-  const pending = []
+  const pending = new Set()
 
   recorder.ondataavailable = async event => {
     if (!event.data.size) return
@@ -54,11 +57,8 @@ const START_RECORDING = async ({
       if (client.readyState === WebSocket.OPEN) client.send(buffer)
     })()
 
-    pending.push(task)
-    task.finally(() => {
-      const index = pending.indexOf(task)
-      if (index !== -1) pending.splice(index, 1)
-    })
+    pending.add(task)
+    task.finally(() => pending.delete(task))
   }
 
   recorder.onerror = () => recorder.stop()
