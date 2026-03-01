@@ -2,6 +2,7 @@
 
 const createGoto = require('@browserless/goto')
 const fs = require('fs').promises
+const { withLock } = require('superlock')
 
 const {
   DEFAULT_TAB_QUERY,
@@ -14,7 +15,6 @@ const {
 
 const {
   NOOP,
-  createLock,
   wait,
   assertPositive,
   closeServer,
@@ -37,7 +37,23 @@ const {
 } = require('./extension')
 
 let currentIndex = 0
-const { lock, unlock } = createLock()
+const defaultLock = withLock()
+const browserLocks = new WeakMap()
+
+const getBrowserLock = browser => {
+  if (!browser || (typeof browser !== 'object' && typeof browser !== 'function')) {
+    return defaultLock
+  }
+
+  let lock = browserLocks.get(browser)
+
+  if (!lock) {
+    lock = withLock()
+    browserLocks.set(browser, lock)
+  }
+
+  return lock
+}
 
 const capturePage = async (page, opts = {}) => {
   if (!page || typeof page.browser !== 'function') {
@@ -75,6 +91,7 @@ const capturePage = async (page, opts = {}) => {
   const retryPolicy = Object.assign({}, DEFAULT_RETRY_POLICY, retry)
 
   const browser = page.browser()
+  const lock = getBrowserLock(browser)
   const index = currentIndex++
 
   const streamMimeType = getDefaultMimeType({
@@ -98,8 +115,7 @@ const capturePage = async (page, opts = {}) => {
   try {
     extension = await openExtension({ browser, port })
 
-    await lock()
-    try {
+    await lock(async () => {
       await page.bringToFront()
       await wait(100)
 
@@ -147,9 +163,7 @@ const capturePage = async (page, opts = {}) => {
       })
 
       isRecordingStarted = true
-    } finally {
-      unlock()
-    }
+    })
 
     await wait(duration, signal)
   } catch (error) {

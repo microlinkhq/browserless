@@ -7,30 +7,6 @@ const { MIME_TYPES_BY_TYPE } = require('./constants')
 
 const NOOP = () => {}
 
-const createLock = () => {
-  let mutex = false
-  const queue = []
-
-  return {
-    lock: () =>
-      new Promise(resolve => {
-        if (!mutex) {
-          mutex = true
-          return resolve()
-        }
-
-        queue.push(resolve)
-      }),
-    unlock: () => {
-      if (queue.length > 0) {
-        queue.shift()()
-      } else {
-        mutex = false
-      }
-    }
-  }
-}
-
 const abortError = () => {
   const error = new Error('The capture operation was aborted')
   error.name = 'AbortError'
@@ -198,7 +174,9 @@ const getDefaultMimeType = ({ type, mimeType, path: outputPath, audio, video }) 
 
 const fitViewportToScreen = async page => {
   const viewport = page.viewport && page.viewport()
-  if (!viewport || typeof page.evaluate !== 'function' || typeof page.setViewport !== 'function') { return }
+  if (!viewport || typeof page.evaluate !== 'function' || typeof page.setViewport !== 'function') {
+    return
+  }
 
   const metrics = await page
     .evaluate(() => ({
@@ -241,7 +219,6 @@ const getVideoConstraints = (page, videoConstraints, sourceViewport) => {
 
 module.exports = {
   NOOP,
-  createLock,
   wait,
   assertPositive,
   closeServer,

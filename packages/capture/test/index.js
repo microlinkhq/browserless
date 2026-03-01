@@ -13,6 +13,7 @@ class FakeWebSocketServer extends EventEmitter {
     super()
     this.port = nextPort++
     FakeWebSocketServer.latest = this
+    FakeWebSocketServer.byPort.set(this.port, this)
     setImmediate(() => this.emit('listening'))
   }
 
@@ -32,9 +33,12 @@ class FakeWebSocketServer extends EventEmitter {
   }
 
   close (callback) {
+    FakeWebSocketServer.byPort.delete(this.port)
     setImmediate(() => callback && callback())
   }
 }
+
+FakeWebSocketServer.byPort = new Map()
 
 const loadCapture = () => {
   const ws = require('ws')
@@ -51,13 +55,19 @@ const loadCapture = () => {
   return capture
 }
 
-const createFixture = ({ chunks = [Buffer.from('a'), Buffer.from('b')], failGoto = false, hasTab = true } = {}) => {
+const createExtension = ({
+  chunks = [Buffer.from('a'), Buffer.from('b')],
+  failGoto = false,
+  hasTab = true
+} = {}) => {
   let socket
 
-  const extension = {
+  return {
     _closed: false,
-    async goto () {
+    _port: undefined,
+    async goto (url) {
       if (failGoto) throw new Error('ERR_BLOCKED_BY_CLIENT')
+      this._port = Number(String(url).split('#').pop()) || undefined
     },
     async evaluate (fn, arg) {
       const source = fn.toString()
@@ -71,7 +81,8 @@ const createFixture = ({ chunks = [Buffer.from('a'), Buffer.from('b')], failGoto
       if (source.includes('globalThis.chrome.tabs.query')) return hasTab ? [{ id: 1 }] : []
 
       if (source.includes('globalThis.START_RECORDING(settings)')) {
-        socket = FakeWebSocketServer.latest.connect({ index: arg.index, chunks })
+        const server = FakeWebSocketServer.byPort.get(this._port) || FakeWebSocketServer.latest
+        socket = server.connect({ index: arg.index, chunks })
         return
       }
 
@@ -90,13 +101,21 @@ const createFixture = ({ chunks = [Buffer.from('a'), Buffer.from('b')], failGoto
       if (socket) socket.close()
     }
   }
+}
 
-  const browser = {
-    async newPage () {
-      return extension
-    }
+const createBrowser = opts => ({
+  async newPage () {
+    return createExtension(opts)
   }
+})
 
+const createFixture = ({
+  chunks = [Buffer.from('a'), Buffer.from('b')],
+  failGoto = false,
+  hasTab = true,
+  browser = createBrowser({ chunks, failGoto, hasTab }),
+  bringToFront = async () => {}
+} = {}) => {
   const page = {
     _viewport: {
       width: 1280,
@@ -121,7 +140,7 @@ const createFixture = ({ chunks = [Buffer.from('a'), Buffer.from('b')], failGoto
     url () {
       return 'https://example.com/'
     },
-    async bringToFront () {},
+    bringToFront,
     keyboard: {
       async down () {},
       async up () {},
@@ -130,6 +149,27 @@ const createFixture = ({ chunks = [Buffer.from('a'), Buffer.from('b')], failGoto
   }
 
   return { page }
+}
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+const createDeferred = () => {
+  let resolve
+  const promise = new Promise(_resolve => {
+    resolve = _resolve
+  })
+  return { promise, resolve }
+}
+
+const waitUntil = async (predicate, { timeout = 500, interval = 10 } = {}) => {
+  const startedAt = Date.now()
+
+  while (!predicate()) {
+    if (Date.now() - startedAt >= timeout) return false
+    await wait(interval)
+  }
+
+  return true
 }
 
 test('capture returns a video buffer', async t => {
@@ -314,4 +354,106 @@ test('rejects when extension cannot be opened', async t => {
   await t.throwsAsync(() => capture(page)('https://example.com', { duration: 20 }), {
     message: /Unable to open capture extension/
   })
+})
+
+test('serializes setup when captures share the same browser', async t => {
+  const createCapture = loadCapture()
+  const browser = createBrowser({ chunks: [Buffer.from('shared')] })
+  const enteredFirst = createDeferred()
+  const releaseFirst = createDeferred()
+  let secondBringToFrontCalls = 0
+
+  const { page: firstPage } = createFixture({
+    browser,
+    bringToFront: async () => {
+      enteredFirst.resolve()
+      await releaseFirst.promise
+    }
+  })
+
+  const { page: secondPage } = createFixture({
+    browser,
+    bringToFront: async () => {
+      secondBringToFrontCalls++
+    }
+  })
+
+  const capture = createCapture({ goto: async () => ({}) })
+
+  const firstTask = capture(firstPage)('https://example.com/first', {
+    duration: 20,
+    frameSize: 10,
+    audio: false,
+    video: true
+  })
+
+  await enteredFirst.promise
+
+  const secondTask = capture(secondPage)('https://example.com/second', {
+    duration: 20,
+    frameSize: 10,
+    audio: false,
+    video: true
+  })
+
+  const secondEnteredBeforeRelease = await waitUntil(() => secondBringToFrontCalls > 0, {
+    timeout: 100
+  })
+  t.false(secondEnteredBeforeRelease)
+
+  releaseFirst.resolve()
+
+  const [firstBuffer, secondBuffer] = await Promise.all([firstTask, secondTask])
+  t.true(Buffer.isBuffer(firstBuffer))
+  t.true(Buffer.isBuffer(secondBuffer))
+  t.is(secondBringToFrontCalls, 1)
+})
+
+test('allows setup in parallel when captures use different browsers', async t => {
+  const createCapture = loadCapture()
+  const enteredFirst = createDeferred()
+  const releaseFirst = createDeferred()
+  let secondBringToFrontCalls = 0
+
+  const { page: firstPage } = createFixture({
+    browser: createBrowser({ chunks: [Buffer.from('first')] }),
+    bringToFront: async () => {
+      enteredFirst.resolve()
+      await releaseFirst.promise
+    }
+  })
+
+  const { page: secondPage } = createFixture({
+    browser: createBrowser({ chunks: [Buffer.from('second')] }),
+    bringToFront: async () => {
+      secondBringToFrontCalls++
+    }
+  })
+
+  const capture = createCapture({ goto: async () => ({}) })
+
+  const firstTask = capture(firstPage)('https://example.com/first-browser', {
+    duration: 20,
+    frameSize: 10,
+    audio: false,
+    video: true
+  })
+
+  await enteredFirst.promise
+
+  const secondTask = capture(secondPage)('https://example.com/second-browser', {
+    duration: 20,
+    frameSize: 10,
+    audio: false,
+    video: true
+  })
+
+  const secondEnteredBeforeRelease = await waitUntil(() => secondBringToFrontCalls > 0)
+  t.true(secondEnteredBeforeRelease)
+
+  releaseFirst.resolve()
+
+  const [firstBuffer, secondBuffer] = await Promise.all([firstTask, secondTask])
+  t.true(Buffer.isBuffer(firstBuffer))
+  t.true(Buffer.isBuffer(secondBuffer))
 })
