@@ -1,7 +1,13 @@
 'use strict'
 
 const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
-const { isWhiteScreenshot } = require('@browserless/screenshot')
+const pReflect = require('p-reflect')
+const {
+  isWhiteScreenshot,
+  waitForDomStability,
+  resolveWaitForDom,
+  DEFAULT_WAIT_FOR_DOM
+} = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless:pdf')
 const createGoto = require('@browserless/goto')
 
@@ -22,9 +28,17 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   return function pdf (page) {
     return async (
       url,
-      { margin = '0.35cm', scale = 0.65, printBackground = true, waitUntil = 'auto', ...opts } = {}
+      {
+        margin = '0.35cm',
+        scale = 0.65,
+        printBackground = true,
+        waitUntil = 'auto',
+        waitForDom = DEFAULT_WAIT_FOR_DOM,
+        ...opts
+      } = {}
     ) => {
       let pdfBuffer
+      const waitForDomOpts = resolveWaitForDom(waitForDom)
 
       const generatePdf = page =>
         page.pdf({
@@ -34,12 +48,24 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           scale
         })
 
+      const waitForDomStabilityResult = async page => {
+        const result = await pReflect(page.evaluate(waitForDomStability, waitForDomOpts))
+        debug(
+          'waitForDomStability',
+          result.isRejected
+            ? { ...waitForDomOpts, error: result.reason.message || result.reason }
+            : { ...waitForDomOpts, ...result.value }
+        )
+      }
+
       if (waitUntil !== 'auto') {
         await goto(page, { ...opts, url, waitUntil })
+        await waitForDomStabilityResult(page)
         pdfBuffer = await generatePdf(page)
       } else {
         await goto(page, { ...opts, url, waitUntil, waitUntilAuto })
         async function waitUntilAuto (page) {
+          await waitForDomStabilityResult(page)
           const timeout = goto.timeouts.action(opts.timeout)
           let isWhite = false
           let retry = -1

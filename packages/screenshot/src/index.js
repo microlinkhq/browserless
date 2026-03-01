@@ -8,9 +8,7 @@ const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
 const timeSpan = require('./time-span')
 const overlay = require('./overlay')
-
-const DEFAULT_WAIT_FOR_DOM = 1000
-const DOM_STABILITY_IDLE_RATIO = 10
+const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require('./wait-for-dom')
 
 const createElapsed = () => {
   const start = Date.now()
@@ -48,37 +46,6 @@ const waitForImagesOnViewport = page =>
         .map(el => el.decode())
     )
   )
-
-const waitForDomStability = ({ idle, timeout } = {}) =>
-  new Promise(resolve => {
-    if (!document.body) return resolve({ status: 'no-body' })
-
-    let lastChange = performance.now()
-    const observer = new window.MutationObserver(() => {
-      lastChange = performance.now()
-    })
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      characterData: false
-    })
-
-    const deadline = performance.now() + timeout
-
-    ;(function check () {
-      const now = performance.now()
-      if (now - lastChange >= idle) {
-        observer.disconnect()
-        return resolve({ status: 'idle' })
-      }
-      if (now >= deadline) {
-        observer.disconnect()
-        return resolve({ status: 'timeout' })
-      }
-      window.requestAnimationFrame(check)
-    })()
-  })
 
 const scrollFullPageToLoadContent = async (page, timeout) => {
   const debug = require('debug-logfmt')('browserless:goto')
@@ -146,18 +113,12 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
-        const domStabilityTimeout =
-          Number.isFinite(waitForDom) && waitForDom > 0 ? waitForDom : DEFAULT_WAIT_FOR_DOM
-        const domStabilityIdle = domStabilityTimeout / DOM_STABILITY_IDLE_RATIO
+        const waitForDomOpts = resolveWaitForDom(waitForDom)
 
         let screenshotOpts = {}
         const tasks = [
           {
-            fn: () =>
-              page.evaluate(waitForDomStability, {
-                idle: domStabilityIdle,
-                timeout: domStabilityTimeout
-              }),
+            fn: () => page.evaluate(waitForDomStability, waitForDomOpts),
             debug: 'beforeScreenshot:waitForDomStability'
           },
           {
@@ -278,3 +239,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
 }
 
 module.exports.isWhiteScreenshot = isWhiteScreenshot
+module.exports.waitForDomStability = waitForDomStability
+module.exports.resolveWaitForDom = resolveWaitForDom
+module.exports.DEFAULT_WAIT_FOR_DOM = DEFAULT_WAIT_FOR_DOM
