@@ -15,7 +15,6 @@ const {
 
 const {
   NOOP,
-  wait,
   assertPositive,
   closeServer,
   createWebSocketServer,
@@ -54,6 +53,33 @@ const getBrowserLock = browser => {
 
   return lock
 }
+
+const abortError = () => {
+  const error = new Error('The capture operation was aborted')
+  error.name = 'AbortError'
+  return error
+}
+
+const waitForCaptureDuration = (duration, signal) =>
+  new Promise((resolve, reject) => {
+    if (signal && signal.aborted) return reject(abortError())
+
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(abortError())
+    }
+
+    const timer = setTimeout(() => {
+      if (signal && typeof signal.removeEventListener === 'function') {
+        signal.removeEventListener('abort', onAbort)
+      }
+      resolve()
+    }, duration)
+
+    if (signal && typeof signal.addEventListener === 'function') {
+      signal.addEventListener('abort', onAbort, { once: true })
+    }
+  })
 
 const capturePage = async (page, opts = {}) => {
   if (!page || typeof page.browser !== 'function') {
@@ -117,7 +143,6 @@ const capturePage = async (page, opts = {}) => {
 
     await lock(async () => {
       await page.bringToFront()
-      await wait(100)
 
       const tab = await getTab({
         extension,
@@ -129,7 +154,7 @@ const capturePage = async (page, opts = {}) => {
         throw new Error('Cannot find the active tab. Try setting `opts.tabQuery`.')
       }
 
-      await activateTab({ extension, tabId: tab.id, wait })
+      await activateTab({ extension, tabId: tab.id })
 
       const captureViewport = __captureViewport || (page.viewport && page.viewport())
       const alignedTab = await alignTabToViewport({
@@ -140,7 +165,7 @@ const capturePage = async (page, opts = {}) => {
       })
 
       await assertExtensionLoaded(extension, retryPolicy)
-      await invokeExtension({ page, wait })
+      await invokeExtension({ page })
 
       recordingPromise = createRecordingSession({ wss, index, timeout })
 
@@ -165,7 +190,7 @@ const capturePage = async (page, opts = {}) => {
       isRecordingStarted = true
     })
 
-    await wait(duration, signal)
+    await waitForCaptureDuration(duration, signal)
   } catch (error) {
     captureError = error
   } finally {

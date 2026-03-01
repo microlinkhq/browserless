@@ -7,39 +7,6 @@ const { MIME_TYPES_BY_TYPE } = require('./constants')
 
 const NOOP = () => {}
 
-const abortError = () => {
-  const error = new Error('The capture operation was aborted')
-  error.name = 'AbortError'
-  return error
-}
-
-const wait = (duration, signal) =>
-  new Promise((resolve, reject) => {
-    if (signal && signal.aborted) return reject(abortError())
-
-    let isSettled = false
-
-    const onAbort = () => {
-      if (isSettled) return
-      isSettled = true
-      clearTimeout(timer)
-      reject(abortError())
-    }
-
-    const timer = setTimeout(() => {
-      if (isSettled) return
-      isSettled = true
-      if (signal && typeof signal.removeEventListener === 'function') {
-        signal.removeEventListener('abort', onAbort)
-      }
-      resolve()
-    }, duration)
-
-    if (signal && typeof signal.addEventListener === 'function') {
-      signal.addEventListener('abort', onAbort, { once: true })
-    }
-  })
-
 const assertPositive = (name, value) => {
   if (!Number.isFinite(value) || value <= 0) {
     throw new TypeError(`Expected \`${name}\` to be a number > 0. Received: ${value}`)
@@ -219,7 +186,6 @@ const getVideoConstraints = (page, videoConstraints, sourceViewport) => {
 
 module.exports = {
   NOOP,
-  wait,
   assertPositive,
   closeServer,
   createWebSocketServer,

@@ -2,7 +2,7 @@
 
 const { EXTENSION_ID, EXTENSION_PATH } = require('./constants')
 
-const invokeExtension = async ({ page, wait }) => {
+const invokeExtension = async ({ page }) => {
   const isMac = process.platform === 'darwin'
 
   await page.keyboard.down(isMac ? 'Meta' : 'Control')
@@ -10,8 +10,6 @@ const invokeExtension = async ({ page, wait }) => {
   await page.keyboard.press('KeyY')
   await page.keyboard.up('Shift')
   await page.keyboard.up(isMac ? 'Meta' : 'Control')
-
-  await wait(100)
 }
 
 const assertExtensionLoaded = async (extension, retryPolicy) => {
@@ -62,12 +60,10 @@ const getTab = async ({ extension, query, currentUrl }) =>
     { query, currentUrl }
   )
 
-const activateTab = async ({ extension, tabId, wait }) => {
+const activateTab = async ({ extension, tabId }) => {
   if (!tabId) return
 
   await extension.evaluate(tabId => globalThis.chrome.tabs.update(tabId, { active: true }), tabId)
-
-  await wait(100)
 }
 
 const alignTabToViewport = async ({ page, extension, tab, viewport }) => {
