@@ -1,9 +1,6 @@
 'use strict'
 
-const path = require('path')
 const { WebSocketServer } = require('ws')
-
-const { MIME_TYPES_BY_TYPE } = require('./constants')
 
 const closeServer = wss => {
   const { promise, resolve } = Promise.withResolvers()
@@ -46,107 +43,7 @@ const createWebSocketServer = () => {
   return promise
 }
 
-const createRecordingSession = ({ wss, index }) => {
-  const { promise, resolve, reject } = Promise.withResolvers()
-  let socket
-  let isSettled = false
-
-  const chunks = []
-
-  const done = (error, value) => {
-    if (isSettled) return
-    isSettled = true
-    wss.removeListener('connection', onConnection)
-
-    if (socket) {
-      socket.removeAllListeners('message').removeAllListeners('close').removeAllListeners('error')
-    }
-
-    if (error) return reject(error)
-    resolve(value)
-  }
-
-  const onConnection = (ws, req) => {
-    const url = new URL(req.url, 'ws://127.0.0.1')
-    if (url.searchParams.get('index') !== String(index)) return
-    socket = ws
-    socket
-      .on('message', buffer => chunks.push(buffer))
-      .once('error', error => done(error))
-      .once('close', () => done(null, Buffer.concat(chunks)))
-  }
-
-  wss.on('connection', onConnection)
-
-  return promise
-}
-
-const getTypeFromPath = outputPath => {
-  if (!outputPath) return undefined
-
-  const extension = path.extname(outputPath).toLowerCase().slice(1)
-
-  if (extension === 'm4a') return 'mp4'
-  if (extension === 'webm' || extension === 'mp4' || extension === 'mkv') return extension
-
-  return undefined
-}
-
-const getMimeTypeFromType = ({ type, audio, video }) => {
-  if (!type) return undefined
-
-  const normalizedType = String(type).trim().toLowerCase().replace(/^\./, '')
-  const mappedType = MIME_TYPES_BY_TYPE[normalizedType]
-
-  if (!mappedType) {
-    throw new TypeError(
-      `Unsupported \`type\` "${type}". Supported types: ${Object.keys(MIME_TYPES_BY_TYPE).join(
-        ', '
-      )}`
-    )
-  }
-
-  if (video && mappedType.video) return mappedType.video
-  if (audio && mappedType.audio) return mappedType.audio
-
-  throw new TypeError(
-    `Unsupported \`type\` "${type}" for the current capture mode (audio=${audio}, video=${video}).`
-  )
-}
-
-const getMimeType = ({ type, path: outputPath, audio, video }) => {
-  const explicitTypeMime = getMimeTypeFromType({ type, audio, video })
-  if (explicitTypeMime) return explicitTypeMime
-
-  const pathTypeMime = getMimeTypeFromType({ type: getTypeFromPath(outputPath), audio, video })
-  if (pathTypeMime) return pathTypeMime
-
-  if (video) return 'video/webm'
-  if (audio) return 'audio/webm'
-  return 'video/webm'
-}
-
-const getVideoConstraints = (videoConstraints, viewport) => {
-  if (videoConstraints) return videoConstraints
-
-  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
-  const width = Math.round(viewport.width * dpr)
-  const height = Math.round(viewport.height * dpr)
-
-  return {
-    mandatory: {
-      minWidth: width,
-      minHeight: height,
-      maxWidth: width,
-      maxHeight: height
-    }
-  }
-}
-
 module.exports = {
   closeServer,
-  createWebSocketServer,
-  createRecordingSession,
-  getMimeType,
-  getVideoConstraints
+  createWebSocketServer
 }

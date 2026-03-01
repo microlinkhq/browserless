@@ -99,9 +99,9 @@ const open = async ({ browser }) => {
   return workerRuntime
 }
 
-const getTab = async ({ extension, query, currentUrl }) => {
+const getTab = async ({ worker, query, currentUrl }) => {
   try {
-    return extension.evaluate(
+    return worker.evaluate(
       async ({ query, currentUrl }) => {
         const queried = await globalThis.chrome.tabs.query(query)
         if (queried[0] && queried[0].url === currentUrl) return queried[0]
@@ -116,13 +116,10 @@ const getTab = async ({ extension, query, currentUrl }) => {
   }
 }
 
-const activateTab = async ({ extension, tabId }) => {
-  if (!tabId) return
+const activateTab = ({ worker, tabId }) =>
+  worker.evaluate(tabId => globalThis.chrome.tabs.update(tabId, { active: true }), tabId)
 
-  await extension.evaluate(tabId => globalThis.chrome.tabs.update(tabId, { active: true }), tabId)
-}
-
-const alignTabToViewport = async ({ page, extension, tab, viewport }) => {
+const alignTabToViewport = async ({ page, worker, tab, viewport }) => {
   if (!tab || !tab.id || !viewport || !viewport.width || !viewport.height) return tab
   if (typeof page.target !== 'function') return tab
 
@@ -133,11 +130,14 @@ const alignTabToViewport = async ({ page, extension, tab, viewport }) => {
   if (!session) return tab
 
   const getCurrentTab = () =>
-    extension.evaluate(tabId => globalThis.chrome.tabs.get(tabId), tab.id).catch(() => null)
+    worker.evaluate(tabId => globalThis.chrome.tabs.get(tabId), tab.id).catch(() => null)
 
   try {
-    let currentTab = (await getCurrentTab()) || tab
-    const window = await session.send('Browser.getWindowForTarget').catch(() => null)
+    const [detectedTab, window] = await Promise.all([
+      getCurrentTab(),
+      session.send('Browser.getWindowForTarget').catch(() => null)
+    ])
+    let currentTab = detectedTab || tab
 
     if (!window || !window.windowId || !window.bounds) return currentTab
 
