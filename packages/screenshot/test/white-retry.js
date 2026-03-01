@@ -53,9 +53,9 @@ const createGoto = ({ timeout = 1000 } = {}) => {
   return goto
 }
 
-const createPage = (screenshots, { verificationSnapshots = [] } = {}) => {
+const createPage = (screenshots, { pageSnapshots = [] } = {}) => {
   let screenshotCalls = 0
-  let verificationCall = 0
+  let pageSnapshotCall = 0
 
   return {
     on: () => {},
@@ -63,8 +63,16 @@ const createPage = (screenshots, { verificationSnapshots = [] } = {}) => {
     evaluate: async expression => {
       if (expression === 'document.fonts.ready') return undefined
       if (typeof expression === 'function') {
+        const source = expression.toString()
+        const isSnapshotEval =
+          source.includes('document.title') &&
+          source.includes('document.body') &&
+          source.includes('window.location.href')
+
+        if (!isSnapshotEval) return undefined
+
         return (
-          verificationSnapshots[verificationCall++] || {
+          pageSnapshots[pageSnapshotCall++] || {
             title: '',
             bodyText: '',
             url: 'https://example.com'
@@ -118,9 +126,9 @@ test('waits for verification interstitial to resolve before screenshot', async t
   t.teardown(restore)
 
   const goto = createGoto({ timeout: 10000 })
-  const screenshots = [Buffer.from('shot1')]
+  const screenshots = [Buffer.from('shot1'), Buffer.from('shot2'), Buffer.from('shot3')]
   const page = createPage(screenshots, {
-    verificationSnapshots: [
+    pageSnapshots: [
       {
         title: 'Verifying you are human',
         bodyText: 'Please wait while we verify that you are not a robot.',
@@ -140,9 +148,16 @@ test('waits for verification interstitial to resolve before screenshot', async t
   })
 
   const screenshot = createScreenshot({ goto })(page)
-  const result = await screenshot('https://example.com', { waitUntil: 'auto', codeScheme: false })
+  const result = await screenshot('https://example.com', {
+    waitUntil: 'auto',
+    codeScheme: false,
+    isPageReady: ({ title = '', bodyText = '', url = '' } = {}) => {
+      const haystack = `${title}\n${bodyText}\n${url}`.toLowerCase()
+      return !haystack.includes('verifying you are human')
+    }
+  })
 
-  t.deepEqual(result, screenshots[0])
+  t.deepEqual(result, screenshots[2])
   t.is(goto.getWaitUntilAutoCalls(), 2)
-  t.is(page.getScreenshotCalls(), 1)
+  t.is(page.getScreenshotCalls(), 3)
 })

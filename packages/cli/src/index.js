@@ -41,6 +41,22 @@ process.on('SIGINT', () => {
   process.exit(130)
 })
 
+const VERIFICATION_MARKERS = Object.freeze([
+  'verifying you are human',
+  'please wait while we verify that you are',
+  'security check',
+  'checking your browser',
+  'request has been denied by the security policy',
+  'vercel security checkpoint',
+  '/_vercel/challenge'
+])
+
+const isPageReady = ({ title = '', bodyText = '', url = '', isWhite = false } = {}) => {
+  const haystack = `${title}\n${bodyText}\n${url}`.toLowerCase()
+  const isVerificationPage = VERIFICATION_MARKERS.some(marker => haystack.includes(marker))
+  return !isWhite && !isVerificationPage
+}
+
 const run = async () => {
   if (cli.input.length === 0) return cli.showHelp()
   spinner.start()
@@ -50,7 +66,7 @@ const run = async () => {
   const browser = createBrowser({ headless })
   onExit(browser.close)
   const browserless = await browser.createContext()
-  return fn({ url, browserless, opts: nestie(opts) })
+  return fn({ url, browserless, opts: nestie(opts), isPageReady })
 }
 
 run()

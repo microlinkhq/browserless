@@ -69,6 +69,7 @@ const buffer = await browserless.screenshot('https://example.com', {
 | `element` | `string` | — | CSS selector for element screenshot |
 | `codeScheme` | `string` | `'atom-dark'` | Prism.js theme for code highlighting |
 | `waitUntil` | `string` | `'auto'` | When to consider navigation done |
+| `isPageReady` | `function` | `({ isWhite }) => !isWhite` | Custom readiness predicate for retry loop |
 | `overlay` | `object` | `{}` | Browser overlay options |
 
 All [Puppeteer page.screenshot() options](https://pptr.dev/api/puppeteer.screenshotoptions) are supported.

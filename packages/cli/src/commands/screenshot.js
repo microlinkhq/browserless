@@ -28,7 +28,9 @@ const BACKGROUNDS = [
 
 const randBackground = uniqueRandomArray(BACKGROUNDS)
 
-module.exports = async ({ url, browserless, opts }) => {
+module.exports = async ({ url, browserless, opts, isPageReady }) => {
+  if (typeof isPageReady === 'function') opts.isPageReady = isPageReady
+
   if (opts.background === 'unsplash') {
     dset(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
   }

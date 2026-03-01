@@ -1,7 +1,5 @@
 'use strict'
 
-const { setTimeout: delay } = require('node:timers/promises')
-
 const debug = require('debug-logfmt')('browserless:screenshot')
 const createGoto = require('@browserless/goto')
 const pReflect = require('p-reflect')
@@ -12,33 +10,20 @@ const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 
 const MAX_WHITE_RETRIES = 5
-const VERIFICATION_RETRY_DELAY = 50
-const VERIFICATION_MARKERS = Object.freeze([
-  'verifying you are human',
-  'please wait while we verify that you are',
-  'security check',
-  'checking your browser',
-  'request has been denied by the security policy',
-  'vercel security checkpoint',
-  '/_vercel/challenge'
-])
-
-const isVerificationSnapshot = ({ title = '', bodyText = '', url = '' } = {}) => {
-  const haystack = `${title}\n${bodyText}\n${url}`.toLowerCase()
-  return VERIFICATION_MARKERS.some(marker => haystack.includes(marker))
-}
 
 const createElapsed = () => {
   const start = Date.now()
   return () => Date.now() - start
 }
 
-const getVerificationSnapshot = page =>
+const getPageSnapshot = page =>
   page.evaluate(() => ({
     title: document.title || '',
     bodyText: document.body ? document.body.innerText || '' : '',
     url: window.location.href || ''
   }))
+
+const defaultIsPageReady = ({ isWhite }) => !isWhite
 
 const getBoundingClientRect = element => {
   const { top, left, height, width, x, y } = element.getBoundingClientRect()
@@ -146,7 +131,13 @@ module.exports = ({ goto, ...gotoOpts }) => {
   return function screenshot (page) {
     return async (
       url,
-      { codeScheme = 'atom-dark', overlay: overlayOpts = {}, waitUntil = 'auto', ...opts } = {}
+      {
+        codeScheme = 'atom-dark',
+        overlay: overlayOpts = {},
+        waitUntil = 'auto',
+        isPageReady = defaultIsPageReady,
+        ...opts
+      } = {}
     ) => {
       let screenshot
       let response
@@ -214,40 +205,32 @@ module.exports = ({ goto, ...gotoOpts }) => {
         const elapsed = createElapsed()
         let retry = 0
         let isWhite = false
+        let isReady = false
 
         do {
           screenshot = await page.screenshot(opts)
           isWhite = await isWhiteScreenshot(screenshot)
+          const snapshotResult = await pReflect(getPageSnapshot(page))
+          const pageSnapshot = snapshotResult.isRejected ? {} : snapshotResult.value
+          const pageReadyResult = await pReflect(
+            opts.isPageReady({
+              page,
+              response,
+              screenshot,
+              isWhite,
+              isWhiteScreenshot,
+              ...pageSnapshot
+            })
+          )
+          isReady = !pageReadyResult.isRejected && !!pageReadyResult.value
 
-          if (!isWhite || retry >= MAX_WHITE_RETRIES || elapsed() >= timeout) break
+          if (isReady || retry >= MAX_WHITE_RETRIES || elapsed() >= timeout) break
 
           retry += 1
           await goto.waitUntilAuto(page, { timeout })
-        } while (isWhite)
+        } while (!isReady)
 
-        return { isWhite, retry }
-      }
-
-      const waitForVerificationToResolve = async opts => {
-        const timeout = goto.timeouts.goto(opts.timeout)
-        const elapsed = createElapsed()
-        let retry = 0
-        let isPending = false
-
-        do {
-          const snapshotResult = await pReflect(getVerificationSnapshot(page))
-          isPending = !snapshotResult.isRejected && isVerificationSnapshot(snapshotResult.value)
-
-          if (!isPending || elapsed() >= timeout) break
-
-          retry += 1
-          const remaining = Math.max(1, timeout - elapsed())
-          const waitTimeout = Math.min(2000, remaining)
-          await pReflect(goto.waitUntilAuto(page, { timeout: waitTimeout }))
-          await delay(Math.min(VERIFICATION_RETRY_DELAY, remaining))
-        } while (isPending)
-
-        return { isPending, retry }
+        return { isWhite, isReady, retry }
       }
 
       const onDialog = dialog => pReflect(dialog.dismiss())
@@ -264,15 +247,17 @@ module.exports = ({ goto, ...gotoOpts }) => {
         } else {
           ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
           async function waitUntilAuto (page, { response }) {
-            const verification = await waitForVerificationToResolve(opts)
             const screenshotOpts = await beforeScreenshot(page, response, opts)
-            const { isWhite, retry } = await takeScreenshot({ ...opts, ...screenshotOpts })
+            const { isWhite, isReady, retry } = await takeScreenshot({
+              ...opts,
+              ...screenshotOpts,
+              isPageReady
+            })
             debug('screenshot', {
               waitUntil,
+              isReady,
               isWhite,
               retry,
-              verificationRetry: verification.retry,
-              verificationPending: verification.isPending,
               duration: timeScreenshot()
             })
           }
@@ -290,5 +275,3 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
 module.exports.isWhiteScreenshot = isWhiteScreenshot
 module.exports.MAX_WHITE_RETRIES = MAX_WHITE_RETRIES
-module.exports.VERIFICATION_MARKERS = VERIFICATION_MARKERS
-module.exports.isVerificationSnapshot = isVerificationSnapshot
