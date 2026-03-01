@@ -9,8 +9,8 @@ const waitForPrism = require('./pretty')
 const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 
-const DOM_STABILITY_TIMEOUT = 1300
-const DOM_STABILITY_IDLE = DOM_STABILITY_TIMEOUT / 1 / 10
+const DEFAULT_WAIT_FOR_DOM = 1000
+const DOM_STABILITY_IDLE_RATIO = 10
 
 const createElapsed = () => {
   const start = Date.now()
@@ -136,6 +136,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         codeScheme = 'atom-dark',
         overlay: overlayOpts = {},
         waitUntil = 'auto',
+        waitForDom = DEFAULT_WAIT_FOR_DOM,
         isPageReady = defaultIsPageReady,
         ...opts
       } = {}
@@ -145,14 +146,16 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
-        const domStabilityTimeout = DOM_STABILITY_TIMEOUT
+        const domStabilityTimeout =
+          Number.isFinite(waitForDom) && waitForDom > 0 ? waitForDom : DEFAULT_WAIT_FOR_DOM
+        const domStabilityIdle = domStabilityTimeout / DOM_STABILITY_IDLE_RATIO
 
         let screenshotOpts = {}
         const tasks = [
           {
             fn: () =>
               page.evaluate(waitForDomStability, {
-                idle: DOM_STABILITY_IDLE,
+                idle: domStabilityIdle,
                 timeout: domStabilityTimeout
               }),
             debug: 'beforeScreenshot:waitForDomStability'
