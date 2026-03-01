@@ -10,6 +10,7 @@ const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 
 const MAX_WHITE_RETRIES = 5
+const DOM_STABILITY_TIMEOUT = 1000
 
 const createElapsed = () => {
   const start = Date.now()
@@ -144,7 +145,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
-        const domStabilityTimeout = Math.max(500, Math.min(4000, timeout))
+        const domStabilityTimeout = DOM_STABILITY_TIMEOUT
 
         let screenshotOpts = {}
         const tasks = [
