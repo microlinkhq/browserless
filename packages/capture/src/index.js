@@ -90,7 +90,7 @@ const getOpts = (value, defaultValue, name) => {
 }
 
 const capturePage = async (page, opts, viewport) => {
-  const { path: outputPath, duration = 3000, timeout = 30000, audio, video, type, delay } = opts
+  const { path: outputPath, duration = 3000, audio, video, type, delay } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
 
@@ -149,7 +149,7 @@ const capturePage = async (page, opts, viewport) => {
       await assertExtensionLoaded(extension)
       await invokeExtension({ page })
 
-      recordingPromise = createRecordingSession({ wss, index, timeout })
+      recordingPromise = createRecordingSession({ wss, index })
 
       await startRecording({
         extension,
@@ -213,9 +213,8 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
   return page =>
     async (url, opts = {}) => {
-      const { retry: _retry, ...captureOpts } = opts
-      const { device } = await goto(page, { ...captureOpts, url })
-      return capturePage(page, captureOpts, device.viewport)
+      const { device } = await goto(page, { ...opts, url })
+      return capturePage(page, opts, device.viewport)
     }
 }
 

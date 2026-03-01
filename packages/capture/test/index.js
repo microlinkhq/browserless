@@ -21,9 +21,13 @@ const DEFAULT_DEVICE = Object.freeze({
   }
 })
 
-const createGoto = onCall => async (page, opts) => {
-  if (typeof onCall === 'function') onCall(page, opts)
-  return { device: DEFAULT_DEVICE }
+const createGoto = onCall => {
+  const goto = async (page, opts) => {
+    if (typeof onCall === 'function') onCall(page, opts)
+    return { device: DEFAULT_DEVICE }
+  }
+
+  return goto
 }
 
 let nextPort = 55000

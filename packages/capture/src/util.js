@@ -38,17 +38,15 @@ const createWebSocketServer = () => {
   }
 
   const cleanup = () => {
-    wss.removeListener('listening', onListening)
-    wss.removeListener('error', onError)
+    wss.removeListener('listening', onListening).removeListener('error', onError)
   }
 
-  wss.once('listening', onListening)
-  wss.once('error', onError)
+  wss.once('listening', onListening).once('error', onError)
 
   return promise
 }
 
-const createRecordingSession = ({ wss, index, timeout }) => {
+const createRecordingSession = ({ wss, index }) => {
   const { promise, resolve, reject } = Promise.withResolvers()
   let socket
   let isSettled = false
@@ -58,13 +56,10 @@ const createRecordingSession = ({ wss, index, timeout }) => {
   const done = (error, value) => {
     if (isSettled) return
     isSettled = true
-    clearTimeout(timer)
     wss.removeListener('connection', onConnection)
 
     if (socket) {
-      socket.removeAllListeners('message')
-      socket.removeAllListeners('close')
-      socket.removeAllListeners('error')
+      socket.removeAllListeners('message').removeAllListeners('close').removeAllListeners('error')
     }
 
     if (error) return reject(error)
@@ -74,21 +69,12 @@ const createRecordingSession = ({ wss, index, timeout }) => {
   const onConnection = (ws, req) => {
     const url = new URL(req.url, 'ws://127.0.0.1')
     if (url.searchParams.get('index') !== String(index)) return
-
     socket = ws
-
-    socket.on('message', data => {
-      if (Buffer.isBuffer(data)) return chunks.push(data)
-      chunks.push(Buffer.from(data))
-    })
-
-    socket.once('error', error => done(error))
-    socket.once('close', () => done(null, Buffer.concat(chunks)))
+    socket
+      .on('message', buffer => chunks.push(buffer))
+      .once('error', error => done(error))
+      .once('close', () => done(null, Buffer.concat(chunks)))
   }
-
-  const timer = setTimeout(() => {
-    done(new Error(`Timed out waiting for stream data after ${timeout}ms`))
-  }, timeout)
 
   wss.on('connection', onConnection)
 
