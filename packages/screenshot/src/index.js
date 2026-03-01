@@ -9,9 +9,8 @@ const waitForPrism = require('./pretty')
 const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 
-const MAX_WHITE_RETRIES = 5
-const DOM_STABILITY_TIMEOUT = 1000
-const DOM_STABILITY_IDLE = 100
+const DOM_STABILITY_TIMEOUT = 1300
+const DOM_STABILITY_IDLE = DOM_STABILITY_TIMEOUT / 1 / 10
 
 const createElapsed = () => {
   const start = Date.now()
@@ -226,7 +225,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           )
           isReady = !pageReadyResult.isRejected && !!pageReadyResult.value
 
-          if (isReady || retry >= MAX_WHITE_RETRIES || elapsed() >= timeout) break
+          if (isReady || elapsed() >= timeout) break
 
           retry += 1
           await goto.waitUntilAuto(page, { timeout })
@@ -276,4 +275,3 @@ module.exports = ({ goto, ...gotoOpts }) => {
 }
 
 module.exports.isWhiteScreenshot = isWhiteScreenshot
-module.exports.MAX_WHITE_RETRIES = MAX_WHITE_RETRIES

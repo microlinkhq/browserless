@@ -1,5 +1,6 @@
 'use strict'
 
+const { setTimeout: delay } = require('node:timers/promises')
 const test = require('ava')
 
 const screenshotModulePath = require.resolve('../src/index.js')
@@ -35,7 +36,7 @@ const loadCreateScreenshot = isWhiteScreenshotMock => {
   return { createScreenshot, restore }
 }
 
-const createGoto = ({ timeout = 1000 } = {}) => {
+const createGoto = ({ timeout = 1000, waitUntilAutoDelay = 0 } = {}) => {
   let waitUntilAutoCalls = 0
 
   const goto = async (_page, { waitUntilAuto } = {}) => {
@@ -47,6 +48,7 @@ const createGoto = ({ timeout = 1000 } = {}) => {
   goto.timeouts = { action: () => timeout, goto: () => timeout }
   goto.waitUntilAuto = async () => {
     waitUntilAutoCalls += 1
+    if (waitUntilAutoDelay) await delay(waitUntilAutoDelay)
   }
   goto.getWaitUntilAutoCalls = () => waitUntilAutoCalls
 
@@ -104,20 +106,21 @@ test('retries white screenshots until non-white image', async t => {
   t.is(goto.getWaitUntilAutoCalls(), 2)
 })
 
-test('stops white screenshot retries after max attempts', async t => {
+test('stops white screenshot retries after timeout', async t => {
   const isWhiteScreenshotMock = async () => true
   const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
   t.teardown(restore)
 
-  const goto = createGoto({ timeout: 10000 })
+  const goto = createGoto({ timeout: 25, waitUntilAutoDelay: 10 })
   const screenshots = Array.from({ length: 10 }, (_, index) => Buffer.from(`shot${index}`))
   const page = createPage(screenshots)
   const screenshot = createScreenshot({ goto })(page)
 
   const result = await screenshot('https://example.com', { waitUntil: 'auto', codeScheme: false })
 
-  t.deepEqual(result, screenshots[createScreenshot.MAX_WHITE_RETRIES])
-  t.is(goto.getWaitUntilAutoCalls(), createScreenshot.MAX_WHITE_RETRIES)
+  t.true(Buffer.isBuffer(result))
+  t.true(goto.getWaitUntilAutoCalls() >= 1)
+  t.is(page.getScreenshotCalls(), goto.getWaitUntilAutoCalls() + 1)
 })
 
 test('waits for verification interstitial to resolve before screenshot', async t => {
