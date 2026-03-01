@@ -68,9 +68,6 @@ const START_RECORDING = async ({
   video,
   audio,
   frameSize,
-  audioBitsPerSecond,
-  videoBitsPerSecond,
-  bitsPerSecond,
   mimeType,
   videoConstraints,
   audioConstraints
@@ -106,9 +103,6 @@ const START_RECORDING = async ({
   const recorderOptions = {
     mimeType
   }
-  if (audioBitsPerSecond) recorderOptions.audioBitsPerSecond = audioBitsPerSecond
-  if (videoBitsPerSecond) recorderOptions.videoBitsPerSecond = videoBitsPerSecond
-  if (bitsPerSecond) recorderOptions.bitsPerSecond = bitsPerSecond
 
   const recorder = new MediaRecorder(stream, recorderOptions)
 

@@ -290,6 +290,46 @@ test('ignores `mimeType` option and maps from `type`', async t => {
   t.is(startRecordingPayload.mimeType, 'video/webm')
 })
 
+test('maps audio/video object values to track constraints', async t => {
+  const createCapture = loadCapture()
+  let startRecordingPayload
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
+
+  const capture = createCapture({ goto: createGoto() })
+  await capture(page)('https://example.com', {
+    duration: 20,
+    audio: { echoCancellation: false, autoGainControl: false },
+    video: {
+      mandatory: {
+        minWidth: 1024,
+        minHeight: 576,
+        maxWidth: 1024,
+        maxHeight: 576
+      }
+    }
+  })
+
+  t.true(startRecordingPayload.audio)
+  t.true(startRecordingPayload.video)
+  t.deepEqual(startRecordingPayload.audioConstraints, {
+    echoCancellation: false,
+    autoGainControl: false
+  })
+  t.deepEqual(startRecordingPayload.videoConstraints, {
+    mandatory: {
+      minWidth: 1024,
+      minHeight: 576,
+      maxWidth: 1024,
+      maxHeight: 576
+    }
+  })
+})
+
 test('capture writes path and returns the same buffer', async t => {
   const createCapture = loadCapture()
   const { page } = createFixture({ chunks: [Buffer.from('chunk-1')] })
@@ -319,6 +359,17 @@ test('rejects when both audio and video are false', async t => {
   await t.throwsAsync(() => capture(page)('https://example.com', { audio: false, video: false }), {
     instanceOf: TypeError,
     message: /At least one of `audio` or `video` must be true/
+  })
+})
+
+test('rejects invalid `audio` option shape', async t => {
+  const createCapture = loadCapture()
+  const { page } = createFixture()
+  const capture = createCapture({ goto: createGoto() })
+
+  await t.throwsAsync(() => capture(page)('https://example.com', { audio: 1 }), {
+    instanceOf: TypeError,
+    message: /Expected `audio` to be a boolean or an object/
   })
 })
 

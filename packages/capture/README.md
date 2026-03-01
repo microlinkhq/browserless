@@ -63,14 +63,8 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 | `path` | `string` | `undefined` | Write the captured media to disk. |
 | `duration` | `number` | `3000` | Capture duration in milliseconds. |
 | `timeout` | `number` | `max(duration * 3, 30000)` | Timeout waiting for stream data. |
-| `audio` | `boolean` | `false` | Capture audio. |
-| `video` | `boolean` | `true` | Capture video. |
-| `audioBitsPerSecond` | `number` | `undefined` | Audio bitrate hint. |
-| `videoBitsPerSecond` | `number` | `undefined` | Video bitrate hint. |
-| `bitsPerSecond` | `number` | `undefined` | Combined bitrate hint. |
-| `videoConstraints` | `object` | `undefined` | `chrome.tabCapture` video constraints. |
-| `audioConstraints` | `object` | `undefined` | `chrome.tabCapture` audio constraints. |
-| `retry` | `{ each?: number, times?: number }` | `{ each: 20, times: 3 }` | Extension readiness retry policy. |
+| `audio` | `boolean \| object` | `false` | Capture audio. When object, it is used as audio track constraints. |
+| `video` | `boolean \| object` | `true` | Capture video. When object, it is used as video track constraints. |
 
 ## Exports
 
@@ -79,9 +73,12 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 - `capture.types`: Supported values for `type`.
 
 `capture` uses `goto(...).device.viewport` as the capture viewport source.
-`videoConstraints` is inferred from that viewport to keep capture framing aligned with screenshot/pdf rendering.
+When `video` is `true` or omitted, video constraints are inferred from that viewport to keep capture framing aligned with screenshot/pdf rendering.
+When `video` is an object, that object is used as the video constraints.
+When `audio` is an object, that object is used as the audio constraints.
 The inferred constraints also account for `deviceScaleFactor`, so output video pixels match screenshot pixel density.
 The capture flow also adjusts tab surface bounds to the current viewport before recording, so the first video frame matches screenshot framing in headless mode.
+Bitrate hints are not configurable; capture uses Chrome MediaRecorder defaults.
 MediaRecorder chunk size is internal and fixed at `250ms`.
 `type` is mapped internally to the MediaRecorder mime type.
 For strict screenshot/poster parity in headless mode, launch Chrome with matching `--screen-info`.

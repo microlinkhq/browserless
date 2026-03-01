@@ -46,7 +46,6 @@ const runScenario = async ({ browser, iterations, warmup, duration, url }) => {
       try {
         await capture(page)(url, {
           duration,
-          frameSize: 20,
           audio: false,
           video: true,
           timeout: CAPTURE_TIMEOUT,

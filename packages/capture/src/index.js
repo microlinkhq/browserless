@@ -18,9 +18,9 @@ const {
   closeServer,
   createWebSocketServer,
   createRecordingSession,
-  getDefaultMimeType,
+  getMimeType,
   getVideoConstraints
-} = require('./functions')
+} = require('./util')
 
 const {
   openExtension,
@@ -57,41 +57,64 @@ const waitForCaptureDuration = duration =>
     setTimeout(resolve, duration)
   })
 
-const capturePage = async (page, opts, viewport) => {
-  const {
-    path: outputPath,
-    duration = 3000,
-    timeout = 30000,
-    audio = false,
-    video = true,
-    audioBitsPerSecond,
-    videoBitsPerSecond,
-    bitsPerSecond,
-    type,
-    delay,
-    retry = {},
-    videoConstraints,
-    audioConstraints
-  } = opts
+const isTrackObject = value => value && typeof value === 'object' && !Array.isArray(value)
 
-  if (!audio && !video) {
+const getOpts = (value, defaultValue, name) => {
+  const resolvedValue = value === undefined ? defaultValue : value
+
+  if (typeof resolvedValue === 'boolean') {
+    return {
+      enabled: resolvedValue,
+      constraints: undefined
+    }
+  }
+
+  if (isTrackObject(resolvedValue)) {
+    const constraints =
+      Object.keys(resolvedValue).length === 0
+        ? undefined
+        : resolvedValue.constraints !== undefined
+          ? resolvedValue.constraints
+          : resolvedValue
+
+    if (constraints !== undefined && !isTrackObject(constraints)) {
+      throw new TypeError(`Expected \`${name}.constraints\` to be an object`)
+    }
+
+    return {
+      enabled: true,
+      constraints
+    }
+  }
+
+  throw new TypeError(`Expected \`${name}\` to be a boolean or an object`)
+}
+
+const capturePage = async (page, opts, viewport) => {
+  const { path: outputPath, duration = 3000, timeout = 30000, audio, video, type, delay } = opts
+
+  const audioOpts = getOpts(audio, false, 'audio')
+
+  const videoOpts = getOpts(video, true, 'video')
+
+  if (!audioOpts.enabled && !videoOpts.enabled) {
     throw new TypeError('At least one of `audio` or `video` must be true')
   }
 
-  const retryPolicy = Object.assign({}, DEFAULT_RETRY_POLICY, retry)
+  const retryPolicy = DEFAULT_RETRY_POLICY
 
   const browser = page.browser()
   const lock = getBrowserLock(browser)
   const index = currentIndex++
 
-  const streamMimeType = getDefaultMimeType({
+  const streamMimeType = getMimeType({
     type,
     path: outputPath,
-    audio,
-    video
+    audio: audioOpts.enabled,
+    video: videoOpts.enabled
   })
 
-  const resolvedVideoConstraints = getVideoConstraints(videoConstraints, viewport)
+  const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport)
 
   const { wss, port } = await createWebSocketServer()
 
@@ -137,16 +160,13 @@ const capturePage = async (page, opts, viewport) => {
           index,
           port,
           tabId: alignedTab.id,
-          video,
-          audio,
+          video: videoOpts.enabled,
+          audio: audioOpts.enabled,
           frameSize: INTERNAL_FRAME_SIZE,
           mimeType: streamMimeType,
-          audioBitsPerSecond,
-          videoBitsPerSecond,
-          bitsPerSecond,
           delay,
           videoConstraints: resolvedVideoConstraints,
-          audioConstraints
+          audioConstraints: audioOpts.constraints
         }
       })
 
@@ -194,10 +214,12 @@ const capturePage = async (page, opts, viewport) => {
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
-  return page => async (url, opts) => {
-    const { device } = await goto(page, { ...opts, url })
-    return capturePage(page, opts, device.viewport)
-  }
+  return page =>
+    async (url, opts = {}) => {
+      const { retry: _retry, ...captureOpts } = opts
+      const { device } = await goto(page, { ...captureOpts, url })
+      return capturePage(page, captureOpts, device.viewport)
+    }
 }
 
 module.exports.capturePage = capturePage
