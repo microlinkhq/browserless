@@ -1,11 +1,10 @@
 'use strict'
 
 const createGoto = require('@browserless/goto')
-const fs = require('fs/promises')
 const { withLock } = require('superlock')
+const fs = require('fs/promises')
 
 const {
-  DEFAULT_RETRY_POLICY,
   EXTENSION_ID,
   EXTENSION_PATH,
   INTERNAL_FRAME_SIZE,
@@ -101,8 +100,6 @@ const capturePage = async (page, opts, viewport) => {
     throw new TypeError('At least one of `audio` or `video` must be true')
   }
 
-  const retryPolicy = DEFAULT_RETRY_POLICY
-
   const browser = page.browser()
   const lock = getBrowserLock(browser)
   const index = currentIndex++
@@ -149,7 +146,7 @@ const capturePage = async (page, opts, viewport) => {
         viewport
       })
 
-      await assertExtensionLoaded(extension, retryPolicy)
+      await assertExtensionLoaded(extension)
       await invokeExtension({ page })
 
       recordingPromise = createRecordingSession({ wss, index, timeout })

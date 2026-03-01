@@ -5,7 +5,9 @@ const fs = require('fs/promises')
 const path = require('path')
 const test = require('ava')
 const os = require('os')
-const EXTENSION_ID = 'jjndjgheafjngoipoacpjgeicjeomjli'
+
+const { EXTENSION_ID } = require('../src/constants')
+
 const DEFAULT_DEVICE = Object.freeze({
   userAgent:
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36',

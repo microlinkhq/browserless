@@ -58,11 +58,9 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `waitUntil` | `string` | `'networkidle2'` | Navigation strategy passed to `goto`. |
 | `type` | `'webm' \| 'mp4' \| 'mkv' \| 'matroska'` | inferred from `path` or `'webm'` | Friendly output type selector. |
 | `path` | `string` | `undefined` | Write the captured media to disk. |
 | `duration` | `number` | `3000` | Capture duration in milliseconds. |
-| `timeout` | `number` | `max(duration * 3, 30000)` | Timeout waiting for stream data. |
 | `audio` | `boolean \| object` | `false` | Capture audio. When object, it is used as audio track constraints. |
 | `video` | `boolean \| object` | `true` | Capture video. When object, it is used as video track constraints. |
 

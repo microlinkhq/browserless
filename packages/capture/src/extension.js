@@ -1,6 +1,6 @@
 'use strict'
 
-const { EXTENSION_ID, EXTENSION_PATH } = require('./constants')
+const { RETRY_POLICY, EXTENSION_ID, EXTENSION_PATH } = require('./constants')
 const BACKGROUND_PATH = `chrome-extension://${EXTENSION_ID}/background.js`
 
 const createWorkerRuntime = browser => {
@@ -58,10 +58,10 @@ const invokeExtension = async ({ page }) => {
   await page.keyboard.up(isMac ? 'Meta' : 'Control')
 }
 
-const assertExtensionLoaded = async (extension, retryPolicy) => {
+const assertExtensionLoaded = async extension => {
   const waitRetry = ms => new Promise(resolve => setTimeout(resolve, ms))
 
-  for (let i = 0; i < retryPolicy.times; i++) {
+  for (let i = 0; i < RETRY_POLICY.times; i++) {
     const isReady = await extension
       .evaluate(
         () =>
@@ -72,7 +72,7 @@ const assertExtensionLoaded = async (extension, retryPolicy) => {
 
     if (isReady) return
 
-    await waitRetry(Math.pow(retryPolicy.each, i))
+    await waitRetry(Math.pow(RETRY_POLICY.each, i))
   }
 
   throw new Error('Could not find START_RECORDING in the extension context')
