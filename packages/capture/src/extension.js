@@ -1,6 +1,10 @@
 'use strict'
 
-const { RETRY_POLICY, EXTENSION_ID, EXTENSION_PATH } = require('./constants')
+const debug = require('debug-logfmt')('browserless:capture')
+const pWaitFor = require('p-wait-for')
+
+const { EXTENSION_ID, EXTENSION_PATH } = require('./constants')
+
 const BACKGROUND_PATH = `chrome-extension://${EXTENSION_ID}/background.js`
 
 const createWorkerRuntime = browser => {
@@ -48,9 +52,8 @@ const createWorkerRuntime = browser => {
   }
 }
 
-const invokeExtension = async ({ page }) => {
+const invoke = async ({ page }) => {
   const isMac = process.platform === 'darwin'
-
   await page.keyboard.down(isMac ? 'Meta' : 'Control')
   await page.keyboard.down('Shift')
   await page.keyboard.press('KeyY')
@@ -59,26 +62,25 @@ const invokeExtension = async ({ page }) => {
 }
 
 const assertExtensionLoaded = async extension => {
-  const waitRetry = ms => new Promise(resolve => setTimeout(resolve, ms))
-
-  for (let i = 0; i < RETRY_POLICY.times; i++) {
-    const isReady = await extension
-      .evaluate(
-        () =>
-          typeof globalThis.START_RECORDING === 'function' &&
-          typeof globalThis.STOP_RECORDING === 'function'
-      )
-      .catch(() => false)
-
-    if (isReady) return
-
-    await waitRetry(Math.pow(RETRY_POLICY.each, i))
-  }
-
-  throw new Error('Could not find START_RECORDING in the extension context')
+  const duration = debug.duration('assertExtensionLoaded')
+  let attempts = 0
+  await pWaitFor(
+    async () => {
+      attempts += 1
+      return extension
+        .evaluate(
+          () =>
+            typeof globalThis.START_RECORDING === 'function' &&
+            typeof globalThis.STOP_RECORDING === 'function'
+        )
+        .catch(() => false)
+    },
+    { interval: 50 }
+  )
+  duration({ attempts })
 }
 
-const openExtension = async ({ browser }) => {
+const open = async ({ browser }) => {
   const workerRuntime = createWorkerRuntime(browser)
   const isWorkerReady = await workerRuntime
     .evaluate(
@@ -168,9 +170,9 @@ const stopRecording = async ({ extension, index }) =>
   extension.evaluate(index => globalThis.STOP_RECORDING(index), index)
 
 module.exports = {
-  invokeExtension,
+  invoke,
   assertExtensionLoaded,
-  openExtension,
+  open,
   getTab,
   activateTab,
   alignTabToViewport,

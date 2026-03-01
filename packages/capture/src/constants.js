@@ -24,7 +24,6 @@ const MIME_TYPES_BY_TYPE = Object.freeze({
 
 const TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
 const TAB_QUERY = Object.freeze({ active: true })
-const RETRY_POLICY = Object.freeze({ each: 20, times: 3 })
 const INTERNAL_FRAME_SIZE = 250
 const NOOP = () => {}
 
@@ -34,7 +33,6 @@ module.exports = {
   MIME_TYPES_BY_TYPE,
   TYPES,
   TAB_QUERY,
-  RETRY_POLICY,
   INTERNAL_FRAME_SIZE,
   NOOP
 }

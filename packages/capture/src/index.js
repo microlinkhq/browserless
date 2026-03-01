@@ -1,5 +1,7 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:capture')
+const { setTimeout } = require('timers/promises')
 const createGoto = require('@browserless/goto')
 const { withLock } = require('superlock')
 const fs = require('fs/promises')
@@ -21,16 +23,7 @@ const {
   getVideoConstraints
 } = require('./util')
 
-const {
-  openExtension,
-  getTab,
-  activateTab,
-  alignTabToViewport,
-  assertExtensionLoaded,
-  invokeExtension,
-  startRecording,
-  stopRecording
-} = require('./extension')
+const browserExtension = require('./extension')
 
 let currentIndex = 0
 const defaultLock = withLock()
@@ -50,11 +43,6 @@ const getBrowserLock = browser => {
 
   return lock
 }
-
-const waitForCaptureDuration = duration =>
-  new Promise(resolve => {
-    setTimeout(resolve, duration)
-  })
 
 const isTrackObject = value => value && typeof value === 'object' && !Array.isArray(value)
 
@@ -93,7 +81,6 @@ const capturePage = async (page, opts, viewport) => {
   const { path: outputPath, duration = 3000, audio, video, type, delay } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
-
   const videoOpts = getOpts(video, true, 'video')
 
   if (!audioOpts.enabled && !videoOpts.enabled) {
@@ -113,7 +100,9 @@ const capturePage = async (page, opts, viewport) => {
 
   const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport)
 
+  let debugDuration = debug.duration('createWebSocketServer')
   const { wss, port } = await createWebSocketServer()
+  debugDuration()
 
   let extension
   let recordingPromise
@@ -122,36 +111,52 @@ const capturePage = async (page, opts, viewport) => {
   let buffer = Buffer.alloc(0)
 
   try {
-    extension = await openExtension({ browser })
+    debugDuration = debug.duration('openExtension')
+    extension = await browserExtension.open({ browser })
+    debugDuration()
 
     await lock(async () => {
+      debugDuration = debug.duration('bringToFront')
       await page.bringToFront()
+      debugDuration()
 
-      const tab = await getTab({
+      debugDuration = debug.duration('getTab')
+      const tab = await browserExtension.getTab({
         extension,
         query: TAB_QUERY,
         currentUrl: page.url()
       })
+      debugDuration()
 
       if (!tab) {
         throw new Error('Cannot find the active tab.')
       }
 
-      await activateTab({ extension, tabId: tab.id })
+      debugDuration = debug.duration('activateTab')
+      await browserExtension.activateTab({ extension, tabId: tab.id })
+      debugDuration()
 
-      const alignedTab = await alignTabToViewport({
+      debugDuration = debug.duration('alignTabToViewport')
+      const alignedTab = await browserExtension.alignTabToViewport({
         page,
         extension,
         tab,
         viewport
       })
+      debugDuration()
 
-      await assertExtensionLoaded(extension)
-      await invokeExtension({ page })
+      debugDuration = debug.duration('assertExtensionLoaded')
+      await browserExtension.assertExtensionLoaded(extension)
+      debugDuration()
+
+      debugDuration = debug.duration('invokeExtension')
+      await browserExtension.invoke({ page })
+      debugDuration()
 
       recordingPromise = createRecordingSession({ wss, index })
 
-      await startRecording({
+      debugDuration = debug.duration('startRecording')
+      await browserExtension.startRecording({
         extension,
         settings: {
           index,
@@ -166,16 +171,16 @@ const capturePage = async (page, opts, viewport) => {
           audioConstraints: audioOpts.constraints
         }
       })
-
+      debugDuration()
       isRecordingStarted = true
     })
 
-    await waitForCaptureDuration(duration)
+    await setTimeout(duration)
   } catch (error) {
     captureError = error
   } finally {
-    if (extension && !extension.isClosed()) {
-      await stopRecording({ extension, index }).catch(NOOP)
+    if (extension && !browserExtension.isClosed()) {
+      await browserExtension.stopRecording({ extension, index }).catch(NOOP)
     }
 
     if (recordingPromise) {
@@ -189,8 +194,8 @@ const capturePage = async (page, opts, viewport) => {
       }
     }
 
-    if (extension && !extension.isClosed()) {
-      await extension.close().catch(NOOP)
+    if (extension && !browserExtension.isClosed()) {
+      await browserExtension.close().catch(NOOP)
     }
 
     await closeServer(wss)
@@ -213,8 +218,11 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
   return page =>
     async (url, opts = {}) => {
+      const duration = debug.duration()
       const { device } = await goto(page, { ...opts, url })
-      return capturePage(page, opts, device.viewport)
+      const result = await capturePage(page, opts, device.viewport)
+      duration.info()
+      return result
     }
 }
 
