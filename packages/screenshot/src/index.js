@@ -180,7 +180,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           const pageReadyResult = await pReflect(
             opts.isPageReady({
               page,
-              response,
+              response: opts.response,
               screenshot,
               isWhite,
               isWhiteScreenshot,
@@ -216,7 +216,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
             const { isWhite, isReady, retry } = await takeScreenshot({
               ...opts,
               ...screenshotOpts,
-              isPageReady
+              isPageReady,
+              response
             })
             debug('screenshot', {
               waitUntil,
