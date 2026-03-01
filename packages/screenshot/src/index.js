@@ -12,7 +12,7 @@ const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 
 const MAX_WHITE_RETRIES = 5
-const VERIFICATION_RETRY_DELAY = 250
+const VERIFICATION_RETRY_DELAY = 50
 const VERIFICATION_MARKERS = Object.freeze([
   'verifying you are human',
   'please wait while we verify that you are',
@@ -74,7 +74,7 @@ const waitForDomStability = ({ idle, timeout } = {}) =>
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: false,
+      attributes: true,
       characterData: false
     })
 
@@ -153,9 +153,18 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
+        const domStabilityTimeout = Math.max(500, Math.min(4000, timeout))
 
         let screenshotOpts = {}
         const tasks = [
+          {
+            fn: () =>
+              page.evaluate(waitForDomStability, {
+                idle: Math.max(200, Math.floor(domStabilityTimeout / 4)),
+                timeout: domStabilityTimeout
+              }),
+            debug: 'beforeScreenshot:waitForDomStability'
+          },
           {
             fn: () => page.evaluate('document.fonts.ready'),
             debug: 'beforeScreenshot:fontsReady'
