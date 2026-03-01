@@ -1,6 +1,7 @@
 'use strict'
 
 const killProcessGroup = require('kill-process-group')
+const createCapture = require('@browserless/capture')
 const debug = require('debug-logfmt')('browserless')
 const requireOneOf = require('require-one-of')
 const pReflect = require('p-reflect')
@@ -42,12 +43,28 @@ const defaultArgs = [
     'PushMessaging',
     'site-per-process', // Disables OOPIF. https://www.chromium.org/Home/chromium-security/site-isolation
     'WebPayments'
-  ].join(',')}`
+  ].join(',')}`,
+  `--allowlisted-extension-id=${createCapture.extensionId}`,
+  `--disable-extensions-except=${createCapture.extensionPath}`,
+  `--load-extension=${createCapture.extensionPath}`
 ]
+
+const normalizeIgnoreDefaultArgs = ignoreDefaultArgs => {
+  if (ignoreDefaultArgs === true) return true
+
+  const required = ['--disable-extensions']
+
+  if (Array.isArray(ignoreDefaultArgs)) {
+    return [...new Set([...ignoreDefaultArgs, ...required])]
+  }
+
+  return required
+}
 
 const spawn = ({
   args = defaultArgs,
   headless = true,
+  ignoreDefaultArgs,
   ignoreHTTPSErrors = true,
   mode = 'launch',
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
@@ -57,6 +74,7 @@ const spawn = ({
   puppeteer[mode]({
     args,
     headless,
+    ignoreDefaultArgs: normalizeIgnoreDefaultArgs(ignoreDefaultArgs),
     ignoreHTTPSErrors,
     waitForInitialPage,
     ...launchOpts
