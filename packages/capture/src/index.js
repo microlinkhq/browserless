@@ -7,7 +7,6 @@ const { withLock } = require('superlock')
 const {
   DEFAULT_TAB_QUERY,
   DEFAULT_RETRY_POLICY,
-  DEFAULT_WAIT_UNTIL,
   EXTENSION_PATH,
   EXTENSION_ID,
   TYPES
@@ -15,12 +14,10 @@ const {
 
 const {
   NOOP,
-  assertPositive,
   closeServer,
   createWebSocketServer,
   createRecordingSession,
   getDefaultMimeType,
-  fitViewportToScreen,
   getVideoConstraints
 } = require('./functions')
 
@@ -81,11 +78,8 @@ const waitForCaptureDuration = (duration, signal) =>
     }
   })
 
-const capturePage = async (page, opts = {}) => {
-  if (!page || typeof page.browser !== 'function') {
-    throw new TypeError('Expected a valid Puppeteer page instance as first argument')
-  }
-
+// TODO: what is frame size
+const capturePage = async (page, opts, viewport) => {
   const {
     path: outputPath,
     duration = 3000,
@@ -103,16 +97,12 @@ const capturePage = async (page, opts = {}) => {
     tabQuery = DEFAULT_TAB_QUERY,
     retry = {},
     videoConstraints,
-    audioConstraints,
-    __captureViewport
+    audioConstraints
   } = opts
 
   if (!audio && !video) {
     throw new TypeError('At least one of `audio` or `video` must be true')
   }
-
-  assertPositive('duration', duration)
-  assertPositive('frameSize', frameSize)
 
   const retryPolicy = Object.assign({}, DEFAULT_RETRY_POLICY, retry)
 
@@ -128,7 +118,7 @@ const capturePage = async (page, opts = {}) => {
     video
   })
 
-  const resolvedVideoConstraints = getVideoConstraints(page, videoConstraints, __captureViewport)
+  const resolvedVideoConstraints = getVideoConstraints(videoConstraints, viewport)
 
   const { wss, port } = await createWebSocketServer()
 
@@ -156,12 +146,11 @@ const capturePage = async (page, opts = {}) => {
 
       await activateTab({ extension, tabId: tab.id })
 
-      const captureViewport = __captureViewport || (page.viewport && page.viewport())
       const alignedTab = await alignTabToViewport({
         page,
         extension,
         tab,
-        viewport: captureViewport
+        viewport
       })
 
       await assertExtensionLoaded(extension, retryPolicy)
@@ -232,14 +221,9 @@ const capturePage = async (page, opts = {}) => {
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
-
-  return function capture (page) {
-    return async (url, { waitUntil = DEFAULT_WAIT_UNTIL, fitToScreen = true, ...opts } = {}) => {
-      await goto(page, { ...opts, url, waitUntil })
-      const captureViewport = page.viewport && page.viewport()
-      if (fitToScreen) await fitViewportToScreen(page)
-      return capturePage(page, { ...opts, __captureViewport: captureViewport })
-    }
+  return page => async (url, opts) => {
+    const { device } = await goto(page, { ...opts, url })
+    return capturePage(page, opts, device.viewport)
   }
 }
 

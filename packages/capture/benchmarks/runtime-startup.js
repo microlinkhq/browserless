@@ -50,8 +50,7 @@ const runScenario = async ({ browser, iterations, warmup, duration, url }) => {
           audio: false,
           video: true,
           timeout: CAPTURE_TIMEOUT,
-          waitUntil: 'domcontentloaded',
-          fitToScreen: false
+          waitUntil: 'domcontentloaded'
         })
         elapsed = performance.now() - startedAt
         await page.close()

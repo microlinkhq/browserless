@@ -25,7 +25,6 @@ const MIME_TYPES_BY_TYPE = Object.freeze({
 const TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
 const DEFAULT_TAB_QUERY = Object.freeze({ active: true })
 const DEFAULT_RETRY_POLICY = Object.freeze({ each: 20, times: 3 })
-const DEFAULT_WAIT_UNTIL = 'networkidle2'
 
 module.exports = {
   EXTENSION_ID,
@@ -33,6 +32,5 @@ module.exports = {
   MIME_TYPES_BY_TYPE,
   TYPES,
   DEFAULT_TAB_QUERY,
-  DEFAULT_RETRY_POLICY,
-  DEFAULT_WAIT_UNTIL
+  DEFAULT_RETRY_POLICY
 }

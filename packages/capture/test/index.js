@@ -6,6 +6,23 @@ const path = require('path')
 const test = require('ava')
 const os = require('os')
 const EXTENSION_ID = 'jjndjgheafjngoipoacpjgeicjeomjli'
+const DEFAULT_DEVICE = Object.freeze({
+  userAgent:
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36',
+  viewport: {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 2,
+    isMobile: false,
+    hasTouch: false,
+    isLandscape: false
+  }
+})
+
+const createGoto = onCall => async (page, opts) => {
+  if (typeof onCall === 'function') onCall(page, opts)
+  return { device: DEFAULT_DEVICE }
+}
 
 let nextPort = 55000
 
@@ -191,10 +208,7 @@ test('capture returns a video buffer', async t => {
   const { page } = createFixture()
   const gotoCalls = []
   const capture = createCapture({
-    goto: async (page, opts) => {
-      gotoCalls.push({ page, opts })
-      return {}
-    }
+    goto: createGoto((page, opts) => gotoCalls.push({ page, opts }))
   })
 
   const result = await capture(page)('https://example.com', {
@@ -209,8 +223,8 @@ test('capture returns a video buffer', async t => {
   t.is(gotoCalls.length, 1)
   t.is(gotoCalls[0].opts.url, 'https://example.com')
   t.deepEqual(page.viewport(), {
-    width: 800,
-    height: 600,
+    width: 1280,
+    height: 800,
     deviceScaleFactor: 2,
     isMobile: false,
     hasTouch: false,
@@ -228,7 +242,7 @@ test('injects viewport-based constraints by default', async t => {
     startRecordingPayload = payload
   })
 
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
   await capture(page)('https://example.com', { duration: 20, audio: false, video: true })
 
   t.deepEqual(startRecordingPayload.videoConstraints, {
@@ -251,7 +265,7 @@ test('maps `type` to MediaRecorder mimeType', async t => {
     startRecordingPayload = payload
   })
 
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
   await capture(page)('https://example.com', { duration: 20, type: 'mp4' })
 
   t.is(startRecordingPayload.mimeType, 'video/mp4')
@@ -267,7 +281,7 @@ test('mimeType takes precedence over `type`', async t => {
     startRecordingPayload = payload
   })
 
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
   await capture(page)('https://example.com', {
     duration: 20,
     type: 'webm',
@@ -280,7 +294,7 @@ test('mimeType takes precedence over `type`', async t => {
 test('capture writes path and returns the same buffer', async t => {
   const createCapture = loadCapture()
   const { page } = createFixture({ chunks: [Buffer.from('chunk-1')] })
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
 
   const outputPath = path.join(os.tmpdir(), `browserless-capture-${Date.now()}.webm`)
   t.teardown(async () => fs.unlink(outputPath).catch(() => {}))
@@ -302,7 +316,7 @@ test('capture writes path and returns the same buffer', async t => {
 test('rejects when both audio and video are false', async t => {
   const createCapture = loadCapture()
   const { page } = createFixture()
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
 
   await t.throwsAsync(() => capture(page)('https://example.com', { audio: false, video: false }), {
     instanceOf: TypeError,
@@ -313,11 +327,22 @@ test('rejects when both audio and video are false', async t => {
 test('rejects unsupported type', async t => {
   const createCapture = loadCapture()
   const { page } = createFixture()
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
 
   await t.throwsAsync(() => capture(page)('https://example.com', { type: 'avi' }), {
     instanceOf: TypeError,
     message: /Unsupported `type` "avi"/
+  })
+})
+
+test('requires viewport in goto device output', async t => {
+  const createCapture = loadCapture()
+  const { page } = createFixture()
+  const capture = createCapture({ goto: async () => ({ device: {} }) })
+
+  await t.throwsAsync(() => capture(page)('https://example.com'), {
+    instanceOf: TypeError,
+    message: /Expected `goto` to return `\{ device: \{ viewport \} \}`/
   })
 })
 
@@ -326,7 +351,7 @@ test('rejects when extension service worker is unavailable', async t => {
   const browser = createWorkerBrowser()
   browser.__setWorkerReady(false)
   const { page } = createFixture({ browser })
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
 
   await t.throwsAsync(() => capture(page)('https://example.com', { duration: 20 }), {
     message: /Unable to connect to capture extension service worker/
@@ -340,7 +365,7 @@ test('uses service worker runtime without opening extension tab', async t => {
     chunks: [Buffer.from('worker')]
   })
   const { page } = createFixture({ browser })
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
 
   const result = await capture(page)('https://example.com', {
     duration: 20,
@@ -375,7 +400,7 @@ test('serializes setup when captures share the same browser', async t => {
     }
   })
 
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
 
   const firstTask = capture(firstPage)('https://example.com/first', {
     duration: 20,
@@ -427,7 +452,7 @@ test('allows setup in parallel when captures use different browsers', async t =>
     }
   })
 
-  const capture = createCapture({ goto: async () => ({}) })
+  const capture = createCapture({ goto: createGoto() })
 
   const firstTask = capture(firstPage)('https://example.com/first-browser', {
     duration: 20,

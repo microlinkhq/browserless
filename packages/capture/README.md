@@ -59,7 +59,6 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `waitUntil` | `string` | `'networkidle2'` | Navigation strategy passed to `goto`. |
-| `fitToScreen` | `boolean` | `true` | Temporarily fit tab viewport to capturable screen to avoid offset crops. |
 | `type` | `'webm' \| 'mp4' \| 'mkv' \| 'matroska'` | inferred from `path` or `'webm'` | Friendly output type selector. |
 | `path` | `string` | `undefined` | Write the captured media to disk. |
 | `duration` | `number` | `3000` | Capture duration in milliseconds. |
@@ -83,7 +82,8 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 - `capture.extensionId`: Extension ID used by the package.
 - `capture.types`: Supported values for `type`.
 
-By default, `videoConstraints` is inferred from the current page viewport to keep capture framing aligned with screenshot/pdf rendering.
+`capture` uses `goto(...).device.viewport` as the capture viewport source.
+`videoConstraints` is inferred from that viewport to keep capture framing aligned with screenshot/pdf rendering.
 The inferred constraints also account for `deviceScaleFactor`, so output video pixels match screenshot pixel density.
 The capture flow also adjusts tab surface bounds to the current viewport before recording, so the first video frame matches screenshot framing in headless mode.
 Use `type` for simple container selection and `mimeType` when you need exact codec control.

@@ -7,12 +7,6 @@ const { MIME_TYPES_BY_TYPE } = require('./constants')
 
 const NOOP = () => {}
 
-const assertPositive = (name, value) => {
-  if (!Number.isFinite(value) || value <= 0) {
-    throw new TypeError(`Expected \`${name}\` to be a number > 0. Received: ${value}`)
-  }
-}
-
 const closeServer = wss =>
   new Promise(resolve => {
     if (!wss) return resolve()
@@ -139,36 +133,8 @@ const getDefaultMimeType = ({ type, mimeType, path: outputPath, audio, video }) 
   return 'video/webm'
 }
 
-const fitViewportToScreen = async page => {
-  const viewport = page.viewport && page.viewport()
-  if (!viewport || typeof page.evaluate !== 'function' || typeof page.setViewport !== 'function') {
-    return
-  }
-
-  const metrics = await page
-    .evaluate(() => ({
-      width: Math.round(window.screen.width || window.innerWidth || 0),
-      height: Math.round(window.screen.height || window.innerHeight || 0),
-      deviceScaleFactor: window.devicePixelRatio || 1
-    }))
-    .catch(() => null)
-
-  if (!metrics || !metrics.width || !metrics.height) return
-  if (viewport.width === metrics.width && viewport.height === metrics.height) return
-
-  await page.setViewport({
-    ...viewport,
-    width: metrics.width,
-    height: metrics.height,
-    deviceScaleFactor: viewport.deviceScaleFactor || metrics.deviceScaleFactor
-  })
-}
-
-const getVideoConstraints = (page, videoConstraints, sourceViewport) => {
+const getVideoConstraints = (videoConstraints, viewport) => {
   if (videoConstraints) return videoConstraints
-
-  const viewport = sourceViewport || (page.viewport && page.viewport())
-  if (!viewport || !viewport.width || !viewport.height) return undefined
 
   const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
   const width = Math.round(viewport.width * dpr)
@@ -186,11 +152,9 @@ const getVideoConstraints = (page, videoConstraints, sourceViewport) => {
 
 module.exports = {
   NOOP,
-  assertPositive,
   closeServer,
   createWebSocketServer,
   createRecordingSession,
   getDefaultMimeType,
-  fitViewportToScreen,
   getVideoConstraints
 }
