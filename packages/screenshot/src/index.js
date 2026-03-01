@@ -127,7 +127,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           }
         ]
 
-        if (waitForDomOpts.shouldWait) {
+        if (waitForDomOpts) {
           tasks.push({
             fn: () => page.evaluate(waitForDomStability, waitForDomOpts),
             debug: 'beforeScreenshot:waitForDomStability'

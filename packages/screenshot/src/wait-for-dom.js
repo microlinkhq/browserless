@@ -6,10 +6,11 @@ const WAIT_FOR_DOM_IDLE_RATIO = 10
 const resolveWaitForDom = waitForDom => {
   const timeout = Number.isFinite(waitForDom) && waitForDom >= 0 ? waitForDom : DEFAULT_WAIT_FOR_DOM
 
+  if (timeout === 0) return undefined
+
   return {
     timeout,
-    idle: timeout / WAIT_FOR_DOM_IDLE_RATIO,
-    shouldWait: timeout > 0
+    idle: timeout / WAIT_FOR_DOM_IDLE_RATIO
   }
 }
 

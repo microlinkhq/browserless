@@ -80,5 +80,5 @@ test('waitUntil auto should honor custom waitForDom', async t => {
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', waitForDom: 2500, timeout: 500 })
 
-  t.deepEqual(domStabilityArgs, { timeout: 2500, idle: 250, shouldWait: true })
+  t.deepEqual(domStabilityArgs, { timeout: 2500, idle: 250 })
 })
