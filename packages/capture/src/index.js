@@ -1,7 +1,7 @@
 'use strict'
 
 const createGoto = require('@browserless/goto')
-const fs = require('fs').promises
+const fs = require('fs/promises')
 const { withLock } = require('superlock')
 
 const {
