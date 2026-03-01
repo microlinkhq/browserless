@@ -1,6 +1,52 @@
 'use strict'
 
 const { EXTENSION_ID, EXTENSION_PATH } = require('./constants')
+const BACKGROUND_PATH = `chrome-extension://${EXTENSION_ID}/background.js`
+
+const createWorkerRuntime = browser => {
+  let isClosed = false
+
+  const findWorkerTarget = () => {
+    if (!browser || typeof browser.targets !== 'function') return
+    return browser
+      .targets()
+      .find(target => target.type() === 'service_worker' && target.url() === BACKGROUND_PATH)
+  }
+
+  const getWorker = async () => {
+    if (isClosed) return
+
+    let target = findWorkerTarget()
+
+    if (!target && typeof browser.waitForTarget === 'function') {
+      target = await browser
+        .waitForTarget(
+          target => target.type() === 'service_worker' && target.url() === BACKGROUND_PATH,
+          { timeout: 1000 }
+        )
+        .catch(() => null)
+    }
+
+    if (!target || typeof target.worker !== 'function') return
+    return target.worker().catch(() => null)
+  }
+
+  const evaluate = async (fn, arg) => {
+    const worker = await getWorker()
+    if (!worker || typeof worker.evaluate !== 'function') {
+      throw new Error('Unable to access capture extension service worker runtime.')
+    }
+    return worker.evaluate(fn, arg)
+  }
+
+  return {
+    evaluate,
+    isClosed: () => isClosed,
+    close: async () => {
+      isClosed = true
+    }
+  }
+}
 
 const invokeExtension = async ({ page }) => {
   const isMac = process.platform === 'darwin'
@@ -32,33 +78,41 @@ const assertExtensionLoaded = async (extension, retryPolicy) => {
   throw new Error('Could not find START_RECORDING in the extension context')
 }
 
-const openExtension = async ({ browser, port }) => {
-  const extension = await browser.newPage()
+const openExtension = async ({ browser }) => {
+  const workerRuntime = createWorkerRuntime(browser)
+  const isWorkerReady = await workerRuntime
+    .evaluate(
+      () =>
+        typeof globalThis.START_RECORDING === 'function' &&
+        typeof globalThis.STOP_RECORDING === 'function'
+    )
+    .catch(() => false)
 
-  try {
-    await extension.goto(`chrome-extension://${EXTENSION_ID}/options.html#${port}`, {
-      waitUntil: 'domcontentloaded'
-    })
-  } catch (error) {
+  if (!isWorkerReady) {
     throw new Error(
-      `Unable to open capture extension. Launch Chromium with extension support using \`${EXTENSION_PATH}\`.`
+      `Unable to connect to capture extension service worker. Launch Chromium with extension support using \`${EXTENSION_PATH}\`.`
     )
   }
 
-  return extension
+  return workerRuntime
 }
 
-const getTab = async ({ extension, query, currentUrl }) =>
-  extension.evaluate(
-    async ({ query, currentUrl }) => {
-      const queried = await globalThis.chrome.tabs.query(query)
-      if (queried[0] && queried[0].url === currentUrl) return queried[0]
+const getTab = async ({ extension, query, currentUrl }) => {
+  try {
+    return extension.evaluate(
+      async ({ query, currentUrl }) => {
+        const queried = await globalThis.chrome.tabs.query(query)
+        if (queried[0] && queried[0].url === currentUrl) return queried[0]
 
-      const all = await globalThis.chrome.tabs.query({})
-      return all.find(tab => tab.url === currentUrl) || queried[0]
-    },
-    { query, currentUrl }
-  )
+        const all = await globalThis.chrome.tabs.query({})
+        return all.find(tab => tab.url === currentUrl) || queried[0]
+      },
+      { query, currentUrl }
+    )
+  } catch (error) {
+    return null
+  }
+}
 
 const activateTab = async ({ extension, tabId }) => {
   if (!tabId) return

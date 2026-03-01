@@ -139,7 +139,7 @@ const capturePage = async (page, opts = {}) => {
   let buffer = Buffer.alloc(0)
 
   try {
-    extension = await openExtension({ browser, port })
+    extension = await openExtension({ browser })
 
     await lock(async () => {
       await page.bringToFront()
@@ -173,6 +173,7 @@ const capturePage = async (page, opts = {}) => {
         extension,
         settings: {
           index,
+          port,
           tabId: alignedTab.id,
           video,
           audio,

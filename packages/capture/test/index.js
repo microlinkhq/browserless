@@ -5,6 +5,7 @@ const fs = require('fs').promises
 const path = require('path')
 const test = require('ava')
 const os = require('os')
+const EXTENSION_ID = 'jjndjgheafjngoipoacpjgeicjeomjli'
 
 let nextPort = 55000
 
@@ -55,20 +56,17 @@ const loadCapture = () => {
   return capture
 }
 
-const createExtension = ({
+const createWorkerBrowser = ({
+  extensionId = EXTENSION_ID,
   chunks = [Buffer.from('a'), Buffer.from('b')],
-  failGoto = false,
   hasTab = true
 } = {}) => {
-  let socket
+  let stopCalls = 0
+  let workerReady = true
+  let onStartRecording
+  const socketsByIndex = new Map()
 
-  return {
-    _closed: false,
-    _port: undefined,
-    async goto (url) {
-      if (failGoto) throw new Error('ERR_BLOCKED_BY_CLIENT')
-      this._port = Number(String(url).split('#').pop()) || undefined
-    },
+  const worker = {
     async evaluate (fn, arg) {
       const source = fn.toString()
 
@@ -76,44 +74,60 @@ const createExtension = ({
         source.includes('typeof globalThis.START_RECORDING') &&
         source.includes('typeof globalThis.STOP_RECORDING')
       ) {
-        return true
+        return workerReady
       }
+
       if (source.includes('globalThis.chrome.tabs.query')) return hasTab ? [{ id: 1 }] : []
+      if (source.includes('globalThis.chrome.tabs.update')) return
+      if (source.includes('globalThis.chrome.tabs.get')) return { id: arg, width: 800, height: 600 }
 
       if (source.includes('globalThis.START_RECORDING(settings)')) {
-        const server = FakeWebSocketServer.byPort.get(this._port) || FakeWebSocketServer.latest
-        socket = server.connect({ index: arg.index, chunks })
+        if (typeof onStartRecording === 'function') onStartRecording(arg)
+        const server = FakeWebSocketServer.byPort.get(arg.port) || FakeWebSocketServer.latest
+        const socket = server.connect({ index: arg.index, chunks })
+        socketsByIndex.set(arg.index, socket)
         return
       }
 
       if (source.includes('globalThis.STOP_RECORDING(index)')) {
+        stopCalls++
+        const socket = socketsByIndex.get(arg)
         if (socket) socket.close()
-        return
       }
+    }
+  }
 
-      return undefined
+  const target = {
+    type: () => 'service_worker',
+    url: () => `chrome-extension://${extensionId}/background.js`,
+    worker: async () => worker
+  }
+
+  return {
+    __worker: worker,
+    __target: target,
+    __stopCalls: () => stopCalls,
+    __setWorkerReady: value => {
+      workerReady = value
     },
-    isClosed () {
-      return this._closed
+    __setOnStartRecording: fn => {
+      onStartRecording = fn
     },
-    async close () {
-      this._closed = true
-      if (socket) socket.close()
+    __newPageCalls: 0,
+    targets () {
+      return [target]
+    },
+    async newPage () {
+      this.__newPageCalls++
+      return {}
     }
   }
 }
 
-const createBrowser = opts => ({
-  async newPage () {
-    return createExtension(opts)
-  }
-})
-
 const createFixture = ({
   chunks = [Buffer.from('a'), Buffer.from('b')],
-  failGoto = false,
   hasTab = true,
-  browser = createBrowser({ chunks, failGoto, hasTab }),
+  browser = createWorkerBrowser({ chunks, hasTab }),
   bringToFront = async () => {}
 } = {}) => {
   const page = {
@@ -209,23 +223,10 @@ test('injects viewport-based constraints by default', async t => {
   let startRecordingPayload
 
   const { page } = createFixture()
-  const originalBrowser = page.browser()
-  const originalNewPage = originalBrowser.newPage
-
-  originalBrowser.newPage = async () => {
-    const extension = await originalNewPage.call(originalBrowser)
-    const originalEvaluate = extension.evaluate.bind(extension)
-
-    extension.evaluate = async (fn, arg) => {
-      const source = fn.toString()
-      if (source.includes('globalThis.START_RECORDING(settings)')) {
-        startRecordingPayload = arg
-      }
-      return originalEvaluate(fn, arg)
-    }
-
-    return extension
-  }
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
 
   const capture = createCapture({ goto: async () => ({}) })
   await capture(page)('https://example.com', { duration: 20, audio: false, video: true })
@@ -245,23 +246,10 @@ test('maps `type` to MediaRecorder mimeType', async t => {
   let startRecordingPayload
 
   const { page } = createFixture()
-  const originalBrowser = page.browser()
-  const originalNewPage = originalBrowser.newPage
-
-  originalBrowser.newPage = async () => {
-    const extension = await originalNewPage.call(originalBrowser)
-    const originalEvaluate = extension.evaluate.bind(extension)
-
-    extension.evaluate = async (fn, arg) => {
-      const source = fn.toString()
-      if (source.includes('globalThis.START_RECORDING(settings)')) {
-        startRecordingPayload = arg
-      }
-      return originalEvaluate(fn, arg)
-    }
-
-    return extension
-  }
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
 
   const capture = createCapture({ goto: async () => ({}) })
   await capture(page)('https://example.com', { duration: 20, type: 'mp4' })
@@ -274,23 +262,10 @@ test('mimeType takes precedence over `type`', async t => {
   let startRecordingPayload
 
   const { page } = createFixture()
-  const originalBrowser = page.browser()
-  const originalNewPage = originalBrowser.newPage
-
-  originalBrowser.newPage = async () => {
-    const extension = await originalNewPage.call(originalBrowser)
-    const originalEvaluate = extension.evaluate.bind(extension)
-
-    extension.evaluate = async (fn, arg) => {
-      const source = fn.toString()
-      if (source.includes('globalThis.START_RECORDING(settings)')) {
-        startRecordingPayload = arg
-      }
-      return originalEvaluate(fn, arg)
-    }
-
-    return extension
-  }
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
 
   const capture = createCapture({ goto: async () => ({}) })
   await capture(page)('https://example.com', {
@@ -346,19 +321,41 @@ test('rejects unsupported type', async t => {
   })
 })
 
-test('rejects when extension cannot be opened', async t => {
+test('rejects when extension service worker is unavailable', async t => {
   const createCapture = loadCapture()
-  const { page } = createFixture({ failGoto: true })
+  const browser = createWorkerBrowser()
+  browser.__setWorkerReady(false)
+  const { page } = createFixture({ browser })
   const capture = createCapture({ goto: async () => ({}) })
 
   await t.throwsAsync(() => capture(page)('https://example.com', { duration: 20 }), {
-    message: /Unable to open capture extension/
+    message: /Unable to connect to capture extension service worker/
   })
+})
+
+test('uses service worker runtime without opening extension tab', async t => {
+  const createCapture = loadCapture()
+  const browser = createWorkerBrowser({
+    extensionId: createCapture.extensionId,
+    chunks: [Buffer.from('worker')]
+  })
+  const { page } = createFixture({ browser })
+  const capture = createCapture({ goto: async () => ({}) })
+
+  const result = await capture(page)('https://example.com', {
+    duration: 20,
+    audio: false,
+    video: true
+  })
+
+  t.deepEqual(result, Buffer.from('worker'))
+  t.is(browser.__newPageCalls, 0)
+  t.true(browser.__stopCalls() > 0)
 })
 
 test('serializes setup when captures share the same browser', async t => {
   const createCapture = loadCapture()
-  const browser = createBrowser({ chunks: [Buffer.from('shared')] })
+  const browser = createWorkerBrowser({ chunks: [Buffer.from('shared')] })
   const enteredFirst = createDeferred()
   const releaseFirst = createDeferred()
   let secondBringToFrontCalls = 0
@@ -416,7 +413,7 @@ test('allows setup in parallel when captures use different browsers', async t =>
   let secondBringToFrontCalls = 0
 
   const { page: firstPage } = createFixture({
-    browser: createBrowser({ chunks: [Buffer.from('first')] }),
+    browser: createWorkerBrowser({ chunks: [Buffer.from('first')] }),
     bringToFront: async () => {
       enteredFirst.resolve()
       await releaseFirst.promise
@@ -424,7 +421,7 @@ test('allows setup in parallel when captures use different browsers', async t =>
   })
 
   const { page: secondPage } = createFixture({
-    browser: createBrowser({ chunks: [Buffer.from('second')] }),
+    browser: createWorkerBrowser({ chunks: [Buffer.from('second')] }),
     bringToFront: async () => {
       secondBringToFrontCalls++
     }
