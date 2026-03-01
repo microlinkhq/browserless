@@ -65,16 +65,12 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 | `timeout` | `number` | `max(duration * 3, 30000)` | Timeout waiting for stream data. |
 | `audio` | `boolean` | `false` | Capture audio. |
 | `video` | `boolean` | `true` | Capture video. |
-| `mimeType` | `string` | inferred from `type`/`path` | MediaRecorder mime type. |
-| `frameSize` | `number` | `20` | Milliseconds per MediaRecorder chunk. |
 | `audioBitsPerSecond` | `number` | `undefined` | Audio bitrate hint. |
 | `videoBitsPerSecond` | `number` | `undefined` | Video bitrate hint. |
 | `bitsPerSecond` | `number` | `undefined` | Combined bitrate hint. |
 | `videoConstraints` | `object` | `undefined` | `chrome.tabCapture` video constraints. |
 | `audioConstraints` | `object` | `undefined` | `chrome.tabCapture` audio constraints. |
-| `tabQuery` | `object` | `{ active: true }` | Query used by `chrome.tabs.query`. |
 | `retry` | `{ each?: number, times?: number }` | `{ each: 20, times: 3 }` | Extension readiness retry policy. |
-| `signal` | `AbortSignal` | `undefined` | Abort capture. |
 
 ## Exports
 
@@ -86,7 +82,8 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 `videoConstraints` is inferred from that viewport to keep capture framing aligned with screenshot/pdf rendering.
 The inferred constraints also account for `deviceScaleFactor`, so output video pixels match screenshot pixel density.
 The capture flow also adjusts tab surface bounds to the current viewport before recording, so the first video frame matches screenshot framing in headless mode.
-Use `type` for simple container selection and `mimeType` when you need exact codec control.
+MediaRecorder chunk size is internal and fixed at `250ms`.
+`type` is mapped internally to the MediaRecorder mime type.
 For strict screenshot/poster parity in headless mode, launch Chrome with matching `--screen-info`.
 
 ## License

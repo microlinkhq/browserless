@@ -5,15 +5,16 @@ const fs = require('fs').promises
 const { withLock } = require('superlock')
 
 const {
-  DEFAULT_TAB_QUERY,
   DEFAULT_RETRY_POLICY,
-  EXTENSION_PATH,
   EXTENSION_ID,
+  EXTENSION_PATH,
+  INTERNAL_FRAME_SIZE,
+  NOOP,
+  TAB_QUERY,
   TYPES
 } = require('./constants')
 
 const {
-  NOOP,
   closeServer,
   createWebSocketServer,
   createRecordingSession,
@@ -51,50 +52,23 @@ const getBrowserLock = browser => {
   return lock
 }
 
-const abortError = () => {
-  const error = new Error('The capture operation was aborted')
-  error.name = 'AbortError'
-  return error
-}
-
-const waitForCaptureDuration = (duration, signal) =>
-  new Promise((resolve, reject) => {
-    if (signal && signal.aborted) return reject(abortError())
-
-    const onAbort = () => {
-      clearTimeout(timer)
-      reject(abortError())
-    }
-
-    const timer = setTimeout(() => {
-      if (signal && typeof signal.removeEventListener === 'function') {
-        signal.removeEventListener('abort', onAbort)
-      }
-      resolve()
-    }, duration)
-
-    if (signal && typeof signal.addEventListener === 'function') {
-      signal.addEventListener('abort', onAbort, { once: true })
-    }
+const waitForCaptureDuration = duration =>
+  new Promise(resolve => {
+    setTimeout(resolve, duration)
   })
 
-// TODO: what is frame size
 const capturePage = async (page, opts, viewport) => {
   const {
     path: outputPath,
     duration = 3000,
-    timeout = Math.max(duration * 3, 30000),
+    timeout = 30000,
     audio = false,
     video = true,
-    frameSize = 20,
     audioBitsPerSecond,
     videoBitsPerSecond,
     bitsPerSecond,
     type,
-    mimeType,
     delay,
-    signal,
-    tabQuery = DEFAULT_TAB_QUERY,
     retry = {},
     videoConstraints,
     audioConstraints
@@ -112,7 +86,6 @@ const capturePage = async (page, opts, viewport) => {
 
   const streamMimeType = getDefaultMimeType({
     type,
-    mimeType,
     path: outputPath,
     audio,
     video
@@ -136,12 +109,12 @@ const capturePage = async (page, opts, viewport) => {
 
       const tab = await getTab({
         extension,
-        query: tabQuery,
+        query: TAB_QUERY,
         currentUrl: page.url()
       })
 
       if (!tab) {
-        throw new Error('Cannot find the active tab. Try setting `opts.tabQuery`.')
+        throw new Error('Cannot find the active tab.')
       }
 
       await activateTab({ extension, tabId: tab.id })
@@ -166,7 +139,7 @@ const capturePage = async (page, opts, viewport) => {
           tabId: alignedTab.id,
           video,
           audio,
-          frameSize,
+          frameSize: INTERNAL_FRAME_SIZE,
           mimeType: streamMimeType,
           audioBitsPerSecond,
           videoBitsPerSecond,
@@ -180,7 +153,7 @@ const capturePage = async (page, opts, viewport) => {
       isRecordingStarted = true
     })
 
-    await waitForCaptureDuration(duration, signal)
+    await waitForCaptureDuration(duration)
   } catch (error) {
     captureError = error
   } finally {

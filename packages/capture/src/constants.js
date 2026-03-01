@@ -23,14 +23,18 @@ const MIME_TYPES_BY_TYPE = Object.freeze({
 })
 
 const TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
-const DEFAULT_TAB_QUERY = Object.freeze({ active: true })
+const TAB_QUERY = Object.freeze({ active: true })
 const DEFAULT_RETRY_POLICY = Object.freeze({ each: 20, times: 3 })
+const INTERNAL_FRAME_SIZE = 250
+const NOOP = () => {}
 
 module.exports = {
   EXTENSION_ID,
   EXTENSION_PATH,
   MIME_TYPES_BY_TYPE,
   TYPES,
-  DEFAULT_TAB_QUERY,
-  DEFAULT_RETRY_POLICY
+  TAB_QUERY,
+  DEFAULT_RETRY_POLICY,
+  INTERNAL_FRAME_SIZE,
+  NOOP
 }

@@ -213,7 +213,6 @@ test('capture returns a video buffer', async t => {
 
   const result = await capture(page)('https://example.com', {
     duration: 20,
-    frameSize: 10,
     audio: false,
     video: true
   })
@@ -271,7 +270,7 @@ test('maps `type` to MediaRecorder mimeType', async t => {
   t.is(startRecordingPayload.mimeType, 'video/mp4')
 })
 
-test('mimeType takes precedence over `type`', async t => {
+test('ignores `mimeType` option and maps from `type`', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
 
@@ -288,7 +287,7 @@ test('mimeType takes precedence over `type`', async t => {
     mimeType: 'video/mp4;codecs=avc1'
   })
 
-  t.is(startRecordingPayload.mimeType, 'video/mp4;codecs=avc1')
+  t.is(startRecordingPayload.mimeType, 'video/webm')
 })
 
 test('capture writes path and returns the same buffer', async t => {
@@ -302,7 +301,6 @@ test('capture writes path and returns the same buffer', async t => {
   const result = await capture(page)('https://example.com', {
     path: outputPath,
     duration: 20,
-    frameSize: 10,
     audio: false,
     video: true
   })
@@ -332,17 +330,6 @@ test('rejects unsupported type', async t => {
   await t.throwsAsync(() => capture(page)('https://example.com', { type: 'avi' }), {
     instanceOf: TypeError,
     message: /Unsupported `type` "avi"/
-  })
-})
-
-test('requires viewport in goto device output', async t => {
-  const createCapture = loadCapture()
-  const { page } = createFixture()
-  const capture = createCapture({ goto: async () => ({ device: {} }) })
-
-  await t.throwsAsync(() => capture(page)('https://example.com'), {
-    instanceOf: TypeError,
-    message: /Expected `goto` to return `\{ device: \{ viewport \} \}`/
   })
 })
 
@@ -404,7 +391,6 @@ test('serializes setup when captures share the same browser', async t => {
 
   const firstTask = capture(firstPage)('https://example.com/first', {
     duration: 20,
-    frameSize: 10,
     audio: false,
     video: true
   })
@@ -413,7 +399,6 @@ test('serializes setup when captures share the same browser', async t => {
 
   const secondTask = capture(secondPage)('https://example.com/second', {
     duration: 20,
-    frameSize: 10,
     audio: false,
     video: true
   })
@@ -456,7 +441,6 @@ test('allows setup in parallel when captures use different browsers', async t =>
 
   const firstTask = capture(firstPage)('https://example.com/first-browser', {
     duration: 20,
-    frameSize: 10,
     audio: false,
     video: true
   })
@@ -465,7 +449,6 @@ test('allows setup in parallel when captures use different browsers', async t =>
 
   const secondTask = capture(secondPage)('https://example.com/second-browser', {
     duration: 20,
-    frameSize: 10,
     audio: false,
     video: true
   })

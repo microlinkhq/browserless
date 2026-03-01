@@ -5,8 +5,6 @@ const { WebSocketServer } = require('ws')
 
 const { MIME_TYPES_BY_TYPE } = require('./constants')
 
-const NOOP = () => {}
-
 const closeServer = wss =>
   new Promise(resolve => {
     if (!wss) return resolve()
@@ -119,9 +117,7 @@ const getMimeTypeFromType = ({ type, audio, video }) => {
   )
 }
 
-const getDefaultMimeType = ({ type, mimeType, path: outputPath, audio, video }) => {
-  if (mimeType) return mimeType
-
+const getDefaultMimeType = ({ type, path: outputPath, audio, video }) => {
   const explicitTypeMime = getMimeTypeFromType({ type, audio, video })
   if (explicitTypeMime) return explicitTypeMime
 
@@ -151,7 +147,6 @@ const getVideoConstraints = (videoConstraints, viewport) => {
 }
 
 module.exports = {
-  NOOP,
   closeServer,
   createWebSocketServer,
   createRecordingSession,
