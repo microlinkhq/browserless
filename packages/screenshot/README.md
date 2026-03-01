@@ -69,7 +69,7 @@ const buffer = await browserless.screenshot('https://example.com', {
 | `element` | `string` | — | CSS selector for element screenshot |
 | `codeScheme` | `string` | `'atom-dark'` | Prism.js theme for code highlighting |
 | `waitUntil` | `string` | `'auto'` | When to consider navigation done |
-| `waitForDom` | `number` | `1000` | DOM stability window in ms (idle is `waitForDom / 10`) |
+| `waitForDom` | `number` | `0` | DOM stability window in ms (idle is `waitForDom / 10`, `0` disables DOM wait) |
 | `isPageReady` | `function` | `({ isWhite }) => !isWhite` | Custom readiness predicate for retry loop |
 | `overlay` | `object` | `{}` | Browser overlay options |
 

@@ -118,10 +118,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let screenshotOpts = {}
         const tasks = [
           {
-            fn: () => page.evaluate(waitForDomStability, waitForDomOpts),
-            debug: 'beforeScreenshot:waitForDomStability'
-          },
-          {
             fn: () => page.evaluate('document.fonts.ready'),
             debug: 'beforeScreenshot:fontsReady'
           },
@@ -130,6 +126,13 @@ module.exports = ({ goto, ...gotoOpts }) => {
             debug: 'beforeScreenshot:waitForImagesOnViewport'
           }
         ]
+
+        if (waitForDomOpts.shouldWait) {
+          tasks.unshift({
+            fn: () => page.evaluate(waitForDomStability, waitForDomOpts),
+            debug: 'beforeScreenshot:waitForDomStability'
+          })
+        }
 
         if (codeScheme && response) {
           tasks.push({

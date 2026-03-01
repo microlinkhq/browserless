@@ -1,14 +1,15 @@
 'use strict'
 
-const DEFAULT_WAIT_FOR_DOM = 1000
+const DEFAULT_WAIT_FOR_DOM = 0
 const WAIT_FOR_DOM_IDLE_RATIO = 10
 
 const resolveWaitForDom = waitForDom => {
-  const timeout = Number.isFinite(waitForDom) && waitForDom > 0 ? waitForDom : DEFAULT_WAIT_FOR_DOM
+  const timeout = Number.isFinite(waitForDom) && waitForDom >= 0 ? waitForDom : DEFAULT_WAIT_FOR_DOM
 
   return {
     timeout,
-    idle: timeout / WAIT_FOR_DOM_IDLE_RATIO
+    idle: timeout / WAIT_FOR_DOM_IDLE_RATIO,
+    shouldWait: timeout > 0
   }
 }
 
