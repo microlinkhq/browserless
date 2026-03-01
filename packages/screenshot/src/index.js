@@ -11,6 +11,7 @@ const overlay = require('./overlay')
 
 const MAX_WHITE_RETRIES = 5
 const DOM_STABILITY_TIMEOUT = 1000
+const DOM_STABILITY_IDLE = 100
 
 const createElapsed = () => {
   const start = Date.now()
@@ -152,7 +153,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           {
             fn: () =>
               page.evaluate(waitForDomStability, {
-                idle: Math.max(200, Math.floor(domStabilityTimeout / 4)),
+                idle: DOM_STABILITY_IDLE,
                 timeout: domStabilityTimeout
               }),
             debug: 'beforeScreenshot:waitForDomStability'
