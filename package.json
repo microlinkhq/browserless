@@ -115,7 +115,7 @@
     "standard": "latest"
   },
   "engines": {
-    "node": ">= 12"
+    "node": ">= 24"
   },
   "scripts": {
     "build": "gulp build",
