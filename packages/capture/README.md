@@ -58,7 +58,7 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `type` | `'webm' \| 'mp4' \| 'mkv' \| 'matroska'` | inferred from `path` or `'webm'` | Friendly output type selector. |
+| `type` | `'webm' \| 'mp4'` | `'webm'` | Output type selector mapped to MediaRecorder mime type. |
 | `path` | `string` | `undefined` | Write the captured media to disk. |
 | `duration` | `number` | `3000` | Capture duration in milliseconds. |
 | `audio` | `boolean \| object` | `false` | Capture audio. When object, it is used as audio track constraints. |
@@ -75,10 +75,10 @@ When `video` is `true` or omitted, video constraints are inferred from that view
 When `video` is an object, that object is used as the video constraints.
 When `audio` is an object, that object is used as the audio constraints.
 The inferred constraints also account for `deviceScaleFactor`, so output video pixels match screenshot pixel density.
-The capture flow also adjusts tab surface bounds to the current viewport before recording, so the first video frame matches screenshot framing in headless mode.
 Bitrate hints are not configurable; capture uses Chrome MediaRecorder defaults.
 MediaRecorder chunk size is internal and fixed at `250ms`.
 `type` is mapped internally to the MediaRecorder mime type.
+When `type` is `'mp4'`, the running Chromium build must support MP4 MediaRecorder output.
 For strict screenshot/poster parity in headless mode, launch Chrome with matching `--screen-info`.
 
 ## License
