@@ -18,17 +18,17 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browserless",
     "benchmark",
-    "performance",
-    "headless",
+    "browserless",
     "chrome",
-    "puppeteer",
-    "profiling",
     "cpu",
     "gpu",
+    "headless",
     "metrics",
-    "optimization"
+    "optimization",
+    "performance",
+    "profiling",
+    "puppeteer"
   ],
   "devDependencies": {
     "@kikobeats/time-span": "latest",

@@ -18,20 +18,20 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
+    "automation",
     "browser",
     "browserless",
     "chrome",
     "chromium",
     "headless",
+    "html",
+    "javascript",
+    "nodejs",
+    "pdf",
     "puppeteer",
     "screenshot",
-    "pdf",
-    "html",
     "text",
-    "automation",
-    "web-scraping",
-    "nodejs",
-    "javascript"
+    "web-scraping"
   ],
   "dependencies": {
     "@browserless/capture": "^10.11.0",
@@ -39,7 +39,7 @@
     "@browserless/goto": "^10.11.0",
     "@browserless/pdf": "^10.11.0",
     "@browserless/screenshot": "^10.11.0",
-    "debug-logfmt": "~1.4.7",
+    "debug-logfmt": "~1.4.8",
     "kill-process-group": "~1.0.13",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",

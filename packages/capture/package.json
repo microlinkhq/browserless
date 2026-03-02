@@ -18,21 +18,21 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
+    "automation",
     "browserless",
     "capture",
-    "video",
-    "recording",
-    "webm",
-    "mp4",
-    "headless",
     "chrome",
+    "headless",
+    "mp4",
     "puppeteer",
-    "automation"
+    "recording",
+    "video",
+    "webm"
   ],
   "dependencies": {
     "@browserless/goto": "^10.11.0",
     "debug-logfmt": "~1.4.8",
-    "ws": "~8.18.3"
+    "ws": "~8.19.0"
   },
   "devDependencies": {
     "ava": "5"

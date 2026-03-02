@@ -18,21 +18,21 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browserless",
-    "lighthouse",
-    "headless",
-    "chrome",
-    "puppeteer",
-    "performance",
-    "audit",
-    "seo",
     "accessibility",
+    "audit",
+    "browserless",
+    "chrome",
+    "headless",
+    "lighthouse",
     "metrics",
+    "performance",
+    "puppeteer",
     "pwa",
+    "seo",
     "web-vitals"
   ],
   "dependencies": {
-    "lighthouse": "~13.0.1"
+    "lighthouse": "~13.0.3"
   },
   "devDependencies": {
     "@browserless/test": "^10.9.18",
