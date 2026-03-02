@@ -85,7 +85,7 @@ const START_RECORDING = async ({
   if (!streamId) throw new Error('Missing tab media stream id for recording session.')
   assertMimeTypeSupported(mimeType)
 
-  const client = new WebSocket(`ws://localhost:${port}/?index=${index}`, [])
+  const client = new WebSocket(`ws://127.0.0.1:${port}/?index=${index}`, [])
 
   let audioStreamConstraints = false
   let videoStreamConstraints = false
