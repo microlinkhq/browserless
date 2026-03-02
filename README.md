@@ -26,13 +26,14 @@
   - [.text(url, options)](#texturl-options)
   - [.pdf(url, options)](#pdfurl-options)
   - [.screenshot(url, options)](#screenshoturl-options)
+  - [.capture(url, options)](#captureurl-options)
   - [.destroyContext(options)](#destroycontextoptions)
   - [.getDevice(options)](#getdeviceoptions)
   - [.evaluate(fn, gotoOpts)](#evaluatefn-gotoopts)
   - [.goto(page, options)](#gotopage-options)
   - [.context()](#context)
   - [.withPage(fn, \[options\])](#withpagefn-options)
-  - [.page()](#page)
+  - [.page(\[name\], \[options\])](#pagename-options)
 - [Extended](#extended)
   - [function](#function)
   - [lighthouse](#lighthouse)
@@ -45,7 +46,7 @@
 
 ## Highlights
 
-- Compatible with Puppeteer API ([text](#texturl-options), [screenshot](#screenshoturl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
+- Compatible with Puppeteer API ([text](#texturl-options), [screenshot](#screenshoturl-options), [capture](#captureurl-options), [html](#htmlurl-options), [pdf](#pdfurl-options)).
 - Built-in [adblocker](#adblock) for canceling unnecessary requests.
 - Shell interaction via [Browserless CLI](#cli).
 - Easy [Google Lighthouse](#lighthouse) integration.
@@ -454,6 +455,70 @@ const buffer = await browserless.screenshot(url.toString(), {
 })
 ```
 
+### .capture(url, options)
+
+Records a video/audio capture of a page navigation using the Chrome `tabCapture` extension API.
+
+```js
+const buffer = await browserless.capture('https://example.com', {
+  duration: 5000,
+  type: 'webm'
+})
+
+console.log(`Captured ${buffer.byteLength} bytes`)
+```
+
+The output can also be saved to disk:
+
+```js
+await browserless.capture('https://example.com', {
+  duration: 3000,
+  type: 'mp4',
+  path: '/tmp/capture.mp4'
+})
+```
+
+#### options
+
+See [browserless.goto](/#gotopage-options) for navigation options.
+
+Additionally, the following capture-specific options are supported:
+
+##### type
+
+type: `string`<br/>
+default: `'webm'`
+
+Output format. Supported values: `'webm'`, `'mp4'`. When `'mp4'`, the running Chromium build must support MP4 MediaRecorder output.
+
+##### duration
+
+type: `number`<br/>
+default: `3000`
+
+Capture duration in milliseconds.
+
+##### path
+
+type: `string`<br/>
+default: `undefined`
+
+When provided, the captured buffer is also written to disk at the given path.
+
+##### audio
+
+type: `boolean` \| `object`<br/>
+default: `false`
+
+Enable audio capture. When an object, it is used as audio track constraints.
+
+##### video
+
+type: `boolean` \| `object`<br/>
+default: `true`
+
+Enable video capture. When an object, it is used as video track constraints. When `true`, video constraints are inferred from the device viewport.
+
 ### .destroyContext(options)
 
 Destroys the current browser context.
@@ -843,7 +908,14 @@ default: `browserless.timeout`
 
 This setting will change the default maximum navigation time.
 
-### .page()
+##### useDefaultContext
+
+type: `boolean`</br>
+default: `false`
+
+When `true`, the page is created in the browser's default (non-incognito) context instead of the isolated browser context. This is required for operations like `capture` where the Chrome extension needs to resolve tab IDs via `chrome.debugger.getTargets()`, which cannot see tabs inside incognito contexts.
+
+### .page([name], [options])
 
 Returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59b247282774ccc53e3cc925efc30d4e25675/docs/api.md#class-page) associated with the current browser context.
 
@@ -851,6 +923,26 @@ Returns a standalone [Page](https://github.com/puppeteer/puppeteer/blob/ddc59b24
 const page = await browserless.page()
 await page.content()
 // => '<html><head></head><body></body></html>'
+```
+
+#### name
+
+type: `string`</br>
+default: `undefined`
+
+Optional name for the page, used in debug logs.
+
+#### options
+
+##### useDefaultContext
+
+type: `boolean`</br>
+default: `false`
+
+When `true`, the page is created in the browser's default (non-incognito) context:
+
+```js
+const page = await browserless.page('capture', { useDefaultContext: true })
 ```
 
 ## Extended
@@ -1011,6 +1103,7 @@ See [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/to
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | [browserless](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         |
 | [@browserless/benchmark](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   |
+| [@browserless/capture](https://github.com/microlinkhq/browserless/tree/master/packages/capture)       | [![npm](https://img.shields.io/npm/v/@browserless/capture.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/capture)       |
 | [@browserless/cli](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               |
 | [@browserless/devices](https://github.com/microlinkhq/browserless/tree/master/packages/devices)       | [![npm](https://img.shields.io/npm/v/@browserless/devices.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/devices)       |
 | [@browserless/errors](https://github.com/microlinkhq/browserless/tree/master/packages/errors)         | [![npm](https://img.shields.io/npm/v/@browserless/errors.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/errors)         |

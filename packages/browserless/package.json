@@ -34,6 +34,7 @@
     "javascript"
   ],
   "dependencies": {
+    "@browserless/capture": "^10.10.0",
     "@browserless/errors": "^10.10.1",
     "@browserless/goto": "^10.10.2",
     "@browserless/pdf": "^10.10.3",

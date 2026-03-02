@@ -1,6 +1,7 @@
 'use strict'
 
 const { ensureError, browserTimeout } = require('@browserless/errors')
+const createCapture = require('@browserless/capture')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -78,9 +79,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     const getBrowserContext = () => _contextPromise
 
-    const createPage = async name => {
+    const createPage = async (name, { useDefaultContext = false } = {}) => {
       const duration = debug.duration('createPage')
-      const browserContext = await getBrowserContext()
+      const browserContext = useDefaultContext
+        ? (await getBrowser()).defaultBrowserContext()
+        : await getBrowserContext()
       const page = await browserContext.newPage()
       const browser = typeof page.browser === 'function' ? page.browser() : undefined
       const metadata = {
@@ -103,7 +106,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage = (fn, { timeout: evaluateTimeout } = {}) => {
+    const withPage = (fn, { timeout: evaluateTimeout, useDefaultContext = false } = {}) => {
       const name = fn.name || 'anonymous'
 
       return async (...args) => {
@@ -114,7 +117,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           let closePageTimeout
 
           try {
-            page = await createPage(name)
+            page = await createPage(name, { useDefaultContext })
             closePageTimeout = setTimeout(() => {
               closePage(page, name).catch(error => {
                 const { message, code, name } = ensureError(error)
@@ -192,6 +195,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       goto,
       html: evaluate(page => page.content()),
       page: createPage,
+      capture: withPage(createCapture({ goto }), { useDefaultContext: true }),
       pdf: withPage(createPdf({ goto })),
       screenshot: withPage(createScreenshot({ goto })),
       text: evaluate(page => page.evaluate(() => document.body.innerText)),

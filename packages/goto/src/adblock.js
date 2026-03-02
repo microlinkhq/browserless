@@ -1,8 +1,8 @@
 'use strict'
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
+const fs = require('fs/promises')
 const path = require('path')
-const fs = require('fs')
 
 const debug = require('debug-logfmt')('browserless:goto:adblock')
 
@@ -11,7 +11,7 @@ let enginePromise
 const getEngine = () => {
   if (enginePromise) return enginePromise
 
-  enginePromise = fs.promises.readFile(path.resolve(__dirname, './engine.bin')).then(buffer => {
+  enginePromise = fs.readFile(path.resolve(__dirname, './engine.bin')).then(buffer => {
     const engine = PuppeteerBlocker.deserialize(new Uint8Array(buffer))
     engine.on('request-blocked', ({ url }) => debug('block', url))
     engine.on('request-redirected', ({ url }) => debug('redirect', url))
@@ -31,7 +31,7 @@ let autoconsentPlaywrightScriptPromise
 const getAutoconsentPlaywrightScript = () => {
   if (autoconsentPlaywrightScriptPromise) return autoconsentPlaywrightScriptPromise
 
-  autoconsentPlaywrightScriptPromise = fs.promises.readFile(
+  autoconsentPlaywrightScriptPromise = fs.readFile(
     path.resolve(
       path.dirname(require.resolve('@duckduckgo/autoconsent')),
       'autoconsent.playwright.js'

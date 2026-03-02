@@ -172,7 +172,7 @@ screencast.onFrame((data, metadata) => {
 #### Save frames to disk
 
 ```js
-const fs = require('fs').promises
+const fs = require('fs/promises')
 
 let frameCount = 0
 

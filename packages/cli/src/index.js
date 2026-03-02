@@ -63,7 +63,13 @@ const run = async () => {
   const [command, rawUrl] = cli.input
   const url = new URL(rawUrl).toString()
   const fn = require(`./commands/${command}`)
-  const browser = createBrowser({ headless })
+  const launchOpts = { headless }
+
+  if (command === 'capture') {
+    launchOpts.headless = headless === false ? false : 'new'
+  }
+
+  const browser = createBrowser(launchOpts)
   onExit(browser.close)
   const browserless = await browser.createContext()
   return fn({ url, browserless, opts: nestie(opts), isPageReady })

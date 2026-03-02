@@ -1,0 +1,8 @@
+{
+  "name": "Browserless Capture",
+  "version": "0.1.0",
+  "key": "ackedhmjjinfocdcekpnbdocpmiffaac",
+  "manifest_version": 3,
+  "permissions": ["tabs", "tabCapture", "offscreen", "debugger"],
+  "background": { "service_worker": "background.js" }
+}
