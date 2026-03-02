@@ -7,7 +7,7 @@ const debug = require('debug-logfmt')('browserless:capture')
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
 
-const { INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
+const { DEFAULT, INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
 
 let currentIndex = 0
 
@@ -78,7 +78,7 @@ const SUPPORTED_TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
 const getMimeType = ({ type, audio, video }) => {
   const normalizedType =
     type === undefined || type === null
-      ? 'webm'
+      ? DEFAULT.type
       : String(type).trim().toLowerCase().replace(/^\./, '')
 
   const mimeTypes = MIME_TYPES_BY_TYPE[normalizedType]
@@ -160,7 +160,7 @@ const getTargetId = async page => {
 }
 
 module.exports = async (page, opts, viewport) => {
-  const { path: outputPath, duration = 3000, audio, video, type } = opts
+  const { path: outputPath, duration = DEFAULT.duration, audio, video, type } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
   const videoOpts = getOpts(video, true, 'video')

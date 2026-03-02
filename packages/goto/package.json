@@ -47,7 +47,7 @@
     "p-wait-for": "3"
   },
   "engines": {
-    "node": ">= 12"
+    "node": ">= 24"
   },
   "files": [
     "scripts",

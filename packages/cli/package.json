@@ -50,7 +50,7 @@
     "unique-random-array": "~2.0.0"
   },
   "engines": {
-    "node": ">= 12"
+    "node": ">= 24"
   },
   "files": [
     "src"

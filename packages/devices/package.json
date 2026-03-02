@@ -39,7 +39,7 @@
     "lodash": "latest"
   },
   "engines": {
-    "node": ">= 12"
+    "node": ">= 24"
   },
   "files": [
     "src"
