@@ -10,7 +10,9 @@ module.exports = async ({ url, browserless, opts }) => {
 
   const suggestedType =
     { matroska: 'mkv', mkv: 'mkv', mp4: 'mp4', webm: 'webm' }[type] ||
-    (captureOpts.mimeType && captureOpts.mimeType.includes('mp4') ? 'mp4' : 'webm')
+    (captureOpts.mimeType && captureOpts.mimeType.includes('mp4')
+      ? 'mp4'
+      : createCapture.DEFAULT.type)
 
   const browser = await browserless.browser()
   const page = await browser.defaultBrowserContext().newPage()
