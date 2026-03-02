@@ -1,6 +1,6 @@
 {
   "name": "@browserless/capture",
-  "description": "Record browser pages as videos with browserless-style API: createCapture({ goto })(page)(url, opts).",
+  "description": "Record a Puppeteer page using tabCapture API",
   "homepage": "https://browserless.js.org/#/?id=capturepage-options",
   "version": "10.11.0",
   "main": "src/index.js",

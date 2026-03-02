@@ -9,7 +9,7 @@
   <br><br>
 </div>
 
-> @browserless/capture: Record a Puppeteer page using the extension + `tabCapture` approach.
+> @browserless/capture: Record a Puppeteer page using tabCapture API.
 
 ## Install
 
@@ -27,7 +27,6 @@ const browser = createBrowser({
   headless: 'new',
   ignoreDefaultArgs: ['--disable-extensions'],
   args: [
-    '--screen-info={2560x1600 devicePixelRatio=2}',
     `--allowlisted-extension-id=${createCapture.extensionId}`,
     `--disable-extensions-except=${createCapture.extensionPath}`,
     `--load-extension=${createCapture.extensionPath}`
