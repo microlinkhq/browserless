@@ -3,6 +3,7 @@
 const { performance } = require('perf_hooks')
 const createBrowser = require('../../browserless/src')
 const createCapture = require('..')
+const { defaultArgs } = createBrowser.driver
 
 const ITERATIONS = Number(process.env.ITERATIONS || 12)
 const WARMUP = Number(process.env.WARMUP || 2)
@@ -129,6 +130,7 @@ const main = async () => {
     timeout: CAPTURE_TIMEOUT,
     ignoreDefaultArgs: ['--disable-extensions'],
     args: [
+      ...defaultArgs,
       `--allowlisted-extension-id=${createCapture.extensionId}`,
       `--disable-extensions-except=${createCapture.extensionPath}`,
       `--load-extension=${createCapture.extensionPath}`

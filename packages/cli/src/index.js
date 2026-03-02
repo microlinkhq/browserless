@@ -5,6 +5,7 @@
 const createCapture = require('@browserless/capture')
 const restoreCursor = require('restore-cursor')
 const createBrowser = require('browserless')
+const { defaultArgs } = createBrowser.driver
 const beautyError = require('beauty-error')
 const { onExit } = require('signal-exit')
 const { nestie } = require('nestie')
@@ -69,6 +70,7 @@ const run = async () => {
   if (command === 'capture') {
     launchOpts.headless = headless === false ? false : 'new'
     launchOpts.args = [
+      ...defaultArgs,
       `--allowlisted-extension-id=${createCapture.extensionId}`,
       `--disable-extensions-except=${createCapture.extensionPath}`,
       `--load-extension=${createCapture.extensionPath}`
