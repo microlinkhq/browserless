@@ -199,15 +199,11 @@ module.exports = async (page, opts, viewport) => {
     recordingPromise = createRecordingSession({ wss, index })
 
     await lock(async () => {
-      const tab = await extension.getTab({ worker })
-      if (!tab) throw new Error('Cannot find the active tab.')
-
       await extension.startRecording({
         extension: worker,
         settings: {
           index,
           port,
-          tabId: tab.id,
           video: videoOpts.enabled,
           audio: audioOpts.enabled,
           frameSize: INTERNAL_FRAME_SIZE,

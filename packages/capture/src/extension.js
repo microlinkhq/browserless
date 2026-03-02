@@ -68,17 +68,6 @@ const open = async ({ browser }) => {
   return workerRuntime
 }
 
-const getTab = async ({ worker }) => {
-  try {
-    return worker.evaluate(async () => {
-      const queried = await globalThis.chrome.tabs.query({ active: true })
-      return queried[0] || null
-    })
-  } catch (error) {
-    return null
-  }
-}
-
 const startRecording = async ({ extension, settings }) =>
   extension.evaluate(settings => globalThis.START_RECORDING(settings), settings)
 
@@ -87,7 +76,6 @@ const stopRecording = async ({ extension, index }) =>
 
 module.exports = {
   open,
-  getTab,
   startRecording,
   stopRecording
 }

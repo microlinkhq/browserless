@@ -82,13 +82,11 @@ const loadCapture = () => {
 
 const createWorkerBrowser = ({
   extensionId = EXTENSION_ID,
-  chunks = [Buffer.from('a'), Buffer.from('b')],
-  hasTab = true
+  chunks = [Buffer.from('a'), Buffer.from('b')]
 } = {}) => {
   let stopCalls = 0
   let workerReady = true
   let onStartRecording
-  let onTabQuery
   const socketsByIndex = new Map()
 
   const worker = {
@@ -102,15 +100,8 @@ const createWorkerBrowser = ({
         return workerReady
       }
 
-      if (source.includes('globalThis.chrome.tabs.query')) {
-        if (typeof onTabQuery === 'function') await onTabQuery()
-        return hasTab ? [{ id: 1 }] : []
-      }
-      if (source.includes('globalThis.chrome.tabs.update')) return
-      if (source.includes('globalThis.chrome.tabs.get')) return { id: arg, width: 800, height: 600 }
-
       if (source.includes('globalThis.START_RECORDING(settings)')) {
-        if (typeof onStartRecording === 'function') onStartRecording(arg)
+        if (typeof onStartRecording === 'function') await onStartRecording(arg)
         const server = FakeWebSocketServer.byPort.get(arg.port) || FakeWebSocketServer.latest
         const socket = server.connect({ index: arg.index, chunks })
         socketsByIndex.set(arg.index, socket)
@@ -141,9 +132,6 @@ const createWorkerBrowser = ({
     __setOnStartRecording: fn => {
       onStartRecording = fn
     },
-    __setOnTabQuery: fn => {
-      onTabQuery = fn
-    },
     __newPageCalls: 0,
     targets () {
       return [target]
@@ -157,8 +145,7 @@ const createWorkerBrowser = ({
 
 const createFixture = ({
   chunks = [Buffer.from('a'), Buffer.from('b')],
-  hasTab = true,
-  browser = createWorkerBrowser({ chunks, hasTab }),
+  browser = createWorkerBrowser({ chunks }),
   bringToFront = async () => {}
 } = {}) => {
   const page = {
@@ -479,17 +466,17 @@ test('serializes setup when captures share the same browser', async t => {
   const browser = createWorkerBrowser({ chunks: [Buffer.from('shared')] })
   const enteredFirst = createDeferred()
   const releaseFirst = createDeferred()
-  let tabQueries = 0
-  let secondTabQueryCalls = 0
+  let startRecordingCalls = 0
+  let secondStartRecordingCalls = 0
 
-  browser.__setOnTabQuery(async () => {
-    tabQueries++
-    if (tabQueries === 1) {
+  browser.__setOnStartRecording(async () => {
+    startRecordingCalls++
+    if (startRecordingCalls === 1) {
       enteredFirst.resolve()
       await releaseFirst.promise
       return
     }
-    secondTabQueryCalls++
+    secondStartRecordingCalls++
   })
 
   const { page: firstPage } = createFixture({ browser })
@@ -512,7 +499,7 @@ test('serializes setup when captures share the same browser', async t => {
     video: true
   })
 
-  const secondEnteredBeforeRelease = await waitUntil(() => secondTabQueryCalls > 0, {
+  const secondEnteredBeforeRelease = await waitUntil(() => secondStartRecordingCalls > 0, {
     timeout: 100
   })
   t.false(secondEnteredBeforeRelease)
@@ -522,24 +509,24 @@ test('serializes setup when captures share the same browser', async t => {
   const [firstBuffer, secondBuffer] = await Promise.all([firstTask, secondTask])
   t.true(Buffer.isBuffer(firstBuffer))
   t.true(Buffer.isBuffer(secondBuffer))
-  t.is(secondTabQueryCalls, 1)
+  t.is(secondStartRecordingCalls, 1)
 })
 
 test('allows setup in parallel when captures use different browsers', async t => {
   const createCapture = loadCapture()
   const enteredFirst = createDeferred()
   const releaseFirst = createDeferred()
-  let secondTabQueryCalls = 0
+  let secondStartRecordingCalls = 0
 
   const firstBrowser = createWorkerBrowser({ chunks: [Buffer.from('first')] })
-  firstBrowser.__setOnTabQuery(async () => {
+  firstBrowser.__setOnStartRecording(async () => {
     enteredFirst.resolve()
     await releaseFirst.promise
   })
 
   const secondBrowser = createWorkerBrowser({ chunks: [Buffer.from('second')] })
-  secondBrowser.__setOnTabQuery(async () => {
-    secondTabQueryCalls++
+  secondBrowser.__setOnStartRecording(async () => {
+    secondStartRecordingCalls++
   })
 
   const { page: firstPage } = createFixture({
@@ -566,7 +553,7 @@ test('allows setup in parallel when captures use different browsers', async t =>
     video: true
   })
 
-  const secondEnteredBeforeRelease = await waitUntil(() => secondTabQueryCalls > 0)
+  const secondEnteredBeforeRelease = await waitUntil(() => secondStartRecordingCalls > 0)
   t.true(secondEnteredBeforeRelease)
 
   releaseFirst.resolve()

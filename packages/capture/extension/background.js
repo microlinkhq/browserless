@@ -1,5 +1,4 @@
 /* global chrome */
-/* eslint-disable no-useless-return */
 
 const MESSAGE_KEY = '__browserless_capture__'
 const OFFSCREEN_PATH = 'offscreen.html'
@@ -35,12 +34,9 @@ const sendToOffscreen = payload =>
     )
   })
 
-const getMediaStreamId = ({ tabId } = {}) =>
+const getMediaStreamId = () =>
   new Promise((resolve, reject) => {
-    const options = {}
-    if (Number.isInteger(tabId)) options.targetTabId = tabId
-
-    chrome.tabCapture.getMediaStreamId(options, streamId => {
+    chrome.tabCapture.getMediaStreamId({}, streamId => {
       if (chrome.runtime.lastError || !streamId) {
         return reject(
           new Error(chrome.runtime.lastError?.message || 'Unable to obtain tab media stream id')
@@ -76,10 +72,7 @@ const ensureOffscreenDocument = async () => {
 }
 
 globalThis.START_RECORDING = async settings => {
-  const [streamId] = await Promise.all([
-    getMediaStreamId({ tabId: settings && settings.tabId }),
-    ensureOffscreenDocument()
-  ])
+  const [streamId] = await Promise.all([getMediaStreamId(), ensureOffscreenDocument()])
   return sendToOffscreen({
     action: 'START_RECORDING',
     settings: { ...settings, streamId }
