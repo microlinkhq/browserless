@@ -61,6 +61,14 @@ const buildTrackConstraints = ({ streamId, constraints }) => {
   }
 }
 
+const assertMimeTypeSupported = mimeType => {
+  if (!mimeType) return
+  if (typeof MediaRecorder.isTypeSupported !== 'function') return
+  if (MediaRecorder.isTypeSupported(mimeType)) return
+
+  throw new Error(`Unsupported MediaRecorder mimeType "${mimeType}" in this Chromium build.`)
+}
+
 const START_RECORDING = async ({
   index,
   port,
@@ -74,6 +82,7 @@ const START_RECORDING = async ({
 }) => {
   if (!port) throw new Error('Missing websocket port for recording session.')
   if (!streamId) throw new Error('Missing tab media stream id for recording session.')
+  assertMimeTypeSupported(mimeType)
 
   const client = new WebSocket(`ws://localhost:${port}/?index=${index}`, [])
 
