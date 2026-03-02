@@ -31,7 +31,6 @@
   ],
   "dependencies": {
     "@browserless/goto": "^10.10.0",
-    "p-wait-for": "3",
     "superlock": "~1.2.6",
     "ws": "~8.18.3"
   },

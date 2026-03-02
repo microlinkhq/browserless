@@ -1,8 +1,5 @@
 'use strict'
 
-const debug = require('debug-logfmt')('browserless:capture')
-const pWaitFor = require('p-wait-for')
-
 const { EXTENSION_ID, EXTENSION_PATH } = require('./constants')
 
 const BACKGROUND_PATH = `chrome-extension://${EXTENSION_ID}/background.js`
@@ -52,34 +49,6 @@ const createWorkerRuntime = browser => {
   }
 }
 
-const invoke = async ({ page }) => {
-  const isMac = process.platform === 'darwin'
-  await page.keyboard.down(isMac ? 'Meta' : 'Control')
-  await page.keyboard.down('Shift')
-  await page.keyboard.press('KeyY')
-  await page.keyboard.up('Shift')
-  await page.keyboard.up(isMac ? 'Meta' : 'Control')
-}
-
-const assertExtensionLoaded = async extension => {
-  const duration = debug.duration('assertExtensionLoaded')
-  let attempts = 0
-  await pWaitFor(
-    async () => {
-      attempts += 1
-      return extension
-        .evaluate(
-          () =>
-            typeof globalThis.START_RECORDING === 'function' &&
-            typeof globalThis.STOP_RECORDING === 'function'
-        )
-        .catch(() => false)
-    },
-    { interval: 50 }
-  )
-  duration({ attempts })
-}
-
 const open = async ({ browser }) => {
   const workerRuntime = createWorkerRuntime(browser)
   const isWorkerReady = await workerRuntime
@@ -99,67 +68,14 @@ const open = async ({ browser }) => {
   return workerRuntime
 }
 
-const getTab = async ({ worker, query, currentUrl }) => {
+const getTab = async ({ worker }) => {
   try {
-    return worker.evaluate(
-      async ({ query, currentUrl }) => {
-        const queried = await globalThis.chrome.tabs.query(query)
-        if (queried[0] && queried[0].url === currentUrl) return queried[0]
-
-        const all = await globalThis.chrome.tabs.query({})
-        return all.find(tab => tab.url === currentUrl) || queried[0]
-      },
-      { query, currentUrl }
-    )
+    return worker.evaluate(async () => {
+      const queried = await globalThis.chrome.tabs.query({ active: true })
+      return queried[0] || null
+    })
   } catch (error) {
     return null
-  }
-}
-
-const activateTab = ({ worker, tabId }) =>
-  worker.evaluate(tabId => globalThis.chrome.tabs.update(tabId, { active: true }), tabId)
-
-const alignTabToViewport = async ({ page, worker, tab, viewport }) => {
-  if (!tab || !tab.id || !viewport || !viewport.width || !viewport.height) return tab
-  if (typeof page.target !== 'function') return tab
-
-  const session = await page
-    .target()
-    .createCDPSession()
-    .catch(() => null)
-  if (!session) return tab
-
-  const getCurrentTab = () =>
-    worker.evaluate(tabId => globalThis.chrome.tabs.get(tabId), tab.id).catch(() => null)
-
-  try {
-    const [detectedTab, window] = await Promise.all([
-      getCurrentTab(),
-      session.send('Browser.getWindowForTarget').catch(() => null)
-    ])
-    let currentTab = detectedTab || tab
-
-    if (!window || !window.windowId || !window.bounds) return currentTab
-
-    const frameWidth = Math.max(0, (window.bounds.width || 0) - (currentTab.width || 0))
-    const frameHeight = Math.max(0, (window.bounds.height || 0) - (currentTab.height || 0))
-
-    const targetBounds = {
-      width: Math.max(1, viewport.width + frameWidth),
-      height: Math.max(1, viewport.height + frameHeight)
-    }
-
-    await session
-      .send('Browser.setWindowBounds', {
-        windowId: window.windowId,
-        bounds: targetBounds
-      })
-      .catch(() => null)
-
-    currentTab = (await getCurrentTab()) || currentTab
-    return currentTab
-  } finally {
-    await session.detach().catch(() => null)
   }
 }
 
@@ -170,12 +86,8 @@ const stopRecording = async ({ extension, index }) =>
   extension.evaluate(index => globalThis.STOP_RECORDING(index), index)
 
 module.exports = {
-  invoke,
-  assertExtensionLoaded,
   open,
   getTab,
-  activateTab,
-  alignTabToViewport,
   startRecording,
   stopRecording
 }

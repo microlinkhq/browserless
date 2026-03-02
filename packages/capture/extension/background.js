@@ -76,8 +76,10 @@ const ensureOffscreenDocument = async () => {
 }
 
 globalThis.START_RECORDING = async settings => {
-  await ensureOffscreenDocument()
-  const streamId = await getMediaStreamId({ tabId: settings && settings.tabId })
+  const [streamId] = await Promise.all([
+    getMediaStreamId({ tabId: settings && settings.tabId }),
+    ensureOffscreenDocument()
+  ])
   return sendToOffscreen({
     action: 'START_RECORDING',
     settings: { ...settings, streamId }
@@ -89,7 +91,3 @@ globalThis.STOP_RECORDING = async index => {
     await sendToOffscreen({ action: 'STOP_RECORDING', index })
   } catch (error) {}
 }
-
-chrome.commands.onCommand.addListener(async command => {
-  if (command !== 'invoke-action') return
-})

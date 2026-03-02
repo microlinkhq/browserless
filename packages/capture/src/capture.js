@@ -8,7 +8,7 @@ const path = require('path')
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
 
-const { INTERNAL_FRAME_SIZE, MIME_TYPES_BY_TYPE, NOOP, TAB_QUERY } = require('./constants')
+const { INTERNAL_FRAME_SIZE, MIME_TYPES_BY_TYPE, NOOP } = require('./constants')
 
 let currentIndex = 0
 const defaultLock = withLock()
@@ -160,7 +160,7 @@ const getOpts = (value, defaultValue, name) => {
 }
 
 module.exports = async (page, opts, viewport) => {
-  const { path: outputPath, duration = 3000, audio, video, type, delay } = opts
+  const { path: outputPath, duration = 3000, audio, video, type } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
   const videoOpts = getOpts(video, true, 'video')
@@ -184,7 +184,6 @@ module.exports = async (page, opts, viewport) => {
 
   let worker
   let workerPromise
-  let extensionReadyPromise
   let wss
   let port
   let recordingPromise
@@ -197,43 +196,22 @@ module.exports = async (page, opts, viewport) => {
     ;({ wss, port } = await createWebSocketServer())
     worker = await workerPromise
 
-    extensionReadyPromise = extension.assertExtensionLoaded(worker)
     recordingPromise = createRecordingSession({ wss, index })
 
     await lock(async () => {
-      await page.bringToFront()
-
-      const tab = await extension.getTab({
-        worker,
-        query: TAB_QUERY,
-        currentUrl: page.url()
-      })
-
+      const tab = await extension.getTab({ worker })
       if (!tab) throw new Error('Cannot find the active tab.')
-
-      await extension.activateTab({ worker, tabId: tab.id })
-
-      const alignedTab = await extension.alignTabToViewport({
-        page,
-        worker,
-        tab,
-        viewport
-      })
-
-      await extensionReadyPromise
-      await extension.invoke({ page })
 
       await extension.startRecording({
         extension: worker,
         settings: {
           index,
           port,
-          tabId: alignedTab.id,
+          tabId: tab.id,
           video: videoOpts.enabled,
           audio: audioOpts.enabled,
           frameSize: INTERNAL_FRAME_SIZE,
           mimeType: streamMimeType,
-          delay,
           videoConstraints: resolvedVideoConstraints,
           audioConstraints: audioOpts.constraints
         }
@@ -267,8 +245,6 @@ module.exports = async (page, opts, viewport) => {
     } else {
       await stopPromise
     }
-
-    await extensionReadyPromise?.catch(NOOP)
 
     const closeTasks = [closeServer(wss)]
 

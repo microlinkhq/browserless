@@ -3,6 +3,7 @@
 const path = require('path')
 
 const EXTENSION_ID = 'jjndjgheafjngoipoacpjgeicjeomjli'
+
 const EXTENSION_PATH = path.join(__dirname, '..', 'extension')
 
 const MIME_TYPES_BY_TYPE = Object.freeze({
@@ -23,7 +24,6 @@ const MIME_TYPES_BY_TYPE = Object.freeze({
 })
 
 const TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
-const TAB_QUERY = Object.freeze({ active: true })
 const INTERNAL_FRAME_SIZE = 250
 const NOOP = () => {}
 
@@ -32,7 +32,6 @@ module.exports = {
   EXTENSION_PATH,
   MIME_TYPES_BY_TYPE,
   TYPES,
-  TAB_QUERY,
   INTERNAL_FRAME_SIZE,
   NOOP
 }

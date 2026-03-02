@@ -3,17 +3,6 @@
   "version": "0.1.0",
   "key": "ackedhmjjinfocdcekpnbdocpmiffaac",
   "manifest_version": 3,
-  "permissions": ["activeTab", "tabs", "tabCapture", "storage", "scripting", "sockets.udp", "sockets.tcp", "offscreen"],
-  "host_permissions": ["*://*/*", "<all_urls>", "https://*/*", "http://*/*"],
-  "action": { "default_title": "Browserless Capture" },
-  "background": { "service_worker": "background.js" },
-  "commands": {
-    "invoke-action": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+Y",
-        "mac": "Command+Shift+Y"
-      },
-      "description": "Invoke extension for current tab"
-    }
-  }
+  "permissions": ["tabs", "tabCapture", "offscreen"],
+  "background": { "service_worker": "background.js" }
 }

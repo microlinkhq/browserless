@@ -23,7 +23,8 @@ const DEFAULT_DEVICE = Object.freeze({
 
 const createGoto = onCall => {
   const goto = async (page, opts) => {
-    if (typeof onCall === 'function') onCall(page, opts)
+    const result = typeof onCall === 'function' ? await onCall(page, opts) : null
+    if (result && result.device) return result
     return { device: DEFAULT_DEVICE }
   }
 
@@ -87,6 +88,7 @@ const createWorkerBrowser = ({
   let stopCalls = 0
   let workerReady = true
   let onStartRecording
+  let onTabQuery
   const socketsByIndex = new Map()
 
   const worker = {
@@ -100,7 +102,10 @@ const createWorkerBrowser = ({
         return workerReady
       }
 
-      if (source.includes('globalThis.chrome.tabs.query')) return hasTab ? [{ id: 1 }] : []
+      if (source.includes('globalThis.chrome.tabs.query')) {
+        if (typeof onTabQuery === 'function') await onTabQuery()
+        return hasTab ? [{ id: 1 }] : []
+      }
       if (source.includes('globalThis.chrome.tabs.update')) return
       if (source.includes('globalThis.chrome.tabs.get')) return { id: arg, width: 800, height: 600 }
 
@@ -135,6 +140,9 @@ const createWorkerBrowser = ({
     },
     __setOnStartRecording: fn => {
       onStartRecording = fn
+    },
+    __setOnTabQuery: fn => {
+      onTabQuery = fn
     },
     __newPageCalls: 0,
     targets () {
@@ -234,6 +242,50 @@ test('capture returns a video buffer', async t => {
     isMobile: false,
     hasTouch: false,
     isLandscape: false
+  })
+})
+
+test('uses effective page viewport after goto', async t => {
+  const createCapture = loadCapture()
+  let startRecordingPayload
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
+
+  const capture = createCapture({
+    goto: createGoto(async () => {
+      return {
+        device: {
+          ...DEFAULT_DEVICE,
+          viewport: {
+            width: 390,
+            height: 844,
+            deviceScaleFactor: 3,
+            isMobile: true,
+            hasTouch: true,
+            isLandscape: false
+          }
+        }
+      }
+    })
+  })
+
+  await capture(page)('https://example.com', {
+    duration: 20,
+    audio: false,
+    video: true
+  })
+
+  t.deepEqual(startRecordingPayload.videoConstraints, {
+    mandatory: {
+      minWidth: 1170,
+      minHeight: 2532,
+      maxWidth: 1170,
+      maxHeight: 2532
+    }
   })
 })
 
@@ -427,22 +479,22 @@ test('serializes setup when captures share the same browser', async t => {
   const browser = createWorkerBrowser({ chunks: [Buffer.from('shared')] })
   const enteredFirst = createDeferred()
   const releaseFirst = createDeferred()
-  let secondBringToFrontCalls = 0
+  let tabQueries = 0
+  let secondTabQueryCalls = 0
 
-  const { page: firstPage } = createFixture({
-    browser,
-    bringToFront: async () => {
+  browser.__setOnTabQuery(async () => {
+    tabQueries++
+    if (tabQueries === 1) {
       enteredFirst.resolve()
       await releaseFirst.promise
+      return
     }
+    secondTabQueryCalls++
   })
 
-  const { page: secondPage } = createFixture({
-    browser,
-    bringToFront: async () => {
-      secondBringToFrontCalls++
-    }
-  })
+  const { page: firstPage } = createFixture({ browser })
+
+  const { page: secondPage } = createFixture({ browser })
 
   const capture = createCapture({ goto: createGoto() })
 
@@ -460,7 +512,7 @@ test('serializes setup when captures share the same browser', async t => {
     video: true
   })
 
-  const secondEnteredBeforeRelease = await waitUntil(() => secondBringToFrontCalls > 0, {
+  const secondEnteredBeforeRelease = await waitUntil(() => secondTabQueryCalls > 0, {
     timeout: 100
   })
   t.false(secondEnteredBeforeRelease)
@@ -470,28 +522,32 @@ test('serializes setup when captures share the same browser', async t => {
   const [firstBuffer, secondBuffer] = await Promise.all([firstTask, secondTask])
   t.true(Buffer.isBuffer(firstBuffer))
   t.true(Buffer.isBuffer(secondBuffer))
-  t.is(secondBringToFrontCalls, 1)
+  t.is(secondTabQueryCalls, 1)
 })
 
 test('allows setup in parallel when captures use different browsers', async t => {
   const createCapture = loadCapture()
   const enteredFirst = createDeferred()
   const releaseFirst = createDeferred()
-  let secondBringToFrontCalls = 0
+  let secondTabQueryCalls = 0
+
+  const firstBrowser = createWorkerBrowser({ chunks: [Buffer.from('first')] })
+  firstBrowser.__setOnTabQuery(async () => {
+    enteredFirst.resolve()
+    await releaseFirst.promise
+  })
+
+  const secondBrowser = createWorkerBrowser({ chunks: [Buffer.from('second')] })
+  secondBrowser.__setOnTabQuery(async () => {
+    secondTabQueryCalls++
+  })
 
   const { page: firstPage } = createFixture({
-    browser: createWorkerBrowser({ chunks: [Buffer.from('first')] }),
-    bringToFront: async () => {
-      enteredFirst.resolve()
-      await releaseFirst.promise
-    }
+    browser: firstBrowser
   })
 
   const { page: secondPage } = createFixture({
-    browser: createWorkerBrowser({ chunks: [Buffer.from('second')] }),
-    bringToFront: async () => {
-      secondBringToFrontCalls++
-    }
+    browser: secondBrowser
   })
 
   const capture = createCapture({ goto: createGoto() })
@@ -510,7 +566,7 @@ test('allows setup in parallel when captures use different browsers', async t =>
     video: true
   })
 
-  const secondEnteredBeforeRelease = await waitUntil(() => secondBringToFrontCalls > 0)
+  const secondEnteredBeforeRelease = await waitUntil(() => secondTabQueryCalls > 0)
   t.true(secondEnteredBeforeRelease)
 
   releaseFirst.resolve()

@@ -76,7 +76,6 @@ const START_RECORDING = async ({
   if (!streamId) throw new Error('Missing tab media stream id for recording session.')
 
   const client = new WebSocket(`ws://localhost:${port}/?index=${index}`, [])
-  await waitForSocketOpen(client)
 
   let audioStreamConstraints = false
   let videoStreamConstraints = false
@@ -95,16 +94,27 @@ const START_RECORDING = async ({
     })
   }
 
-  const stream = await navigator.mediaDevices.getUserMedia({
+  const mediaStreamPromise = navigator.mediaDevices.getUserMedia({
     audio: audioStreamConstraints,
     video: videoStreamConstraints
   })
 
-  const recorderOptions = {
-    mimeType
+  let stream
+  try {
+    ;[stream] = await Promise.all([mediaStreamPromise, waitForSocketOpen(client)])
+  } catch (error) {
+    mediaStreamPromise
+      .then(openedStream => openedStream.getTracks().forEach(track => track.stop()))
+      .catch(() => {})
+
+    if (client.readyState === WebSocket.CONNECTING || client.readyState === WebSocket.OPEN) {
+      client.close()
+    }
+
+    throw error
   }
 
-  const recorder = new MediaRecorder(stream, recorderOptions)
+  const recorder = new MediaRecorder(stream, { mimeType })
 
   const pending = new Set()
 
