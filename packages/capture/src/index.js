@@ -4,18 +4,19 @@ const debug = require('debug-logfmt')('browserless:capture')
 const createGoto = require('@browserless/goto')
 
 const { EXTENSION_ID, EXTENSION_PATH, TYPES } = require('./constants')
-const capture = require('./capture')
+const runCapture = require('./capture')
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
-  return page =>
-    async (url, opts = {}) => {
+  return function capture (page) {
+    return async (url, opts = {}) => {
       const duration = debug.duration({ url }, opts)
       const { device } = await goto(page, { ...opts, url })
-      const result = await capture(page, opts, device.viewport)
+      const result = await runCapture(page, opts, device.viewport)
       duration.info()
       return result
     }
+  }
 }
 
 module.exports.extensionPath = EXTENSION_PATH
