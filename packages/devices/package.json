@@ -19,15 +19,15 @@
   },
   "keywords": [
     "browserless",
+    "desktop",
     "devices",
     "emulation",
     "mobile",
-    "tablet",
-    "desktop",
-    "viewport",
-    "user-agent",
     "responsive",
-    "testing"
+    "tablet",
+    "testing",
+    "user-agent",
+    "viewport"
   ],
   "dependencies": {
     "didyoumean3": "~1.2.5",

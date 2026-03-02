@@ -18,18 +18,18 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browserless",
-    "screencast",
-    "video",
-    "gif",
-    "recording",
-    "headless",
-    "chrome",
-    "puppeteer",
-    "frame-capture",
     "automation",
+    "browserless",
+    "chrome",
     "demo",
-    "tutorial"
+    "frame-capture",
+    "gif",
+    "headless",
+    "puppeteer",
+    "recording",
+    "screencast",
+    "tutorial",
+    "video"
   ],
   "dependencies": {
     "null-prototype-object": "~1.2.5"

@@ -20,18 +20,18 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
+    "automation",
     "browserless",
+    "chrome",
     "cli",
     "command-line",
     "headless",
-    "chrome",
+    "pdf",
     "puppeteer",
     "screenshot",
-    "pdf",
-    "automation",
-    "web-scraping",
     "terminal",
-    "tool"
+    "tool",
+    "web-scraping"
   ],
   "dependencies": {
     "@browserless/capture": "^10.11.0",

@@ -22,16 +22,16 @@
     "url": "https://github.com/microlinkhq/browserless/issues"
   },
   "keywords": [
-    "browserless",
-    "testing",
-    "test-suite",
-    "headless",
-    "chrome",
-    "puppeteer",
     "automation",
+    "browserless",
+    "chrome",
+    "e2e",
+    "headless",
+    "puppeteer",
     "screenshot-testing",
-    "visual-testing",
-    "e2e"
+    "test-suite",
+    "testing",
+    "visual-testing"
   ],
   "devDependencies": {
     "async-listen": "latest",
@@ -40,7 +40,7 @@
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "pdf-parse": "latest",
-    "puppeteer": "24.36.0",
+    "puppeteer": "24.37.5",
     "signal-exit": "latest",
     "temperment": "latest"
   },
