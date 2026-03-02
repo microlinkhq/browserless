@@ -3,10 +3,13 @@
 const { EXTENSION_ID, EXTENSION_PATH } = require('./constants')
 
 const BACKGROUND_PATH = `chrome-extension://${EXTENSION_ID}/background.js`
+const workerRuntimes = new WeakMap()
+const openingWorkerRuntimes = new WeakMap()
+
+const isCacheableBrowser = browser =>
+  browser && (typeof browser === 'object' || typeof browser === 'function')
 
 const createWorkerRuntime = browser => {
-  let isClosed = false
-
   const findWorkerTarget = () => {
     if (!browser || typeof browser.targets !== 'function') return
     return browser
@@ -15,8 +18,6 @@ const createWorkerRuntime = browser => {
   }
 
   const getWorker = async () => {
-    if (isClosed) return
-
     let target = findWorkerTarget()
 
     if (!target && typeof browser.waitForTarget === 'function') {
@@ -41,31 +42,67 @@ const createWorkerRuntime = browser => {
   }
 
   return {
-    evaluate,
-    isClosed: () => isClosed,
-    close: async () => {
-      isClosed = true
-    }
+    evaluate
   }
 }
 
 const open = async ({ browser }) => {
-  const workerRuntime = createWorkerRuntime(browser)
-  const isWorkerReady = await workerRuntime
-    .evaluate(
-      () =>
-        typeof globalThis.START_RECORDING === 'function' &&
-        typeof globalThis.STOP_RECORDING === 'function'
-    )
-    .catch(() => false)
+  if (isCacheableBrowser(browser)) {
+    const cachedRuntime = workerRuntimes.get(browser)
+    if (cachedRuntime) return cachedRuntime
 
-  if (!isWorkerReady) {
-    throw new Error(
-      `Unable to connect to capture extension service worker. Launch Chromium with extension support using \`${EXTENSION_PATH}\`.`
-    )
+    const cachedOpening = openingWorkerRuntimes.get(browser)
+    if (cachedOpening) return cachedOpening
   }
 
-  return workerRuntime
+  const openPromise = (async () => {
+    const workerRuntime = createWorkerRuntime(browser)
+    const isWorkerReady = await workerRuntime
+      .evaluate(
+        () =>
+          typeof globalThis.START_RECORDING === 'function' &&
+          typeof globalThis.STOP_RECORDING === 'function'
+      )
+      .catch(() => false)
+
+    if (!isWorkerReady) {
+      throw new Error(
+        `Unable to connect to capture extension service worker. Launch Chromium with extension support using \`${EXTENSION_PATH}\`.`
+      )
+    }
+
+    if (isCacheableBrowser(browser)) workerRuntimes.set(browser, workerRuntime)
+    return workerRuntime
+  })()
+
+  if (isCacheableBrowser(browser)) {
+    openingWorkerRuntimes.set(browser, openPromise)
+  }
+
+  try {
+    return await openPromise
+  } finally {
+    if (isCacheableBrowser(browser)) openingWorkerRuntimes.delete(browser)
+  }
+}
+
+const getTabIdFromTargetId = async ({ worker, targetId }) => {
+  try {
+    return worker.evaluate(async targetId => {
+      if (
+        !globalThis.chrome.debugger ||
+        typeof globalThis.chrome.debugger.getTargets !== 'function'
+      ) {
+        return null
+      }
+
+      const targets = await globalThis.chrome.debugger.getTargets()
+      const target = targets.find(target => target && target.id === targetId)
+      return Number.isInteger(target && target.tabId) ? target.tabId : null
+    }, targetId)
+  } catch (error) {
+    return null
+  }
 }
 
 const startRecording = async ({ extension, settings }) =>
@@ -76,6 +113,7 @@ const stopRecording = async ({ extension, index }) =>
 
 module.exports = {
   open,
+  getTabIdFromTargetId,
   startRecording,
   stopRecording
 }

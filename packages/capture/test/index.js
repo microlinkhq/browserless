@@ -82,7 +82,8 @@ const loadCapture = () => {
 
 const createWorkerBrowser = ({
   extensionId = EXTENSION_ID,
-  chunks = [Buffer.from('a'), Buffer.from('b')]
+  chunks = [Buffer.from('a'), Buffer.from('b')],
+  hasTab = true
 } = {}) => {
   let stopCalls = 0
   let workerReady = true
@@ -98,6 +99,12 @@ const createWorkerBrowser = ({
         source.includes('typeof globalThis.STOP_RECORDING')
       ) {
         return workerReady
+      }
+
+      if (source.includes('globalThis.chrome.debugger.getTargets')) {
+        if (!hasTab) return null
+        if (arg === 'target-2') return 2
+        return 1
       }
 
       if (source.includes('globalThis.START_RECORDING(settings)')) {
@@ -145,8 +152,9 @@ const createWorkerBrowser = ({
 
 const createFixture = ({
   chunks = [Buffer.from('a'), Buffer.from('b')],
-  browser = createWorkerBrowser({ chunks }),
-  bringToFront = async () => {}
+  hasTab = true,
+  browser = createWorkerBrowser({ chunks, hasTab }),
+  targetId = 'target-1'
 } = {}) => {
   const page = {
     _viewport: {
@@ -157,6 +165,7 @@ const createFixture = ({
       hasTouch: false,
       isLandscape: false
     },
+    _targetId: targetId,
     browser () {
       return browser
     },
@@ -172,11 +181,20 @@ const createFixture = ({
     url () {
       return 'https://example.com/'
     },
-    bringToFront,
-    keyboard: {
-      async down () {},
-      async up () {},
-      async press () {}
+    target () {
+      return {
+        createCDPSession: async () => ({
+          send: async method =>
+            method === 'Target.getTargetInfo'
+              ? {
+                  targetInfo: {
+                    targetId: page._targetId
+                  }
+                }
+              : null,
+          detach: async () => {}
+        })
+      }
     }
   }
 
@@ -313,6 +331,7 @@ test('supports `type: webm`', async t => {
   await capture(page)('https://example.com', { duration: 20, type: 'webm' })
 
   t.is(startRecordingPayload.mimeType, 'video/webm')
+  t.is(startRecordingPayload.tabId, 1)
 })
 
 test('supports `type: mp4`', async t => {
@@ -476,7 +495,7 @@ test('uses service worker runtime without opening extension tab', async t => {
   t.true(browser.__stopCalls() > 0)
 })
 
-test('serializes setup when captures share the same browser', async t => {
+test('allows setup in parallel when captures share the same browser', async t => {
   const createCapture = loadCapture()
   const browser = createWorkerBrowser({ chunks: [Buffer.from('shared')] })
   const enteredFirst = createDeferred()
@@ -494,9 +513,9 @@ test('serializes setup when captures share the same browser', async t => {
     secondStartRecordingCalls++
   })
 
-  const { page: firstPage } = createFixture({ browser })
+  const { page: firstPage } = createFixture({ browser, targetId: 'target-1' })
 
-  const { page: secondPage } = createFixture({ browser })
+  const { page: secondPage } = createFixture({ browser, targetId: 'target-2' })
 
   const capture = createCapture({ goto: createGoto() })
 
@@ -514,10 +533,8 @@ test('serializes setup when captures share the same browser', async t => {
     video: true
   })
 
-  const secondEnteredBeforeRelease = await waitUntil(() => secondStartRecordingCalls > 0, {
-    timeout: 100
-  })
-  t.false(secondEnteredBeforeRelease)
+  const secondEnteredBeforeRelease = await waitUntil(() => secondStartRecordingCalls > 0)
+  t.true(secondEnteredBeforeRelease)
 
   releaseFirst.resolve()
 

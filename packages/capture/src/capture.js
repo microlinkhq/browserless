@@ -1,7 +1,6 @@
 'use strict'
 
 const { setTimeout } = require('timers/promises')
-const { withLock } = require('superlock')
 const fs = require('fs/promises')
 
 const { closeServer, createWebSocketServer } = require('./util')
@@ -10,23 +9,6 @@ const extension = require('./extension')
 const { INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
 
 let currentIndex = 0
-const defaultLock = withLock()
-const browserLocks = new WeakMap()
-
-const getBrowserLock = browser => {
-  if (!browser || (typeof browser !== 'object' && typeof browser !== 'function')) {
-    return defaultLock
-  }
-
-  let lock = browserLocks.get(browser)
-
-  if (!lock) {
-    lock = withLock()
-    browserLocks.set(browser, lock)
-  }
-
-  return lock
-}
 
 const createRecordingSession = ({ wss, index }) => {
   const { promise, resolve, reject } = Promise.withResolvers()
@@ -143,6 +125,23 @@ const getOpts = (value, defaultValue, name) => {
   throw new TypeError(`Expected \`${name}\` to be a boolean or an object`)
 }
 
+const getPageTargetId = async page => {
+  if (!page || typeof page.target !== 'function') return null
+
+  const target = page.target()
+  if (!target || typeof target.createCDPSession !== 'function') return null
+
+  const session = await target.createCDPSession().catch(() => null)
+  if (!session) return null
+
+  try {
+    const result = await session.send('Target.getTargetInfo').catch(() => null)
+    return result && result.targetInfo && result.targetInfo.targetId
+  } finally {
+    await session.detach().catch(() => null)
+  }
+}
+
 module.exports = async (page, opts, viewport) => {
   const { path: outputPath, duration = 3000, audio, video, type } = opts
 
@@ -154,7 +153,6 @@ module.exports = async (page, opts, viewport) => {
   }
 
   const browser = page.browser()
-  const lock = getBrowserLock(browser)
   const index = currentIndex++
 
   const streamMimeType = getMimeType({
@@ -173,30 +171,41 @@ module.exports = async (page, opts, viewport) => {
   let isRecordingStarted = false
   let captureError
   let buffer = Buffer.alloc(0)
+  let pageTargetId
 
   try {
+    pageTargetId = await getPageTargetId(page)
+    if (!pageTargetId) throw new Error('Cannot resolve page target id.')
+
     workerPromise = extension.open({ browser })
     ;({ wss, port } = await createWebSocketServer())
     worker = await workerPromise
 
     recordingPromise = createRecordingSession({ wss, index })
 
-    await lock(async () => {
-      await extension.startRecording({
-        extension: worker,
-        settings: {
-          index,
-          port,
-          video: videoOpts.enabled,
-          audio: audioOpts.enabled,
-          frameSize: INTERNAL_FRAME_SIZE,
-          mimeType: streamMimeType,
-          videoConstraints: resolvedVideoConstraints,
-          audioConstraints: audioOpts.constraints
-        }
-      })
-      isRecordingStarted = true
+    const tabId = await extension.getTabIdFromTargetId({
+      worker,
+      targetId: pageTargetId
     })
+    if (!Number.isInteger(tabId)) {
+      throw new Error('Cannot resolve tab id for the current page target.')
+    }
+
+    await extension.startRecording({
+      extension: worker,
+      settings: {
+        index,
+        port,
+        tabId,
+        video: videoOpts.enabled,
+        audio: audioOpts.enabled,
+        frameSize: INTERNAL_FRAME_SIZE,
+        mimeType: streamMimeType,
+        videoConstraints: resolvedVideoConstraints,
+        audioConstraints: audioOpts.constraints
+      }
+    })
+    isRecordingStarted = true
     await setTimeout(duration)
   } catch (error) {
     if (!worker && workerPromise) {
@@ -204,8 +213,7 @@ module.exports = async (page, opts, viewport) => {
     }
     captureError = error
   } finally {
-    const isWorkerOpen = worker && typeof worker.isClosed === 'function' && !worker.isClosed()
-    const stopPromise = isWorkerOpen
+    const stopPromise = worker
       ? extension.stopRecording({ extension: worker, index }).catch(NOOP)
       : Promise.resolve()
 
@@ -225,13 +233,7 @@ module.exports = async (page, opts, viewport) => {
       await stopPromise
     }
 
-    const closeTasks = [closeServer(wss)]
-
-    if (worker && typeof worker.isClosed === 'function' && !worker.isClosed()) {
-      closeTasks.push(worker.close().catch(NOOP))
-    }
-
-    await Promise.all(closeTasks)
+    await closeServer(wss)
   }
 
   if (captureError) throw captureError

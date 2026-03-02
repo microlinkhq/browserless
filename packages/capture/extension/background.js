@@ -3,6 +3,9 @@
 const MESSAGE_KEY = '__browserless_capture__'
 const OFFSCREEN_PATH = 'offscreen.html'
 const MESSAGE_TIMEOUT = 10_000
+const OFFSCREEN_ALREADY_EXISTS_RE = /already exists|single offscreen document/i
+
+let offscreenDocumentPromise
 
 const sendToOffscreen = payload =>
   new Promise((resolve, reject) => {
@@ -34,9 +37,14 @@ const sendToOffscreen = payload =>
     )
   })
 
-const getMediaStreamId = () =>
+const getMediaStreamId = tabId =>
   new Promise((resolve, reject) => {
-    chrome.tabCapture.getMediaStreamId({}, streamId => {
+    if (!Number.isInteger(tabId)) {
+      reject(new TypeError('Missing tab id for recording session.'))
+      return
+    }
+
+    chrome.tabCapture.getMediaStreamId({ targetTabId: tabId }, streamId => {
       if (chrome.runtime.lastError || !streamId) {
         return reject(
           new Error(chrome.runtime.lastError?.message || 'Unable to obtain tab media stream id')
@@ -47,32 +55,53 @@ const getMediaStreamId = () =>
     })
   })
 
+const getOffscreenContexts = async offscreenUrl => {
+  if (typeof chrome.runtime.getContexts !== 'function') return []
+  return chrome.runtime
+    .getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [offscreenUrl]
+    })
+    .catch(() => [])
+}
+
 const ensureOffscreenDocument = async () => {
   if (!chrome.offscreen || typeof chrome.offscreen.createDocument !== 'function') return
+  if (offscreenDocumentPromise) return offscreenDocumentPromise
 
-  const offscreenUrl = chrome.runtime.getURL(OFFSCREEN_PATH)
-  let contexts = []
+  offscreenDocumentPromise = (async () => {
+    const offscreenUrl = chrome.runtime.getURL(OFFSCREEN_PATH)
+    const contexts = await getOffscreenContexts(offscreenUrl)
+    if (contexts.length > 0) return
 
-  if (typeof chrome.runtime.getContexts === 'function') {
-    contexts = await chrome.runtime
-      .getContexts({
-        contextTypes: ['OFFSCREEN_DOCUMENT'],
-        documentUrls: [offscreenUrl]
+    try {
+      await chrome.offscreen.createDocument({
+        url: OFFSCREEN_PATH,
+        reasons: ['USER_MEDIA'],
+        justification: 'Record tab media without opening a visible extension tab.'
       })
-      .catch(() => [])
+    } catch (error) {
+      if (OFFSCREEN_ALREADY_EXISTS_RE.test(error?.message || '')) return
+
+      const refreshedContexts = await getOffscreenContexts(offscreenUrl)
+      if (refreshedContexts.length > 0) return
+
+      throw error
+    }
+  })()
+
+  try {
+    await offscreenDocumentPromise
+  } finally {
+    offscreenDocumentPromise = undefined
   }
-
-  if (contexts.length > 0) return
-
-  await chrome.offscreen.createDocument({
-    url: OFFSCREEN_PATH,
-    reasons: ['USER_MEDIA'],
-    justification: 'Record tab media without opening a visible extension tab.'
-  })
 }
 
 globalThis.START_RECORDING = async settings => {
-  const [streamId] = await Promise.all([getMediaStreamId(), ensureOffscreenDocument()])
+  const [streamId] = await Promise.all([
+    getMediaStreamId(settings && settings.tabId),
+    ensureOffscreenDocument()
+  ])
   return sendToOffscreen({
     action: 'START_RECORDING',
     settings: { ...settings, streamId }
