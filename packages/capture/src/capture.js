@@ -182,6 +182,7 @@ module.exports = async (page, opts, viewport) => {
 
   let worker
   let workerPromise
+  let wsServerPromise
   let wss
   let port
   let recordingPromise
@@ -191,12 +192,20 @@ module.exports = async (page, opts, viewport) => {
   let targetId
 
   try {
-    targetId = await runWithDuration('getPageTargetId', () => getTargetId(page))
-    if (!targetId) throw new Error('Cannot resolve page target id.')
-
+    const targetIdPromise = runWithDuration('getPageTargetId', () => getTargetId(page))
     workerPromise = runWithDuration('extension.open', () => extension.open({ browser }))
-    ;({ wss, port } = await runWithDuration('createWebSocketServer', () => createWebSocketServer()))
-    worker = await runWithDuration('awaitWorker', () => workerPromise)
+    wsServerPromise = runWithDuration('createWebSocketServer', () => createWebSocketServer())
+
+    const [_targetId, _worker, wsServer] = await Promise.all([
+      targetIdPromise,
+      workerPromise,
+      wsServerPromise
+    ])
+
+    targetId = _targetId
+    worker = _worker
+    ;({ wss, port } = wsServer)
+    if (!targetId) throw new Error('Cannot resolve page target id.')
 
     recordingPromise = createRecordingSession({ wss, index })
 
@@ -237,6 +246,12 @@ module.exports = async (page, opts, viewport) => {
   } catch (error) {
     if (!worker && workerPromise) {
       worker = await runWithDuration('awaitWorkerAfterError', () => workerPromise.catch(NOOP))
+    }
+    if (!wss && wsServerPromise) {
+      ;({ wss, port } =
+        (await runWithDuration('awaitWebSocketServerAfterError', () =>
+          wsServerPromise.catch(NOOP)
+        )) || {})
     }
     captureError = error
   } finally {
