@@ -23,18 +23,34 @@ npm install @browserless/capture --save
 const createBrowser = require('browserless')
 const createCapture = require('@browserless/capture')
 
-const browser = createBrowser({
-  headless: 'new',
-  ignoreDefaultArgs: ['--disable-extensions'],
-  args: [
-    `--allowlisted-extension-id=${createCapture.extensionId}`,
-    `--disable-extensions-except=${createCapture.extensionPath}`,
-    `--load-extension=${createCapture.extensionPath}`
-  ]
-})
+const withCaptureExtension = (launchOpts = {}) => {
+  const ignoreDefaultArgs = launchOpts.ignoreDefaultArgs
+
+  return {
+    ...launchOpts,
+    args: [
+      ...(launchOpts.args || []),
+      `--allowlisted-extension-id=${createCapture.extensionId}`,
+      `--disable-extensions-except=${createCapture.extensionPath}`,
+      `--load-extension=${createCapture.extensionPath}`
+    ],
+    ignoreDefaultArgs:
+      ignoreDefaultArgs === true
+        ? true
+        : [
+            ...new Set([
+              ...(Array.isArray(ignoreDefaultArgs) ? ignoreDefaultArgs : []),
+              '--disable-extensions'
+            ])
+          ]
+  }
+}
+
+const browser = createBrowser(withCaptureExtension({ headless: 'new' }))
 
 const browserless = await browser.createContext()
-const page = await browserless.page()
+const puppeteerBrowser = await browserless.browser()
+const page = await puppeteerBrowser.defaultBrowserContext().newPage()
 const capture = createCapture({ goto: browserless.goto })
 
 const video = await capture(page)('https://example.com', {
@@ -42,7 +58,18 @@ const video = await capture(page)('https://example.com', {
   type: 'mp4',
   path: '/tmp/demo.mp4'
 })
+
+await page.close()
+await browserless.destroyContext()
+await browser.close()
 ```
+
+`browserless` core does not inject capture extension flags automatically.
+`@browserless/capture` requires:
+
+- Loading the bundled extension using `--allowlisted-extension-id`, `--disable-extensions-except`, and `--load-extension`.
+- Ensuring Chromium default arg `--disable-extensions` is ignored.
+- Creating the captured page from `defaultBrowserContext()` (not an incognito context).
 
 API shape is intentionally simple, similar to `page.screenshot()`/`page.pdf()`:
 

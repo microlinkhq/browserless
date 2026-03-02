@@ -46,7 +46,6 @@ This package integrates and re-exports functionality from other `@browserless/*`
 | `@browserless/goto` | Page navigation with smart waiting strategies, ad blocking, and evasion techniques |
 | `@browserless/screenshot` | Screenshot capture with overlays, device emulation, and code highlighting |
 | `@browserless/pdf` | PDF generation with customizable margins and scaling |
-| `@browserless/capture` | Tab recording via extension + `tabCapture` (uses default browser context) |
 | `@browserless/errors` | Standardized error handling and timeout errors |
 
 ## License

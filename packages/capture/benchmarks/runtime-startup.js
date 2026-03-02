@@ -2,6 +2,8 @@
 
 const { performance } = require('perf_hooks')
 const createBrowser = require('../../browserless/src')
+const createCapture = require('..')
+const { defaultArgs } = createBrowser.driver
 
 const ITERATIONS = Number(process.env.ITERATIONS || 12)
 const WARMUP = Number(process.env.WARMUP || 2)
@@ -40,11 +42,15 @@ const summarize = (values, { opsPerSample = 1 } = {}) => {
 const toMs = value => Number(value.toFixed(2))
 
 const runCapture = async ({ browserless, duration, url }) => {
+  const capture = createCapture({ goto: browserless.goto })
+
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
     const startedAt = performance.now()
+    const browser = await browserless.browser()
+    const page = await browser.defaultBrowserContext().newPage()
 
     try {
-      await browserless.capture(url, {
+      await capture(page)(url, {
         duration,
         audio: false,
         video: true,
@@ -57,6 +63,8 @@ const runCapture = async ({ browserless, duration, url }) => {
         typeof error.message === 'string' &&
         error.message.includes('No video data was captured')
       if (!isNoData || attempt === RETRIES) throw error
+    } finally {
+      if (!page.isClosed()) await page.close().catch(() => {})
     }
   }
 }
@@ -119,7 +127,14 @@ const main = async () => {
 
   const browser = createBrowser({
     headless: 'new',
-    timeout: CAPTURE_TIMEOUT
+    timeout: CAPTURE_TIMEOUT,
+    ignoreDefaultArgs: ['--disable-extensions'],
+    args: [
+      ...defaultArgs,
+      `--allowlisted-extension-id=${createCapture.extensionId}`,
+      `--disable-extensions-except=${createCapture.extensionPath}`,
+      `--load-extension=${createCapture.extensionPath}`
+    ]
   })
   const browserless = await browser.createContext()
 

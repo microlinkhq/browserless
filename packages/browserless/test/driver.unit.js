@@ -1,7 +1,6 @@
 'use strict'
 
 const test = require('ava')
-const createCapture = require('@browserless/capture')
 
 const driver = require('../src/driver')
 
@@ -16,7 +15,7 @@ const createFakePuppeteer = onLaunch => ({
   }
 })
 
-test('spawn adds capture extension launch args by default', async t => {
+test('spawn does not add capture extension launch args by default', async t => {
   let launchOptions
   const puppeteer = createFakePuppeteer(options => {
     launchOptions = options
@@ -25,13 +24,13 @@ test('spawn adds capture extension launch args by default', async t => {
   await driver.spawn({ puppeteer })
 
   t.truthy(launchOptions)
-  t.true(launchOptions.args.includes(`--allowlisted-extension-id=${createCapture.extensionId}`))
-  t.true(launchOptions.args.includes(`--disable-extensions-except=${createCapture.extensionPath}`))
-  t.true(launchOptions.args.includes(`--load-extension=${createCapture.extensionPath}`))
-  t.deepEqual(launchOptions.ignoreDefaultArgs, ['--disable-extensions'])
+  t.false(launchOptions.args.some(arg => arg.startsWith('--allowlisted-extension-id=')))
+  t.false(launchOptions.args.some(arg => arg.startsWith('--disable-extensions-except=')))
+  t.false(launchOptions.args.some(arg => arg.startsWith('--load-extension=')))
+  t.is(launchOptions.ignoreDefaultArgs, undefined)
 })
 
-test('spawn merges user ignoreDefaultArgs with extension requirement', async t => {
+test('spawn keeps user ignoreDefaultArgs as is', async t => {
   let launchOptions
   const puppeteer = createFakePuppeteer(options => {
     launchOptions = options
@@ -39,7 +38,7 @@ test('spawn merges user ignoreDefaultArgs with extension requirement', async t =
 
   await driver.spawn({ puppeteer, ignoreDefaultArgs: ['--foo'] })
 
-  t.deepEqual(launchOptions.ignoreDefaultArgs, ['--foo', '--disable-extensions'])
+  t.deepEqual(launchOptions.ignoreDefaultArgs, ['--foo'])
 })
 
 test('spawn preserves ignoreDefaultArgs=true', async t => {
