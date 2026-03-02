@@ -3,12 +3,11 @@
 const { setTimeout } = require('timers/promises')
 const { withLock } = require('superlock')
 const fs = require('fs/promises')
-const path = require('path')
 
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
 
-const { INTERNAL_FRAME_SIZE, MIME_TYPES_BY_TYPE, NOOP } = require('./constants')
+const { INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
 
 let currentIndex = 0
 const defaultLock = withLock()
@@ -64,49 +63,34 @@ const createRecordingSession = ({ wss, index }) => {
   return promise
 }
 
-const getTypeFromPath = outputPath => {
-  if (!outputPath) return undefined
+const MIME_TYPES_BY_TYPE = Object.freeze({
+  webm: Object.freeze({
+    video: 'video/webm',
+    audio: 'audio/webm'
+  }),
+  mp4: Object.freeze({
+    video: 'video/mp4',
+    audio: 'audio/mp4'
+  })
+})
 
-  const extension = path.extname(outputPath).toLowerCase().slice(1)
+const SUPPORTED_TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
 
-  if (extension === 'm4a') return 'mp4'
-  if (extension === 'webm' || extension === 'mp4' || extension === 'mkv') return extension
+const getMimeType = ({ type, audio, video }) => {
+  const normalizedType =
+    type === undefined || type === null
+      ? 'webm'
+      : String(type).trim().toLowerCase().replace(/^\./, '')
 
-  return undefined
-}
+  const mimeTypes = MIME_TYPES_BY_TYPE[normalizedType]
 
-const getMimeTypeFromType = ({ type, audio, video }) => {
-  if (!type) return undefined
-
-  const normalizedType = String(type).trim().toLowerCase().replace(/^\./, '')
-  const mappedType = MIME_TYPES_BY_TYPE[normalizedType]
-
-  if (!mappedType) {
+  if (!mimeTypes) {
     throw new TypeError(
-      `Unsupported \`type\` "${type}". Supported types: ${Object.keys(MIME_TYPES_BY_TYPE).join(
-        ', '
-      )}`
+      `Unsupported \`type\` "${type}". Supported types: ${SUPPORTED_TYPES.join(', ')}.`
     )
   }
 
-  if (video && mappedType.video) return mappedType.video
-  if (audio && mappedType.audio) return mappedType.audio
-
-  throw new TypeError(
-    `Unsupported \`type\` "${type}" for the current capture mode (audio=${audio}, video=${video}).`
-  )
-}
-
-const getMimeType = ({ type, path: outputPath, audio, video }) => {
-  const explicitTypeMime = getMimeTypeFromType({ type, audio, video })
-  if (explicitTypeMime) return explicitTypeMime
-
-  const pathTypeMime = getMimeTypeFromType({ type: getTypeFromPath(outputPath), audio, video })
-  if (pathTypeMime) return pathTypeMime
-
-  if (video) return 'video/webm'
-  if (audio) return 'audio/webm'
-  return 'video/webm'
+  return audio && !video ? mimeTypes.audio : mimeTypes.video
 }
 
 const getVideoConstraints = (videoConstraints, viewport) => {
@@ -175,7 +159,6 @@ module.exports = async (page, opts, viewport) => {
 
   const streamMimeType = getMimeType({
     type,
-    path: outputPath,
     audio: audioOpts.enabled,
     video: videoOpts.enabled
   })

@@ -299,7 +299,23 @@ test('injects viewport-based constraints by default', async t => {
   })
 })
 
-test('maps `type` to MediaRecorder mimeType', async t => {
+test('supports `type: webm`', async t => {
+  const createCapture = loadCapture()
+  let startRecordingPayload
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
+
+  const capture = createCapture({ goto: createGoto() })
+  await capture(page)('https://example.com', { duration: 20, type: 'webm' })
+
+  t.is(startRecordingPayload.mimeType, 'video/webm')
+})
+
+test('supports `type: mp4`', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
 
@@ -315,7 +331,7 @@ test('maps `type` to MediaRecorder mimeType', async t => {
   t.is(startRecordingPayload.mimeType, 'video/mp4')
 })
 
-test('ignores `mimeType` option and maps from `type`', async t => {
+test('ignores `mimeType` option and uses webm defaults', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
 
@@ -328,7 +344,6 @@ test('ignores `mimeType` option and maps from `type`', async t => {
   const capture = createCapture({ goto: createGoto() })
   await capture(page)('https://example.com', {
     duration: 20,
-    type: 'webm',
     mimeType: 'video/mp4;codecs=avc1'
   })
 
@@ -425,7 +440,7 @@ test('rejects unsupported type', async t => {
 
   await t.throwsAsync(() => capture(page)('https://example.com', { type: 'avi' }), {
     instanceOf: TypeError,
-    message: /Unsupported `type` "avi"/
+    message: /Supported types: webm, mp4/
   })
 })
 
