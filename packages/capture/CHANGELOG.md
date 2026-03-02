@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.11.0](https://github.com/microlinkhq/browserless/compare/v10.10.3...v10.11.0) (2026-03-02)
+
+### Features
+
+* capture ([#653](https://github.com/microlinkhq/browserless/issues/653)) ([0d7d22e](https://github.com/microlinkhq/browserless/commit/0d7d22e5823aef97843d4d0cf660b3fe4e43492c))
+
 # [10.10.0](https://github.com/microlinkhq/browserless) (2026-02-24)
 
 ### Features
