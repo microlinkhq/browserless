@@ -3,6 +3,7 @@
 const MESSAGE_KEY = '__browserless_capture__'
 const SOCKET_CONNECT_TIMEOUT = 10_000
 const recorders = {}
+const NOOP = () => {}
 
 const toErrorMessage = error => {
   if (typeof error === 'string') return error
@@ -114,7 +115,7 @@ const START_RECORDING = async ({
   } catch (error) {
     mediaStreamPromise
       .then(openedStream => openedStream.getTracks().forEach(track => track.stop()))
-      .catch(() => {})
+      .catch(NOOP)
 
     if (client.readyState === WebSocket.CONNECTING || client.readyState === WebSocket.OPEN) {
       client.close()

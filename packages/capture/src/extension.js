@@ -1,6 +1,6 @@
 'use strict'
 
-const { EXTENSION_ID, EXTENSION_PATH } = require('./constants')
+const { EXTENSION_ID, EXTENSION_PATH, NOOP } = require('./constants')
 
 const BACKGROUND_PATH = `chrome-extension://${EXTENSION_ID}/background.js`
 const workerRuntimes = new WeakMap()
@@ -26,11 +26,11 @@ const createWorkerRuntime = browser => {
           target => target.type() === 'service_worker' && target.url() === BACKGROUND_PATH,
           { timeout: 1000 }
         )
-        .catch(() => null)
+        .catch(NOOP)
     }
 
     if (!target || typeof target.worker !== 'function') return
-    return target.worker().catch(() => null)
+    return target.worker().catch(NOOP)
   }
 
   const evaluate = async (fn, arg) => {
@@ -93,16 +93,14 @@ const getTabIdFromTargetId = async ({ worker, targetId }) => {
         !globalThis.chrome.debugger ||
         typeof globalThis.chrome.debugger.getTargets !== 'function'
       ) {
-        return null
+        return
       }
 
       const targets = await globalThis.chrome.debugger.getTargets()
       const target = targets.find(target => target && target.id === targetId)
-      return Number.isInteger(target && target.tabId) ? target.tabId : null
+      return Number.isInteger(target && target.tabId) ? target.tabId : undefined
     }, targetId)
-  } catch (error) {
-    return null
-  }
+  } catch (_) {}
 }
 
 const startRecording = async ({ extension, settings }) =>

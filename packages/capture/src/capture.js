@@ -2,6 +2,7 @@
 
 const { setTimeout } = require('timers/promises')
 const fs = require('fs/promises')
+const debug = require('debug-logfmt')('browserless:capture')
 
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
@@ -9,6 +10,22 @@ const extension = require('./extension')
 const { INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
 
 let currentIndex = 0
+
+const runWithDuration = async (label, fn, fields) => {
+  const duration = debug.duration(label)
+
+  try {
+    const value = await fn()
+    duration(fields)
+    return value
+  } catch (error) {
+    duration({
+      ...(fields || {}),
+      error: error && error.message
+    })
+    throw error
+  }
+}
 
 const createRecordingSession = ({ wss, index }) => {
   const { promise, resolve, reject } = Promise.withResolvers()
@@ -125,20 +142,20 @@ const getOpts = (value, defaultValue, name) => {
   throw new TypeError(`Expected \`${name}\` to be a boolean or an object`)
 }
 
-const getPageTargetId = async page => {
-  if (!page || typeof page.target !== 'function') return null
+const getTargetId = async page => {
+  if (!page || typeof page.target !== 'function') return
 
   const target = page.target()
-  if (!target || typeof target.createCDPSession !== 'function') return null
+  if (!target || typeof target.createCDPSession !== 'function') return
 
-  const session = await target.createCDPSession().catch(() => null)
-  if (!session) return null
+  const session = await target.createCDPSession().catch(NOOP)
+  if (!session) return
 
   try {
-    const result = await session.send('Target.getTargetInfo').catch(() => null)
+    const result = await session.send('Target.getTargetInfo').catch(NOOP)
     return result && result.targetInfo && result.targetInfo.targetId
   } finally {
-    await session.detach().catch(() => null)
+    await session.detach().catch(NOOP)
   }
 }
 
@@ -171,50 +188,64 @@ module.exports = async (page, opts, viewport) => {
   let isRecordingStarted = false
   let captureError
   let buffer = Buffer.alloc(0)
-  let pageTargetId
+  let targetId
 
   try {
-    pageTargetId = await getPageTargetId(page)
-    if (!pageTargetId) throw new Error('Cannot resolve page target id.')
+    targetId = await runWithDuration('getPageTargetId', () => getTargetId(page))
+    if (!targetId) throw new Error('Cannot resolve page target id.')
 
-    workerPromise = extension.open({ browser })
-    ;({ wss, port } = await createWebSocketServer())
-    worker = await workerPromise
+    workerPromise = runWithDuration('extension.open', () => extension.open({ browser }))
+    ;({ wss, port } = await runWithDuration('createWebSocketServer', () => createWebSocketServer()))
+    worker = await runWithDuration('awaitWorker', () => workerPromise)
 
     recordingPromise = createRecordingSession({ wss, index })
 
-    const tabId = await extension.getTabIdFromTargetId({
-      worker,
-      targetId: pageTargetId
-    })
+    const tabId = await runWithDuration(
+      'extension.getTabIdFromTargetId',
+      () =>
+        extension.getTabIdFromTargetId({
+          worker,
+          targetId
+        }),
+      { targetId }
+    )
     if (!Number.isInteger(tabId)) {
       throw new Error('Cannot resolve tab id for the current page target.')
     }
 
-    await extension.startRecording({
-      extension: worker,
-      settings: {
-        index,
-        port,
-        tabId,
-        video: videoOpts.enabled,
-        audio: audioOpts.enabled,
-        frameSize: INTERNAL_FRAME_SIZE,
-        mimeType: streamMimeType,
-        videoConstraints: resolvedVideoConstraints,
-        audioConstraints: audioOpts.constraints
-      }
-    })
+    await runWithDuration(
+      'extension.startRecording',
+      () =>
+        extension.startRecording({
+          extension: worker,
+          settings: {
+            index,
+            port,
+            tabId,
+            video: videoOpts.enabled,
+            audio: audioOpts.enabled,
+            frameSize: INTERNAL_FRAME_SIZE,
+            mimeType: streamMimeType,
+            videoConstraints: resolvedVideoConstraints,
+            audioConstraints: audioOpts.constraints
+          }
+        }),
+      { index, tabId }
+    )
     isRecordingStarted = true
-    await setTimeout(duration)
+    await runWithDuration('durationwait', () => setTimeout(duration), { duration })
   } catch (error) {
     if (!worker && workerPromise) {
-      worker = await workerPromise.catch(() => null)
+      worker = await runWithDuration('awaitWorkerAfterError', () => workerPromise.catch(NOOP))
     }
     captureError = error
   } finally {
     const stopPromise = worker
-      ? extension.stopRecording({ extension: worker, index }).catch(NOOP)
+      ? runWithDuration(
+        'extension.stopRecording',
+        () => extension.stopRecording({ extension: worker, index }).catch(NOOP),
+        { index }
+      )
       : Promise.resolve()
 
     if (recordingPromise) {
@@ -223,17 +254,19 @@ module.exports = async (page, opts, viewport) => {
           if (!captureError) throw error
           return Buffer.alloc(0)
         })
-        const [, recordingResult] = await Promise.all([stopPromise, recordingResultPromise])
+        const [, recordingResult] = await runWithDuration('stop+recordingPromise', () =>
+          Promise.all([stopPromise, recordingResultPromise])
+        )
         buffer = recordingResult
       } else {
         recordingPromise.catch(NOOP)
-        await stopPromise
+        await runWithDuration('stopWithoutRecording', () => stopPromise)
       }
     } else {
-      await stopPromise
+      await runWithDuration('stopWithoutPromise', () => stopPromise)
     }
 
-    await closeServer(wss)
+    await runWithDuration('closeServer', () => closeServer(wss))
   }
 
   if (captureError) throw captureError
@@ -244,7 +277,12 @@ module.exports = async (page, opts, viewport) => {
     )
   }
 
-  if (outputPath) await fs.writeFile(outputPath, buffer)
+  if (outputPath) {
+    await runWithDuration('writeFile', () => fs.writeFile(outputPath, buffer), {
+      outputPath,
+      bytes: buffer.length
+    })
+  }
 
   return buffer
 }

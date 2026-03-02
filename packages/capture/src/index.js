@@ -10,7 +10,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
   return page =>
     async (url, opts = {}) => {
-      const duration = debug.duration()
+      const duration = debug.duration({ url }, opts)
       const { device } = await goto(page, { ...opts, url })
       const result = await capture(page, opts, device.viewport)
       duration.info()

@@ -31,6 +31,7 @@
   ],
   "dependencies": {
     "@browserless/goto": "^10.10.0",
+    "debug-logfmt": "~1.4.8",
     "ws": "~8.18.3"
   },
   "devDependencies": {
