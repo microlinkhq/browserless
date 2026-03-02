@@ -2,6 +2,7 @@
 
 'use strict'
 
+const createCapture = require('@browserless/capture')
 const restoreCursor = require('restore-cursor')
 const createBrowser = require('browserless')
 const beautyError = require('beauty-error')
@@ -67,6 +68,12 @@ const run = async () => {
 
   if (command === 'capture') {
     launchOpts.headless = headless === false ? false : 'new'
+    launchOpts.args = [
+      `--allowlisted-extension-id=${createCapture.extensionId}`,
+      `--disable-extensions-except=${createCapture.extensionPath}`,
+      `--load-extension=${createCapture.extensionPath}`
+    ]
+    launchOpts.ignoreDefaultArgs = ['--disable-extensions']
   }
 
   const browser = createBrowser(launchOpts)

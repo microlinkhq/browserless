@@ -34,7 +34,6 @@
     "web-scraping"
   ],
   "dependencies": {
-    "@browserless/capture": "^10.11.1",
     "@browserless/errors": "^10.11.1",
     "@browserless/goto": "^10.11.1",
     "@browserless/pdf": "^10.11.1",
