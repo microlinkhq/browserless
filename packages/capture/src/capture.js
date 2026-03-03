@@ -12,9 +12,7 @@ const {
   DEFAULT_CODEC_BY_TYPE,
   INTERNAL_FRAME_SIZE,
   MAX_FRAME_RATE,
-  NOOP,
-  QUALITIES,
-  VIDEO_BITS_PER_SECOND_BY_QUALITY
+  NOOP
 } = require('./constants')
 
 let currentIndex = 0
@@ -76,24 +74,6 @@ const MIME_TYPES_BY_TYPE = Object.freeze({
 })
 
 const SUPPORTED_TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
-
-const getQuality = quality => {
-  const normalizedQuality =
-    quality === undefined || quality === null
-      ? DEFAULT.quality
-      : String(quality)
-        .trim()
-        .toLowerCase()
-        .replace(/[\s_]+/g, '-')
-
-  if (!QUALITIES.includes(normalizedQuality)) {
-    throw new TypeError(
-      `Unsupported \`quality\` "${quality}". Supported qualities: ${QUALITIES.join(', ')}.`
-    )
-  }
-
-  return normalizedQuality
-}
 
 const getCodec = ({ codec, type, video }) => {
   if (codec === undefined || codec === null) {
@@ -215,7 +195,7 @@ const getTargetId = async page => {
 }
 
 module.exports = async (page, opts, viewport) => {
-  const { path: outputPath, duration = DEFAULT.duration, audio, video, type, quality, codec } = opts
+  const { path: outputPath, duration = DEFAULT.duration, audio, video, type, codec } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
   const videoOpts = getOpts(video, true, 'video')
@@ -233,11 +213,6 @@ module.exports = async (page, opts, viewport) => {
     audio: audioOpts.enabled,
     video: videoOpts.enabled
   })
-
-  const resolvedQuality = getQuality(quality)
-  const recorderOptions = videoOpts.enabled
-    ? { videoBitsPerSecond: VIDEO_BITS_PER_SECOND_BY_QUALITY[resolvedQuality] }
-    : undefined
 
   const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport)
 
@@ -297,7 +272,6 @@ module.exports = async (page, opts, viewport) => {
             audio: audioOpts.enabled,
             frameSize: INTERNAL_FRAME_SIZE,
             mimeType: streamMimeType,
-            recorderOptions,
             videoConstraints: resolvedVideoConstraints,
             audioConstraints: audioOpts.constraints
           }

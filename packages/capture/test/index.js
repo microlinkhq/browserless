@@ -253,13 +253,11 @@ test('capture returns a video buffer', async t => {
   })
 })
 
-test('exports capture format and quality defaults', t => {
+test('exports capture format defaults', t => {
   const createCapture = loadCapture()
 
   t.deepEqual(createCapture.TYPES, ['webm', 'mp4'])
-  t.deepEqual(createCapture.QUALITIES, ['extra-high', 'high', 'medium', 'low', 'extra-low'])
   t.is(createCapture.DEFAULT.type, 'mp4')
-  t.is(createCapture.DEFAULT.quality, 'high')
 })
 
 test('uses effective page viewport after goto', async t => {
@@ -423,132 +421,6 @@ test('supports custom `codec` for mp4', async t => {
   t.is(startRecordingPayload.mimeType, 'video/mp4;codecs=avc1.640033')
 })
 
-test('supports `quality: extra-high`', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', { duration: 20, quality: 'extra-high' })
-
-  t.deepEqual(startRecordingPayload.recorderOptions, {
-    videoBitsPerSecond: 20000000
-  })
-})
-
-test('supports `quality: high`', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', { duration: 20, quality: 'high' })
-
-  t.deepEqual(startRecordingPayload.recorderOptions, {
-    videoBitsPerSecond: 8000000
-  })
-})
-
-test('supports `quality: medium`', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', { duration: 20, quality: 'medium' })
-
-  t.deepEqual(startRecordingPayload.recorderOptions, {
-    videoBitsPerSecond: 5000000
-  })
-})
-
-test('supports `quality: low`', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', { duration: 20, quality: 'low' })
-
-  t.deepEqual(startRecordingPayload.recorderOptions, {
-    videoBitsPerSecond: 2500000
-  })
-})
-
-test('supports `quality: extra-low`', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', { duration: 20, quality: 'extra-low' })
-
-  t.deepEqual(startRecordingPayload.recorderOptions, {
-    videoBitsPerSecond: 1000000
-  })
-})
-
-test('uses default `quality: high`', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', { duration: 20 })
-
-  t.deepEqual(startRecordingPayload.recorderOptions, {
-    videoBitsPerSecond: 8000000
-  })
-})
-
-test('normalizes spaced quality values', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', { duration: 20, quality: 'extra high' })
-
-  t.deepEqual(startRecordingPayload.recorderOptions, {
-    videoBitsPerSecond: 20000000
-  })
-})
-
 test('maps audio/video object values to track constraints', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
@@ -667,17 +539,6 @@ test('rejects unsupported type', async t => {
   await t.throwsAsync(() => capture(page)('https://example.com', { type: 'avi' }), {
     instanceOf: TypeError,
     message: /Supported types: webm, mp4/
-  })
-})
-
-test('rejects unsupported quality', async t => {
-  const createCapture = loadCapture()
-  const { page } = createFixture()
-  const capture = createCapture({ goto: createGoto() })
-
-  await t.throwsAsync(() => capture(page)('https://example.com', { quality: 'ultra' }), {
-    instanceOf: TypeError,
-    message: /Supported qualities: extra-high, high, medium, low, extra-low/
   })
 })
 
