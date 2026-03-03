@@ -6,7 +6,7 @@ const path = require('path')
 const test = require('ava')
 const os = require('os')
 
-const { EXTENSION_ID, MAX_FRAME_RATE } = require('../src/constants')
+const { EXTENSION_ID } = require('../src/constants')
 
 const DEFAULT_DEVICE = Object.freeze({
   userAgent:
@@ -299,8 +299,7 @@ test('uses effective page viewport after goto', async t => {
       minWidth: 1170,
       minHeight: 2532,
       maxWidth: 1170,
-      maxHeight: 2532,
-      maxFrameRate: MAX_FRAME_RATE
+      maxHeight: 2532
     }
   })
 })
@@ -323,8 +322,7 @@ test('injects viewport-based constraints by default', async t => {
       minWidth: 2560,
       minHeight: 1600,
       maxWidth: 2560,
-      maxHeight: 1600,
-      maxFrameRate: MAX_FRAME_RATE
+      maxHeight: 1600
     }
   })
 })
@@ -456,36 +454,9 @@ test('maps audio/video object values to track constraints', async t => {
       minWidth: 1024,
       minHeight: 576,
       maxWidth: 1024,
-      maxHeight: 576,
-      maxFrameRate: MAX_FRAME_RATE
+      maxHeight: 576
     }
   })
-})
-
-test('forces `maxFrameRate: 60` for custom video constraints', async t => {
-  const createCapture = loadCapture()
-  let startRecordingPayload
-
-  const { page } = createFixture()
-  const browser = page.browser()
-  browser.__setOnStartRecording(payload => {
-    startRecordingPayload = payload
-  })
-
-  const capture = createCapture({ goto: createGoto() })
-  await capture(page)('https://example.com', {
-    duration: 20,
-    audio: false,
-    video: {
-      mandatory: {
-        maxFrameRate: 30,
-        maxWidth: 800,
-        maxHeight: 600
-      }
-    }
-  })
-
-  t.is(startRecordingPayload.videoConstraints.mandatory.maxFrameRate, MAX_FRAME_RATE)
 })
 
 test('capture writes path and returns the same buffer', async t => {

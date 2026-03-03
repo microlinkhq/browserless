@@ -7,13 +7,7 @@ const debug = require('debug-logfmt')('browserless:capture')
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
 
-const {
-  DEFAULT,
-  DEFAULT_CODEC_BY_TYPE,
-  INTERNAL_FRAME_SIZE,
-  MAX_FRAME_RATE,
-  NOOP
-} = require('./constants')
+const { DEFAULT, DEFAULT_CODEC_BY_TYPE, INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
 
 let currentIndex = 0
 
@@ -113,35 +107,20 @@ const getMimeType = ({ type, audio, video, codec }) => {
 }
 
 const getVideoConstraints = (videoConstraints, viewport) => {
-  const withMaxFrameRate = constraints => {
-    const source = constraints && typeof constraints === 'object' ? constraints : {}
-    const mandatory =
-      source.mandatory && typeof source.mandatory === 'object' ? source.mandatory : {}
-    const { mandatory: _mandatory, ...rest } = source
-
-    return {
-      ...rest,
-      mandatory: {
-        ...mandatory,
-        maxFrameRate: MAX_FRAME_RATE
-      }
-    }
-  }
-
-  if (videoConstraints) return withMaxFrameRate(videoConstraints)
+  if (videoConstraints) return videoConstraints
 
   const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
   const width = Math.round(viewport.width * dpr)
   const height = Math.round(viewport.height * dpr)
 
-  return withMaxFrameRate({
+  return {
     mandatory: {
       minWidth: width,
       minHeight: height,
       maxWidth: width,
       maxHeight: height
     }
-  })
+  }
 }
 
 const isTrackObject = value => value && typeof value === 'object' && !Array.isArray(value)
