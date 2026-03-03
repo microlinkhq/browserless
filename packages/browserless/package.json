@@ -4,6 +4,7 @@
   "homepage": "https://browserless.js.org",
   "version": "10.11.4",
   "main": "src/index.js",
+  "types": "index.d.ts",
   "author": {
     "email": "hello@microlink.io",
     "name": "microlink.io",
@@ -50,13 +51,15 @@
     "@browserless/test": "^10.11.4",
     "ava": "5",
     "ps-list": "7",
+    "puppeteer": "^24.37.5",
     "tinyspawn": "latest"
   },
   "engines": {
     "node": ">= 24"
   },
   "files": [
-    "src"
+    "src",
+    "index.d.ts"
   ],
   "scripts": {
     "test": "ava"
