@@ -4,12 +4,10 @@ const fs = require('node:fs/promises')
 const path = require('node:path')
 
 const createBrowser = require('../../browserless/src')
-const { VIDEO_BITS_PER_SECOND_BY_QUALITY } = require('../src/constants')
 
 const { defaultArgs } = createBrowser.driver
 
-const QUALITY = process.env.QUALITY || 'extra-high'
-const BITRATE = VIDEO_BITS_PER_SECOND_BY_QUALITY[QUALITY]
+const BITRATE = Number(process.env.BITRATE || 20_000_000)
 
 const ITERATIONS = Number(process.env.ITERATIONS || 3)
 const DURATION_MS = Number(process.env.DURATION_MS || 3000)
@@ -214,7 +212,7 @@ const runOne = async ({ page, mimeType, iteration, saveDir }) =>
           if (e.data && e.data.size) chunks.push(e.data)
         }
 
-        recorder.start(250)
+        recorder.start()
         await new Promise(resolve => setTimeout(resolve, ms))
         recorder.stop()
         await stopped
@@ -386,10 +384,6 @@ const benchmarkCodec = async ({ page, mimeType, saveDir }) => {
 }
 
 const main = async () => {
-  if (!BITRATE) {
-    throw new Error(`Unknown QUALITY="${QUALITY}". Check VIDEO_BITS_PER_SECOND_BY_QUALITY.`)
-  }
-
   await ensureDir(SAVE_DIR)
 
   const browser = createBrowser({
@@ -416,7 +410,7 @@ const main = async () => {
       console.log(`URL: ${URL}`)
       console.log(`User Agent: ${userAgent}`)
       console.log(`MediaRecorder available: ${hasMediaRecorder}`)
-      console.log(`Quality preset: ${QUALITY} (${BITRATE} bps)`)
+      console.log(`Bitrate: ${BITRATE} bps`)
       console.log(`Artifacts: ${SAVE_DIR}`)
       console.log(
         `Run config: iterations=${ITERATIONS}, warmupMs=${WARMUP_MS}, durationMs=${DURATION_MS}, frameRate=${FRAME_RATE}, width=${WIDTH}, height=${HEIGHT}`

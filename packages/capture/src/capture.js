@@ -7,15 +7,7 @@ const debug = require('debug-logfmt')('browserless:capture')
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
 
-const {
-  DEFAULT,
-  DEFAULT_CODEC_BY_TYPE,
-  INTERNAL_FRAME_SIZE,
-  MAX_FRAME_RATE,
-  NOOP,
-  QUALITIES,
-  VIDEO_BITS_PER_SECOND_BY_QUALITY
-} = require('./constants')
+const { DEFAULT, DEFAULT_CODEC_BY_TYPE, NOOP } = require('./constants')
 
 let currentIndex = 0
 
@@ -77,24 +69,6 @@ const MIME_TYPES_BY_TYPE = Object.freeze({
 
 const SUPPORTED_TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
 
-const getQuality = quality => {
-  const normalizedQuality =
-    quality === undefined || quality === null
-      ? DEFAULT.quality
-      : String(quality)
-        .trim()
-        .toLowerCase()
-        .replace(/[\s_]+/g, '-')
-
-  if (!QUALITIES.includes(normalizedQuality)) {
-    throw new TypeError(
-      `Unsupported \`quality\` "${quality}". Supported qualities: ${QUALITIES.join(', ')}.`
-    )
-  }
-
-  return normalizedQuality
-}
-
 const getCodec = ({ codec, type, video }) => {
   if (codec === undefined || codec === null) {
     return video ? DEFAULT_CODEC_BY_TYPE[type] : undefined
@@ -133,35 +107,20 @@ const getMimeType = ({ type, audio, video, codec }) => {
 }
 
 const getVideoConstraints = (videoConstraints, viewport) => {
-  const withMaxFrameRate = constraints => {
-    const source = constraints && typeof constraints === 'object' ? constraints : {}
-    const mandatory =
-      source.mandatory && typeof source.mandatory === 'object' ? source.mandatory : {}
-    const { mandatory: _mandatory, ...rest } = source
-
-    return {
-      ...rest,
-      mandatory: {
-        ...mandatory,
-        maxFrameRate: MAX_FRAME_RATE
-      }
-    }
-  }
-
-  if (videoConstraints) return withMaxFrameRate(videoConstraints)
+  if (videoConstraints) return videoConstraints
 
   const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
   const width = Math.round(viewport.width * dpr)
   const height = Math.round(viewport.height * dpr)
 
-  return withMaxFrameRate({
+  return {
     mandatory: {
       minWidth: width,
       minHeight: height,
       maxWidth: width,
       maxHeight: height
     }
-  })
+  }
 }
 
 const isTrackObject = value => value && typeof value === 'object' && !Array.isArray(value)
@@ -215,7 +174,7 @@ const getTargetId = async page => {
 }
 
 module.exports = async (page, opts, viewport) => {
-  const { path: outputPath, duration = DEFAULT.duration, audio, video, type, quality, codec } = opts
+  const { path: outputPath, duration = DEFAULT.duration, audio, video, type, codec } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
   const videoOpts = getOpts(video, true, 'video')
@@ -233,11 +192,6 @@ module.exports = async (page, opts, viewport) => {
     audio: audioOpts.enabled,
     video: videoOpts.enabled
   })
-
-  const resolvedQuality = getQuality(quality)
-  const recorderOptions = videoOpts.enabled
-    ? { videoBitsPerSecond: VIDEO_BITS_PER_SECOND_BY_QUALITY[resolvedQuality] }
-    : undefined
 
   const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport)
 
@@ -292,11 +246,10 @@ module.exports = async (page, opts, viewport) => {
             index,
             port,
             tabId,
+            duration,
             video: videoOpts.enabled,
             audio: audioOpts.enabled,
-            frameSize: INTERNAL_FRAME_SIZE,
             mimeType: streamMimeType,
-            recorderOptions,
             videoConstraints: resolvedVideoConstraints,
             audioConstraints: audioOpts.constraints
           }
@@ -304,7 +257,6 @@ module.exports = async (page, opts, viewport) => {
       { index, tabId }
     )
     isRecordingStarted = true
-    await runWithDuration('durationwait', () => setTimeout(duration), { duration })
   } catch (error) {
     if (!worker && workerPromise) {
       worker = await runWithDuration('awaitWorkerAfterError', () => workerPromise.catch(NOOP))
@@ -317,33 +269,33 @@ module.exports = async (page, opts, viewport) => {
     }
     captureError = error
   } finally {
-    const stopPromise = worker
-      ? runWithDuration(
-        'extension.stopRecording',
-        () => extension.stopRecording({ extension: worker, index }).catch(NOOP),
-        { index }
-      )
-      : Promise.resolve()
-
-    if (recordingPromise) {
-      if (isRecordingStarted) {
+    try {
+      if (recordingPromise && isRecordingStarted) {
         const recordingResultPromise = recordingPromise.catch(error => {
           if (!captureError) throw error
           return Buffer.alloc(0)
         })
-        const [, recordingResult] = await runWithDuration('stop+recordingPromise', () =>
-          Promise.all([stopPromise, recordingResultPromise])
-        )
-        buffer = recordingResult
-      } else {
+        const safetyTimeoutMs = Math.ceil(duration * 1.5)
+        const recordingWithTimeout = Promise.race([
+          recordingResultPromise,
+          setTimeout(safetyTimeoutMs).then(() => {
+            throw new Error('Recording timed out')
+          })
+        ])
+        buffer = await runWithDuration('recordingPromise', () => recordingWithTimeout)
+      } else if (recordingPromise) {
         recordingPromise.catch(NOOP)
-        await runWithDuration('stopWithoutRecording', () => stopPromise)
       }
-    } else {
-      await runWithDuration('stopWithoutPromise', () => stopPromise)
+    } finally {
+      if (worker) {
+        await runWithDuration(
+          'extension.stopRecording',
+          () => extension.stopRecording({ extension: worker, index }).catch(NOOP),
+          { index }
+        )
+      }
+      await runWithDuration('closeServer', () => closeServer(wss))
     }
-
-    await runWithDuration('closeServer', () => closeServer(wss))
   }
 
   if (captureError) throw captureError

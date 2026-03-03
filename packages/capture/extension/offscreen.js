@@ -76,11 +76,10 @@ const START_RECORDING = async ({
   streamId,
   video,
   audio,
-  frameSize,
   mimeType,
-  recorderOptions,
   videoConstraints,
-  audioConstraints
+  audioConstraints,
+  duration = 0
 }) => {
   if (!port) throw new Error('Missing websocket port for recording session.')
   if (!streamId) throw new Error('Missing tab media stream id for recording session.')
@@ -125,7 +124,7 @@ const START_RECORDING = async ({
     throw error
   }
 
-  const recorder = new MediaRecorder(stream, { mimeType, ...recorderOptions })
+  const recorder = new MediaRecorder(stream, { mimeType })
 
   const pending = new Set()
 
@@ -157,12 +156,19 @@ const START_RECORDING = async ({
   }
 
   recorders[index] = recorder
-  recorder.start(frameSize)
+  recorder.start()
+
+  if (duration > 0) {
+    recorder.__autoStopTimer = setTimeout(() => {
+      if (recorder.state !== 'inactive') recorder.stop()
+    }, duration)
+  }
 }
 
 const STOP_RECORDING = index => {
   const recorder = recorders[index]
   if (!recorder || recorder.state === 'inactive') return
+  clearTimeout(recorder.__autoStopTimer)
   recorder.stop()
 }
 

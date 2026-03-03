@@ -8,7 +8,6 @@ const {
   DEFAULT_CODEC_BY_TYPE,
   EXTENSION_ID,
   EXTENSION_PATH,
-  QUALITIES,
   TYPES
 } = require('./constants')
 const runCapture = require('./capture')
@@ -29,6 +28,5 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 module.exports.extensionPath = EXTENSION_PATH
 module.exports.extensionId = EXTENSION_ID
 module.exports.TYPES = TYPES
-module.exports.QUALITIES = QUALITIES
 module.exports.DEFAULT = DEFAULT
 module.exports.DEFAULT_CODEC_BY_TYPE = DEFAULT_CODEC_BY_TYPE
