@@ -2,7 +2,7 @@
   "name": "@browserless/function",
   "description": "Execute arbitrary JavaScript code in a secure browser sandbox with access to page DOM and network.",
   "homepage": "https://browserless.js.org",
-  "version": "10.11.3",
+  "version": "10.11.4",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -36,7 +36,7 @@
     "require-one-of": "~1.0.24"
   },
   "devDependencies": {
-    "@browserless/test": "^10.11.3",
+    "@browserless/test": "^10.11.4",
     "acorn": "~8.16.0",
     "acorn-walk": "~8.3.5",
     "ava": "5",
