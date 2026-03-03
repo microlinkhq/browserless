@@ -125,7 +125,7 @@ const START_RECORDING = async ({
     throw error
   }
 
-  const recorder = new MediaRecorder(stream, { mimeType, ...(recorderOptions || {}) })
+  const recorder = new MediaRecorder(stream, { mimeType, ...recorderOptions })
 
   const pending = new Set()
 
