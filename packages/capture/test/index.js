@@ -253,8 +253,8 @@ test('capture returns a video buffer', async t => {
 test('exports capture format and quality defaults', t => {
   const createCapture = loadCapture()
 
-  t.deepEqual(createCapture.types, ['webm', 'mp4'])
-  t.deepEqual(createCapture.qualities, ['extra-high', 'high', 'medium', 'low', 'extra-low'])
+  t.deepEqual(createCapture.TYPES, ['webm', 'mp4'])
+  t.deepEqual(createCapture.QUALITIES, ['extra-high', 'high', 'medium', 'low', 'extra-low'])
   t.is(createCapture.DEFAULT.type, 'mp4')
   t.is(createCapture.DEFAULT.quality, 'high')
 })
