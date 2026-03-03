@@ -50,7 +50,6 @@
     "src"
   ],
   "scripts": {
-    "coverage": "exit 0",
     "test": "ava"
   },
   "license": "MIT",
