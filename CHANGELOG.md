@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [10.12.0](https://github.com/microlinkhq/browserless/compare/v10.11.6...v10.12.0) (2026-03-03)
+
+### Features
+
+* add TypeScript type definitions ([#702](https://github.com/microlinkhq/browserless/issues/702)) ([5d4008f](https://github.com/microlinkhq/browserless/commit/5d4008f945912665e92c38cb810c647438aeee5d))
+
 ## [10.11.6](https://github.com/microlinkhq/browserless/compare/v10.11.5...v10.11.6) (2026-03-03)
 
 **Note:** Version bump only for package browserless
