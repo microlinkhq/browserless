@@ -106,7 +106,7 @@ When `video` is `true` or omitted, video constraints are inferred from that view
 When `video` is an object, that object is used as the video constraints.
 When `audio` is an object, that object is used as the audio constraints.
 The inferred constraints also account for `deviceScaleFactor`, so output video pixels match screenshot pixel density.
-Capture always enforces `videoConstraints.mandatory.maxFrameRate = 60`.
+Capture always enforces `videoConstraints.mandatory.maxFrameRate = 120`.
 `quality` maps to bitrate presets (`extra-high`: 20Mbps, `high`: 8Mbps, `medium`: 5Mbps, `low`: 2.5Mbps, `extra-low`: 1Mbps).
 MediaRecorder chunk size is internal and fixed at `250ms`.
 `type` is mapped internally to the MediaRecorder mime type, and `codec` is appended as `;codecs=...`.
