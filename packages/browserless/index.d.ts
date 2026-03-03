@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, Page, PDFOptions, Viewport } from 'puppeteer'
+import type { Browser, BrowserContext, HTTPResponse, Page, PDFOptions, Viewport } from 'puppeteer'
 
 export interface BrowserlessOptions {
   timeout?: number
@@ -31,7 +31,7 @@ export interface Context {
   respawn: () => void
   context: () => Promise<BrowserContext>
   browser: () => Promise<Browser>
-  evaluate: (fn: (page: Page, response?: unknown, error?: Error) => unknown, gotoOpts?: GotoOptions) => Promise<unknown>
+  evaluate: <T>(fn: (page: Page, response?: HTTPResponse | undefined, error?: Error) => T | Promise<T>, gotoOpts?: GotoOptions) => Promise<T>
   goto: (page: Page, url: string, opts?: GotoOptions) => Promise<GotoResult>
   html: (url: string, opts?: GotoOptions) => Promise<string>
   page: (name?: string) => Promise<Page>
@@ -51,7 +51,7 @@ export interface GotoOptions {
 }
 
 export interface GotoResult {
-  response: unknown
+  response: HTTPResponse | null
   error: Error | null
 }
 
