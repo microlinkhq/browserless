@@ -7,7 +7,15 @@ const debug = require('debug-logfmt')('browserless:capture')
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
 
-const { DEFAULT, INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
+const {
+  DEFAULT,
+  DEFAULT_CODEC_BY_TYPE,
+  INTERNAL_FRAME_SIZE,
+  MAX_FRAME_RATE,
+  NOOP,
+  QUALITIES,
+  VIDEO_BITS_PER_SECOND_BY_QUALITY
+} = require('./constants')
 
 let currentIndex = 0
 
@@ -63,19 +71,48 @@ const createRecordingSession = ({ wss, index }) => {
 }
 
 const MIME_TYPES_BY_TYPE = Object.freeze({
-  webm: Object.freeze({
-    video: 'video/webm',
-    audio: 'audio/webm'
-  }),
-  mp4: Object.freeze({
-    video: 'video/mp4',
-    audio: 'audio/mp4'
-  })
+  webm: Object.freeze({ video: 'video/webm', audio: 'audio/webm' }),
+  mp4: Object.freeze({ video: 'video/mp4', audio: 'audio/mp4' })
 })
 
 const SUPPORTED_TYPES = Object.freeze(Object.keys(MIME_TYPES_BY_TYPE))
 
-const getMimeType = ({ type, audio, video }) => {
+const getQuality = quality => {
+  const normalizedQuality =
+    quality === undefined || quality === null
+      ? DEFAULT.quality
+      : String(quality)
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-')
+
+  if (!QUALITIES.includes(normalizedQuality)) {
+    throw new TypeError(
+      `Unsupported \`quality\` "${quality}". Supported qualities: ${QUALITIES.join(', ')}.`
+    )
+  }
+
+  return normalizedQuality
+}
+
+const getCodec = ({ codec, type, video }) => {
+  if (codec === undefined || codec === null) {
+    return video ? DEFAULT_CODEC_BY_TYPE[type] : undefined
+  }
+
+  if (typeof codec !== 'string') {
+    throw new TypeError(`Expected \`codec\` to be a string. Received ${typeof codec}.`)
+  }
+
+  const normalizedCodec = codec.trim()
+  if (!normalizedCodec) {
+    throw new TypeError('Expected `codec` to be a non-empty string.')
+  }
+
+  return normalizedCodec
+}
+
+const getMimeType = ({ type, audio, video, codec }) => {
   const normalizedType =
     type === undefined || type === null
       ? DEFAULT.type
@@ -89,24 +126,42 @@ const getMimeType = ({ type, audio, video }) => {
     )
   }
 
-  return audio && !video ? mimeTypes.audio : mimeTypes.video
+  const streamMimeType = audio && !video ? mimeTypes.audio : mimeTypes.video
+  const resolvedCodec = getCodec({ codec, type: normalizedType, video })
+
+  return resolvedCodec ? `${streamMimeType};codecs=${resolvedCodec}` : streamMimeType
 }
 
 const getVideoConstraints = (videoConstraints, viewport) => {
-  if (videoConstraints) return videoConstraints
+  const withMaxFrameRate = constraints => {
+    const source = constraints && typeof constraints === 'object' ? constraints : {}
+    const mandatory =
+      source.mandatory && typeof source.mandatory === 'object' ? source.mandatory : {}
+    const { mandatory: _mandatory, ...rest } = source
+
+    return {
+      ...rest,
+      mandatory: {
+        ...mandatory,
+        maxFrameRate: MAX_FRAME_RATE
+      }
+    }
+  }
+
+  if (videoConstraints) return withMaxFrameRate(videoConstraints)
 
   const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
   const width = Math.round(viewport.width * dpr)
   const height = Math.round(viewport.height * dpr)
 
-  return {
+  return withMaxFrameRate({
     mandatory: {
       minWidth: width,
       minHeight: height,
       maxWidth: width,
       maxHeight: height
     }
-  }
+  })
 }
 
 const isTrackObject = value => value && typeof value === 'object' && !Array.isArray(value)
@@ -160,7 +215,7 @@ const getTargetId = async page => {
 }
 
 module.exports = async (page, opts, viewport) => {
-  const { path: outputPath, duration = DEFAULT.duration, audio, video, type } = opts
+  const { path: outputPath, duration = DEFAULT.duration, audio, video, type, quality, codec } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
   const videoOpts = getOpts(video, true, 'video')
@@ -174,9 +229,15 @@ module.exports = async (page, opts, viewport) => {
 
   const streamMimeType = getMimeType({
     type,
+    codec,
     audio: audioOpts.enabled,
     video: videoOpts.enabled
   })
+
+  const resolvedQuality = getQuality(quality)
+  const recorderOptions = videoOpts.enabled
+    ? { videoBitsPerSecond: VIDEO_BITS_PER_SECOND_BY_QUALITY[resolvedQuality] }
+    : undefined
 
   const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport)
 
@@ -235,6 +296,7 @@ module.exports = async (page, opts, viewport) => {
             audio: audioOpts.enabled,
             frameSize: INTERNAL_FRAME_SIZE,
             mimeType: streamMimeType,
+            recorderOptions,
             videoConstraints: resolvedVideoConstraints,
             audioConstraints: audioOpts.constraints
           }

@@ -55,11 +55,11 @@ The `@browserless/cli` package allows you to:
 ### Capture examples
 
 ```sh
-# webm (default)
-browserless capture https://example.com --path=./capture.webm
+# mp4 (default)
+browserless capture https://example.com --path=./capture.mp4
 
-# mp4 using friendly output type
-browserless capture https://example.com --type=mp4 --path=./capture.mp4
+# webm output type
+browserless capture https://example.com --type=webm --path=./capture.webm
 ```
 
 > **Note:** The `lighthouse` command requires an extra installation.  

@@ -45,7 +45,6 @@
     "src"
   ],
   "scripts": {
-    "bench:runtime": "node benchmarks/runtime-startup.js",
     "coverage": "exit 0",
     "test": "ava"
   },

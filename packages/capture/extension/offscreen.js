@@ -78,6 +78,7 @@ const START_RECORDING = async ({
   audio,
   frameSize,
   mimeType,
+  recorderOptions,
   videoConstraints,
   audioConstraints
 }) => {
@@ -124,7 +125,7 @@ const START_RECORDING = async ({
     throw error
   }
 
-  const recorder = new MediaRecorder(stream, { mimeType })
+  const recorder = new MediaRecorder(stream, { mimeType, ...recorderOptions })
 
   const pending = new Set()
 
