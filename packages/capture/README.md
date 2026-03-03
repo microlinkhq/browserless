@@ -56,6 +56,8 @@ const capture = createCapture({ goto: browserless.goto })
 const video = await capture(page)('https://example.com', {
   duration: 5000,
   type: 'mp4',
+  codec: 'avc1.4D401F',
+  quality: 'high',
   path: '/tmp/demo.mp4'
 })
 
@@ -84,7 +86,9 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `type` | `'webm' \| 'mp4'` | `'webm'` | Output type selector mapped to MediaRecorder mime type. |
+| `type` | `'webm' \| 'mp4'` | `'mp4'` | Output type selector mapped to MediaRecorder mime type. |
+| `codec` | `string` | Depends on `type` | MediaRecorder codec override. Defaults: `webm -> vp9`, `mp4 -> avc1.4D401F`. |
+| `quality` | `'extra-high' \| 'high' \| 'medium' \| 'low' \| 'extra-low'` | `'high'` | Video quality hint mapped to `MediaRecorder.videoBitsPerSecond`. |
 | `path` | `string` | `undefined` | Write the captured media to disk. |
 | `duration` | `number` | `3000` | Capture duration in milliseconds. |
 | `audio` | `boolean \| object` | `false` | Capture audio. When object, it is used as audio track constraints. |
@@ -95,15 +99,26 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 - `capture.extensionPath`: Absolute path to the bundled extension.
 - `capture.extensionId`: Extension ID used by the package.
 - `capture.types`: Supported values for `type`.
+- `capture.qualities`: Supported values for `quality`.
 
 `capture` uses `goto(...).device.viewport` as the capture viewport source.
 When `video` is `true` or omitted, video constraints are inferred from that viewport to keep capture framing aligned with screenshot/pdf rendering.
 When `video` is an object, that object is used as the video constraints.
 When `audio` is an object, that object is used as the audio constraints.
 The inferred constraints also account for `deviceScaleFactor`, so output video pixels match screenshot pixel density.
-Bitrate hints are not configurable; capture uses Chrome MediaRecorder defaults.
+Capture always enforces `videoConstraints.mandatory.maxFrameRate = 60`.
+`quality` maps to bitrate presets (`extra-high`: 20Mbps, `high`: 8Mbps, `medium`: 5Mbps, `low`: 2.5Mbps, `extra-low`: 1Mbps).
 MediaRecorder chunk size is internal and fixed at `250ms`.
-`type` is mapped internally to the MediaRecorder mime type.
+`type` is mapped internally to the MediaRecorder mime type, and `codec` is appended as `;codecs=...`.
+Default codecs are `vp9` for `webm` and `avc1.4D401F` for `mp4`.
+You can override codec per request using `opts.codec`.
+For example:
+
+```js
+await capture(page)(url, { type: 'webm', codec: 'vp8' })
+await capture(page)(url, { type: 'mp4', codec: 'avc1.640033' })
+```
+
 When `type` is `'mp4'`, the running Chromium build must support MP4 MediaRecorder output.
 For strict screenshot/poster parity in headless mode, launch Chrome with matching `--screen-info`.
 

@@ -3,7 +3,7 @@
 const debug = require('debug-logfmt')('browserless:capture')
 const createGoto = require('@browserless/goto')
 
-const { DEFAULT, EXTENSION_ID, EXTENSION_PATH, TYPES } = require('./constants')
+const { DEFAULT, EXTENSION_ID, EXTENSION_PATH, QUALITIES, TYPES } = require('./constants')
 const runCapture = require('./capture')
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
@@ -22,4 +22,5 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 module.exports.extensionPath = EXTENSION_PATH
 module.exports.extensionId = EXTENSION_ID
 module.exports.types = TYPES
+module.exports.qualities = QUALITIES
 module.exports.DEFAULT = DEFAULT
