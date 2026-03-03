@@ -112,6 +112,9 @@ const createWorkerBrowser = ({
         const server = FakeWebSocketServer.byPort.get(arg.port) || FakeWebSocketServer.latest
         const socket = server.connect({ index: arg.index, chunks })
         socketsByIndex.set(arg.index, socket)
+        if (arg.duration > 0) {
+          setTimeout(() => socket.close(), arg.duration)
+        }
         return
       }
 

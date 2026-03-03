@@ -292,6 +292,7 @@ module.exports = async (page, opts, viewport) => {
             index,
             port,
             tabId,
+            duration,
             video: videoOpts.enabled,
             audio: audioOpts.enabled,
             frameSize: INTERNAL_FRAME_SIZE,
@@ -304,7 +305,6 @@ module.exports = async (page, opts, viewport) => {
       { index, tabId }
     )
     isRecordingStarted = true
-    await runWithDuration('durationwait', () => setTimeout(duration), { duration })
   } catch (error) {
     if (!worker && workerPromise) {
       worker = await runWithDuration('awaitWorkerAfterError', () => workerPromise.catch(NOOP))
@@ -317,33 +317,33 @@ module.exports = async (page, opts, viewport) => {
     }
     captureError = error
   } finally {
-    const stopPromise = worker
-      ? runWithDuration(
-        'extension.stopRecording',
-        () => extension.stopRecording({ extension: worker, index }).catch(NOOP),
-        { index }
-      )
-      : Promise.resolve()
-
-    if (recordingPromise) {
-      if (isRecordingStarted) {
+    try {
+      if (recordingPromise && isRecordingStarted) {
         const recordingResultPromise = recordingPromise.catch(error => {
           if (!captureError) throw error
           return Buffer.alloc(0)
         })
-        const [, recordingResult] = await runWithDuration('stop+recordingPromise', () =>
-          Promise.all([stopPromise, recordingResultPromise])
-        )
-        buffer = recordingResult
-      } else {
+        const safetyTimeoutMs = Math.ceil(duration * 1.5)
+        const recordingWithTimeout = Promise.race([
+          recordingResultPromise,
+          setTimeout(safetyTimeoutMs).then(() => {
+            throw new Error('Recording timed out')
+          })
+        ])
+        buffer = await runWithDuration('recordingPromise', () => recordingWithTimeout)
+      } else if (recordingPromise) {
         recordingPromise.catch(NOOP)
-        await runWithDuration('stopWithoutRecording', () => stopPromise)
       }
-    } else {
-      await runWithDuration('stopWithoutPromise', () => stopPromise)
+    } finally {
+      if (worker) {
+        await runWithDuration(
+          'extension.stopRecording',
+          () => extension.stopRecording({ extension: worker, index }).catch(NOOP),
+          { index }
+        )
+      }
+      await runWithDuration('closeServer', () => closeServer(wss))
     }
-
-    await runWithDuration('closeServer', () => closeServer(wss))
   }
 
   if (captureError) throw captureError
