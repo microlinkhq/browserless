@@ -11,6 +11,5 @@ module.exports = {
   EXTENSION_ID: 'jjndjgheafjngoipoacpjgeicjeomjli',
   EXTENSION_PATH: path.join(__dirname, '..', 'extension'),
   TYPES: Object.freeze(['webm', 'mp4']),
-  INTERNAL_FRAME_SIZE: 250,
   NOOP: () => {}
 }

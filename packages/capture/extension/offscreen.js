@@ -76,7 +76,6 @@ const START_RECORDING = async ({
   streamId,
   video,
   audio,
-  frameSize,
   mimeType,
   videoConstraints,
   audioConstraints,
@@ -157,7 +156,7 @@ const START_RECORDING = async ({
   }
 
   recorders[index] = recorder
-  recorder.start(frameSize)
+  recorder.start()
 
   if (duration > 0) {
     recorder.__autoStopTimer = setTimeout(() => {

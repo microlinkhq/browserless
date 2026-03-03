@@ -357,7 +357,7 @@ test('supports `type: mp4`', async t => {
   const capture = createCapture({ goto: createGoto() })
   await capture(page)('https://example.com', { duration: 20, type: 'mp4' })
 
-  t.is(startRecordingPayload.mimeType, 'video/mp4;codecs=avc1.4D401F')
+  t.is(startRecordingPayload.mimeType, 'video/mp4;codecs=avc1.640028')
 })
 
 test('ignores `mimeType` option and uses mp4 defaults', async t => {
@@ -376,7 +376,7 @@ test('ignores `mimeType` option and uses mp4 defaults', async t => {
     mimeType: 'video/mp4;codecs=avc1'
   })
 
-  t.is(startRecordingPayload.mimeType, 'video/mp4;codecs=avc1.4D401F')
+  t.is(startRecordingPayload.mimeType, 'video/mp4;codecs=avc1.640028')
 })
 
 test('supports custom `codec` for webm', async t => {

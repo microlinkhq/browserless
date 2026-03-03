@@ -7,7 +7,7 @@ const debug = require('debug-logfmt')('browserless:capture')
 const { closeServer, createWebSocketServer } = require('./util')
 const extension = require('./extension')
 
-const { DEFAULT, DEFAULT_CODEC_BY_TYPE, INTERNAL_FRAME_SIZE, NOOP } = require('./constants')
+const { DEFAULT, DEFAULT_CODEC_BY_TYPE, NOOP } = require('./constants')
 
 let currentIndex = 0
 
@@ -249,7 +249,6 @@ module.exports = async (page, opts, viewport) => {
             duration,
             video: videoOpts.enabled,
             audio: audioOpts.enabled,
-            frameSize: INTERNAL_FRAME_SIZE,
             mimeType: streamMimeType,
             videoConstraints: resolvedVideoConstraints,
             audioConstraints: audioOpts.constraints

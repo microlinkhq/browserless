@@ -212,7 +212,7 @@ const runOne = async ({ page, mimeType, iteration, saveDir }) =>
           if (e.data && e.data.size) chunks.push(e.data)
         }
 
-        recorder.start(250)
+        recorder.start()
         await new Promise(resolve => setTimeout(resolve, ms))
         recorder.stop()
         await stopped
