@@ -52,8 +52,7 @@
     "ava": "5",
     "ps-list": "7",
     "puppeteer": "^24.37.5",
-    "tinyspawn": "latest",
-    "typescript": "^5.9.3"
+    "tinyspawn": "latest"
   },
   "engines": {
     "node": ">= 24"
