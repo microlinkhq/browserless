@@ -11,8 +11,15 @@ const GET_THEME_PATH = () => require('prism-themes').themesDirectory
 
 const THEME_PATH = () => CACHE.root || (CACHE.root = GET_THEME_PATH())
 
+const escapeHtml = str => str
+  .replace(/&/g, '&amp;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+
 module.exports = async themeId => {
-  if (isHttpUrl(themeId)) return `<link rel="stylesheet" type="text/css" href="${themeId}">`
+  if (isHttpUrl(themeId)) return `<link rel="stylesheet" type="text/css" href="${escapeHtml(themeId)}">`
 
   const stylesheet =
     CACHE[themeId] ||
