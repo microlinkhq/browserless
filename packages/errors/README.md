@@ -38,7 +38,7 @@ The `@browserless/errors` package allows you to:
 |---------------|------|-------------|
 | `browserTimeout` | `EBRWSRTIMEOUT` | Promise or navigation timed out |
 | `protocolError` | `EPROTOCOL` | Chrome DevTools Protocol error |
-| `evaluationFailed` | `EFAILEDEVAL` | Page evaluation/script execution failed |
+| `evaluationFailed` | `EINVALEVAL` | Page evaluation/script execution failed |
 | `contextDisconnected` | `EBRWSRCONTEXTCONNRESET` | Browser context connection was reset |
 
 ### Usage
@@ -56,7 +56,7 @@ const protocolError = errors.protocolError({ message: 'Target closed.' })
 
 // Create an evaluation error
 const evalError = errors.evaluationFailed({ message: 'foo is not defined' })
-// => BrowserlessError: EFAILEDEVAL, foo is not defined
+// => BrowserlessError: EINVALEVAL, foo is not defined
 
 // Normalize a raw error from Puppeteer
 const rawError = { message: 'Protocol error (Runtime.callFunctionOn): Target closed.' }

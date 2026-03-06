@@ -44,15 +44,15 @@ test('evaluationFailed', t => {
 
     t.true(parsedError instanceof Error)
     t.is(parsedError.name, 'BrowserlessError')
-    t.is(parsedError.code, 'EFAILEDEVAL')
-    t.is(parsedError.message, "EFAILEDEVAL, Cannot read property 'bar' of undefined")
+    t.is(parsedError.code, 'EINVALEVAL')
+    t.is(parsedError.message, "EINVALEVAL, Cannot read property 'bar' of undefined")
 
     const error = errors.evaluationFailed("Cannot read property 'bar' of undefined")
 
     t.true(error instanceof Error)
     t.is(error.name, 'BrowserlessError')
-    t.is(error.code, 'EFAILEDEVAL')
-    t.is(error.message, "EFAILEDEVAL, Cannot read property 'bar' of undefined")
+    t.is(error.code, 'EINVALEVAL')
+    t.is(error.message, "EINVALEVAL, Cannot read property 'bar' of undefined")
   }
   {
     const parsedError = errors.ensureError({
@@ -61,19 +61,16 @@ test('evaluationFailed', t => {
 
     t.true(parsedError instanceof Error)
     t.is(parsedError.name, 'BrowserlessError')
-    t.is(parsedError.code, 'EFAILEDEVAL')
+    t.is(parsedError.code, 'EINVALEVAL')
 
-    t.is(
-      parsedError.message,
-      "EFAILEDEVAL, Cannot read properties of undefined (reading 'versoin')"
-    )
+    t.is(parsedError.message, "EINVALEVAL, Cannot read properties of undefined (reading 'versoin')")
 
     const error = errors.evaluationFailed("Cannot read properties of undefined (reading 'versoin')")
 
     t.true(error instanceof Error)
     t.is(error.name, 'BrowserlessError')
-    t.is(error.code, 'EFAILEDEVAL')
-    t.is(error.message, "EFAILEDEVAL, Cannot read properties of undefined (reading 'versoin')")
+    t.is(error.code, 'EINVALEVAL')
+    t.is(error.message, "EINVALEVAL, Cannot read properties of undefined (reading 'versoin')")
   }
   {
     const parsedError = errors.ensureError({
@@ -82,16 +79,16 @@ test('evaluationFailed', t => {
 
     t.true(parsedError instanceof Error)
     t.is(parsedError.name, 'BrowserlessError')
-    t.is(parsedError.code, 'EFAILEDEVAL')
+    t.is(parsedError.code, 'EINVALEVAL')
 
-    t.is(parsedError.message, 'EFAILEDEVAL, version is not defined')
+    t.is(parsedError.message, 'EINVALEVAL, version is not defined')
 
     const error = errors.evaluationFailed('version is not defined')
 
     t.true(error instanceof Error)
     t.is(error.name, 'BrowserlessError')
-    t.is(error.code, 'EFAILEDEVAL')
-    t.is(error.message, 'EFAILEDEVAL, version is not defined')
+    t.is(error.code, 'EINVALEVAL')
+    t.is(error.message, 'EINVALEVAL, version is not defined')
   }
 })
 
