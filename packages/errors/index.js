@@ -36,7 +36,7 @@ browserlessError.browserTimeout = createBrowserlessError({
 browserlessError.protocolError = createBrowserlessError({ code: 'EPROTOCOL' })
 
 browserlessError.evaluationFailed = createBrowserlessError({
-  code: 'EFAILEDEVAL',
+  code: 'EINVALEVAL',
   message: 'Evaluation failed'
 })
 
