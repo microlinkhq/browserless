@@ -52,6 +52,7 @@ const isWhiteSampledImage = (data, { width, height, channels }) => {
 module.exports = async uint8array => {
   const input = Buffer.isBuffer(uint8array) ? uint8array : Buffer.from(uint8array)
   const { data, info } = await sharp(input)
+    .pipelineColourspace('srgb')
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
