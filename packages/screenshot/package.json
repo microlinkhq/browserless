@@ -2,7 +2,7 @@
   "name": "@browserless/screenshot",
   "description": "Capture high-quality screenshots of websites with overlay support, device emulation, and automated image optimization.",
   "homepage": "https://browserless.js.org/#/?id=screenshoturl-options",
-  "version": "10.12.3",
+  "version": "10.12.4",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
