@@ -419,7 +419,7 @@ The color schemes is based on the [Prism library](https://prismjs.com).
 
 ![](https://i.imgur.com/uFfviX7.png)
 
-The [Prism repository](https://github.com/PrismJS/prism-themes/tree/master?tab=readme-ov-file#available-themes) offers a wide range of themes to choose from as well as a [CDN option](https://unpkg.com/browse/prismjs@1.29.0/themes).
+The [automad-prism-themes repository](https://github.com/automadcms/automad-prism-themes) offers a wide range of themes to choose from as well as a [CDN option](https://unpkg.com/browse/automad-prism-themes@latest/dist/).
 
 ##### element
 
