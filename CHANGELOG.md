@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.5](https://github.com/microlinkhq/browserless/compare/v10.12.4...v10.12.5) (2026-03-17)
+
+### Bug Fixes
+
+* **screenshot:** normalize white detection to sRGB ([#710](https://github.com/microlinkhq/browserless/issues/710)) ([ecfec2d](https://github.com/microlinkhq/browserless/commit/ecfec2dc3ae6350e13aca506ecfba5e196d7756e))
+
 ## [10.12.4](https://github.com/microlinkhq/browserless/compare/v10.12.3...v10.12.4) (2026-03-17)
 
 **Note:** Version bump only for package browserless
