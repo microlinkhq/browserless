@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.2](https://github.com/microlinkhq/browserless/compare/v10.12.1...v10.12.2) (2026-03-17)
+
+### Bug Fixes
+
+* **function:** access to response ([#707](https://github.com/microlinkhq/browserless/issues/707)) ([5c853b7](https://github.com/microlinkhq/browserless/commit/5c853b7aa1b9fef8fb34c7b083da51062e358a69))
+
 ## [10.12.1](https://github.com/microlinkhq/browserless/compare/v10.12.0...v10.12.1) (2026-03-06)
 
 **Note:** Version bump only for package browserless

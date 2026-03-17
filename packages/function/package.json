@@ -2,7 +2,7 @@
   "name": "@browserless/function",
   "description": "Execute arbitrary JavaScript code in a secure browser sandbox with access to page DOM and network.",
   "homepage": "https://browserless.js.org",
-  "version": "10.12.1",
+  "version": "10.12.2",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
