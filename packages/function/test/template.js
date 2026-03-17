@@ -1,3 +1,5 @@
+/* eslint-disable no-new-func */
+
 'use strict'
 
 const { spawnSync } = require('child_process')
@@ -51,6 +53,43 @@ test('require puppeteer if page is used', t => {
     const code = obj => obj.page.title()
     t.is(template(code.toString()).includes('puppeteer'), true)
   }
+})
+
+test('non-page template reconstructs response methods from _response', async t => {
+  const code = '({ response }) => ({ status: response.status(), ok: response.ok() })'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, {
+    _response: { status: 200, ok: true }
+  })
+  t.deepEqual(result, { status: 200, ok: true })
+})
+
+test('response is undefined when _response is absent', async t => {
+  const code = '({ response }) => response'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, {})
+  t.is(result, undefined)
+})
+
+test('_response is not leaked to user function opts', async t => {
+  const code = '(opts) => Object.keys(opts).sort()'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, {
+    _response: { status: 200 },
+    query: { foo: 'bar' }
+  })
+  t.deepEqual(result, ['query', 'response'])
+})
+
+test('page template includes response in function call', t => {
+  const code = '({ page, response }) => response.status()'
+  const source = template(code)
+  t.true(source.includes('response'))
+  t.true(source.includes('_response'))
+  t.true(source.includes('...rest'))
 })
 
 test('reuse page usage analysis to avoid parsing code twice', t => {

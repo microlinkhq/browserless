@@ -29,16 +29,30 @@ const isUsingPage = code => {
   return result
 }
 
+// _response is a plain JSON object serialized via isolated-function;
+// wrap each value as a method to match Puppeteer's HTTPResponse API
+const withResponse = `
+  const { _response: _r, ...rest } = opts
+  const response = _r
+    ? Object.fromEntries(Object.entries(_r).map(([k, v]) => [k, () => v]))
+    : undefined`
+
 const template = (code, usesPage = isUsingPage(code)) => {
-  if (!usesPage) return `async (url, _, opts) => (${code})(opts)`
+  if (!usesPage) {
+    return `async (url, _, opts) => {
+    ${withResponse}
+    return (${code})({ response, ...rest })
+  }`
+  }
   return `
     async (url, browserWSEndpoint, opts) => {
+      ${withResponse}
       const puppeteer = require('@cloudflare/puppeteer')
       const browser = await puppeteer.connect({ browserWSEndpoint })
       const pages = await browser.pages()
       const page = pages[pages.length - 1]
       try {
-        return await (${code})({ page, ...opts })
+        return await (${code})({ page, response, ...rest })
       } finally {
         await browser.disconnect()
       }

@@ -269,6 +269,177 @@ test('interact with npm modules', async t => {
   t.true(!!logging)
 })
 
+test('access to response', async t => {
+  const code = ({ response }) => response.status()
+  const myFn = browserlessFunction(code, opts)
+  const { profiling, logging, ...result } = await myFn('https://example.com')
+
+  t.true(result.isFulfilled)
+  t.is(result.value, 200)
+  t.true(!!profiling)
+})
+
+test('access to response (with page)', async t => {
+  const code = async ({ page, response }) => ({
+    title: await page.title(),
+    status: response.status()
+  })
+
+  const myFn = browserlessFunction(code, opts)
+  const { profiling, logging, ...result } = await myFn('https://example.com')
+
+  t.true(result.isFulfilled)
+  t.is(result.value.title, 'Example Domain')
+  t.is(result.value.status, 200)
+  t.true(!!profiling)
+  t.true(!!logging)
+})
+
+test('response is serialized and reconstructed with callable methods', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return (source) => {
+          const fn = new Function('return (' + source + ')')()
+          return [
+            async (...args) => {
+              try {
+                return { isFulfilled: true, value: await fn(...args) }
+              } catch (error) {
+                return { isFulfilled: false, value: { message: error.message } }
+              }
+            },
+            async () => {}
+          ]
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+
+    const fakeResponse = {
+      status: () => 200,
+      statusText: () => 'OK',
+      url: () => 'https://example.com',
+      ok: () => true,
+      headers: () => ({ 'content-type': 'text/html' }),
+      remoteAddress: () => ({ ip: '93.184.216.34', port: 443 }),
+      timing: () => null,
+      fromCache: () => false,
+      fromServiceWorker: () => false
+    }
+
+    const fakeBrowserless = {
+      withPage: fn => async () =>
+        fn({}, async () => ({
+          device: { viewport: {}, userAgent: 'ua' },
+          response: fakeResponse
+        }))()
+    }
+
+    const fn = browserlessFunction(
+      ({ response }) => ({
+        status: response.status(),
+        ok: response.ok(),
+        url: response.url(),
+        headers: response.headers()
+      }),
+      {
+        getBrowserless: async () => ({
+          createContext: async () => fakeBrowserless
+        })
+      }
+    )
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(result => process.stdout.write(JSON.stringify(result)))
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  const result = JSON.parse(stdout.trim())
+  t.true(result.isFulfilled)
+  t.deepEqual(result.value, {
+    status: 200,
+    ok: true,
+    url: 'https://example.com',
+    headers: { 'content-type': 'text/html' }
+  })
+})
+
+test('response is undefined when goto returns no response', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return (source) => {
+          const fn = new Function('return (' + source + ')')()
+          return [
+            async (...args) => {
+              try {
+                return { isFulfilled: true, value: await fn(...args) }
+              } catch (error) {
+                return { isFulfilled: false, value: { message: error.message } }
+              }
+            },
+            async () => {}
+          ]
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+
+    const fakeBrowserless = {
+      withPage: fn => async () =>
+        fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))()
+    }
+
+    const fn = browserlessFunction(
+      ({ response }) => response === undefined,
+      {
+        getBrowserless: async () => ({
+          createContext: async () => fakeBrowserless
+        })
+      }
+    )
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(result => process.stdout.write(JSON.stringify(result)))
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  const result = JSON.parse(stdout.trim())
+  t.true(result.isFulfilled)
+  t.is(result.value, true)
+})
+
 test('throws error when browser is launched with pipe mode', async t => {
   const createTestUtil = require('@browserless/test/create')
   const { getBrowser } = createTestUtil({ pipe: true })
