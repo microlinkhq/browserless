@@ -35,6 +35,7 @@
     "@browserless/goto": "^10.11.4",
     "@kikobeats/content-type": "~1.0.3",
     "@kikobeats/time-span": "~1.0.11",
+    "automad-prism-themes": "~0.3.7",
     "debug-logfmt": "~1.4.8",
     "got": "~11.8.6",
     "is-html-content": "~1.0.0",

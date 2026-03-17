@@ -61,17 +61,17 @@ const buffer = await browserless.screenshot('https://example.com', {
 
 ### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `type` | `string` | `'png'` | Image format: `'png'`, `'jpeg'`, `'webp'` |
-| `quality` | `number` | — | Quality (0-100) for JPEG/WebP |
-| `fullPage` | `boolean` | `false` | Capture full scrollable page |
-| `element` | `string` | — | CSS selector for element screenshot |
-| `codeScheme` | `string` | `'atom-dark'` | Prism.js theme for code highlighting |
-| `waitUntil` | `string` | `'auto'` | When to consider navigation done |
-| `waitForDom` | `number` | `0` | DOM stability window in ms (idle is `waitForDom / 10`, `0` disables DOM wait) |
-| `isPageReady` | `function` | `({ isWhite }) => !isWhite` | Custom readiness predicate for retry loop |
-| `overlay` | `object` | `{}` | Browser overlay options |
+| Option        | Type       | Default                     | Description                                                                   |
+| ------------- | ---------- | --------------------------- | ----------------------------------------------------------------------------- |
+| `type`        | `string`   | `'png'`                     | Image format: `'png'`, `'jpeg'`, `'webp'`                                     |
+| `quality`     | `number`   | —                           | Quality (0-100) for JPEG/WebP                                                 |
+| `fullPage`    | `boolean`  | `false`                     | Capture full scrollable page                                                  |
+| `element`     | `string`   | —                           | CSS selector for element screenshot                                           |
+| `codeScheme`  | `string`   | `'atom-dark'`               | Prism.js theme for code highlighting                                          |
+| `waitUntil`   | `string`   | `'auto'`                    | When to consider navigation done                                              |
+| `waitForDom`  | `number`   | `0`                         | DOM stability window in ms (idle is `waitForDom / 10`, `0` disables DOM wait) |
+| `isPageReady` | `function` | `({ isWhite }) => !isWhite` | Custom readiness predicate for retry loop                                     |
+| `overlay`     | `object`   | `{}`                        | Browser overlay options                                                       |
 
 All [Puppeteer page.screenshot() options](https://pptr.dev/api/puppeteer.screenshotoptions) are supported.
 
@@ -84,10 +84,10 @@ const buffer = await browserless.screenshot(url, {
   overlay: {
     // Browser frame theme: 'dark' or 'light'
     browser: 'dark',
-    
+
     // Background: color, gradient, or image URL
     background: 'linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)',
-    
+
     // Margin around the screenshot (default: 0.2 = 20%)
     margin: 0.2
   }
@@ -149,8 +149,114 @@ const buffer = await browserless.screenshot('https://api.example.com/data', {
 })
 ```
 
-Available themes from [prism-themes](https://github.com/PrismJS/prism-themes):
-- `atom-dark`, `ghcolors`, `dracula`, `duotone-dark`, `duotone-light`, `material-dark`, `material-light`, `nord`, `synthwave84`, and more
+Available themes from [automad-prism-themes](https://github.com/automadcms/automad-prism-themes) and [prism-themes](https://github.com/PrismJS/prism-themes). When a theme exists in both, the automad version is used.
+
+| Theme                             | Source       |
+| --------------------------------- | ------------ |
+| `a11y-dark`                       | prism-themes |
+| `atom-dark`                       | automad      |
+| `atom-one-dark`                   | automad      |
+| `atom-one-light`                  | automad      |
+| `aura-dark`                       | automad      |
+| `automad-dark`                    | automad      |
+| `automad-light`                   | automad      |
+| `ayu-dark`                        | automad      |
+| `ayu-light`                       | automad      |
+| `ayu-mirage`                      | automad      |
+| `base`                            | automad      |
+| `base16-ateliersulphurpool.light` | prism-themes |
+| `bearded-arc-blueberry`           | automad      |
+| `bearded-vivid-light`             | automad      |
+| `boola-dark`                      | automad      |
+| `boola-light`                     | automad      |
+| `catppuccin-frappe`               | automad      |
+| `catppuccin-latte`                | automad      |
+| `catppuccin-macchiato`            | automad      |
+| `catppuccin-mocha`                | automad      |
+| `cb`                              | prism-themes |
+| `coldark-cold`                    | automad      |
+| `coldark-dark`                    | automad      |
+| `coy-without-shadows`             | prism-themes |
+| `darcula`                         | prism-themes |
+| `dark-frost`                      | automad      |
+| `dark-space`                      | automad      |
+| `dracula`                         | automad      |
+| `duotone-dark`                    | automad      |
+| `duotone-earth`                   | automad      |
+| `duotone-forest`                  | automad      |
+| `duotone-light`                   | automad      |
+| `duotone-sea`                     | automad      |
+| `duotone-space`                   | automad      |
+| `ghcolors`                        | prism-themes |
+| `github-dark`                     | automad      |
+| `github-light`                    | automad      |
+| `gruvbox-dark`                    | automad      |
+| `gruvbox-light`                   | automad      |
+| `holi-theme`                      | prism-themes |
+| `hopscotch`                       | prism-themes |
+| `laserwave`                       | automad      |
+| `lucario`                         | prism-themes |
+| `material-dark`                   | prism-themes |
+| `material-light`                  | prism-themes |
+| `material-oceanic`                | prism-themes |
+| `night-owl`                       | automad      |
+| `night-owl-light`                 | automad      |
+| `nightfall`                       | automad      |
+| `nord`                            | automad      |
+| `one-dark`                        | prism-themes |
+| `one-light`                       | prism-themes |
+| `panda`                           | automad      |
+| `poimandres`                      | automad      |
+| `pojoaque`                        | prism-themes |
+| `rose-pine`                       | automad      |
+| `rose-pine-dawn`                  | automad      |
+| `sakura-sun`                      | automad      |
+| `sea-shells-dark`                 | automad      |
+| `serendipity-midnight`            | automad      |
+| `serendipity-morning`             | automad      |
+| `serendipity-sunset`              | automad      |
+| `shades-of-purple`                | automad      |
+| `solarized-dark-atom`             | automad      |
+| `synthwave84`                     | automad      |
+| `tailwind-ice`                    | automad      |
+| `tailwind-moon-blue`              | automad      |
+| `tokyo-night`                     | automad      |
+| `tokyo-night-light`               | automad      |
+| `tokyo-night-storm`               | automad      |
+| `verdandi`                        | automad      |
+| `verdandi-alter`                  | automad      |
+| `violet-dream`                    | automad      |
+| `vs`                              | prism-themes |
+| `vsc-dark-plus`                   | automad      |
+| `xonokai`                         | prism-themes |
+| `z-touch`                         | prism-themes |
+
+Some themes also offer light/dark combo variants that bundle both modes in a single CSS file, switching automatically based on the page's dark mode class. Since screenshots render without a dark mode context, the light variant will always be used — prefer explicit themes like `github-light` or `github-dark` instead.
+
+Available combo themes:
+
+| Combo theme                        | Light                 | Dark                    |
+| ---------------------------------- | --------------------- | ----------------------- |
+| `atom-one.light-dark`              | `atom-one-light`      | `atom-one-dark`         |
+| `automad.light-dark`               | `automad-light`       | `automad-dark`          |
+| `ayu.light-dark`                   | `ayu-light`           | `ayu-dark`              |
+| `ayu-mirage.light-dark`            | `ayu-light`           | `ayu-mirage`            |
+| `bearded-arc-blueberry.light-dark` | `bearded-vivid-light` | `bearded-arc-blueberry` |
+| `boola.light-dark`                 | `boola-light`         | `boola-dark`            |
+| `catppuccin-frappe.light-dark`     | `catppuccin-latte`    | `catppuccin-frappe`     |
+| `catppuccin-macchiato.light-dark`  | `catppuccin-latte`    | `catppuccin-macchiato`  |
+| `catppuccin-mocha.light-dark`      | `catppuccin-latte`    | `catppuccin-mocha`      |
+| `coldark.light-dark`               | `coldark-cold`        | `coldark-dark`          |
+| `github.light-dark`                | `github-light`        | `github-dark`           |
+| `gruvbox.light-dark`               | `gruvbox-light`       | `gruvbox-dark`          |
+| `night-owl.light-dark`             | `night-owl-light`     | `night-owl`             |
+| `rose-pine.light-dark`             | `rose-pine-dawn`      | `rose-pine`             |
+| `serendipity-midnight.light-dark`  | `serendipity-morning` | `serendipity-midnight`  |
+| `serendipity-sunset.light-dark`    | `serendipity-morning` | `serendipity-sunset`    |
+| `tailwind-moon-blue.light-dark`    | `tailwind-ice`        | `tailwind-moon-blue`    |
+| `tokyo-night-storm.light-dark`     | `tokyo-night-light`   | `tokyo-night-storm`     |
+| `tokyo-night.light-dark`           | `tokyo-night-light`   | `tokyo-night`           |
+| `verdandi.light-dark`              | `verdandi`            | `verdandi-alter`        |
 
 ### Smart Content Detection
 
@@ -222,22 +328,22 @@ const buffer = await browserless.screenshot('https://example.com', {
 
 This is a **core functionality package** for screenshot capture:
 
-| Consumer | Purpose |
-|----------|---------|
-| `browserless` (core) | Provides the `.screenshot()` method |
-| `@browserless/cli` | Powers the `browserless screenshot` command |
-| `@browserless/pdf` | Uses `isWhiteScreenshot` for content detection |
+| Consumer             | Purpose                                        |
+| -------------------- | ---------------------------------------------- |
+| `browserless` (core) | Provides the `.screenshot()` method            |
+| `@browserless/cli`   | Powers the `browserless screenshot` command    |
+| `@browserless/pdf`   | Uses `isWhiteScreenshot` for content detection |
 
 ### Dependencies
 
-| Package | Purpose |
-|---------|---------|
-| `@browserless/goto` | Page navigation with ad blocking |
-| `sharp` | Image composition for overlays; White/blank screenshot detection |
-| `prism-themes` | Syntax highlighting themes |
-| `svg-gradient` | Generate gradient backgrounds |
-| `got` | Fetch remote background images |
-| `is-html-content` | Detect if content is HTML vs code |
+| Package                | Purpose                                                          |
+| ---------------------- | ---------------------------------------------------------------- |
+| `@browserless/goto`    | Page navigation with ad blocking                                 |
+| `sharp`                | Image composition for overlays; White/blank screenshot detection |
+| `automad-prism-themes` | Syntax highlighting themes                                       |
+| `svg-gradient`         | Generate gradient backgrounds                                    |
+| `got`                  | Fetch remote background images                                   |
+| `is-html-content`      | Detect if content is HTML vs code                                |
 
 ## License
 
