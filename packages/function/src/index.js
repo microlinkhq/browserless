@@ -6,6 +6,18 @@ const runFunction = require('./function')
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
+const serializeResponse = response => ({
+  status: response.status(),
+  statusText: response.statusText(),
+  url: response.url(),
+  ok: response.ok(),
+  headers: response.headers(),
+  remoteAddress: response.remoteAddress(),
+  timing: response.timing(),
+  fromCache: response.fromCache(),
+  fromServiceWorker: response.fromServiceWorker()
+})
+
 module.exports = (
   fn,
   {
@@ -36,14 +48,15 @@ module.exports = (
     const browserless = await browser.createContext()
 
     return browserless.withPage((page, goto) => async () => {
-      const { device } = await goto(page, { url, timeout, ...gotoOpts })
+      const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
 
       const runFunctionOpts = {
         url,
         code,
         device,
         ...opts,
-        ...fnOpts
+        ...fnOpts,
+        ...(response && { _response: serializeResponse(response) })
       }
 
       if (runFunctionOpts.code === code) {
