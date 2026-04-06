@@ -96,7 +96,10 @@ const setupAutoConsent = async page => {
     }
 
     if (message.type === 'eval') {
-      const result = await page.evaluate(message.code)
+      let result = false
+      try {
+        result = await page.evaluate(message.code)
+      } catch {}
       return sendMessage(page, { type: 'evalResp', id: message.id, result })
     }
   })

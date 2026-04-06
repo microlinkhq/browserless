@@ -81,6 +81,40 @@ test('skip autoconsent setup when `adblock` is false', async t => {
   t.false(calls.includes('autoconsentSendMessage'))
 })
 
+test('autoconsent eval that throws still sends evalResp with result false', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve(null), 3000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'evalResp' && msg.id === 'test-throw') {
+            clearTimeout(timeout)
+            resolve(msg)
+          }
+        }
+        window
+          .autoconsentSendMessage({
+            type: 'eval',
+            id: 'test-throw',
+            code: '(() => { throw new Error("boom") })()'
+          })
+          .catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'evalResp should be received even when eval code throws')
+  t.is(received.type, 'evalResp')
+  t.is(received.id, 'test-throw')
+  t.is(received.result, false)
+})
+
 test('`disableAdblock` removes blocker listeners and keeps request interception enabled', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)
