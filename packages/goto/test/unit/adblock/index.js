@@ -81,6 +81,119 @@ test('skip autoconsent setup when `adblock` is false', async t => {
   t.false(calls.includes('autoconsentSendMessage'))
 })
 
+test('autoconsent eval that throws still sends evalResp with result false', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve(null), 3000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'evalResp' && msg.id === 'test-throw') {
+            clearTimeout(timeout)
+            resolve(msg)
+          }
+        }
+        window
+          .autoconsentSendMessage({
+            type: 'eval',
+            id: 'test-throw',
+            code: '(() => { throw new Error("boom") })()'
+          })
+          .catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'evalResp should be received even when eval code throws')
+  t.is(received.type, 'evalResp')
+  t.is(received.id, 'test-throw')
+  t.is(received.result, false)
+})
+
+test('autoconsent eval that hangs is timed out', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve(null), 10000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'evalResp' && msg.id === 'test-hang') {
+            clearTimeout(timeout)
+            resolve(msg)
+          }
+        }
+        window
+          .autoconsentSendMessage({
+            type: 'eval',
+            id: 'test-hang',
+            code: 'new Promise(() => {})'
+          })
+          .catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'evalResp should be received even when eval code hangs')
+  t.is(received.type, 'evalResp')
+  t.is(received.id, 'test-hang')
+  t.is(received.result, false)
+})
+
+test('eval triggered from child frame is rejected', async t => {
+  const browserless = await getBrowserContext(t)
+
+  const url = await runServer(t, ({ req, res }) => {
+    res.setHeader('content-type', 'text/html')
+    if (req.url === '/frame') {
+      return res.end('<html><body></body></html>')
+    }
+    res.end('<html><body><iframe src="/frame"></iframe></body></html>')
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load' })
+
+    const iframeEl = await page.waitForSelector('iframe')
+    const iframe = await iframeEl.contentFrame()
+
+    await page.evaluate(() => {
+      window.__iframeEval = false
+    })
+
+    const hasBinding = await iframe
+      .evaluate(() => typeof window.autoconsentSendMessage === 'function')
+      .catch(() => false)
+
+    if (!hasBinding) return false
+
+    await iframe.evaluate(() => {
+      window
+        .autoconsentSendMessage({
+          type: 'eval',
+          id: 'frame-eval',
+          code: 'window.__iframeEval = true'
+        })
+        .catch(() => {})
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    return page.evaluate(() => window.__iframeEval)
+  })
+
+  const result = await run()
+  t.is(result, false, 'eval from child frame must not execute in main frame')
+})
+
 test('`disableAdblock` removes blocker listeners and keeps request interception enabled', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)

@@ -1,6 +1,8 @@
 'use strict'
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
+const { randomUUID } = require('crypto')
+const pTimeout = require('p-timeout')
 const fs = require('fs/promises')
 const path = require('path')
 
@@ -53,6 +55,10 @@ const autoconsentConfig = Object.freeze({
   enablePrehide: true,
   /* apply CSS-only rules that hide popups lacking a reject button */
   enableCosmeticRules: true,
+  /* enable rules auto-generated from common CMP patterns */
+  enableGeneratedRules: true,
+  /* fall back to heuristic click when no specific rule matches */
+  enableHeuristicAction: true,
   /* skip bundled ABP/uBO cosmetic filter list (saves bundle size) */
   enableFilterList: false,
   /* how many times to retry CMP detection (~50 ms apart) */
@@ -80,21 +86,36 @@ const sendMessage = (page, message) =>
     }, message)
     .catch(() => {})
 
-const setupAutoConsent = async page => {
+const setupAutoConsent = async (page, timeout) => {
   if (page._autoconsentSetup) return
   const autoconsentPlaywrightScript = await getAutoconsentPlaywrightScript()
+  const nonce = randomUUID()
 
   await page.exposeFunction('autoconsentSendMessage', async message => {
     if (!message || typeof message !== 'object') return
+    if (message.__nonce !== nonce) return
 
     if (message.type === 'init') {
       return sendMessage(page, { type: 'initResp', config: autoconsentConfig })
     }
 
     if (message.type === 'eval') {
-      return sendMessage(page, { type: 'evalResp', id: message.id, result: false })
+      let result = false
+      try {
+        result = await pTimeout(page.evaluate(message.code), timeout)
+      } catch {}
+      return sendMessage(page, { type: 'evalResp', id: message.id, result })
     }
   })
+
+  /* Wrap the binding in the top frame so every outgoing message carries the
+     nonce.  Child frames (including cross-origin iframes) keep the raw CDP
+     binding which lacks the nonce, so their messages are silently rejected. */
+  await page.evaluateOnNewDocument(n => {
+    if (window.self !== window.top) return
+    const raw = window.autoconsentSendMessage
+    if (raw) window.autoconsentSendMessage = msg => raw({ ...msg, __nonce: n })
+  }, nonce)
 
   await page.evaluateOnNewDocument(autoconsentPlaywrightScript)
   page._autoconsentSetup = true
@@ -102,7 +123,7 @@ const setupAutoConsent = async page => {
 
 const runAutoConsent = async page => page.evaluate(await getAutoconsentPlaywrightScript())
 
-const enableBlockingInPage = (page, run, actionTimeout) => {
+const enableBlockingInPage = (page, run, timeout) => {
   page.disableAdblock = () =>
     getEngine()
       .then(engine => engine.disableBlockingInPage(page, { keepRequestInterception: true }))
@@ -111,13 +132,13 @@ const enableBlockingInPage = (page, run, actionTimeout) => {
 
   return [
     run({
-      fn: setupAutoConsent(page),
-      timeout: actionTimeout,
+      fn: setupAutoConsent(page, timeout),
+      timeout,
       debug: 'autoconsent:setup'
     }),
     run({
       fn: getEngine().then(engine => engine.enableBlockingInPage(page)),
-      timeout: actionTimeout,
+      timeout,
       debug: 'adblock'
     })
   ]
