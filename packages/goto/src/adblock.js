@@ -1,6 +1,8 @@
 'use strict'
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
+const { randomUUID } = require('crypto')
+const pTimeout = require('p-timeout')
 const fs = require('fs/promises')
 const path = require('path')
 
@@ -84,12 +86,14 @@ const sendMessage = (page, message) =>
     }, message)
     .catch(() => {})
 
-const setupAutoConsent = async page => {
+const setupAutoConsent = async (page, timeout) => {
   if (page._autoconsentSetup) return
   const autoconsentPlaywrightScript = await getAutoconsentPlaywrightScript()
+  const nonce = randomUUID()
 
   await page.exposeFunction('autoconsentSendMessage', async message => {
     if (!message || typeof message !== 'object') return
+    if (message.__nonce !== nonce) return
 
     if (message.type === 'init') {
       return sendMessage(page, { type: 'initResp', config: autoconsentConfig })
@@ -98,11 +102,20 @@ const setupAutoConsent = async page => {
     if (message.type === 'eval') {
       let result = false
       try {
-        result = await page.evaluate(message.code)
+        result = await pTimeout(page.evaluate(message.code), timeout)
       } catch {}
       return sendMessage(page, { type: 'evalResp', id: message.id, result })
     }
   })
+
+  /* Wrap the binding in the top frame so every outgoing message carries the
+     nonce.  Child frames (including cross-origin iframes) keep the raw CDP
+     binding which lacks the nonce, so their messages are silently rejected. */
+  await page.evaluateOnNewDocument(n => {
+    if (window.self !== window.top) return
+    const raw = window.autoconsentSendMessage
+    if (raw) window.autoconsentSendMessage = msg => raw({ ...msg, __nonce: n })
+  }, nonce)
 
   await page.evaluateOnNewDocument(autoconsentPlaywrightScript)
   page._autoconsentSetup = true
@@ -119,7 +132,7 @@ const enableBlockingInPage = (page, run, actionTimeout) => {
 
   return [
     run({
-      fn: setupAutoConsent(page),
+      fn: setupAutoConsent(page, actionTimeout),
       timeout: actionTimeout,
       debug: 'autoconsent:setup'
     }),
