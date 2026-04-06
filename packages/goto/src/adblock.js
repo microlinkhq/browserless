@@ -123,7 +123,7 @@ const setupAutoConsent = async (page, timeout) => {
 
 const runAutoConsent = async page => page.evaluate(await getAutoconsentPlaywrightScript())
 
-const enableBlockingInPage = (page, run, actionTimeout) => {
+const enableBlockingInPage = (page, run, timeout) => {
   page.disableAdblock = () =>
     getEngine()
       .then(engine => engine.disableBlockingInPage(page, { keepRequestInterception: true }))
@@ -132,13 +132,13 @@ const enableBlockingInPage = (page, run, actionTimeout) => {
 
   return [
     run({
-      fn: setupAutoConsent(page, actionTimeout),
-      timeout: actionTimeout,
+      fn: setupAutoConsent(page, timeout),
+      timeout,
       debug: 'autoconsent:setup'
     }),
     run({
       fn: getEngine().then(engine => engine.enableBlockingInPage(page)),
-      timeout: actionTimeout,
+      timeout,
       debug: 'adblock'
     })
   ]
