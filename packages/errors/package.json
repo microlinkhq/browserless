@@ -29,10 +29,10 @@
     "puppeteer"
   ],
   "dependencies": {
-    "debug-logfmt": "~1.4.8",
+    "debug-logfmt": "~1.4.10",
     "ensure-error": "~3.0.1",
     "serialize-error": "~8.1.0",
-    "whoops": "~5.1.0"
+    "whoops": "~5.1.1"
   },
   "devDependencies": {
     "ava": "5"

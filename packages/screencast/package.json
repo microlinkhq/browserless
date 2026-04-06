@@ -32,7 +32,7 @@
     "video"
   ],
   "dependencies": {
-    "null-prototype-object": "~1.2.5"
+    "null-prototype-object": "~1.2.6"
   },
   "devDependencies": {
     "@browserless/test": "^10.11.4",

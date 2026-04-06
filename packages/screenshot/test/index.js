@@ -47,6 +47,7 @@ test('graphics features', async t => {
           Vulkan: 'Disabled',
           WebGL: 'Hardware accelerated but at reduced performance',
           WebGPU: 'Software only, hardware acceleration unavailable',
+          'WebGPU interop': 'Disabled',
           WebNN: 'Disabled'
         }
       : {
@@ -63,6 +64,7 @@ test('graphics features', async t => {
           'Video Encode': 'Hardware accelerated',
           WebGL: 'Hardware accelerated but at reduced performance',
           WebGPU: 'Software only, hardware acceleration unavailable',
+          'WebGPU interop': 'Disabled',
           WebNN: 'Disabled'
         }
   )

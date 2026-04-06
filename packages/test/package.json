@@ -40,7 +40,7 @@
     "fs-extra": "latest",
     "img-diff-js": "latest",
     "pdf-parse": "latest",
-    "puppeteer": "24.37.5",
+    "puppeteer": "24",
     "signal-exit": "latest",
     "temperment": "latest"
   },
