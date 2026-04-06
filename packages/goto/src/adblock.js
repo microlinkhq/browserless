@@ -53,6 +53,10 @@ const autoconsentConfig = Object.freeze({
   enablePrehide: true,
   /* apply CSS-only rules that hide popups lacking a reject button */
   enableCosmeticRules: true,
+  /* enable rules auto-generated from common CMP patterns */
+  enableGeneratedRules: true,
+  /* fall back to heuristic click when no specific rule matches */
+  enableHeuristicAction: true,
   /* skip bundled ABP/uBO cosmetic filter list (saves bundle size) */
   enableFilterList: false,
   /* how many times to retry CMP detection (~50 ms apart) */
@@ -92,7 +96,8 @@ const setupAutoConsent = async page => {
     }
 
     if (message.type === 'eval') {
-      return sendMessage(page, { type: 'evalResp', id: message.id, result: false })
+      const result = await page.evaluate(message.code)
+      return sendMessage(page, { type: 'evalResp', id: message.id, result })
     }
   })
 
