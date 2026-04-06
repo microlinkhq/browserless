@@ -2,7 +2,7 @@
   "name": "@browserless/screencast",
   "description": "Capture website interactions frame-by-frame to create videos and GIFs. Perfect for demos, tutorials, and automated testing.",
   "homepage": "https://browserless.js.org/#/?id=screencasturl-options",
-  "version": "10.11.4",
+  "version": "10.12.6",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -35,7 +35,7 @@
     "null-prototype-object": "~1.2.6"
   },
   "devDependencies": {
-    "@browserless/test": "^10.11.4",
+    "@browserless/test": "^10.12.6",
     "@kikobeats/time-span": "latest",
     "@skyra/gifenc": "latest",
     "ava": "5",
