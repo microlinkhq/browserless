@@ -181,11 +181,12 @@ test('webgl vendor is not bot', async t => {
     ? {
         vendor: 'Google Inc. (Google)',
         renderer:
-        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
+          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
       }
     : {
-        vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
+        vendor: 'Google Inc. (Google)',
+        renderer:
+          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
       }
 
   t.deepEqual(await webgl(), expected)
@@ -209,11 +210,12 @@ test('webgl2 vendor is not bot', async t => {
     ? {
         vendor: 'Google Inc. (Google)',
         renderer:
-        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
+          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
       }
     : {
-        vendor: 'Google Inc. (Apple)',
-        renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)'
+        vendor: 'Google Inc. (Google)',
+        renderer:
+          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
       }
 
   t.deepEqual(await webgl2(), expected)

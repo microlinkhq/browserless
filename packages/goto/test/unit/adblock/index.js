@@ -17,7 +17,7 @@ test('adblock assets are lazy loaded at require time', t => {
   const script = `
     const fs = require('fs')
     const path = require('path')
-    const targetFiles = new Set(['engine.bin', 'autoconsent.playwright.js'])
+    const targetFiles = new Set(['engine.bin', 'autoconsent.playwright.js', 'compact-rules.json'])
     let targetedSyncReads = 0
     const originalReadFileSync = fs.readFileSync
     fs.readFileSync = (...args) => {
@@ -35,6 +35,33 @@ test('adblock assets are lazy loaded at require time', t => {
 
   t.is(status, 0, stderr)
   t.is(stdout.trim(), '0')
+})
+
+test('pre-warm rules failure does not crash the process', t => {
+  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
+  const script = `
+    const fsp = require('fs/promises')
+    const origReadFile = fsp.readFile
+    fsp.readFile = (...args) => {
+      const filePath = typeof args[0] === 'string' ? args[0] : String(args[0])
+      if (filePath.includes('compact-rules.json')) {
+        return Promise.reject(new Error('simulated ENOENT'))
+      }
+      return origReadFile(...args)
+    }
+    const adblock = require(${JSON.stringify(adblockPath)})
+    const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
+    adblock.enableBlockingInPage({ exposeFunction: async () => {}, evaluateOnNewDocument: async () => {} }, run, 5000)
+    setTimeout(() => { process.stdout.write('ok'); process.exit(0) }, 500)
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8',
+    timeout: 5000
+  })
+
+  t.is(status, 0, `process crashed: ${stderr}`)
+  t.is(stdout.trim(), 'ok')
 })
 
 test('setup autoconsent when `adblock` is enabled', async t => {
@@ -79,6 +106,139 @@ test('skip autoconsent setup when `adblock` is false', async t => {
   const calls = await run()
 
   t.false(calls.includes('autoconsentSendMessage'))
+})
+
+test('initResp includes rules', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve('TIMEOUT'), 5000)
+        const messages = []
+        window.autoconsentReceiveMessage = msg => {
+          messages.push(msg && typeof msg === 'object' ? msg.type : String(msg))
+          if (msg && msg.type === 'initResp') {
+            clearTimeout(timeout)
+            resolve({
+              msgKeys: Object.keys(msg).sort().join(','),
+              hasRules: !!msg.rules,
+              hasR: !!(msg.rules && msg.rules.r),
+              hasIndex: !!(msg.rules && msg.rules.index),
+              configKeys: msg.config ? Object.keys(msg.config).sort().join(',') : 'NO_CONFIG',
+              messages: messages.join(';')
+            })
+          }
+        }
+        window.autoconsentSendMessage({ type: 'init' }).catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'initResp should be received')
+  t.not(received, 'TIMEOUT', 'timed out, no initResp received')
+  t.snapshot(received, 'diagnostic snapshot of initResp')
+  t.true(received.hasRules, `initResp must include rules (keys: ${received.msgKeys}, config: ${received.configKeys}, messages: ${received.messages})`)
+  t.true(received.hasR, 'compact rules must contain r (rules) field')
+  t.true(received.hasIndex, 'compact rules must contain index field')
+})
+
+test('initResp includes config with expected shape', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve('TIMEOUT'), 5000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg && msg.type === 'initResp') {
+            clearTimeout(timeout)
+            resolve({
+              configStr: JSON.stringify(msg.config),
+              configKeys: msg.config ? Object.keys(msg.config).sort().join(',') : 'NO_CONFIG',
+              msgKeys: Object.keys(msg).sort().join(',')
+            })
+          }
+        }
+        window.autoconsentSendMessage({ type: 'init' }).catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'initResp should be received')
+  t.not(received, 'TIMEOUT', 'timed out, no initResp received')
+  t.snapshot(received, 'diagnostic snapshot of config')
+  const config = JSON.parse(received.configStr)
+  t.truthy(config, 'initResp must include config')
+  t.is(config.enabled, true)
+  t.is(config.autoAction, 'optOut')
+  t.is(config.enablePrehide, true)
+  t.is(config.isMainWorld, false, `config keys: ${received.configKeys}, msg keys: ${received.msgKeys}`)
+  t.is(typeof config.detectRetries, 'number')
+  t.truthy(config.logs, 'config must include logs')
+})
+
+test('eval that succeeds returns the actual result', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve(null), 3000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'evalResp' && msg.id === 'test-ok') {
+            clearTimeout(timeout)
+            resolve(msg)
+          }
+        }
+        window
+          .autoconsentSendMessage({
+            type: 'eval',
+            id: 'test-ok',
+            code: '1 + 1 === 2'
+          })
+          .catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'evalResp should be received')
+  t.is(received.type, 'evalResp')
+  t.is(received.id, 'test-ok')
+  t.is(received.result, true)
+})
+
+test('invalid messages are silently ignored', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    const results = await page.evaluate(() => {
+      return Promise.allSettled([
+        window.autoconsentSendMessage(null),
+        window.autoconsentSendMessage('string'),
+        window.autoconsentSendMessage(42)
+      ])
+    })
+
+    return results.every(r => r.status === 'fulfilled')
+  })
+
+  t.true(await run(), 'invalid messages must not throw')
 })
 
 test('autoconsent eval that throws still sends evalResp with result false', async t => {
