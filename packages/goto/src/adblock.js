@@ -156,16 +156,12 @@ const setupAutoConsent = async (page, timeout) => {
     }
   })
 
-  /* Wrap the binding in the top frame so every outgoing message carries the
-     nonce.  Child frames (including cross-origin iframes) keep the raw CDP
-     binding which lacks the nonce, so their messages are silently rejected. */
-  await page.evaluateOnNewDocument(n => {
-    if (window.self !== window.top) return
-    const raw = window.autoconsentSendMessage
-    if (raw) window.autoconsentSendMessage = msg => raw({ ...msg, __nonce: n })
-  }, nonce)
-
-  await page.evaluateOnNewDocument(autoconsentPlaywrightScript)
+  /* Single injection: wrap the binding in the top frame so every outgoing
+     message carries the nonce, then run the autoconsent script. Child frames
+     keep the raw CDP binding which lacks the nonce, so their messages are
+     silently rejected. */
+  const nonceGuard = `(function(n){if(window.self!==window.top)return;var raw=window.autoconsentSendMessage;if(raw)window.autoconsentSendMessage=function(msg){return raw(Object.assign({},msg,{__nonce:n}))}})(${JSON.stringify(nonce)});`
+  await page.evaluateOnNewDocument(nonceGuard + autoconsentPlaywrightScript)
   page._autoconsentSetup = true
 }
 
