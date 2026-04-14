@@ -141,9 +141,12 @@ const setupAutoConsent = async (page, timeout) => {
 
       case 'cmpDetected':
       case 'popupFound':
-      case 'optOutResult':
       case 'autoconsentDone':
         debug(message.type, { cmp: message.cmp })
+        break
+
+      case 'optOutResult':
+        debug(message.type, { result: message.result })
         break
 
       case 'autoconsentError':
