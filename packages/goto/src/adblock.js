@@ -127,6 +127,7 @@ const setupAutoConsent = async (page, timeout) => {
 
     switch (message.type) {
       case 'init': {
+        page._autoconsentInitDone = true
         const rules = await getAutoconsentRules()
         return sendMessage(page, { type: 'initResp', config: autoconsentConfig, rules })
       }
@@ -168,7 +169,10 @@ const setupAutoConsent = async (page, timeout) => {
   page._autoconsentSetup = true
 }
 
-const runAutoConsent = async page => page.evaluate(await getAutoconsentPlaywrightScript())
+const runAutoConsent = async page => {
+  if (page._autoconsentInitDone) return
+  return page.evaluate(await getAutoconsentPlaywrightScript())
+}
 
 const enableBlockingInPage = (page, run, timeout) => {
   getAutoconsentRules()
