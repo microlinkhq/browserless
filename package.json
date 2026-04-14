@@ -130,12 +130,10 @@
     "dev:server": "browser-sync start --server --files \"index.html, README.md, static/**/*.(css|js)\"",
     "lint": "standard",
     "postrelease": "github-generate-release",
-    "prerelease": "pnpm run update:check",
     "pretest": "pnpm run lint",
     "release": "lerna publish --yes --sort --conventional-commits -m \"chore(release): %s\"",
     "test": "c8 pnpm --recursive --sequential test",
-    "update": "pnpm --recursive --parallel exec ncu -u",
-    "update:check": "pnpm --recursive --parallel exec ncu -errorLevel 2"
+    "update": "pnpm --recursive --parallel exec ncu -u"
   },
   "private": true,
   "license": "MIT",
