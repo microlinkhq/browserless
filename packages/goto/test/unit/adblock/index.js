@@ -17,7 +17,7 @@ test('adblock assets are lazy loaded at require time', t => {
   const script = `
     const fs = require('fs')
     const path = require('path')
-    const targetFiles = new Set(['engine.bin', 'autoconsent.playwright.js'])
+    const targetFiles = new Set(['engine.bin', 'autoconsent.playwright.js', 'rules.json'])
     let targetedSyncReads = 0
     const originalReadFileSync = fs.readFileSync
     fs.readFileSync = (...args) => {
@@ -79,6 +79,34 @@ test('skip autoconsent setup when `adblock` is false', async t => {
   const calls = await run()
 
   t.false(calls.includes('autoconsentSendMessage'))
+})
+
+test('initResp includes rules', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve(null), 3000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'initResp') {
+            clearTimeout(timeout)
+            resolve(msg)
+          }
+        }
+        window.autoconsentSendMessage({ type: 'init' }).catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'initResp should be received')
+  t.truthy(received.rules, 'initResp must include rules')
+  t.true(Array.isArray(received.rules.autoconsent), 'rules must contain autoconsent array')
+  t.true(received.rules.autoconsent.length > 0, 'autoconsent rules must not be empty')
 })
 
 test('autoconsent eval that throws still sends evalResp with result false', async t => {

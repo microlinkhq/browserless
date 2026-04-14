@@ -44,36 +44,47 @@ const getAutoconsentPlaywrightScript = () => {
   return autoconsentPlaywrightScriptPromise
 }
 
+let autoconsentRulesPromise
+
+const getAutoconsentRules = () => {
+  if (autoconsentRulesPromise) return autoconsentRulesPromise
+
+  autoconsentRulesPromise = fs
+    .readFile(
+      path.resolve(
+        path.dirname(require.resolve('@duckduckgo/autoconsent')),
+        '../rules/rules.json'
+      ),
+      'utf8'
+    )
+    .then(JSON.parse)
+
+  return autoconsentRulesPromise
+}
+
 /* Configuration passed to autoconsent's `initResp` message.
    See https://github.com/duckduckgo/autoconsent/blob/main/api.md */
 const autoconsentConfig = Object.freeze({
-  /* activate consent rule matching */
   enabled: true,
-  /* automatically reject (opt-out) all cookies */
   autoAction: 'optOut',
-  /* hide banners early via CSS before detection finishes */
+  disabledCmps: [],
   enablePrehide: true,
-  /* apply CSS-only rules that hide popups lacking a reject button */
   enableCosmeticRules: true,
-  /* enable rules auto-generated from common CMP patterns */
   enableGeneratedRules: true,
-  /* fall back to heuristic click when no specific rule matches */
-  enableHeuristicAction: true,
-  /* skip bundled ABP/uBO cosmetic filter list (saves bundle size) */
   enableFilterList: false,
-  /* how many times to retry CMP detection (~50 ms apart) */
+  enableHeuristicDetection: true,
+  enableHeuristicAction: true,
+  isMainWorld: false,
+  prehideTimeout: 2000,
   detectRetries: 20,
   logs: {
-    /* CMP detection / opt-out lifecycle events */
     lifecycle: false,
-    /* individual rule step execution */
     rulesteps: false,
-    /* eval snippet calls */
+    detectionsteps: false,
     evals: false,
-    /* rule errors */
     errors: false,
-    /* background ↔ content-script messages */
-    messages: false
+    messages: false,
+    waits: false
   }
 })
 
@@ -95,16 +106,30 @@ const setupAutoConsent = async (page, timeout) => {
     if (!message || typeof message !== 'object') return
     if (message.__nonce !== nonce) return
 
-    if (message.type === 'init') {
-      return sendMessage(page, { type: 'initResp', config: autoconsentConfig })
-    }
+    switch (message.type) {
+      case 'init': {
+        const rules = await getAutoconsentRules()
+        return sendMessage(page, { type: 'initResp', config: autoconsentConfig, rules })
+      }
 
-    if (message.type === 'eval') {
-      let result = false
-      try {
-        result = await pTimeout(page.evaluate(message.code), timeout)
-      } catch {}
-      return sendMessage(page, { type: 'evalResp', id: message.id, result })
+      case 'eval': {
+        let result = false
+        try {
+          result = await pTimeout(page.evaluate(message.code), timeout)
+        } catch {}
+        return sendMessage(page, { type: 'evalResp', id: message.id, result })
+      }
+
+      case 'cmpDetected':
+      case 'popupFound':
+      case 'optOutResult':
+      case 'autoconsentDone':
+        debug(message.type, { cmp: message.cmp })
+        break
+
+      case 'autoconsentError':
+        debug(message.type, { details: message.details })
+        break
     }
   })
 
