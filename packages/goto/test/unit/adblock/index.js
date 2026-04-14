@@ -117,14 +117,19 @@ test('initResp includes rules', async t => {
 
     return page.evaluate(() => {
       return new Promise(resolve => {
-        const timeout = setTimeout(() => resolve(null), 3000)
+        const timeout = setTimeout(() => resolve('TIMEOUT'), 5000)
+        const messages = []
         window.autoconsentReceiveMessage = msg => {
-          if (msg.type === 'initResp') {
+          messages.push(msg && typeof msg === 'object' ? msg.type : String(msg))
+          if (msg && msg.type === 'initResp') {
             clearTimeout(timeout)
             resolve({
+              msgKeys: Object.keys(msg).sort().join(','),
               hasRules: !!msg.rules,
               hasR: !!(msg.rules && msg.rules.r),
-              hasIndex: !!(msg.rules && msg.rules.index)
+              hasIndex: !!(msg.rules && msg.rules.index),
+              configKeys: msg.config ? Object.keys(msg.config).sort().join(',') : 'NO_CONFIG',
+              messages: messages.join(';')
             })
           }
         }
@@ -135,7 +140,9 @@ test('initResp includes rules', async t => {
 
   const received = await run()
   t.truthy(received, 'initResp should be received')
-  t.true(received.hasRules, 'initResp must include rules')
+  t.not(received, 'TIMEOUT', 'timed out, no initResp received')
+  t.snapshot(received, 'diagnostic snapshot of initResp')
+  t.true(received.hasRules, `initResp must include rules (keys: ${received.msgKeys}, config: ${received.configKeys}, messages: ${received.messages})`)
   t.true(received.hasR, 'compact rules must contain r (rules) field')
   t.true(received.hasIndex, 'compact rules must contain index field')
 })
@@ -149,11 +156,15 @@ test('initResp includes config with expected shape', async t => {
 
     return page.evaluate(() => {
       return new Promise(resolve => {
-        const timeout = setTimeout(() => resolve(null), 3000)
+        const timeout = setTimeout(() => resolve('TIMEOUT'), 5000)
         window.autoconsentReceiveMessage = msg => {
-          if (msg.type === 'initResp') {
+          if (msg && msg.type === 'initResp') {
             clearTimeout(timeout)
-            resolve({ config: msg.config })
+            resolve({
+              configStr: JSON.stringify(msg.config),
+              configKeys: msg.config ? Object.keys(msg.config).sort().join(',') : 'NO_CONFIG',
+              msgKeys: Object.keys(msg).sort().join(',')
+            })
           }
         }
         window.autoconsentSendMessage({ type: 'init' }).catch(() => {})
@@ -163,13 +174,16 @@ test('initResp includes config with expected shape', async t => {
 
   const received = await run()
   t.truthy(received, 'initResp should be received')
-  t.truthy(received.config, 'initResp must include config')
-  t.is(received.config.enabled, true)
-  t.is(received.config.autoAction, 'optOut')
-  t.is(received.config.enablePrehide, true)
-  t.is(received.config.isMainWorld, false)
-  t.is(typeof received.config.detectRetries, 'number')
-  t.truthy(received.config.logs, 'config must include logs')
+  t.not(received, 'TIMEOUT', 'timed out, no initResp received')
+  t.snapshot(received, 'diagnostic snapshot of config')
+  const config = JSON.parse(received.configStr)
+  t.truthy(config, 'initResp must include config')
+  t.is(config.enabled, true)
+  t.is(config.autoAction, 'optOut')
+  t.is(config.enablePrehide, true)
+  t.is(config.isMainWorld, false, `config keys: ${received.configKeys}, msg keys: ${received.msgKeys}`)
+  t.is(typeof config.detectRetries, 'number')
+  t.truthy(config.logs, 'config must include logs')
 })
 
 test('eval that succeeds returns the actual result', async t => {
