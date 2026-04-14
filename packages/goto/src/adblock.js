@@ -63,27 +63,46 @@ const getAutoconsentRules = () => {
 }
 
 /* Configuration passed to autoconsent's `initResp` message.
-   See https://github.com/duckduckgo/autoconsent/blob/main/api.md */
+   See https://github.com/duckduckgo/autoconsent/blob/main/docs/api.md */
 const autoconsentConfig = Object.freeze({
+  /* activate consent rule matching */
   enabled: true,
+  /* automatically reject (opt-out) all cookies */
   autoAction: 'optOut',
+  /* skip these CMPs even if detected */
   disabledCmps: [],
+  /* hide banners early via CSS before detection finishes */
   enablePrehide: true,
+  /* apply CSS-only rules that hide popups lacking a reject button */
   enableCosmeticRules: true,
+  /* enable rules auto-generated from common CMP patterns */
   enableGeneratedRules: true,
+  /* skip bundled ABP/uBO cosmetic filter list (saves bundle size) */
   enableFilterList: false,
+  /* detect CMPs using heuristics when no specific rule matches */
   enableHeuristicDetection: true,
+  /* fall back to heuristic click when no specific rule matches */
   enableHeuristicAction: true,
+  /* run in the page's main world (false = isolated world) */
   isMainWorld: false,
+  /* max ms to keep prehide CSS applied before removing it */
   prehideTimeout: 2000,
+  /* how many times to retry CMP detection (~50 ms apart) */
   detectRetries: 20,
   logs: {
+    /* CMP detection / opt-out lifecycle events */
     lifecycle: false,
+    /* individual rule step execution */
     rulesteps: false,
+    /* CMP detection step details */
     detectionsteps: false,
+    /* eval snippet calls */
     evals: false,
+    /* rule errors */
     errors: false,
+    /* background ↔ content-script messages */
     messages: false,
+    /* wait/delay step timing */
     waits: false
   }
 })
