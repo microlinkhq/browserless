@@ -37,6 +37,33 @@ test('adblock assets are lazy loaded at require time', t => {
   t.is(stdout.trim(), '0')
 })
 
+test('pre-warm rules failure does not crash the process', t => {
+  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
+  const script = `
+    const fsp = require('fs/promises')
+    const origReadFile = fsp.readFile
+    fsp.readFile = (...args) => {
+      const filePath = typeof args[0] === 'string' ? args[0] : String(args[0])
+      if (filePath.includes('compact-rules.json')) {
+        return Promise.reject(new Error('simulated ENOENT'))
+      }
+      return origReadFile(...args)
+    }
+    const adblock = require(${JSON.stringify(adblockPath)})
+    const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
+    adblock.enableBlockingInPage({ exposeFunction: async () => {}, evaluateOnNewDocument: async () => {} }, run, 5000)
+    setTimeout(() => { process.stdout.write('ok'); process.exit(0) }, 500)
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8',
+    timeout: 5000
+  })
+
+  t.is(status, 0, `process crashed: ${stderr}`)
+  t.is(stdout.trim(), 'ok')
+})
+
 test('setup autoconsent when `adblock` is enabled', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)

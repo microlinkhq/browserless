@@ -171,7 +171,7 @@ const runAutoConsent = async page => {
 }
 
 const enableBlockingInPage = (page, run, timeout) => {
-  getAutoconsentRules()
+  getAutoconsentRules().catch(() => {})
 
   page.disableAdblock = () =>
     getEngine()
