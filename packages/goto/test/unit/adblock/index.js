@@ -109,6 +109,93 @@ test('initResp includes rules', async t => {
   t.true(received.rules.autoconsent.length > 0, 'autoconsent rules must not be empty')
 })
 
+test('initResp includes config with expected shape', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve(null), 3000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'initResp') {
+            clearTimeout(timeout)
+            resolve(msg)
+          }
+        }
+        window.autoconsentSendMessage({ type: 'init' }).catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'initResp should be received')
+  t.truthy(received.config, 'initResp must include config')
+  t.is(received.config.enabled, true)
+  t.is(received.config.autoAction, 'optOut')
+  t.is(received.config.enablePrehide, true)
+  t.is(received.config.isMainWorld, false)
+  t.is(typeof received.config.detectRetries, 'number')
+  t.truthy(received.config.logs, 'config must include logs')
+})
+
+test('eval that succeeds returns the actual result', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    return page.evaluate(() => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve(null), 3000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'evalResp' && msg.id === 'test-ok') {
+            clearTimeout(timeout)
+            resolve(msg)
+          }
+        }
+        window
+          .autoconsentSendMessage({
+            type: 'eval',
+            id: 'test-ok',
+            code: '1 + 1 === 2'
+          })
+          .catch(() => {})
+      })
+    })
+  })
+
+  const received = await run()
+  t.truthy(received, 'evalResp should be received')
+  t.is(received.type, 'evalResp')
+  t.is(received.id, 'test-ok')
+  t.is(received.result, true)
+})
+
+test('invalid messages are silently ignored', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+
+    const results = await page.evaluate(() => {
+      return Promise.allSettled([
+        window.autoconsentSendMessage(null),
+        window.autoconsentSendMessage('string'),
+        window.autoconsentSendMessage(42)
+      ])
+    })
+
+    return results.every(r => r.status === 'fulfilled')
+  })
+
+  t.true(await run(), 'invalid messages must not throw')
+})
+
 test('autoconsent eval that throws still sends evalResp with result false', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)
