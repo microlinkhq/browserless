@@ -8,59 +8,34 @@ const path = require('path')
 
 const debug = require('debug-logfmt')('browserless:goto:adblock')
 
-let enginePromise
+const lazy = fn => {
+  let p
+  return () => (p ??= fn())
+}
 
-const getEngine = () => {
-  if (enginePromise) return enginePromise
+const autoconsentDir = path.dirname(require.resolve('@duckduckgo/autoconsent'))
 
-  enginePromise = fs.readFile(path.resolve(__dirname, './engine.bin')).then(buffer => {
+const getEngine = lazy(() =>
+  fs.readFile(path.resolve(__dirname, './engine.bin')).then(buffer => {
     const engine = PuppeteerBlocker.deserialize(new Uint8Array(buffer))
     engine.on('request-blocked', ({ url }) => debug('block', url))
     engine.on('request-redirected', ({ url }) => debug('redirect', url))
     return engine
   })
-
-  return enginePromise
-}
+)
 
 /**
  * autoconsent.playwright.js is the only browser-injectable IIFE bundle in the package.
  * It is not in the package's "exports" map, so pin @duckduckgo/autoconsent with ~ to
  * avoid breakage from internal restructuring on minor/patch bumps.
  */
-let autoconsentPlaywrightScriptPromise
+const getAutoconsentPlaywrightScript = lazy(() =>
+  fs.readFile(path.resolve(autoconsentDir, 'autoconsent.playwright.js'), 'utf8')
+)
 
-const getAutoconsentPlaywrightScript = () => {
-  if (autoconsentPlaywrightScriptPromise) return autoconsentPlaywrightScriptPromise
-
-  autoconsentPlaywrightScriptPromise = fs.readFile(
-    path.resolve(
-      path.dirname(require.resolve('@duckduckgo/autoconsent')),
-      'autoconsent.playwright.js'
-    ),
-    'utf8'
-  )
-
-  return autoconsentPlaywrightScriptPromise
-}
-
-let autoconsentRulesPromise
-
-const getAutoconsentRules = () => {
-  if (autoconsentRulesPromise) return autoconsentRulesPromise
-
-  autoconsentRulesPromise = fs
-    .readFile(
-      path.resolve(
-        path.dirname(require.resolve('@duckduckgo/autoconsent')),
-        '../rules/compact-rules.json'
-      ),
-      'utf8'
-    )
-    .then(JSON.parse)
-
-  return autoconsentRulesPromise
-}
+const getAutoconsentRules = lazy(() =>
+  fs.readFile(path.resolve(autoconsentDir, '../rules/compact-rules.json'), 'utf8').then(JSON.parse)
+)
 
 /* Configuration passed to autoconsent's `initResp` message.
    See https://github.com/duckduckgo/autoconsent/blob/main/docs/api.md */
