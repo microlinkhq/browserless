@@ -53,7 +53,7 @@ const getAutoconsentRules = () => {
     .readFile(
       path.resolve(
         path.dirname(require.resolve('@duckduckgo/autoconsent')),
-        '../rules/rules.json'
+        '../rules/compact-rules.json'
       ),
       'utf8'
     )
@@ -171,6 +171,8 @@ const setupAutoConsent = async (page, timeout) => {
 const runAutoConsent = async page => page.evaluate(await getAutoconsentPlaywrightScript())
 
 const enableBlockingInPage = (page, run, timeout) => {
+  getAutoconsentRules()
+
   page.disableAdblock = () =>
     getEngine()
       .then(engine => engine.disableBlockingInPage(page, { keepRequestInterception: true }))

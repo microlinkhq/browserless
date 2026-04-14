@@ -17,7 +17,7 @@ test('adblock assets are lazy loaded at require time', t => {
   const script = `
     const fs = require('fs')
     const path = require('path')
-    const targetFiles = new Set(['engine.bin', 'autoconsent.playwright.js', 'rules.json'])
+    const targetFiles = new Set(['engine.bin', 'autoconsent.playwright.js', 'compact-rules.json'])
     let targetedSyncReads = 0
     const originalReadFileSync = fs.readFileSync
     fs.readFileSync = (...args) => {
@@ -105,8 +105,8 @@ test('initResp includes rules', async t => {
   const received = await run()
   t.truthy(received, 'initResp should be received')
   t.truthy(received.rules, 'initResp must include rules')
-  t.true(Array.isArray(received.rules.autoconsent), 'rules must contain autoconsent array')
-  t.true(received.rules.autoconsent.length > 0, 'autoconsent rules must not be empty')
+  t.truthy(received.rules.r, 'compact rules must contain r (rules) field')
+  t.truthy(received.rules.index, 'compact rules must contain index field')
 })
 
 test('initResp includes config with expected shape', async t => {
