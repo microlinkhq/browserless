@@ -121,7 +121,11 @@ test('initResp includes rules', async t => {
         window.autoconsentReceiveMessage = msg => {
           if (msg.type === 'initResp') {
             clearTimeout(timeout)
-            resolve(msg)
+            resolve({
+              hasRules: !!msg.rules,
+              hasR: !!(msg.rules && msg.rules.r),
+              hasIndex: !!(msg.rules && msg.rules.index)
+            })
           }
         }
         window.autoconsentSendMessage({ type: 'init' }).catch(() => {})
@@ -131,9 +135,9 @@ test('initResp includes rules', async t => {
 
   const received = await run()
   t.truthy(received, 'initResp should be received')
-  t.truthy(received.rules, 'initResp must include rules')
-  t.truthy(received.rules.r, 'compact rules must contain r (rules) field')
-  t.truthy(received.rules.index, 'compact rules must contain index field')
+  t.true(received.hasRules, 'initResp must include rules')
+  t.true(received.hasR, 'compact rules must contain r (rules) field')
+  t.true(received.hasIndex, 'compact rules must contain index field')
 })
 
 test('initResp includes config with expected shape', async t => {
@@ -149,7 +153,7 @@ test('initResp includes config with expected shape', async t => {
         window.autoconsentReceiveMessage = msg => {
           if (msg.type === 'initResp') {
             clearTimeout(timeout)
-            resolve(msg)
+            resolve({ config: msg.config })
           }
         }
         window.autoconsentSendMessage({ type: 'init' }).catch(() => {})
