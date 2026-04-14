@@ -96,7 +96,6 @@
   "devDependencies": {
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
-
     "@lerna-lite/cli": "latest",
     "@lerna-lite/publish": "latest",
     "browser-sync": "latest",
