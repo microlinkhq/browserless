@@ -32,6 +32,7 @@
     "web-capture"
   ],
   "dependencies": {
+    "@browserless/errors": "^10.12.6",
     "@browserless/goto": "^10.12.7",
     "@kikobeats/content-type": "~1.0.4",
     "@kikobeats/time-span": "~1.0.12",

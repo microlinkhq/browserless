@@ -40,6 +40,11 @@ browserlessError.evaluationFailed = createBrowserlessError({
   message: 'Evaluation failed'
 })
 
+browserlessError.invalidClip = createBrowserlessError({
+  code: 'EINVALCLIP',
+  message: 'The `clip` must be an object with numeric x, y, width and height.'
+})
+
 browserlessError.contextDisconnected = createBrowserlessError({
   code: 'EBRWSRCONTEXTCONNRESET',
   message: 'The browser context is not connected.'

@@ -92,6 +92,15 @@ test('evaluationFailed', t => {
   }
 })
 
+test('invalidClip', t => {
+  const error = errors.invalidClip()
+
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EINVALCLIP')
+  t.is(error.message, 'EINVALCLIP, The `clip` must be an object with numeric x, y, width and height.')
+})
+
 test('ensureError handles non-object input', t => {
   const errorFromString = errors.ensureError('boom')
   t.true(errorFromString instanceof Error)

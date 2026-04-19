@@ -2,6 +2,7 @@
 
 const debug = require('debug-logfmt')('browserless:screenshot')
 const createGoto = require('@browserless/goto')
+const { invalidClip } = require('@browserless/errors')
 const pReflect = require('p-reflect')
 
 const isWhiteScreenshot = require('./is-white-screenshot')
@@ -13,6 +14,28 @@ const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require
 const createElapsed = () => {
   const start = Date.now()
   return () => Date.now() - start
+}
+
+const toFiniteNumber = value => {
+  const number = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+  return Number.isFinite(number) ? number : undefined
+}
+
+const normalizeClip = clip => {
+  if (clip === undefined) return undefined
+  if (typeof clip !== 'object' || clip === null) throw invalidClip()
+
+  const x = toFiniteNumber(clip.x)
+  const y = toFiniteNumber(clip.y)
+  const width = toFiniteNumber(clip.width)
+  const height = toFiniteNumber(clip.height)
+
+  if (x === undefined || x < 0) throw invalidClip()
+  if (y === undefined || y < 0) throw invalidClip()
+  if (width === undefined || width <= 0) throw invalidClip()
+  if (height === undefined || height <= 0) throw invalidClip()
+
+  return { ...clip, x, y, width, height }
 }
 
 const getPageSnapshot = page =>
@@ -210,7 +233,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
         if (waitUntil !== 'auto') {
           ;({ response } = await goto(page, { ...opts, url, waitUntil }))
           const screenshotOpts = await beforeScreenshot(page, response, opts)
-          screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
+          const screenshotParams = { ...opts, ...screenshotOpts, clip: normalizeClip(screenshotOpts.clip ?? opts.clip) }
+          screenshot = await page.screenshot(screenshotParams)
           debug('screenshot', { waitUntil, duration: timeScreenshot() })
         } else {
           ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
@@ -219,6 +243,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
             const { isWhite, isReady, retry } = await takeScreenshot({
               ...opts,
               ...screenshotOpts,
+              clip: normalizeClip(screenshotOpts.clip ?? opts.clip),
               isPageReady,
               response
             })
