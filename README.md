@@ -441,7 +441,7 @@ You can configure the overlay by specifying the following:
 - **background**: Specifies the background to use. A number of value types are supported:
   - Hexadecimal/RGB/RGBA color codes, eg. `#c1c1c1`.
   - [CSS gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient), eg. `linear-gradient(225deg, #FF057C 0%, #8D0B93 50%, #321575 100%)`
-  - Image URLs, eg. `https://source.unsplash.com/random/1920x1080`.
+  - Image URLs, eg. `https://picsum.photos/1920/1080`.
 
 ```js
 const buffer = await browserless.screenshot(url.toString(), {
