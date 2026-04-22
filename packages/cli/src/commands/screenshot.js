@@ -32,7 +32,7 @@ module.exports = async ({ url, browserless, opts, isPageReady }) => {
   if (typeof isPageReady === 'function') opts.isPageReady = isPageReady
 
   if (opts.background === 'unsplash') {
-    dset(opts, 'overlay.background', 'https://source.unsplash.com/random/1920x1080')
+    dset(opts, 'overlay.background', 'https://picsum.photos/1920/1080')
   }
 
   if (opts.background === 'gradient') {

@@ -104,7 +104,7 @@ overlay: { background: '#c1c1c1' }
 overlay: { background: 'linear-gradient(45deg, #12c2e9, #c471ed, #f64f59)' }
 
 // Image URL
-overlay: { background: 'https://source.unsplash.com/random/1920x1080' }
+overlay: { background: 'https://picsum.photos/1920/1080' }
 ```
 
 ### Element Screenshots
