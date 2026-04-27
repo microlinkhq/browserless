@@ -110,7 +110,7 @@
     "finepack": "latest",
     "git-authors-cli": "latest",
     "github-generate-release": "latest",
-    "gulp": "4",
+    "gulp": "5",
     "gulp-concat": "latest",
     "gulp-postcss": "latest",
     "gulp-uglify": "latest",
