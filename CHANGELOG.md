@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.8](https://github.com/microlinkhq/browserless/compare/v10.12.7...v10.12.8) (2026-04-29)
+
+### Bug Fixes
+
+* dead link ([a82d09c](https://github.com/microlinkhq/browserless/commit/a82d09c3e6417d600e28c88212e77c12554f4fda))
+* source.unsplash.com/random was deprecated in 2024 (now 503s) ([#717](https://github.com/microlinkhq/browserless/issues/717)) ([2a1012d](https://github.com/microlinkhq/browserless/commit/2a1012d1841769667f326ab7917ba0b51d8a4649))
+
 ## [10.12.7](https://github.com/microlinkhq/browserless/compare/v10.12.6...v10.12.7) (2026-04-14)
 
 **Note:** Version bump only for package browserless
