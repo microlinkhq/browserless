@@ -36,7 +36,7 @@
     "debug-logfmt": "~1.4.10",
     "got": "~11.8.6",
     "is-url-http": "~2.3.13",
-    "p-reflect": "~2.1.0",
+    "p-reflect": "~3.1.0",
     "p-timeout": "~4.1.0",
     "shallow-equal": "~3.1.0",
     "tough-cookie": "~6.0.1"
