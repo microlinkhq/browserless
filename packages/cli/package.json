@@ -37,7 +37,7 @@
     "@browserless/capture": "^10.12.8",
     "beauty-error": "~1.2.22",
     "browserless": "^10.12.8",
-    "dark-mode": "~3.0.0",
+    "dark-mode": "~5.0.0",
     "dset": "~3.1.4",
     "mri": "~1.2.0",
     "nanospinner": "~1.2.2",
