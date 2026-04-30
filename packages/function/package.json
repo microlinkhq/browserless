@@ -39,7 +39,7 @@
     "@browserless/test": "^10.12.6",
     "acorn": "~8.16.0",
     "acorn-walk": "~8.3.5",
-    "ava": "5",
+    "ava": "8",
     "lodash": "latest"
   },
   "engines": {

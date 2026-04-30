@@ -38,7 +38,7 @@
     "@browserless/test": "^10.12.6",
     "@kikobeats/time-span": "latest",
     "@skyra/gifenc": "latest",
-    "ava": "5",
+    "ava": "8",
     "canvas": "latest",
     "sharp": "latest"
   },

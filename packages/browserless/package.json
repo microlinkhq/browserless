@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@browserless/test": "^10.12.6",
-    "ava": "5",
+    "ava": "8",
     "ps-list": "7",
     "puppeteer": "24",
     "tinyspawn": "latest"

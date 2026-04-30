@@ -35,7 +35,7 @@
     "require-one-of": "~1.0.24"
   },
   "devDependencies": {
-    "ava": "5",
+    "ava": "8",
     "lodash": "latest"
   },
   "engines": {

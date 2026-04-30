@@ -35,7 +35,7 @@
   ],
   "devDependencies": {
     "async-listen": "latest",
-    "ava": "5",
+    "ava": "8",
     "browserless": "latest",
     "fs-extra": "latest",
     "img-diff-js": "latest",
