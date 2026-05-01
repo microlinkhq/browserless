@@ -2,7 +2,7 @@
   "packages": [
     "packages/*"
   ],
-  "version": "10.12.8",
+  "version": "10.12.9",
   "command": {
     "bootstrap": {
       "npmClientArgs": [
