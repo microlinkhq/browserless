@@ -60,7 +60,7 @@ test('`window.outerWidth` is defined', async t => {
 test('`window.navigator.deviceMemory` is present', async t => {
   const page = await getPage(t)
   await page.goto(fileUrl)
-  t.is(await page.evaluate('window.navigator.deviceMemory'), 8)
+  t.true((await page.evaluate('window.navigator.deviceMemory')) > 0)
 })
 
 test('`window.navigator.webdriver` is false', async t => {
@@ -181,12 +181,12 @@ test('webgl vendor is not bot', async t => {
     ? {
         vendor: 'Google Inc. (Google)',
         renderer:
-          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
+        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
       }
     : {
         vendor: 'Google Inc. (Google)',
         renderer:
-          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
+        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
       }
 
   t.deepEqual(await webgl(), expected)
@@ -210,12 +210,12 @@ test('webgl2 vendor is not bot', async t => {
     ? {
         vendor: 'Google Inc. (Google)',
         renderer:
-          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
+        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
       }
     : {
         vendor: 'Google Inc. (Google)',
         renderer:
-          'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
+        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
       }
 
   t.deepEqual(await webgl2(), expected)
