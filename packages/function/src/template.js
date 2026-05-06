@@ -50,7 +50,19 @@ const template = (code, usesPage = isUsingPage(code)) => {
       const puppeteer = require('@cloudflare/puppeteer')
       const browser = await puppeteer.connect({ browserWSEndpoint })
       const pages = await browser.pages()
-      const page = pages[pages.length - 1]
+      const { targetId } = opts
+      let page
+      if (targetId && pages.length > 1) {
+        for (const p of pages) {
+          try {
+            const session = await p.createCDPSession()
+            const { targetInfo } = await session.send('Target.getTargetInfo')
+            await session.detach()
+            if (targetInfo.targetId === targetId) { page = p; break }
+          } catch {}
+        }
+      }
+      if (!page) page = pages[pages.length - 1]
       try {
         return await (${code})({ page, response, ...rest })
       } finally {

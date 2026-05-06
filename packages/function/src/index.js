@@ -6,6 +6,17 @@ const runFunction = require('./function')
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
+const getTargetId = async page => {
+  try {
+    const session = await page.createCDPSession()
+    const { targetInfo } = await session.send('Target.getTargetInfo')
+    await session.detach()
+    return targetInfo.targetId
+  } catch {
+    return undefined
+  }
+}
+
 const serializeResponse = response => ({
   status: response.status(),
   statusText: response.statusText(),
@@ -50,6 +61,8 @@ module.exports = (
     return browserless.withPage((page, goto) => async () => {
       const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
 
+      const targetId = await getTargetId(page)
+
       const runFunctionOpts = {
         url,
         code,
@@ -73,6 +86,7 @@ module.exports = (
 
         if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
         runFunctionOpts.browserWSEndpoint = browserWSEndpoint
+        runFunctionOpts.targetId = targetId
       }
 
       const result = await runFunction(runFunctionOpts)
