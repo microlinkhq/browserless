@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.12](https://github.com/microlinkhq/browserless/compare/v10.12.11...v10.12.12) (2026-05-06)
+
+### Bug Fixes
+
+* downgrade serialize-error ([fa8817b](https://github.com/microlinkhq/browserless/commit/fa8817b3dddebdce7fdfeeabf7317c2b6394aab3))
+
 ## [10.12.9](https://github.com/microlinkhq/browserless/compare/v10.12.8...v10.12.9) (2026-05-01)
 
 **Note:** Version bump only for package @browserless/errors
