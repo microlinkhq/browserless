@@ -711,3 +711,27 @@ test('retry getBrowserless on next call when initial creation fails', async t =>
   t.true(second.isFulfilled)
   t.is(getBrowserlessCalls, 2)
 })
+
+test('concurrent page functions return the correct page for each request', async t => {
+  const { runServer } = require('@browserless/test/create')({ timeout: 120000 })
+
+  const CONCURRENCY = 5
+
+  const urls = await Promise.all(
+    Array.from({ length: CONCURRENCY }, (_, i) =>
+      runServer(t, ({ res }) => {
+        res.setHeader('content-type', 'text/html')
+        res.end(`<html><head><title>page-${i}</title></head><body>page-${i}</body></html>`)
+      })
+    )
+  )
+
+  const fns = urls.map(url => browserlessFunction(({ page }) => page.url(), opts))
+
+  const results = await Promise.all(fns.map((fn, i) => fn(urls[i])))
+
+  for (let i = 0; i < CONCURRENCY; i++) {
+    t.true(results[i].isFulfilled, `request ${i} should succeed`)
+    t.is(results[i].value, urls[i], `request ${i} should return its own URL`)
+  }
+})
