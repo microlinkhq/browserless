@@ -2,7 +2,7 @@
   "name": "@browserless/capture",
   "description": "Record a Puppeteer page using tabCapture API",
   "homepage": "https://browserless.js.org/#/?id=capturepage-options",
-  "version": "10.12.11",
+  "version": "10.12.13",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",
@@ -30,7 +30,7 @@
     "webm"
   ],
   "dependencies": {
-    "@browserless/goto": "^10.12.11",
+    "@browserless/goto": "^10.12.13",
     "debug-logfmt": "~1.4.10",
     "ws": "~8.20.0"
   },
