@@ -10,7 +10,11 @@ const debug = require('debug-logfmt')('browserless:goto:adblock')
 
 const lazy = fn => {
   let p
-  return () => (p ??= fn())
+  return () =>
+    (p ??= fn().catch(err => {
+      p = undefined
+      throw err
+    }))
 }
 
 const autoconsentDir = path.dirname(require.resolve('@duckduckgo/autoconsent'))
@@ -135,7 +139,9 @@ const setupAutoConsent = async (page, timeout) => {
      message carries the nonce, then run the autoconsent script. Child frames
      keep the raw CDP binding which lacks the nonce, so their messages are
      silently rejected. */
-  const nonceGuard = `(function(n){if(window.self!==window.top)return;var raw=window.autoconsentSendMessage;if(raw)window.autoconsentSendMessage=function(msg){return raw(Object.assign({},msg,{__nonce:n}))}})(${JSON.stringify(nonce)});`
+  const nonceGuard = `(function(n){if(window.self!==window.top)return;var raw=window.autoconsentSendMessage;if(raw)window.autoconsentSendMessage=function(msg){return raw(Object.assign({},msg,{__nonce:n}))}})(${JSON.stringify(
+    nonce
+  )});`
   await page.evaluateOnNewDocument(nonceGuard + autoconsentPlaywrightScript)
   page._autoconsentSetup = true
 }
