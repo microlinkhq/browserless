@@ -17,7 +17,9 @@ module.exports =
           url
         })
 
-      const result = await browserless.withPage(fn, { timeout })()
-      if (teardown) await teardown()
-      return result
+      try {
+        return await browserless.withPage(fn, { timeout })()
+      } finally {
+        if (teardown) await teardown()
+      }
     }
