@@ -43,8 +43,12 @@ const readTheme = async themeId => {
   return readFile(filePath)
 }
 
+const { escapeHtml } = require('./html')
+
 module.exports = async themeId => {
-  if (isHttpUrl(themeId)) return `<link rel="stylesheet" type="text/css" href="${themeId}">`
+  if (isHttpUrl(themeId)) {
+    return `<link rel="stylesheet" type="text/css" href="${escapeHtml(themeId)}">`
+  }
   CACHE[themeId] = CACHE[themeId] || (await readTheme(themeId))
   return `<style>${CACHE[themeId]}</style>`
 }
