@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.14](https://github.com/microlinkhq/browserless/compare/v10.12.13...v10.12.14) (2026-05-17)
+
+### Bug Fixes
+
+* **errors:** classify session/frame errors as context disconnected ([#756](https://github.com/microlinkhq/browserless/issues/756)) ([2bd6670](https://github.com/microlinkhq/browserless/commit/2bd6670c0874f7f1e50dc3f0fee282dcfdd6d0f4))
+
 ## [10.12.13](https://github.com/microlinkhq/browserless/compare/v10.12.12...v10.12.13) (2026-05-11)
 
 **Note:** Version bump only for package browserless
