@@ -8,7 +8,8 @@ const preset = name =>
     : undefined
 
 module.exports = async ({ preset: presetName, ...settings } = {}) => {
-  const config = (await preset(presetName)) || { extends: 'lighthouse:default' }
-  if (Object.keys(settings).length > 0) config.settings = { ...config.settings, ...settings }
+  const presetConfig = (await preset(presetName)) || { extends: 'lighthouse:default' }
+  const config = { ...presetConfig }
+  if (Object.keys(settings).length > 0) config.settings = { ...presetConfig.settings, ...settings }
   return config
 }
