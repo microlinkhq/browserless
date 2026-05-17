@@ -47,6 +47,7 @@ test('clean up cdp frame listeners across screencast sessions', async t => {
 
   t.is(countListeners(), 0)
 
+  screencastA.onFrame(() => {})
   await screencastA.start()
   t.is(countListeners(), 1)
   await screencastA.stop()
@@ -58,6 +59,7 @@ test('clean up cdp frame listeners across screencast sessions', async t => {
     everyNthFrame: 1
   })
 
+  screencastB.onFrame(() => {})
   await screencastB.start()
   t.is(countListeners(), 1)
   await screencastB.stop()
