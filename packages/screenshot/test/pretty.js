@@ -99,6 +99,28 @@ test("don't prettify `text/html` when markup is HTML", async t => {
   t.snapshot(html)
 })
 
+test('escape HTML entities in payload', async t => {
+  const page = await getPage(t)
+
+  const payload = {
+    xss: '<script>alert("xss")</script>',
+    entities: 'a & b < c > d "quoted"'
+  }
+
+  const response = {
+    text: () => JSON.stringify(payload),
+    headers: () => ({ 'content-type': 'application/json; charset=utf-8' })
+  }
+
+  const opts = { codeScheme: 'ghcolors' }
+  await pretty(page, response, opts)
+  const html = await page.content()
+
+  t.false(html.includes('<script>alert'))
+  t.true(html.includes('&lt;script&gt;'))
+  t.true(html.includes('&amp;'))
+})
+
 test("don't prettify `text/plain` when markup is HTML", async t => {
   const page = await getPage(t)
 
