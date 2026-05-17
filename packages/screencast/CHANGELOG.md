@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.15](https://github.com/microlinkhq/browserless/compare/v10.12.14...v10.12.15) (2026-05-17)
+
+### Bug Fixes
+
+* **screencast:** throw if start() is called without onFrame handler ([#763](https://github.com/microlinkhq/browserless/issues/763)) ([a3689b1](https://github.com/microlinkhq/browserless/commit/a3689b16d393cf70a696c6b2c0e70f48475ab586)), closes [#698](https://github.com/microlinkhq/browserless/issues/698)
+
 ## [10.12.6](https://github.com/microlinkhq/browserless/compare/v10.12.5...v10.12.6) (2026-04-06)
 
 **Note:** Version bump only for package @browserless/screencast

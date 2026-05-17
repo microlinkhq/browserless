@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.15](https://github.com/microlinkhq/browserless/compare/v10.12.14...v10.12.15) (2026-05-17)
+
+### Bug Fixes
+
+* **browserless:** handle respawn promise rejections ([#759](https://github.com/microlinkhq/browserless/issues/759)) ([ddcdf53](https://github.com/microlinkhq/browserless/commit/ddcdf53ec109039f46fc0a96a07eabe186f6ff72)), closes [#696](https://github.com/microlinkhq/browserless/issues/696)
+
 ## [10.12.14](https://github.com/microlinkhq/browserless/compare/v10.12.13...v10.12.14) (2026-05-17)
 
 ### Bug Fixes

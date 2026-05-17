@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.15](https://github.com/microlinkhq/browserless/compare/v10.12.14...v10.12.15) (2026-05-17)
+
+### Bug Fixes
+
+* **function:** merge vmOpts.allow instead of overwriting ([#761](https://github.com/microlinkhq/browserless/issues/761)) ([b9b973c](https://github.com/microlinkhq/browserless/commit/b9b973c439533d9df595436fc289de082af40378)), closes [#690](https://github.com/microlinkhq/browserless/issues/690)
+* **function:** move acorn/acorn-walk to dependencies ([#760](https://github.com/microlinkhq/browserless/issues/760)) ([75556bc](https://github.com/microlinkhq/browserless/commit/75556bc3dab1447733e1a7cd74b7793ab0116f46)), closes [#694](https://github.com/microlinkhq/browserless/issues/694)
+
 ## [10.12.14](https://github.com/microlinkhq/browserless/compare/v10.12.13...v10.12.14) (2026-05-17)
 
 **Note:** Version bump only for package @browserless/function

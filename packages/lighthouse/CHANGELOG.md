@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.15](https://github.com/microlinkhq/browserless/compare/v10.12.14...v10.12.15) (2026-05-17)
+
+### Bug Fixes
+
+* **lighthouse:** avoid mutating cached preset config ([#758](https://github.com/microlinkhq/browserless/issues/758)) ([8b7570b](https://github.com/microlinkhq/browserless/commit/8b7570bebe19f54a43ac07050386211571d6dc48)), closes [#697](https://github.com/microlinkhq/browserless/issues/697)
+* **lighthouse:** ensure teardown runs when withPage throws ([#757](https://github.com/microlinkhq/browserless/issues/757)) ([be75012](https://github.com/microlinkhq/browserless/commit/be750126fa682f9a662b9b45a83141d13d1026e3)), closes [#693](https://github.com/microlinkhq/browserless/issues/693)
+
 ## [10.12.13](https://github.com/microlinkhq/browserless/compare/v10.12.12...v10.12.13) (2026-05-11)
 
 **Note:** Version bump only for package @browserless/lighthouse

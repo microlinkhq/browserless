@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.15](https://github.com/microlinkhq/browserless/compare/v10.12.14...v10.12.15) (2026-05-17)
+
+### Bug Fixes
+
+* **browserless:** handle respawn promise rejections ([#759](https://github.com/microlinkhq/browserless/issues/759)) ([ddcdf53](https://github.com/microlinkhq/browserless/commit/ddcdf53ec109039f46fc0a96a07eabe186f6ff72)), closes [#696](https://github.com/microlinkhq/browserless/issues/696)
+* **function:** merge vmOpts.allow instead of overwriting ([#761](https://github.com/microlinkhq/browserless/issues/761)) ([b9b973c](https://github.com/microlinkhq/browserless/commit/b9b973c439533d9df595436fc289de082af40378)), closes [#690](https://github.com/microlinkhq/browserless/issues/690)
+* **function:** move acorn/acorn-walk to dependencies ([#760](https://github.com/microlinkhq/browserless/issues/760)) ([75556bc](https://github.com/microlinkhq/browserless/commit/75556bc3dab1447733e1a7cd74b7793ab0116f46)), closes [#694](https://github.com/microlinkhq/browserless/issues/694)
+* **lighthouse:** avoid mutating cached preset config ([#758](https://github.com/microlinkhq/browserless/issues/758)) ([8b7570b](https://github.com/microlinkhq/browserless/commit/8b7570bebe19f54a43ac07050386211571d6dc48)), closes [#697](https://github.com/microlinkhq/browserless/issues/697)
+* **lighthouse:** ensure teardown runs when withPage throws ([#757](https://github.com/microlinkhq/browserless/issues/757)) ([be75012](https://github.com/microlinkhq/browserless/commit/be750126fa682f9a662b9b45a83141d13d1026e3)), closes [#693](https://github.com/microlinkhq/browserless/issues/693)
+* **screencast:** throw if start() is called without onFrame handler ([#763](https://github.com/microlinkhq/browserless/issues/763)) ([a3689b1](https://github.com/microlinkhq/browserless/commit/a3689b16d393cf70a696c6b2c0e70f48475ab586)), closes [#698](https://github.com/microlinkhq/browserless/issues/698)
+* **screenshot:** escape HTML in pretty render output ([#764](https://github.com/microlinkhq/browserless/issues/764)) ([e50d4d4](https://github.com/microlinkhq/browserless/commit/e50d4d45cb5484429b1bd664e7f578ae7e249197)), closes [#695](https://github.com/microlinkhq/browserless/issues/695) [#691](https://github.com/microlinkhq/browserless/issues/691)
+
 ## [10.12.14](https://github.com/microlinkhq/browserless/compare/v10.12.13...v10.12.14) (2026-05-17)
 
 ### Bug Fixes

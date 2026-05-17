@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [10.12.15](https://github.com/microlinkhq/browserless/compare/v10.12.14...v10.12.15) (2026-05-17)
+
+### Bug Fixes
+
+* **screenshot:** escape HTML in pretty render output ([#764](https://github.com/microlinkhq/browserless/issues/764)) ([e50d4d4](https://github.com/microlinkhq/browserless/commit/e50d4d45cb5484429b1bd664e7f578ae7e249197)), closes [#695](https://github.com/microlinkhq/browserless/issues/695) [#691](https://github.com/microlinkhq/browserless/issues/691)
+
 ## [10.12.14](https://github.com/microlinkhq/browserless/compare/v10.12.13...v10.12.14) (2026-05-17)
 
 **Note:** Version bump only for package @browserless/screenshot
