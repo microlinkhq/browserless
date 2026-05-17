@@ -25,6 +25,7 @@ module.exports = (page, opts) => {
   return {
     // https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast
     start: () => {
+      if (!onFrame) throw new Error('onFrame callback must be registered before calling start()')
       attachFrameListener()
       return cdp.send('Page.startScreencast', opts)
     },
