@@ -15,9 +15,13 @@ module.exports = async ({
   ...opts
 }) => {
   const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
+  const vmOptsAllow = vmOpts?.allow || {}
   const [fn, teardown] = isolatedFunction(source, {
     ...vmOpts,
-    allow: { permissions },
+    allow: {
+      ...vmOptsAllow,
+      permissions: [...(vmOptsAllow.permissions || []), ...permissions]
+    },
     throwError: false
   })
   const result = await fn(url, browserWSEndpoint, opts)
