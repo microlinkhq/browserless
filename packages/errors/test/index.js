@@ -92,6 +92,26 @@ test('evaluationFailed', t => {
   }
 })
 
+test('contextDisconnected from "Session closed"', t => {
+  const error = errors.ensureError({
+    message: 'Session closed. Most likely the page has been closed.'
+  })
+
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
+})
+
+test('contextDisconnected from "Attempted to use detached Frame"', t => {
+  const error = errors.ensureError({
+    message: "Attempted to use detached Frame 'BF1FB34FC20107D5D21C354065F61277'."
+  })
+
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
+})
+
 test('ensureError handles non-object input', t => {
   const errorFromString = errors.ensureError('boom')
   t.true(errorFromString instanceof Error)

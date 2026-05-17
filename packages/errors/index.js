@@ -59,7 +59,9 @@ browserlessError.ensureError = rawError => {
       'Protocol error (Target.createTarget): Failed to find browser context with id',
       'Protocol error (Target.createTarget): Target closed',
       'Protocol error (Target.createBrowserContext): Target closed'
-    ].some(message => errorMessage.startsWith(message))
+    ].some(message => errorMessage.startsWith(message)) ||
+    errorMessage.includes('Session closed') ||
+    errorMessage.includes('Attempted to use detached Frame')
   ) {
     return browserlessError.contextDisconnected()
   }
