@@ -76,10 +76,13 @@ const content = (payload, contentType) =>
 
 const language = contentType => (contentType === 'json' ? 'language-js' : 'language-text')
 
+const escapeHtml = str =>
+  str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
 module.exports = (payload, { contentType, prism, theme }) => {
   const css = `${resetCSS}\n${theme}`
   const lang = language(contentType)
-  const code = content(payload, contentType)
+  const code = escapeHtml(content(payload, contentType))
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -93,3 +96,5 @@ module.exports = (payload, { contentType, prism, theme }) => {
 </body>
 </html>`
 }
+
+module.exports.escapeHtml = escapeHtml
