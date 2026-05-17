@@ -454,6 +454,130 @@ test('withPage retries transient context disconnections', async t => {
   t.is(attempts, 2)
 })
 
+test('withPage retries on "Session closed" error', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let pid = 4100
+
+  driver.spawn = () => {
+    let isClosed = false
+
+    const page = {
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    const browserContext = {
+      id: `ctx-${pid}`,
+      close: () => Promise.resolve(),
+      newPage: () => Promise.resolve(page)
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 3000 })
+  t.teardown(browser.close)
+  const browserless = await browser.createContext({ retry: 1 })
+
+  let attempts = 0
+  const evaluate = browserless.withPage(
+    () => async () => {
+      attempts += 1
+      if (attempts === 1) throw new Error('Session closed. Most likely the page has been closed.')
+      return 'recovered'
+    },
+    { timeout: 3000 }
+  )
+
+  const result = await evaluate()
+
+  t.is(result, 'recovered')
+  t.is(attempts, 2)
+})
+
+test('withPage retries on "Attempted to use detached Frame" error', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let pid = 4200
+
+  driver.spawn = () => {
+    let isClosed = false
+
+    const page = {
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    const browserContext = {
+      id: `ctx-${pid}`,
+      close: () => Promise.resolve(),
+      newPage: () => Promise.resolve(page)
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      isConnected: () => true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 3000 })
+  t.teardown(browser.close)
+  const browserless = await browser.createContext({ retry: 1 })
+
+  let attempts = 0
+  const evaluate = browserless.withPage(
+    () => async () => {
+      attempts += 1
+      if (attempts === 1) {
+        throw new Error("Attempted to use detached Frame 'BF1FB34FC20107D5D21C354065F61277'.")
+      }
+      return 'recovered'
+    },
+    { timeout: 3000 }
+  )
+
+  const result = await evaluate()
+
+  t.is(result, 'recovered')
+  t.is(attempts, 2)
+})
+
 test('withPage close does not respawn browser for metadata logging', async t => {
   const browserlessFactory = require('..')
   const { driver } = browserlessFactory
