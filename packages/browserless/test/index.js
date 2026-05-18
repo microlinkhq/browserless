@@ -219,7 +219,7 @@ test('withPage timeout cleanup should not emit unhandled rejections', async t =>
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => true,
+      connected: true,
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -299,7 +299,7 @@ test('withPage clears timeout cleanup timer after success', async t => {
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => true,
+      connected: true,
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -357,7 +357,7 @@ test('withPage does not retry non-transient errors', async t => {
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => true,
+      connected: true,
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -418,7 +418,7 @@ test('withPage retries transient context disconnections', async t => {
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => true,
+      connected: true,
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -479,7 +479,7 @@ test('withPage retries on "Session closed" error', async t => {
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => true,
+      connected: true,
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -540,7 +540,7 @@ test('withPage retries on "Attempted to use detached Frame" error', async t => {
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => true,
+      connected: true,
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -609,7 +609,9 @@ test('withPage close does not respawn browser for metadata logging', async t => 
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => isConnected,
+      get connected () {
+        return isConnected
+      },
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -664,7 +666,9 @@ test('withPage create does not respawn browser for metadata logging', async t =>
 
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
-      isConnected: () => isConnected,
+      get connected () {
+        return isConnected
+      },
       once: () => {},
       version: () => Promise.resolve('mock'),
       createBrowserContext: () => Promise.resolve(browserContext),
@@ -707,7 +711,7 @@ test('lock is scoped per browserless instance', async t => {
     setTimeout(instance === 'slow' ? 500 : 0).then(() => ({
       pid: ++pid,
       close: () => Promise.resolve(),
-      isConnected: () => true,
+      connected: true,
       once: () => {},
       version: () => Promise.resolve('mock')
     }))

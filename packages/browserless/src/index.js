@@ -14,9 +14,6 @@ const { AbortError } = pRetry
 
 const driver = require('./driver')
 
-const isConnected = browser =>
-  typeof browser?.isConnected === 'function' ? browser.isConnected() : !!browser?.connected
-
 module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const lock = withLock()
   const goto = createGoto({ timeout: globalTimeout, ...launchOpts })
@@ -74,7 +71,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     if (isClosed) return browserProcessPromise
     const browserProcess = await lock(async () => {
       const browserProcess = await browserProcessPromise
-      if (isConnected(browserProcess)) return browserProcess
+      if (browserProcess.connected) return browserProcess
       await respawn()
     })
 

@@ -8,7 +8,7 @@ const createFakePuppeteer = onLaunch => ({
   launch: async options => {
     onLaunch(options)
     return {
-      isConnected: () => true,
+      connected: true,
       close: async () => {},
       process: () => ({ pid: 1 })
     }
