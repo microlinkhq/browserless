@@ -6,6 +6,8 @@ const test = require('ava')
 const browserless = require('..')
 
 const isCI = !!process.env.CI
+const isConnected = browser =>
+  typeof browser?.isConnected === 'function' ? browser.isConnected() : !!browser?.connected
 
 const getChromiumPs = async () => {
   const ps = await psList()
@@ -61,9 +63,9 @@ test('.close() disconnect in connect mode', async t => {
 
   const browser = await browserlessFactory.browser()
 
-  t.true(browser.isConnected())
+  t.true(isConnected(browser))
 
   await browserlessFactory.close()
 
-  t.false(browser.isConnected())
+  t.false(isConnected(browser))
 })
