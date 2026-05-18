@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [11.0.0](https://github.com/microlinkhq/browserless/compare/v10.12.15...v11.0.0) (2026-05-18)
+
+### ⚠ BREAKING CHANGES
+
+* Puppeteer 25 Browser.connected API (#767)
+
+### Features
+
+* Puppeteer 25 Browser.connected API ([#767](https://github.com/microlinkhq/browserless/issues/767)) ([6431760](https://github.com/microlinkhq/browserless/commit/64317607d9257688f97d4ab276ec7c6a99b6de59))
+
 ## [10.12.15](https://github.com/microlinkhq/browserless/compare/v10.12.14...v10.12.15) (2026-05-17)
 
 ### Bug Fixes
