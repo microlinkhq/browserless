@@ -33,7 +33,7 @@
   "devDependencies": {
     "@kikobeats/time-span": "latest",
     "asciichart": "latest",
-    "browserless": "latest",
+    "browserless": "workspace:*",
     "debug-logfmt": "latest",
     "measured": "latest",
     "meow": "9",

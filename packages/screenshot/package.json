@@ -51,7 +51,7 @@
     "svg-gradient": "~1.0.4"
   },
   "devDependencies": {
-    "@browserless/test": "^10.12.6",
+    "@browserless/test": "workspace:*",
     "ava": "5",
     "cheerio": "latest"
   },

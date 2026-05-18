@@ -38,7 +38,7 @@
     "require-one-of": "~1.0.24"
   },
   "devDependencies": {
-    "@browserless/test": "^10.12.6",
+    "@browserless/test": "workspace:*",
     "ava": "5",
     "lodash": "latest"
   },

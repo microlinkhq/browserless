@@ -71,7 +71,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     if (isClosed) return browserProcessPromise
     const browserProcess = await lock(async () => {
       const browserProcess = await browserProcessPromise
-      if (browserProcess.isConnected()) return browserProcess
+      if (browserProcess.connected) return browserProcess
       await respawn()
     })
 
