@@ -48,7 +48,7 @@
     "superlock": "~1.2.7"
   },
   "devDependencies": {
-    "@browserless/test": "workspace:^10.12.6",
+    "@browserless/test": "workspace:*",
     "ava": "5",
     "ps-list": "7",
     "puppeteer": "25.0.3",

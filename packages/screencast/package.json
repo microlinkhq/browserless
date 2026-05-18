@@ -35,7 +35,7 @@
     "null-prototype-object": "~1.2.6"
   },
   "devDependencies": {
-    "@browserless/test": "workspace:^10.12.6",
+    "@browserless/test": "workspace:*",
     "@kikobeats/time-span": "latest",
     "@skyra/gifenc": "latest",
     "ava": "5",
