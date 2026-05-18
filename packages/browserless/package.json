@@ -51,7 +51,7 @@
     "@browserless/test": "workspace:*",
     "ava": "5",
     "ps-list": "7",
-    "puppeteer": "25.0.3",
+    "puppeteer": "25",
     "tinyspawn": "latest"
   },
   "engines": {
