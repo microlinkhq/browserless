@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.0.0](https://github.com/microlinkhq/browserless/compare/v12.0.0...v13.0.0) (2026-05-19)
+
+### ⚠ BREAKING CHANGES
+
+* **function:** non-page functions no longer receive `device`
+  or `response` — both are `undefined`. Functions that need HTTP
+  response data must destructure `page` to trigger the browser
+  path.
+
+* fix: addressing comment
+
+### Performance Improvements
+
+* **function:** skip browser for non-page functions ([#770](https://github.com/microlinkhq/browserless/issues/770)) ([49ca9a4](https://github.com/microlinkhq/browserless/commit/49ca9a4ac5f8057319d47a7e7569e991670009f3))
+
 ## [12.0.0](https://github.com/microlinkhq/browserless/compare/v11.0.0...v12.0.0) (2026-05-19)
 
 ### ⚠ BREAKING CHANGES
