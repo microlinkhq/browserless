@@ -74,9 +74,12 @@ module.exports = ({ tmpdir } = {}) => {
           device,
           ...opts,
           ...fnOpts,
-          ...(response && { _response: serializeResponse(response) }),
-          needsNetwork,
-          source
+          ...(response && { _response: serializeResponse(response) })
+        }
+
+        if (runFunctionOpts.code === code) {
+          runFunctionOpts.needsNetwork = needsNetwork
+          runFunctionOpts.source = source
         }
 
         const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
@@ -103,9 +106,12 @@ module.exports = ({ tmpdir } = {}) => {
         url,
         code,
         ...opts,
-        ...fnOpts,
-        needsNetwork: false,
-        source
+        ...fnOpts
+      }
+
+      if (runFunctionOpts.code === code) {
+        runFunctionOpts.needsNetwork = false
+        runFunctionOpts.source = source
       }
 
       const result = await runFunction(runFunctionOpts)
