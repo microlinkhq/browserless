@@ -34,7 +34,7 @@
     "@browserless/errors": "^11.0.0",
     "acorn": "~8.16.0",
     "acorn-walk": "~8.3.5",
-    "isolated-function": "~0.1.51",
+    "isolated-function": "~0.1.55",
     "require-one-of": "~1.0.24"
   },
   "devDependencies": {

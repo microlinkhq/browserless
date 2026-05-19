@@ -1,8 +1,9 @@
 'use strict'
 
 const { isBrowserlessError, ensureError } = require('@browserless/errors')
+const createIsolatedFunction = require('isolated-function')
 const requireOneOf = require('require-one-of')
-const runFunction = require('./function')
+const createRunFunction = require('./function')
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
@@ -29,72 +30,81 @@ const serializeResponse = response => ({
   fromServiceWorker: response.fromServiceWorker()
 })
 
-module.exports = (
-  fn,
-  {
-    getBrowserless = requireOneOf(['browserless']),
-    retry = 2,
-    timeout = 30000,
-    gotoOpts,
-    ...opts
-  } = {}
-) => {
-  const code = stringify(fn)
-  const needsNetwork = runFunction.isUsingPage(code)
-  const source = runFunction.buildTemplate(code, needsNetwork)
-  let browserPromise
+module.exports = ({ tmpdir } = {}) => {
+  const isolatedFunction = createIsolatedFunction({ tmpdir })
+  const runFunction = createRunFunction(isolatedFunction)
 
-  const getBrowser = async () => {
-    if (!browserPromise) {
-      browserPromise = Promise.resolve(getBrowserless()).catch(error => {
-        browserPromise = undefined
-        throw error
-      })
+  const createFunction = (
+    fn,
+    {
+      getBrowserless = requireOneOf(['browserless']),
+      retry = 2,
+      timeout = 30000,
+      gotoOpts,
+      ...opts
+    } = {}
+  ) => {
+    const code = stringify(fn)
+    const needsNetwork = createRunFunction.isUsingPage(code)
+    const source = createRunFunction.buildTemplate(code, needsNetwork)
+    let browserPromise
+
+    const getBrowser = async () => {
+      if (!browserPromise) {
+        browserPromise = Promise.resolve(getBrowserless()).catch(error => {
+          browserPromise = undefined
+          throw error
+        })
+      }
+      return browserPromise
     }
-    return browserPromise
+
+    return async (url, fnOpts = {}) => {
+      const browser = await getBrowser()
+      const browserless = await browser.createContext()
+
+      return browserless.withPage((page, goto) => async () => {
+        const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
+
+        const targetId = await getTargetId(page)
+
+        const runFunctionOpts = {
+          url,
+          code,
+          device,
+          ...opts,
+          ...fnOpts,
+          ...(response && { _response: serializeResponse(response) })
+        }
+
+        if (runFunctionOpts.code === code) {
+          runFunctionOpts.needsNetwork = needsNetwork
+          runFunctionOpts.source = source
+        }
+
+        if (runFunctionOpts.needsNetwork !== false) {
+          const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
+          const browserWSEndpoint =
+            browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
+              ? browserFromPage.wsEndpoint()
+              : undefined
+
+          if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
+          runFunctionOpts.browserWSEndpoint = browserWSEndpoint
+          runFunctionOpts.targetId = targetId
+        }
+
+        const result = await runFunction(runFunctionOpts)
+
+        if (result.isFulfilled) return result
+        const error = ensureError(result.value)
+        if (isBrowserlessError(error)) throw error
+        return result
+      })()
+    }
   }
 
-  return async (url, fnOpts = {}) => {
-    const browser = await getBrowser()
-    const browserless = await browser.createContext()
+  createFunction.teardown = () => isolatedFunction.teardown()
 
-    return browserless.withPage((page, goto) => async () => {
-      const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
-
-      const targetId = await getTargetId(page)
-
-      const runFunctionOpts = {
-        url,
-        code,
-        device,
-        ...opts,
-        ...fnOpts,
-        ...(response && { _response: serializeResponse(response) })
-      }
-
-      if (runFunctionOpts.code === code) {
-        runFunctionOpts.needsNetwork = needsNetwork
-        runFunctionOpts.source = source
-      }
-
-      if (runFunctionOpts.needsNetwork !== false) {
-        const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
-        const browserWSEndpoint =
-          browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
-            ? browserFromPage.wsEndpoint()
-            : undefined
-
-        if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
-        runFunctionOpts.browserWSEndpoint = browserWSEndpoint
-        runFunctionOpts.targetId = targetId
-      }
-
-      const result = await runFunction(runFunctionOpts)
-
-      if (result.isFulfilled) return result
-      const error = ensureError(result.value)
-      if (isBrowserlessError(error)) throw error
-      return result
-    })()
-  }
+  return createFunction
 }
