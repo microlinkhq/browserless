@@ -108,26 +108,15 @@ test('collect logs ', async t => {
   t.true(!!profiling)
 })
 
-test('access to device', async t => {
-  const code = ({ device }) => device
+test('device is undefined for non-page functions', async t => {
+  const code = ({ device }) => device === undefined
   const myFn = browserlessFunction(code, opts)
 
   const { profiling, ...result } = await myFn(fileUrl)
 
   t.deepEqual(result, {
     isFulfilled: true,
-    value: {
-      userAgent:
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36',
-      viewport: {
-        width: 1280,
-        height: 800,
-        deviceScaleFactor: 2,
-        isMobile: false,
-        hasTouch: false,
-        isLandscape: false
-      }
-    },
+    value: true,
     logging: {}
   })
 
@@ -269,13 +258,13 @@ test('interact with npm modules', async t => {
   t.true(!!logging)
 })
 
-test('access to response', async t => {
-  const code = ({ response }) => response.status()
+test('response is undefined for non-page functions', async t => {
+  const code = ({ response }) => response === undefined
   const myFn = browserlessFunction(code, opts)
   const { profiling, logging, ...result } = await myFn('https://example.com')
 
   t.true(result.isFulfilled)
-  t.is(result.value, 200)
+  t.is(result.value, true)
   t.true(!!profiling)
 })
 
@@ -295,7 +284,7 @@ test('access to response (with page)', async t => {
   t.true(!!logging)
 })
 
-test('response is serialized and reconstructed with callable methods', t => {
+test('response is serialized and reconstructed with callable methods (page function)', t => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `
     const Module = require('module')
@@ -318,6 +307,12 @@ test('response is serialized and reconstructed with callable methods', t => {
           return instance
         }
       }
+      if (request === '@cloudflare/puppeteer') {
+        return { connect: async () => ({
+          pages: async () => [],
+          disconnect: async () => {}
+        }) }
+      }
       return originalLoad(request, parent, isMain)
     }
 
@@ -337,14 +332,17 @@ test('response is serialized and reconstructed with callable methods', t => {
 
     const fakeBrowserless = {
       withPage: fn => async () =>
-        fn({}, async () => ({
-          device: { viewport: {}, userAgent: 'ua' },
-          response: fakeResponse
-        }))()
+        fn(
+          { browser: () => ({ wsEndpoint: () => 'ws://example' }) },
+          async () => ({
+            device: { viewport: {}, userAgent: 'ua' },
+            response: fakeResponse
+          })
+        )()
     }
 
     const fn = browserlessFunction(
-      ({ response }) => ({
+      ({ page, response }) => ({
         status: response.status(),
         ok: response.ok(),
         url: response.url(),
@@ -381,7 +379,7 @@ test('response is serialized and reconstructed with callable methods', t => {
   })
 })
 
-test('response is undefined when goto returns no response', t => {
+test('response is undefined for non-page functions (subprocess)', t => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `
     const Module = require('module')
@@ -409,18 +407,9 @@ test('response is undefined when goto returns no response', t => {
 
     const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
 
-    const fakeBrowserless = {
-      withPage: fn => async () =>
-        fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))()
-    }
-
     const fn = browserlessFunction(
       ({ response }) => response === undefined,
-      {
-        getBrowserless: async () => ({
-          createContext: async () => fakeBrowserless
-        })
-      }
+      { getBrowserless: async () => ({}) }
     )
 
     Promise.resolve()
@@ -456,29 +445,21 @@ test('throws error when browser is launched with pipe mode', async t => {
   t.is(error.message, 'Browser WebSocket endpoint not found')
 })
 
-test('skip browser websocket endpoint lookup for non-page functions', async t => {
-  let browserCalls = 0
-
-  const fakeBrowserless = {
-    withPage: fn => async () =>
-      fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
-    browser: async () => {
-      browserCalls += 1
-      return { wsEndpoint: () => 'ws://example' }
-    }
-  }
+test('non-page functions skip browser entirely', async t => {
+  let getBrowserlessCalls = 0
 
   const fn = browserlessFunction(() => 'ok', {
-    getBrowserless: async () => ({
-      createContext: async () => fakeBrowserless
-    })
+    getBrowserless: async () => {
+      getBrowserlessCalls += 1
+      return {}
+    }
   })
 
   const result = await fn('https://example.com')
 
   t.true(result.isFulfilled)
   t.is(result.value, 'ok')
-  t.is(browserCalls, 0)
+  t.is(getBrowserlessCalls, 0)
 })
 
 test('prefer page browser websocket endpoint when available', t => {
@@ -572,16 +553,8 @@ test('reuse function code analysis across invocations', t => {
 
     const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
 
-    const fakeBrowserless = {
-      withPage: fn => async () =>
-        fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
-      browser: async () => ({ wsEndpoint: () => 'ws://example' })
-    }
-
     const fn = browserlessFunction(() => 'ok', {
-      getBrowserless: async () => ({
-        createContext: async () => fakeBrowserless
-      })
+      getBrowserless: async () => ({})
     })
 
     Promise.resolve()
@@ -636,16 +609,9 @@ test('reuse compiled template source across invocations', t => {
     }
 
     const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
-    const fakeBrowserless = {
-      withPage: fn => async () =>
-        fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
-      browser: async () => ({ wsEndpoint: () => 'ws://example' })
-    }
 
     const fn = browserlessFunction(() => 'ok', {
-      getBrowserless: async () => ({
-        createContext: async () => fakeBrowserless
-      })
+      getBrowserless: async () => ({})
     })
 
     Promise.resolve()
@@ -666,63 +632,132 @@ test('reuse compiled template source across invocations', t => {
   t.deepEqual(JSON.parse(stdout.trim()), { templateCalls: 1, parseCalls: 1 })
 })
 
-test('reuse browserless instance across invocations', async t => {
-  let getBrowserlessCalls = 0
-  let createContextCalls = 0
+test('reuse browserless instance across page function invocations', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
 
-  const fakeBrowserless = {
-    withPage: fn => async () =>
-      fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
-    browser: async () => ({ wsEndpoint: () => 'ws://example' })
-  }
-
-  const fn = browserlessFunction(() => 'ok', {
-    getBrowserless: async () => {
-      getBrowserlessCalls += 1
-      return {
-        createContext: async () => {
-          createContextCalls += 1
-          return fakeBrowserless
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return ({ tmpdir } = {}) => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
         }
       }
+      return originalLoad(request, parent, isMain)
     }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+    let getBrowserlessCalls = 0
+    let createContextCalls = 0
+
+    const fakeBrowserless = {
+      withPage: fn => async () =>
+        fn(
+          { browser: () => ({ wsEndpoint: () => 'ws://example' }) },
+          async () => ({ device: { viewport: {}, userAgent: 'ua' } })
+        )()
+    }
+
+    const fn = browserlessFunction(({ page }) => 'ok', {
+      getBrowserless: async () => {
+        getBrowserlessCalls += 1
+        return {
+          createContext: async () => {
+            createContextCalls += 1
+            return fakeBrowserless
+          }
+        }
+      }
+    })
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(() => fn('https://example.com'))
+      .then(result => process.stdout.write(JSON.stringify({ getBrowserlessCalls, createContextCalls })))
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
   })
 
-  const first = await fn('https://example.com')
-  const second = await fn('https://example.com')
-
-  t.true(first.isFulfilled)
-  t.true(second.isFulfilled)
+  t.is(status, 0, stderr)
+  const { getBrowserlessCalls, createContextCalls } = JSON.parse(stdout.trim())
   t.is(getBrowserlessCalls, 1)
   t.is(createContextCalls, 2)
 })
 
-test('retry getBrowserless on next call when initial creation fails', async t => {
-  let getBrowserlessCalls = 0
+test('retry getBrowserless on next call when initial creation fails', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
 
-  const fakeBrowserless = {
-    withPage: fn => async () =>
-      fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
-    browser: async () => ({ wsEndpoint: () => 'ws://example' })
-  }
-
-  const fn = browserlessFunction(() => 'ok', {
-    getBrowserless: async () => {
-      getBrowserlessCalls += 1
-      if (getBrowserlessCalls === 1) {
-        throw new Error('temporary failure')
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return ({ tmpdir } = {}) => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
+        }
       }
-      return {
-        createContext: async () => fakeBrowserless
-      }
+      return originalLoad(request, parent, isMain)
     }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+    let getBrowserlessCalls = 0
+
+    const fakeBrowserless = {
+      withPage: fn => async () =>
+        fn(
+          { browser: () => ({ wsEndpoint: () => 'ws://example' }) },
+          async () => ({ device: { viewport: {}, userAgent: 'ua' } })
+        )()
+    }
+
+    const fn = browserlessFunction(({ page }) => 'ok', {
+      getBrowserless: async () => {
+        getBrowserlessCalls += 1
+        if (getBrowserlessCalls === 1) {
+          throw new Error('temporary failure')
+        }
+        return {
+          createContext: async () => fakeBrowserless
+        }
+      }
+    })
+
+    Promise.resolve()
+      .then(() => fn('https://example.com').then(() => 'no-error').catch(e => e.message))
+      .then(firstResult => {
+        return fn('https://example.com').then(second => {
+          process.stdout.write(JSON.stringify({
+            firstResult,
+            secondFulfilled: second.isFulfilled,
+            getBrowserlessCalls
+          }))
+        })
+      })
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
   })
 
-  const firstError = await t.throwsAsync(fn('https://example.com'))
-  t.is(firstError.message, 'temporary failure')
-
-  const second = await fn('https://example.com')
-  t.true(second.isFulfilled)
+  t.is(status, 0, stderr)
+  const { firstResult, secondFulfilled, getBrowserlessCalls } = JSON.parse(stdout.trim())
+  t.is(firstResult, 'temporary failure')
+  t.true(secondFulfilled)
   t.is(getBrowserlessCalls, 2)
 })
 
