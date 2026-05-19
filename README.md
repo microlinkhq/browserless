@@ -864,20 +864,19 @@ Optional name for the page, used in debug logs.
 
 ### function
 
-The [`@browserless/function`](https://npm.im/@browserless/function) package provides an isolated VM scope to run arbitrary JavaScript code with runtime access to a browser page:
+The [`@browserless/function`](https://npm.im/@browserless/function) package provides a secure sandbox to run arbitrary JavaScript code with runtime access to a browser page:
 
 ```js
-const createFunction = require('@browserless/function')
+const createFunction = require('@browserless/function')()
 
 const code = async ({ page }) => page.evaluate('jQuery.fn.jquery')
 
 const version = createFunction(code)
 
-const { isFulfilled, isRejected, value } = await version('https://jquery.com')
+const { isFulfilled, value } = await version('https://jquery.com')
 
 // => {
 //   isFulfilled: true,
-//   isRejected: false,
 //   value: '1.13.1'
 // }
 ```
@@ -888,7 +887,7 @@ Besides the following properties, any other argument provided will be available 
 
 ##### vmOpts
 
-The hosted code is also running inside a secure sandbox created via [vm2](https://npm.im/vm2).
+The hosted code runs inside a secure sandbox created via [isolated-function](https://npm.im/isolated-function).
 
 ##### gotoOpts
 

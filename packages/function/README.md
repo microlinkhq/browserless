@@ -37,9 +37,21 @@ The `@browserless/function` package allows you to:
 
 ### Usage
 
-```js
-const createFunction = require('@browserless/function')
+First, create a function instance by calling the factory:
 
+```js
+const createFunction = require('@browserless/function')()
+```
+
+You can optionally pass a `tmpdir` for the sandbox working directory:
+
+```js
+const createFunction = require('@browserless/function')({ tmpdir: '/tmp/functions' })
+```
+
+Then use it to run arbitrary JavaScript:
+
+```js
 // Simple function without page access
 const code = ({ query }) => query.value * 2
 
@@ -55,7 +67,7 @@ console.log(result)
 When your code references `page`, browserless automatically provides access to the Puppeteer page:
 
 ```js
-const createFunction = require('@browserless/function')
+const createFunction = require('@browserless/function')()
 
 // Function with page access
 const code = async ({ page }) => {
@@ -89,8 +101,33 @@ The function returns a structured result:
 |----------|-------------|
 | `isFulfilled` | `true` if execution succeeded, `false` if error |
 | `value` | Return value (success) or error object (failure) |
-| `profiling` | Execution timing and performance data |
+| `profiling` | Execution timing and resource usage (see below) |
 | `logging` | Captured console output (`log`, `warn`, `error`, etc.) |
+
+#### Profiling
+
+The `profiling` object contains phased timing and resource data:
+
+| Property | Description |
+|----------|-------------|
+| `phases.compile` | Time to compile the sandbox script (ms) |
+| `phases.spawn` | Time to spawn the child process (ms) |
+| `phases.run` | Time executing the user function (ms) |
+| `phases.total` | Total wall-clock time (ms) |
+| `cpu` | CPU time consumed (ms) |
+| `memory` | Peak memory usage (bytes) |
+
+### Teardown
+
+Call `.teardown()` on the factory instance to clean up sandbox resources:
+
+```js
+const createFunction = require('@browserless/function')({ tmpdir: '/tmp/functions' })
+
+// ... use createFunction ...
+
+await createFunction.teardown()
+```
 
 ### Options
 
@@ -121,7 +158,7 @@ const myFn = createFunction(code, {
 #### Interact with page elements
 
 ```js
-const createFunction = require('@browserless/function')
+const createFunction = require('@browserless/function')()
 
 const code = async ({ page }) => {
   await page.waitForSelector('button.submit')
@@ -138,7 +175,7 @@ const result = await clickAndGetTitle('https://example.com')
 #### Inject external scripts
 
 ```js
-const createFunction = require('@browserless/function')
+const createFunction = require('@browserless/function')()
 
 const code = ({ page }) => page.evaluate('jQuery.fn.jquery')
 
@@ -155,7 +192,7 @@ const result = await getjQueryVersion('https://example.com')
 #### Use npm modules in sandbox
 
 ```js
-const createFunction = require('@browserless/function')
+const createFunction = require('@browserless/function')()
 
 const code = async ({ page }) => {
   const _ = require('lodash')
@@ -170,7 +207,7 @@ const result = await countWords('https://example.com')
 #### Handle errors
 
 ```js
-const createFunction = require('@browserless/function')
+const createFunction = require('@browserless/function')()
 
 const code = () => {
   throw new Error('Something went wrong')
@@ -192,7 +229,7 @@ This is an **extended functionality package** for advanced use cases. It makes t
 | Package | Purpose |
 |---------|---------|
 | `@browserless/errors` | Error normalization and typed errors |
-| `isolated-function` | Secure VM sandbox execution |
+| `isolated-function` | Secure sandboxed execution via child processes |
 | `require-one-of` | Auto-detects browserless installation |
 | `acorn` / `acorn-walk` | AST parsing to detect page usage in code |
 
