@@ -30,13 +30,7 @@ const serializeResponse = response => ({
   fromServiceWorker: response.fromServiceWorker()
 })
 
-module.exports = (factoryOpts = {}) => {
-  if (typeof factoryOpts === 'function' || typeof factoryOpts === 'string') {
-    throw new TypeError(
-      'API changed: call require("@browserless/function")({ tmpdir })(code, opts)'
-    )
-  }
-  const { tmpdir } = factoryOpts
+module.exports = ({ tmpdir } = {}) => {
   const isolatedFunction = createIsolatedFunction({ tmpdir })
   const runFunction = createRunFunction(isolatedFunction)
 
