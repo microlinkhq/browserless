@@ -16,6 +16,20 @@ const opts = {
 
 const fileUrl = `file://${path.join(__dirname, './fixtures/example.html')}`
 
+const createBrowserlessFunction = require('..')
+
+test('throws when called with old API signature', t => {
+  t.throws(() => createBrowserlessFunction(() => 'ok', {}), {
+    instanceOf: TypeError,
+    message: /API changed/
+  })
+
+  t.throws(() => createBrowserlessFunction('() => "ok"', {}), {
+    instanceOf: TypeError,
+    message: /API changed/
+  })
+})
+
 test('code runs in strict mode', async t => {
   const code = () => {
     function isStrict () {
