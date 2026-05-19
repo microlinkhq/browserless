@@ -2,7 +2,7 @@
   "name": "@browserless/lighthouse",
   "description": "Run Google Lighthouse audits on websites using headless Chrome. Get performance, accessibility, and SEO metrics.",
   "homepage": "https://browserless.js.org",
-  "version": "11.0.0",
+  "version": "12.0.0",
   "main": "src",
   "author": {
     "email": "hello@microlink.io",

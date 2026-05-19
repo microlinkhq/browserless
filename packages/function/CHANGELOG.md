@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [12.0.0](https://github.com/microlinkhq/browserless/compare/v11.0.0...v12.0.0) (2026-05-19)
+
+### ⚠ BREAKING CHANGES
+
+* **function:** update dependencies (#768)
+
+### Features
+
+* **function:** update dependencies ([#768](https://github.com/microlinkhq/browserless/issues/768)) ([1f80eda](https://github.com/microlinkhq/browserless/commit/1f80edabe9c7a8856ad25af7332e7422323a5b2e))
+
 ## [11.0.0](https://github.com/microlinkhq/browserless/compare/v10.12.15...v11.0.0) (2026-05-18)
 
 ### ⚠ BREAKING CHANGES
