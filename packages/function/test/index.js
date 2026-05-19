@@ -5,7 +5,7 @@ const { spawnSync } = require('child_process')
 const path = require('path')
 const test = require('ava')
 
-const browserlessFunction = require('..')
+const browserlessFunction = require('..')()
 
 const browserless = getBrowser()
 
@@ -303,24 +303,25 @@ test('response is serialized and reconstructed with callable methods', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return (source) => {
-          const fn = new Function('return (' + source + ')')()
-          return [
-            async (...args) => {
+        return ({ tmpdir } = {}) => {
+          const instance = (source) => {
+            const fn = new Function('return (' + source + ')')()
+            return async (...args) => {
               try {
                 return { isFulfilled: true, value: await fn(...args) }
               } catch (error) {
                 return { isFulfilled: false, value: { message: error.message } }
               }
-            },
-            async () => {}
-          ]
+            }
+          }
+          instance.teardown = async () => {}
+          return instance
         }
       }
       return originalLoad(request, parent, isMain)
     }
 
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
 
     const fakeResponse = {
       status: () => 200,
@@ -388,24 +389,25 @@ test('response is undefined when goto returns no response', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return (source) => {
-          const fn = new Function('return (' + source + ')')()
-          return [
-            async (...args) => {
+        return ({ tmpdir } = {}) => {
+          const instance = (source) => {
+            const fn = new Function('return (' + source + ')')()
+            return async (...args) => {
               try {
                 return { isFulfilled: true, value: await fn(...args) }
               } catch (error) {
                 return { isFulfilled: false, value: { message: error.message } }
               }
-            },
-            async () => {}
-          ]
+            }
+          }
+          instance.teardown = async () => {}
+          return instance
         }
       }
       return originalLoad(request, parent, isMain)
     }
 
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
 
     const fakeBrowserless = {
       withPage: fn => async () =>
@@ -488,12 +490,16 @@ test('prefer page browser websocket endpoint when available', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return () => [async () => ({ isFulfilled: true, value: 'ok' }), async () => {}]
+        return ({ tmpdir } = {}) => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
+        }
       }
       return originalLoad(request, parent, isMain)
     }
 
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
 
     const fakeBrowserless = {
       withPage: fn => async () =>
@@ -544,7 +550,11 @@ test('reuse function code analysis across invocations', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return () => [async () => ({ isFulfilled: true, value: 'ok' }), async () => {}]
+        return ({ tmpdir } = {}) => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
+        }
       }
 
       if (request === 'acorn') {
@@ -560,7 +570,7 @@ test('reuse function code analysis across invocations', t => {
       return originalLoad(request, parent, isMain)
     }
 
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
 
     const fakeBrowserless = {
       withPage: fn => async () =>
@@ -602,7 +612,11 @@ test('reuse compiled template source across invocations', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return () => [async () => ({ isFulfilled: true, value: 'ok' }), async () => {}]
+        return ({ tmpdir } = {}) => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
+        }
       }
 
       if (request === './template') {
@@ -621,7 +635,7 @@ test('reuse compiled template source across invocations', t => {
       return originalLoad(request, parent, isMain)
     }
 
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
     const fakeBrowserless = {
       withPage: fn => async () =>
         fn({}, async () => ({ device: { viewport: {}, userAgent: 'ua' } }))(),
