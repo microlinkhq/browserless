@@ -59,7 +59,7 @@ module.exports = ({ tmpdir } = {}) => {
       return browserPromise
     }
 
-    return async (url, fnOpts = {}) => {
+    const runWithBrowser = async (url, fnOpts) => {
       const browser = await getBrowser()
       const browserless = await browser.createContext()
 
@@ -82,17 +82,15 @@ module.exports = ({ tmpdir } = {}) => {
           runFunctionOpts.source = source
         }
 
-        if (runFunctionOpts.needsNetwork !== false) {
-          const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
-          const browserWSEndpoint =
-            browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
-              ? browserFromPage.wsEndpoint()
-              : undefined
+        const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
+        const browserWSEndpoint =
+          browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
+            ? browserFromPage.wsEndpoint()
+            : undefined
 
-          if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
-          runFunctionOpts.browserWSEndpoint = browserWSEndpoint
-          runFunctionOpts.targetId = targetId
-        }
+        if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
+        runFunctionOpts.browserWSEndpoint = browserWSEndpoint
+        runFunctionOpts.targetId = targetId
 
         const result = await runFunction(runFunctionOpts)
 
@@ -102,6 +100,30 @@ module.exports = ({ tmpdir } = {}) => {
         return result
       })()
     }
+
+    const runWithoutBrowser = async (url, fnOpts) => {
+      const runFunctionOpts = {
+        url,
+        code,
+        ...opts,
+        ...fnOpts
+      }
+
+      if (runFunctionOpts.code === code) {
+        runFunctionOpts.needsNetwork = false
+        runFunctionOpts.source = source
+      }
+
+      const result = await runFunction(runFunctionOpts)
+
+      if (result.isFulfilled) return result
+      const error = ensureError(result.value)
+      if (isBrowserlessError(error)) throw error
+      return result
+    }
+
+    return async (url, fnOpts = {}) =>
+      needsNetwork ? runWithBrowser(url, fnOpts) : runWithoutBrowser(url, fnOpts)
   }
 
   createFunction.teardown = () => isolatedFunction.teardown()
