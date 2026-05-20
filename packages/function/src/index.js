@@ -4,6 +4,9 @@ const { isBrowserlessError, ensureError } = require('@browserless/errors')
 const createIsolatedFunction = require('isolated-function')
 const requireOneOf = require('require-one-of')
 const createRunFunction = require('./function')
+const path = require('path')
+
+const nodePaths = [path.resolve(__dirname, '..', 'node_modules')]
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
@@ -31,7 +34,7 @@ const serializeResponse = response => ({
 })
 
 module.exports = ({ tmpdir } = {}) => {
-  const isolatedFunction = createIsolatedFunction({ tmpdir })
+  const isolatedFunction = createIsolatedFunction({ tmpdir, nodePaths })
   const runFunction = createRunFunction(isolatedFunction)
 
   const createFunction = (
