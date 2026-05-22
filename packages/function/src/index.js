@@ -6,7 +6,8 @@ const requireOneOf = require('require-one-of')
 const createRunFunction = require('./function')
 const path = require('path')
 
-const nodePaths = [path.resolve(__dirname, '..', 'node_modules')]
+const cloudflareDir = path.dirname(require.resolve('@cloudflare/puppeteer/package.json'))
+const nodePaths = [path.resolve(cloudflareDir, '..', '..')]
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
