@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.0.7](https://github.com/microlinkhq/browserless/compare/v13.0.6...v13.0.7) (2026-06-03)
+
+### Bug Fixes
+
+* error EPROTOCOL is retriable ([#775](https://github.com/microlinkhq/browserless/issues/775)) ([3231e35](https://github.com/microlinkhq/browserless/commit/3231e35bcf771cd53da60514951baec9c2848d6e))
+
 ## [13.0.0](https://github.com/microlinkhq/browserless/compare/v12.0.0...v13.0.0) (2026-05-19)
 
 **Note:** Version bump only for package browserless
