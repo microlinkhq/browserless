@@ -147,7 +147,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
               if (isRejected || isDestroyedForced) throw new AbortError()
-              const isRetryable = error.code === 'EBRWSRCONTEXTCONNRESET'
+              const isRetryable =
+                error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
               _contextPromise = createBrowserContext(contextOpts)
               const { message, attemptNumber, retriesLeft } = error
