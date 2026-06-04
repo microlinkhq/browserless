@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.0.8](https://github.com/microlinkhq/browserless/compare/v13.0.7...v13.0.8) (2026-06-04)
+
+### Bug Fixes
+
+* **goto:** don’t forward sec-fetch-* headers ([#778](https://github.com/microlinkhq/browserless/issues/778)) ([aaf1f28](https://github.com/microlinkhq/browserless/commit/aaf1f28d5174cb9e29dc71d3f744bcde61220914))
+
 ## [13.0.7](https://github.com/microlinkhq/browserless/compare/v13.0.6...v13.0.7) (2026-06-03)
 
 **Note:** Version bump only for package @browserless/pdf
