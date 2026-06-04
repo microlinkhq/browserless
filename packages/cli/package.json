@@ -34,9 +34,9 @@
     "web-scraping"
   ],
   "dependencies": {
-    "@browserless/capture": "^13.0.7",
+    "@browserless/capture": "workspace:*",
     "beauty-error": "~1.2.22",
-    "browserless": "^13.0.7",
+    "browserless": "workspace:*",
     "dark-mode": "~3.0.0",
     "dset": "~3.1.4",
     "mri": "~1.2.0",

@@ -30,7 +30,7 @@
     "webm"
   ],
   "dependencies": {
-    "@browserless/goto": "^13.0.7",
+    "@browserless/goto": "workspace:*",
     "debug-logfmt": "~1.4.10",
     "ws": "~8.21.0"
   },

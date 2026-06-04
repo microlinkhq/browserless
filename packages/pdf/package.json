@@ -30,8 +30,8 @@
     "website-to-pdf"
   ],
   "dependencies": {
-    "@browserless/goto": "^13.0.7",
-    "@browserless/screenshot": "^13.0.7",
+    "@browserless/goto": "workspace:*",
+    "@browserless/screenshot": "workspace:*",
     "@kikobeats/time-span": "~1.0.12",
     "debug-logfmt": "~1.4.10",
     "pretty-ms": "~7.0.1"

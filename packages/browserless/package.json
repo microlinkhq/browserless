@@ -35,10 +35,10 @@
     "web-scraping"
   ],
   "dependencies": {
-    "@browserless/errors": "^13.0.0",
-    "@browserless/goto": "^13.0.7",
-    "@browserless/pdf": "^13.0.7",
-    "@browserless/screenshot": "^13.0.7",
+    "@browserless/errors": "workspace:*",
+    "@browserless/goto": "workspace:*",
+    "@browserless/pdf": "workspace:*",
+    "@browserless/screenshot": "workspace:*",
     "debug-logfmt": "~1.4.10",
     "kill-process-group": "~1.0.13",
     "p-reflect": "~2.1.0",

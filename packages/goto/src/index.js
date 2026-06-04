@@ -251,7 +251,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       authenticate,
       click,
       colorScheme,
-      headers = {},
+      headers: rawHeaders = {},
       html,
       javascript = true,
       mediaType,
@@ -362,13 +362,13 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     }
 
     const device = getDevice({
-      headers,
+      headers: rawHeaders,
       device: args.device ?? defaultDevice,
       viewport: args.viewport
     })
 
-    if (device.userAgent && !headers['user-agent']) {
-      headers['user-agent'] = device.userAgent
+    if (device.userAgent && !rawHeaders['user-agent']) {
+      rawHeaders['user-agent'] = device.userAgent
     }
 
     if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
@@ -379,6 +379,15 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
           debug: 'viewport'
         })
       )
+    }
+
+    // sec-fetch-* headers are per-request metadata the browser computes
+    // automatically (same-origin vs cross-site, navigation vs subresource, etc.).
+    // setExtraHTTPHeaders would stamp a single static value on every request,
+    // overriding Chrome's correct per-request values for cross-origin sub-resources.
+    const headers = {}
+    for (const key of Object.keys(rawHeaders)) {
+      if (!key.startsWith('sec-fetch-')) headers[key] = rawHeaders[key]
     }
 
     const headersKeys = Object.keys(headers)
@@ -409,21 +418,21 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       }
 
       if (cookie) {
-        const extraHTTPHeaders = {}
-        const extraHTTPHeadersKeys = []
+        const httpHeaders = {}
+        const httpHeadersKeys = []
 
         for (const key of headersKeys) {
           if (key === 'cookie') continue
-          extraHTTPHeaders[key] = headers[key]
-          extraHTTPHeadersKeys.push(key)
+          httpHeaders[key] = headers[key]
+          httpHeadersKeys.push(key)
         }
 
-        if (extraHTTPHeadersKeys.length > 0) {
+        if (httpHeadersKeys.length > 0) {
           prePromises.push(
             run({
-              fn: page.setExtraHTTPHeaders(extraHTTPHeaders),
+              fn: page.setExtraHTTPHeaders(httpHeaders),
               timeout: actionTimeout,
-              debug: { headers: extraHTTPHeadersKeys }
+              debug: { headers: httpHeadersKeys }
             })
           )
         }

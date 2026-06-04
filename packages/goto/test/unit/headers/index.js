@@ -142,6 +142,92 @@ test('does not forward cookie through extra headers', async t => {
   t.true(cookies.some(({ name, value }) => name === 'yummy_cookie' && value === 'choco'))
 })
 
+test('sec-fetch-* headers are not forwarded via setExtraHTTPHeaders', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+  let extraHTTPHeaders
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const originalSetExtraHTTPHeaders = page.setExtraHTTPHeaders.bind(page)
+    page.setExtraHTTPHeaders = headers => {
+      extraHTTPHeaders = headers
+      return originalSetExtraHTTPHeaders(headers)
+    }
+
+    const { response } = await goto(page, {
+      url,
+      headers: {
+        'x-foo': 'bar',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-dest': 'document',
+        'sec-fetch-user': '?1'
+      }
+    })
+
+    return { body: await response.json() }
+  })
+
+  const { body } = await run()
+
+  t.truthy(extraHTTPHeaders)
+  t.is(extraHTTPHeaders['x-foo'], 'bar')
+  t.false(Object.prototype.hasOwnProperty.call(extraHTTPHeaders, 'sec-fetch-site'))
+  t.false(Object.prototype.hasOwnProperty.call(extraHTTPHeaders, 'sec-fetch-mode'))
+  t.false(Object.prototype.hasOwnProperty.call(extraHTTPHeaders, 'sec-fetch-dest'))
+  t.false(Object.prototype.hasOwnProperty.call(extraHTTPHeaders, 'sec-fetch-user'))
+  t.is(body.headers['x-foo'], 'bar')
+})
+
+test('sec-fetch-* headers are not sent to cross-origin subrequests', async t => {
+  const browserless = await getBrowserContext(t)
+  let subrequestHeaders
+
+  const subrequestUrl = (
+    await runServer(t, ({ req, res }) => {
+      if (req.method === 'OPTIONS') {
+        res.setHeader('access-control-allow-origin', '*')
+        res.setHeader('access-control-allow-methods', 'GET,POST,OPTIONS')
+        res.statusCode = 204
+        return res.end()
+      }
+
+      subrequestHeaders = req.headers
+      res.setHeader('access-control-allow-origin', '*')
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({ ok: true }))
+    })
+  ).replace('127.0.0.1', 'localhost')
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`
+      <script>
+        fetch('${subrequestUrl}').finally(() => {
+          window.__subrequest_complete = true
+        })
+      </script>
+    `)
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, {
+      url,
+      waitForFunction: () => window.__subrequest_complete === true,
+      headers: {
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-dest': 'document'
+      }
+    })
+  })
+
+  await run()
+
+  t.truthy(subrequestHeaders)
+  t.not(subrequestHeaders['sec-fetch-site'], 'same-origin')
+})
+
 test('cookies are not sent to subrequests via extra headers', async t => {
   const browserless = await getBrowserContext(t)
   let subrequestHeaders
