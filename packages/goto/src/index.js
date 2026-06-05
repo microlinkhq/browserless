@@ -251,6 +251,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       authenticate,
       click,
       colorScheme,
+      flattenShadowDOM = false,
       headers: rawHeaders = {},
       html,
       javascript = true,
@@ -481,7 +482,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
             return Promise.race([page.goto(url, { waitUntil, ...args }), promise])
           })()
 
-      const { value: response, reason: error } = await run({
+      let { value: response, reason: error } = await run({
         fn: navigationPromise,
         timeout: gotoTimeout,
         debug: { fn: html ? 'html' : 'url', waitUntil }
@@ -545,6 +546,65 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
       if (isWaitUntilAuto) {
         await waitUntilAuto(page, { response, timeout: actionTimeout * 2 })
+      }
+
+      if (flattenShadowDOM) {
+        const { isRejected, reason: flattenError } = await run({
+          fn: page.evaluate(() => {
+            ;(function flatten (root) {
+              const replaceSlot = (slot, nodes) => {
+                const parent = slot.parentNode
+                if (!parent) return
+                for (const node of nodes) parent.insertBefore(node, slot)
+                slot.remove()
+              }
+
+              const flattenNode = node => {
+                if (node.nodeType !== window.Node.ELEMENT_NODE) return
+                if (node.shadowRoot) flattenElement(node)
+                flattenChildren(node)
+              }
+
+              const flattenChildren = root => {
+                for (const el of root.querySelectorAll('*')) {
+                  if (el.shadowRoot) flattenElement(el)
+                  if (el.localName !== 'slot') continue
+
+                  const slot = el
+                  const nodes = slot.assignedNodes({ flatten: true })
+                  if (nodes.length > 0) {
+                    const clones = nodes.map(node => {
+                      flattenNode(node)
+                      return node.cloneNode(true)
+                    })
+
+                    replaceSlot(slot, clones)
+                  } else {
+                    const fallback = [...slot.childNodes]
+                    fallback.forEach(flattenNode)
+                    if (fallback.length > 0) {
+                      replaceSlot(
+                        slot,
+                        fallback.map(n => n.cloneNode(true))
+                      )
+                    } else slot.remove()
+                  }
+                }
+              }
+
+              const flattenElement = el => {
+                flattenChildren(el.shadowRoot)
+                el.innerHTML = el.shadowRoot.innerHTML
+              }
+
+              flattenChildren(root)
+            })(document.body)
+          }),
+          timeout: actionTimeout,
+          debug: 'flattenShadowDOM'
+        })
+
+        if (isRejected) error = error || flattenError || new Error('flattenShadowDOM failed')
       }
 
       return { response, device, error }

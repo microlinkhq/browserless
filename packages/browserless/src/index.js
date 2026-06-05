@@ -198,7 +198,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       browser: getBrowser,
       evaluate,
       goto,
-      html: evaluate(page => page.content()),
+      html: evaluate(page => page.content(), { flattenShadowDOM: true }),
       page: createPage,
       pdf: withPage(createPdf({ goto })),
       screenshot: withPage(createScreenshot({ goto })),

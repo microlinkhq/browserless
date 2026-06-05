@@ -71,6 +71,7 @@ const { response, device, error } = await goto(page, {
 | `javascript` | `boolean` | `true` | Enable/disable JavaScript |
 | `animations` | `boolean` | `false` | Enable CSS animations |
 | `colorScheme` | `string` | — | `'light'` or `'dark'` preference |
+| `flattenShadowDOM` | `boolean` | `false` (`true` for `html()`) | Serialize open shadow DOM into HTML (mutates the page DOM; closed shadow roots are skipped) |
 | `mediaType` | `string` | — | CSS media type (`'screen'`, `'print'`) |
 | `timezone` | `string` | — | Timezone to emulate |
 | `authenticate` | `object` | — | HTTP authentication credentials |
