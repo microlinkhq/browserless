@@ -32,7 +32,7 @@ export interface Context {
   context: () => Promise<BrowserContext>
   browser: () => Promise<Browser>
   evaluate: <T>(fn: (page: Page, response?: HTTPResponse | undefined, error?: Error) => T | Promise<T>, gotoOpts?: GotoOptions) => Promise<T>
-  goto: (page: Page, url: string, opts?: GotoOptions) => Promise<GotoResult>
+  goto: (page: Page, opts: GotoOptions & { url: string }) => Promise<GotoResult>
   html: (url: string, opts?: GotoOptions) => Promise<string>
   page: (name?: string) => Promise<Page>
   pdf: (page: Page, opts?: PDFOptions) => Promise<Buffer>
@@ -47,6 +47,7 @@ export interface GotoOptions {
   waitUntil?: 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2'
   timeout?: number
   headers?: Record<string, string>
+  flattenShadowDOM?: boolean
   [key: string]: unknown
 }
 
