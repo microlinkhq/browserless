@@ -62,6 +62,55 @@ test('handle page disconnections', async t => {
   await intercept('chrome://version')
 })
 
+test('waitUntil auto waits for delayed content', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ req, res }) => {
+    if (req.url === '/data.json') {
+      return setTimeout(() => {
+        res.setHeader('content-type', 'application/json')
+        res.end(JSON.stringify({ loaded: true }))
+      }, 300)
+    }
+    res.setHeader('content-type', 'text/html')
+    res.end(`<html><body>
+      <div id="result">waiting</div>
+      <script>
+        fetch('/data.json').then(r => r.json()).then(d => {
+          document.getElementById('result').textContent = d.loaded ? 'done' : 'fail'
+        })
+      </script>
+    </body></html>`)
+  })
+
+  const getText = browserless.evaluate(async (page, response) =>
+    page.evaluate(() => document.getElementById('result').textContent)
+  )
+
+  const text = await getText(url, { waitUntil: 'auto' })
+  t.is(text, 'done')
+})
+
+test('waitUntil auto does not pollute browser history', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<html><body><h1>ok</h1></body></html>')
+  })
+
+  const getHistoryLengths = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const withoutAuto = await page.evaluate(() => window.history.length)
+
+    await goto(page, { url, waitUntil: 'auto', adblock: false })
+    const withAuto = await page.evaluate(() => window.history.length)
+
+    return { withoutAuto, withAuto }
+  })
+
+  const { withoutAuto, withAuto } = await getHistoryLengths()
+  t.is(withAuto, withoutAuto)
+})
+
 test('handle page.goto hanging', async t => {
   const browserless = await getBrowserContext(t)
 
