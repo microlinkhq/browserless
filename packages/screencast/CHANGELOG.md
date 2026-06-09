@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.1](https://github.com/microlinkhq/browserless/compare/v13.1.0...v13.1.1) (2026-06-09)
+
+**Note:** Version bump only for package @browserless/screencast
+
 ## [13.0.8](https://github.com/microlinkhq/browserless/compare/v13.0.7...v13.0.8) (2026-06-04)
 
 **Note:** Version bump only for package @browserless/screencast
