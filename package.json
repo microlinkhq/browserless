@@ -160,9 +160,6 @@
       "finepack"
     ]
   },
-  "pnpm": {
-    "neverBuiltDependencies": []
-  },
   "simple-git-hooks": {
     "commit-msg": "npx commitlint --edit",
     "pre-commit": "npx nano-staged"
