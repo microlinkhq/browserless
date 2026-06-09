@@ -228,18 +228,11 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
   // related https://github.com/puppeteer/puppeteer/issues/1353
   const _waitUntilAuto = (page, { timeout }) => {
-    return Promise.all(
-      [
-        {
-          fn: () => page.waitForNavigation({ waitUntil: 'networkidle2' }),
-          debug: 'waitUntilAuto:waitForNavigation'
-        },
-        {
-          fn: () => page.evaluate(() => window.history.pushState(null, null, null)),
-          debug: 'waitUntilAuto:pushState'
-        }
-      ].map(({ fn, debug }) => run({ fn: fn(), debug, timeout }))
-    )
+    return run({
+      fn: page.waitForNetworkIdle({ idleTime: 500, concurrency: 2 }),
+      debug: 'waitUntilAuto:networkIdle',
+      timeout
+    })
   }
 
   const goto = async (
