@@ -1,4 +1,4 @@
-allowBuilds: true
+dangerouslyAllowAllBuilds: true
 minimumReleaseAge: 0
 packages:
   - 'packages/*'
