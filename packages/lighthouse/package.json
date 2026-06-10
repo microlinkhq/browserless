@@ -32,7 +32,7 @@
     "web-vitals"
   ],
   "dependencies": {
-    "lighthouse": "~13.3.0"
+    "lighthouse": "~13.4.0"
   },
   "devDependencies": {
     "@browserless/test": "workspace:*",
