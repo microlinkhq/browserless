@@ -34,6 +34,7 @@
     "@browserless/screenshot": "workspace:*",
     "@kikobeats/time-span": "~1.0.12",
     "debug-logfmt": "~1.4.10",
+    "p-reflect": "~2.1.0",
     "pretty-ms": "~7.0.1"
   },
   "engines": {

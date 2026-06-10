@@ -538,7 +538,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       }
 
       if (isWaitUntilAuto) {
-        await waitUntilAuto(page, { response, timeout: actionTimeout * 2 })
+        await waitUntilAuto(page, { response, timeout: gotoTimeout })
       }
 
       if (flattenShadowDOM) {
