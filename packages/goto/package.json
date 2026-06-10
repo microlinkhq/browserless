@@ -65,5 +65,8 @@
     ],
     "timeout": "2m",
     "workerThreads": false
+  },
+  "peerDependencies": {
+    "puppeteer": "25"
   }
 }
