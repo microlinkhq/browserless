@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.2](https://github.com/microlinkhq/browserless/compare/v13.1.1...v13.1.2) (2026-06-10)
+
+### Bug Fixes
+
+* extend auto waituntil timeout ([#787](https://github.com/microlinkhq/browserless/issues/787)) ([a7e9a79](https://github.com/microlinkhq/browserless/commit/a7e9a799c0503961b44551ed0ee0e8ae95bf6c71))
+
 ## [13.1.1](https://github.com/microlinkhq/browserless/compare/v13.1.0...v13.1.1) (2026-06-09)
 
 **Note:** Version bump only for package browserless
