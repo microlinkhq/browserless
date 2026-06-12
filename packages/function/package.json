@@ -33,7 +33,7 @@
   "dependencies": {
     "@browserless/errors": "workspace:*",
     "@cloudflare/puppeteer": "~1.1.0",
-    "acorn": "~8.16.0",
+    "acorn": "~8.17.0",
     "acorn-walk": "~8.3.5",
     "isolated-function": "~0.1.63",
     "require-one-of": "~1.0.24"
