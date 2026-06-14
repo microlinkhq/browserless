@@ -2,7 +2,6 @@
 
 const { getBrowserContext, runServer } = require('@browserless/test')
 const createScreenshot = require('..')
-const cheerio = require('cheerio')
 const test = require('ava')
 
 const isCI = !!process.env.CI
@@ -10,64 +9,35 @@ const isCI = !!process.env.CI
 test('graphics features', async t => {
   const browserless = await getBrowserContext(t)
 
-  const getGpu = browserless.withPage(page => async () => {
-    await page.goto('chrome://gpu/')
-
-    const html = await page.evaluate(() => document.querySelector('info-view').shadowRoot.innerHTML)
-    await page.close()
-
-    const $ = cheerio.load(html)
-
-    const props = []
-
-    $('#content div:first li').each((_, element) => {
-      const key = $(element).find('span:eq(2)').text().trim().slice(0, -1)
-      const value = $(element).find('span:eq(3)').text().trim()
-      props.push([key, value])
+  // Assert real WebGL capability rather than the chrome://gpu feature-status
+  // strings: those vary wildly by Mesa/LLVM version and host (e.g. CI labels
+  // WebGL "Disabled" while it still renders through ANGLE), so they don't
+  // reflect actual capability. A live getContext + ANGLE renderer does.
+  const getWebGL = browserless.withPage(page => async () => {
+    const result = await page.evaluate(() => {
+      const ctx = document.createElement('canvas').getContext('webgl')
+      if (!ctx) return null
+      const dbg = ctx.getExtension('WEBGL_debug_renderer_info')
+      return {
+        vendor: ctx.getParameter(dbg.UNMASKED_VENDOR_WEBGL),
+        renderer: ctx.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+      }
     })
-
-    return Object.fromEntries(props)
+    await page.close()
+    return result
   })
 
-  t.deepEqual(
-    await getGpu(),
-    isCI
-      ? {
-          Canvas: 'Hardware accelerated',
-          'Direct Rendering Display Compositor': 'Disabled',
-          Compositing: 'Software only. Hardware acceleration disabled',
-          'Multiple Raster Threads': 'Enabled',
-          OpenGL: 'Enabled',
-          Rasterization: 'Hardware accelerated',
-          'Raw Draw': 'Disabled',
-          'Skia Graphite': 'Disabled',
-          TreesInViz: 'Enabled',
-          'Video Decode': 'Hardware accelerated',
-          'Video Encode': 'Software only. Hardware acceleration disabled',
-          Vulkan: 'Disabled',
-          WebGL: 'Hardware accelerated but at reduced performance',
-          WebGPU: 'Software only, hardware acceleration unavailable',
-          'WebGPU interop': 'Disabled',
-          WebNN: 'Disabled'
-        }
-      : {
-          Canvas: 'Hardware accelerated',
-          'Direct Rendering Display Compositor': 'Disabled',
-          Compositing: 'Software only. Hardware acceleration disabled',
-          'Multiple Raster Threads': 'Enabled',
-          OpenGL: 'Enabled',
-          Rasterization: 'Hardware accelerated',
-          'Raw Draw': 'Disabled',
-          'Skia Graphite': 'Disabled',
-          TreesInViz: 'Disabled',
-          'Video Decode': 'Hardware accelerated',
-          'Video Encode': 'Hardware accelerated',
-          WebGL: 'Hardware accelerated but at reduced performance',
-          WebGPU: 'Software only, hardware acceleration unavailable',
-          'WebGPU interop': 'Disabled',
-          WebNN: 'Disabled'
-        }
-  )
+  const webgl = await getWebGL()
+  t.truthy(webgl)
+  t.true(webgl.vendor.startsWith('Google Inc.'))
+  // Portable: WebGL must go through ANGLE, never a silent SwiftShader / 2D
+  // fallback. The message surfaces the real renderer if the backend changes.
+  t.true(webgl.renderer.startsWith('ANGLE ('), webgl.renderer)
+  t.false(webgl.renderer.includes('SwiftShader'), webgl.renderer)
+  // --use-angle=gl resolves to Mesa llvmpipe only on the GPU-less Linux target
+  // (CI under Xvfb); on macOS/Windows/hardware GL the backend differs but is
+  // still valid, so pin llvmpipe only on CI.
+  if (isCI) t.true(webgl.renderer.includes('llvmpipe'), webgl.renderer)
 })
 
 test('dialog listener is cleaned up between screenshot calls on same page', async t => {

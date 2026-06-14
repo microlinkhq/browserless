@@ -8,6 +8,16 @@ const isCI = !!process.env.CI
 
 const fileUrl = `file://${path.join(__dirname, '../../fixtures/dummy.html')}`
 
+const readWebGL = (page, type) =>
+  page.evaluate(type => {
+    const ctx = document.createElement('canvas').getContext(type)
+    const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
+    return {
+      vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
+      renderer: ctx.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+    }
+  }, type)
+
 test('`window.Notification` is not defined', async t => {
   const page = await getPage(t)
   t.is((await page.evaluate('typeof window.Notification'), undefined))
@@ -165,60 +175,39 @@ test('media codecs are present', async t => {
 
 test('webgl vendor is not bot', async t => {
   const page = await getPage(t)
-
-  const webgl = () =>
-    page.evaluate(() => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('webgl')
-      const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
-      return {
-        vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
-        renderer: ctx.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
-      }
-    })
-
-  const expected = isCI
-    ? {
-        vendor: 'Google Inc. (Google)',
-        renderer:
-        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
-      }
-    : {
-        vendor: 'Google Inc. (Google)',
-        renderer:
-        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
-      }
-
-  t.deepEqual(await webgl(), expected)
+  const { vendor } = await readWebGL(page, 'webgl')
+  t.true(vendor.startsWith('Google Inc.'))
 })
 
 test('webgl2 vendor is not bot', async t => {
   const page = await getPage(t)
+  const { vendor } = await readWebGL(page, 'webgl2')
+  t.true(vendor.startsWith('Google Inc.'))
+})
 
-  const webgl2 = () =>
-    page.evaluate(() => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('webgl2')
-      const debugInfo = ctx.getExtension('WEBGL_debug_renderer_info')
-      return {
-        vendor: ctx.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
-        renderer: ctx.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
-      }
-    })
+test('webgl renderer goes through ANGLE (Mesa llvmpipe on CI)', async t => {
+  const page = await getPage(t)
 
-  const expected = isCI
-    ? {
-        vendor: 'Google Inc. (Google)',
-        renderer:
-        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)'
-      }
-    : {
-        vendor: 'Google Inc. (Google)',
-        renderer:
-        'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)'
-      }
+  for (const type of ['webgl', 'webgl2']) {
+    const { vendor, renderer } = await readWebGL(page, type)
 
-  t.deepEqual(await webgl2(), expected)
+    // Portable: WebGL must go through ANGLE, never a SwiftShader / 2D fallback.
+    t.true(vendor.startsWith('Google Inc.'), `${type}: ${vendor}`)
+    t.true(renderer.startsWith('ANGLE ('), `${type}: ${renderer}`)
+    t.false(renderer.includes('SwiftShader'), `${type}: ${renderer}`)
+
+    // --use-angle=gl binds to the host's system GL: Mesa llvmpipe on the
+    // GPU-less Linux target (CI under Xvfb), but native GL on macOS/Windows or
+    // hardware-accelerated hosts. Pin the whole llvmpipe string only on CI; the
+    // `LLVM x.y.z N bits` token tracks the runner's Mesa/LLVM build so it is
+    // normalized out, and everything else is compared exactly.
+    if (isCI) {
+      const expected = 'ANGLE (Mesa, llvmpipe (LLVM <llvm>), OpenGL 4.5)'
+      const normalized = renderer.replace(/LLVM [\d.]+ \d+ bits/, 'LLVM <llvm>')
+      t.is(vendor, 'Google Inc. (Mesa)', type)
+      t.is(normalized, expected, `${type}: ${renderer}`)
+    }
+  }
 })
 
 test('broken images have dimensions', async t => {

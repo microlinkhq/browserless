@@ -21,10 +21,24 @@ test('capture frames', async t => {
     frames.push({ data, metadata })
   })
 
-  screencast.start()
-  await page.goto('https://example.com', { waitUntil: 'domcontentloaded' })
+  await screencast.start()
+  await page.goto('https://example.com', { waitUntil: 'load' })
+
+  // Page.startScreencast emits a frame per compositor commit. Under the GL
+  // backend a fully static page may not commit again after the initial paint,
+  // so drive a visual change each tick to force commits and poll until the
+  // screencast captures at least one frame.
+  const deadline = Date.now() + 5000
+  while (frames.length === 0 && Date.now() < deadline) {
+    await page.evaluate(() => {
+      document.body.style.background = `hsl(${Date.now() % 360}, 50%, 50%)`
+    })
+    await new Promise(resolve => setTimeout(resolve, 50))
+  }
+
   await screencast.stop()
 
+  t.true(frames.length > 0)
   frames.forEach(({ data, metadata }) => {
     t.truthy(data)
     t.is(typeof metadata, 'object')

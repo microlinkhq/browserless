@@ -23,16 +23,20 @@ const defaultArgs = [
   '--disk-cache-size=33554432', // https://source.chromium.org/search?q=lang:cpp+symbol:kDiskCacheSize&ss=chromium
   '--font-render-hinting=none', // https://github.com/puppeteer/puppeteer/issues/2410#issuecomment-2886054614
   '--ignore-gpu-blocklist', // https://source.chromium.org/search?q=lang:cpp+symbol:kIgnoreGpuBlocklist&ss=chromium
-  '--in-process-gpu', // https://github.com/search?q=repo%3Achromium%2Fchromium%20in-process-gpu&type=code
   '--no-default-browser-check', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoDefaultBrowserCheck&ss=chromium
   '--no-pings', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoPings&ss=chromium
   '--no-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoSandbox&ss=chromium
   '--no-startup-window',
   `--enable-features=${['SharedArrayBuffer'].join(',')}`,
   '--no-zygote', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium
-  '--disable-gpu',
-  '--use-angle=swiftshader', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
-  '--use-gl=angle', // https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md
+  // Route WebGL through ANGLE -> system OpenGL, which resolves to Mesa llvmpipe
+  // (software). On a GPU-less host this renders WebGL ~4x faster than the
+  // SwiftShader fallback (measured: ~7s vs ~30s for a 3D chart). Requires Mesa
+  // (libgl1-mesa-dri) installed and a display (Xvfb) so ANGLE can bind a GL
+  // surface; see .github/workflows for the CI setup. Do NOT add
+  // --disable-gpu/--in-process-gpu: they force the SwiftShader path and disable
+  // the GL surface respectively.
+  '--use-angle=gl', // https://chromium.googlesource.com/angle/angle/+/main/doc/DevSetup.md
   `--disable-features=${[
     'AudioServiceOutOfProcess',
     'CalculateNativeWinOcclusion',

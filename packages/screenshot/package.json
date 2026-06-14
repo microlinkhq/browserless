@@ -52,8 +52,7 @@
   },
   "devDependencies": {
     "@browserless/test": "workspace:*",
-    "ava": "5",
-    "cheerio": "latest"
+    "ava": "5"
   },
   "engines": {
     "node": ">= 24"
