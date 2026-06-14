@@ -2,7 +2,7 @@
   "name": "@browserless/goto",
   "description": "Navigate to web pages with built-in ad blocking, device emulation, and optimized loading for faster automation.",
   "homepage": "https://browserless.js.org/#/?id=gotopage-options",
-  "version": "13.1.3",
+  "version": "13.1.4",
   "main": "src/index.js",
   "author": {
     "email": "hello@microlink.io",

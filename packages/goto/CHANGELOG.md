@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.4](https://github.com/microlinkhq/browserless/compare/v13.1.3...v13.1.4) (2026-06-14)
+
+### Performance Improvements
+
+* **driver:** render WebGL via Mesa llvmpipe ([#791](https://github.com/microlinkhq/browserless/issues/791)) ([c803b9b](https://github.com/microlinkhq/browserless/commit/c803b9ba02cc4d5f08b38a5ae3b613ee16a41a4b))
+
 ## [13.1.3](https://github.com/microlinkhq/browserless/compare/v13.1.2...v13.1.3) (2026-06-14)
 
 **Note:** Version bump only for package @browserless/goto
