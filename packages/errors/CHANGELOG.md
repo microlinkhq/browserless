@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.5](https://github.com/microlinkhq/browserless/compare/v13.1.4...v13.1.5) (2026-06-15)
+
+### Bug Fixes
+
+* retry on 'Execution context was destroyed' navigation error ([#793](https://github.com/microlinkhq/browserless/issues/793)) ([9ce21e1](https://github.com/microlinkhq/browserless/commit/9ce21e1ea6276baf64f38d71b13eee0c921b9cac))
+
 ## [13.0.0](https://github.com/microlinkhq/browserless/compare/v12.0.0...v13.0.0) (2026-05-19)
 
 **Note:** Version bump only for package @browserless/errors
