@@ -112,6 +112,16 @@ test('contextDisconnected from "Attempted to use detached Frame"', t => {
   t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
 })
 
+test('contextDisconnected from "Execution context was destroyed"', t => {
+  const error = errors.ensureError({
+    message: 'Execution context was destroyed, most likely because of a navigation.'
+  })
+
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
+})
+
 test('ensureError handles non-object input', t => {
   const errorFromString = errors.ensureError('boom')
   t.true(errorFromString instanceof Error)
