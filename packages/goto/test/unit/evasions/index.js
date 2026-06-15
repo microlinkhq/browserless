@@ -199,11 +199,11 @@ test('webgl renderer goes through ANGLE (Mesa llvmpipe on CI)', async t => {
     // --use-angle=gl binds to the host's system GL: Mesa llvmpipe on the
     // GPU-less Linux target (CI under Xvfb), but native GL on macOS/Windows or
     // hardware-accelerated hosts. Pin the whole llvmpipe string only on CI; the
-    // `LLVM x.y.z N bits` token tracks the runner's Mesa/LLVM build so it is
+    // `LLVM x.y.z, N bits` token tracks the runner's Mesa/LLVM build so it is
     // normalized out, and everything else is compared exactly.
     if (isCI) {
       const expected = 'ANGLE (Mesa, llvmpipe (LLVM <llvm>), OpenGL 4.5)'
-      const normalized = renderer.replace(/LLVM [\d.]+ \d+ bits/, 'LLVM <llvm>')
+      const normalized = renderer.replace(/LLVM [\d.]+,? \d+ bits/, 'LLVM <llvm>')
       t.is(vendor, 'Google Inc. (Mesa)', type)
       t.is(normalized, expected, `${type}: ${renderer}`)
     }
