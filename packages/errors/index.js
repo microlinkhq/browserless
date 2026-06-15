@@ -61,7 +61,8 @@ browserlessError.ensureError = rawError => {
       'Protocol error (Target.createBrowserContext): Target closed'
     ].some(message => errorMessage.startsWith(message)) ||
     errorMessage.includes('Session closed') ||
-    errorMessage.includes('Attempted to use detached Frame')
+    errorMessage.includes('Attempted to use detached Frame') ||
+    errorMessage.includes('Execution context was destroyed')
   ) {
     return browserlessError.contextDisconnected()
   }
