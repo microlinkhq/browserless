@@ -2,7 +2,7 @@
   "name": "browserless",
   "description": "The headless Chrome/Chromium driver on top of Puppeteer. Take screenshots, generate PDFs, extract text and HTML with a production-ready API.",
   "homepage": "https://browserless.js.org",
-  "version": "13.1.5",
+  "version": "13.1.6",
   "types": "index.d.ts",
   "main": "src/index.js",
   "author": {

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.6](https://github.com/microlinkhq/browserless/compare/v13.1.5...v13.1.6) (2026-06-15)
+
+### Bug Fixes
+
+* avoid 'response.status is not a function' on goto timeout ([#794](https://github.com/microlinkhq/browserless/issues/794)) ([39a3400](https://github.com/microlinkhq/browserless/commit/39a34008cc8d6666b50cfbe28e72aae24e0e1025))
+
 ## [13.1.5](https://github.com/microlinkhq/browserless/compare/v13.1.4...v13.1.5) (2026-06-15)
 
 **Note:** Version bump only for package @browserless/function
