@@ -784,3 +784,19 @@ test('concurrent page functions return the correct page for each request', async
     t.is(results[i].value, urls[i], `request ${i} should return its own URL`)
   }
 })
+
+test('isHttpResponse rejects non-response values', t => {
+  const { isHttpResponse } = require('..')
+
+  // a real puppeteer HTTPResponse exposes `status` as a method
+  t.true(isHttpResponse({ status: () => 200 }))
+
+  // goto can yield no navigation response (timeout / same-document nav)
+  t.false(isHttpResponse(null))
+  t.false(isHttpResponse(undefined))
+
+  // a `p-reflect` settlement object must NOT be treated as a response:
+  // it is truthy but `status` is not callable, which used to crash
+  // serializeResponse with "response.status is not a function"
+  t.false(isHttpResponse({ isFulfilled: true, isRejected: false, value: undefined }))
+})
