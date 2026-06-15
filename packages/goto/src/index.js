@@ -64,7 +64,10 @@ const stopLoadingOnTimeout = (page, timeout) => {
   return {
     promise: new Promise(resolve => {
       timeoutId = globalThis.setTimeout(() => {
-        pReflect(page._client().send('Page.stopLoading')).then(resolve)
+        // resolve with `undefined` (no navigation response): `pReflect` would
+        // otherwise leak its `{ isFulfilled, value, ... }` settlement object as
+        // the race winner, which downstream treats as an HTTPResponse.
+        pReflect(page._client().send('Page.stopLoading')).then(() => resolve())
       }, timeout)
 
       if (typeof timeoutId.unref === 'function') timeoutId.unref()

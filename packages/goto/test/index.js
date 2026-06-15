@@ -122,6 +122,25 @@ test('handle page.goto hanging', async t => {
   t.true(html.includes('<body></body>'))
 })
 
+test('goto timeout resolves response as undefined (not a settlement object)', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, () => {
+    // accept the connection but never send headers/body: page.goto gets no
+    // navigation response, so stopLoadingOnTimeout wins the race on timeout
+    return new Promise(() => {})
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const { response } = await goto(page, { url, timeout: 1500, adblock: false })
+    return response
+  })
+
+  const response = await run()
+  // on timeout there is no navigation response: must be falsy, never the
+  // `{ isFulfilled, value, ... }` object that `pReflect` would otherwise leak
+  t.falsy(response)
+})
+
 test('abortTypes keeps behavior with duplicated resource types', async t => {
   const browserless = await getBrowserContext(t)
   const url = await runServer(t, ({ res }) => {

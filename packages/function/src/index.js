@@ -22,6 +22,8 @@ const getTargetId = async page => {
   }
 }
 
+const isHttpResponse = response => response != null && typeof response.status === 'function'
+
 const serializeResponse = response => ({
   status: response.status(),
   statusText: response.statusText(),
@@ -78,7 +80,7 @@ module.exports = ({ tmpdir } = {}) => {
           device,
           ...opts,
           ...fnOpts,
-          ...(response && { _response: serializeResponse(response) })
+          ...(isHttpResponse(response) && { _response: serializeResponse(response) })
         }
 
         if (runFunctionOpts.code === code) {
@@ -134,3 +136,6 @@ module.exports = ({ tmpdir } = {}) => {
 
   return createFunction
 }
+
+module.exports.isHttpResponse = isHttpResponse
+module.exports.serializeResponse = serializeResponse
