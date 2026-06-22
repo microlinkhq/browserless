@@ -122,6 +122,34 @@ test('contextDisconnected from "Execution context was destroyed"', t => {
   t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
 })
 
+test('isContextDestroyed', t => {
+  t.true(
+    errors.isContextDestroyed({
+      message: 'Execution context was destroyed, most likely because of a navigation.'
+    })
+  )
+  t.true(
+    errors.isContextDestroyed({ message: 'Session closed. Most likely the page has been closed.' })
+  )
+  t.true(errors.isContextDestroyed({ message: "Attempted to use detached Frame 'BF1'." }))
+  t.true(
+    errors.isContextDestroyed({
+      message: 'Protocol error (Target.createTarget): Target closed'
+    })
+  )
+  t.true(
+    errors.isContextDestroyed(
+      'Execution context was destroyed, most likely because of a navigation.'
+    )
+  )
+  t.true(errors.isContextDestroyed({ error: { message: 'Execution context was destroyed' } }))
+
+  t.false(errors.isContextDestroyed({ message: 'Evaluation failed: boom' }))
+  t.false(errors.isContextDestroyed({ message: 'Navigation timeout of 30000 ms exceeded' }))
+  t.false(errors.isContextDestroyed('boom'))
+  t.false(errors.isContextDestroyed(null))
+})
+
 test('ensureError handles non-object input', t => {
   const errorFromString = errors.ensureError('boom')
   t.true(errorFromString instanceof Error)

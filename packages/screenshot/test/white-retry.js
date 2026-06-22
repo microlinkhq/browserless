@@ -89,6 +89,49 @@ const createPage = (screenshots, { pageSnapshots = [] } = {}) => {
   }
 }
 
+test('retries capture when navigation destroys the execution context', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const goto = createGoto()
+  const page = createPage([])
+
+  // first capture races with a client-side navigation, second succeeds
+  let calls = 0
+  page.screenshot = async () => {
+    if (calls++ === 0) {
+      throw new Error('Execution context was destroyed, most likely because of a navigation.')
+    }
+    return Buffer.from('shot-ok')
+  }
+
+  const screenshot = createScreenshot({ goto })(page)
+  const result = await screenshot('https://example.com', { waitUntil: 'auto', codeScheme: false })
+
+  t.deepEqual(result, Buffer.from('shot-ok'))
+  t.is(calls, 2)
+  t.is(goto.getWaitUntilAutoCalls(), 1)
+})
+
+test('does not retry capture on a non-navigation error', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const goto = createGoto()
+  const page = createPage([])
+  page.screenshot = async () => {
+    throw new Error('boom')
+  }
+
+  const screenshot = createScreenshot({ goto })(page)
+  await t.throwsAsync(screenshot('https://example.com', { waitUntil: 'auto', codeScheme: false }), {
+    message: 'boom'
+  })
+  t.is(goto.getWaitUntilAutoCalls(), 0)
+})
+
 test('retries white screenshots until non-white image', async t => {
   const responses = [true, true, false]
   const isWhiteScreenshotMock = async () => responses.shift() ?? false

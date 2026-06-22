@@ -82,3 +82,36 @@ test('waitUntil auto should honor custom waitForDom', async t => {
 
   t.deepEqual(domStabilityArgs, { timeout: 2500, idle: 250 })
 })
+
+test('retries pdf generation when navigation destroys the execution context', async t => {
+  let pdfCalls = 0
+  let waitUntilAutoCalls = 0
+
+  const page = {
+    screenshot: async () => noWhiteScreenshot,
+    evaluate: async () => ({ status: 'idle' }),
+    pdf: async () => {
+      if (pdfCalls++ === 0) {
+        throw new Error('Execution context was destroyed, most likely because of a navigation.')
+      }
+      return Buffer.from('pdf-ok')
+    }
+  }
+
+  const goto = async (page, opts = {}) => {
+    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
+    return { response: {} }
+  }
+
+  goto.timeouts = { action: () => 100000 }
+  goto.waitUntilAuto = async () => {
+    waitUntilAutoCalls += 1
+  }
+
+  const pdf = createPdf({ goto })(page)
+  const buffer = await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  t.deepEqual(buffer, Buffer.from('pdf-ok'))
+  t.is(pdfCalls, 2)
+  t.is(waitUntilAutoCalls, 1)
+})
