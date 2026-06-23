@@ -3,6 +3,7 @@
 const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
 const pReflect = require('p-reflect')
 const {
+  captureWithNavigationRetry,
   isWhiteScreenshot,
   waitForDomStability,
   resolveWaitForDom,
@@ -41,12 +42,16 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       const waitForDomOpts = resolveWaitForDom(waitForDom)
 
       const generatePdf = page =>
-        page.pdf({
-          ...opts,
-          margin: getMargin(margin),
-          printBackground,
-          scale
-        })
+        captureWithNavigationRetry(
+          () =>
+            page.pdf({
+              ...opts,
+              margin: getMargin(margin),
+              printBackground,
+              scale
+            }),
+          { page, goto, timeout: goto.timeouts.action(opts.timeout) }
+        )
 
       const waitForDomStabilityResult = async page => {
         if (!waitForDomOpts) return
@@ -77,12 +82,16 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           do {
             ++retry
             const screenshotTime = timeSpan()
-            const screenshot = await page.screenshot({
-              ...opts,
-              optimizeForSpeed: true,
-              type: 'jpeg',
-              quality: 30
-            })
+            const screenshot = await captureWithNavigationRetry(
+              () =>
+                page.screenshot({
+                  ...opts,
+                  optimizeForSpeed: true,
+                  type: 'jpeg',
+                  quality: 30
+                }),
+              { page, goto, timeout }
+            )
             isWhite = await isWhiteScreenshot(screenshot)
             if (isWhite) await goto.waitUntilAuto(page, { timeout: opts.timeout })
             debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })

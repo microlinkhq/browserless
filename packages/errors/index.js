@@ -45,6 +45,30 @@ browserlessError.contextDisconnected = createBrowserlessError({
   message: 'The browser context is not connected.'
 })
 
+const getErrorMessage = rawError => {
+  const error = isObject(rawError) && 'error' in rawError ? rawError.error : rawError
+  if (typeof error === 'string') return error
+  return isObject(error) && typeof error.message === 'string' ? error.message : ''
+}
+
+// Whether the error means the page navigated away (the execution context /
+// browser context was torn down mid-operation). These are transient on SPAs
+// that navigate client-side: waiting for navigation to settle and retrying the
+// operation in-place typically succeeds.
+const isContextDestroyed = rawError => {
+  const errorMessage = getErrorMessage(rawError)
+  return (
+    [
+      'Protocol error (Target.createTarget): Failed to find browser context with id',
+      'Protocol error (Target.createTarget): Target closed',
+      'Protocol error (Target.createBrowserContext): Target closed'
+    ].some(message => errorMessage.startsWith(message)) ||
+    errorMessage.includes('Session closed') ||
+    errorMessage.includes('Attempted to use detached Frame') ||
+    errorMessage.includes('Execution context was destroyed')
+  )
+}
+
 browserlessError.ensureError = rawError => {
   if (isObject(rawError) && rawError.__parsed) return rawError
 
@@ -54,16 +78,7 @@ browserlessError.ensureError = rawError => {
 
   const errorMessage = isObject(error) && typeof error.message === 'string' ? error.message : ''
 
-  if (
-    [
-      'Protocol error (Target.createTarget): Failed to find browser context with id',
-      'Protocol error (Target.createTarget): Target closed',
-      'Protocol error (Target.createBrowserContext): Target closed'
-    ].some(message => errorMessage.startsWith(message)) ||
-    errorMessage.includes('Session closed') ||
-    errorMessage.includes('Attempted to use detached Frame') ||
-    errorMessage.includes('Execution context was destroyed')
-  ) {
+  if (isContextDestroyed(error)) {
     return browserlessError.contextDisconnected()
   }
 
@@ -92,3 +107,4 @@ const isBrowserlessError = error => error.name === ERROR_NAME
 
 module.exports = browserlessError
 module.exports.isBrowserlessError = isBrowserlessError
+module.exports.isContextDestroyed = isContextDestroyed

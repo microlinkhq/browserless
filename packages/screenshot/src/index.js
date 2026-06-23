@@ -1,6 +1,7 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless:screenshot')
+const { isContextDestroyed } = require('@browserless/errors')
 const createGoto = require('@browserless/goto')
 const pReflect = require('p-reflect')
 
@@ -10,9 +11,24 @@ const timeSpan = require('./time-span')
 const overlay = require('./overlay')
 const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require('./wait-for-dom')
 
-const createElapsed = () => {
-  const start = Date.now()
-  return () => Date.now() - start
+const timeSpanMs = require('@kikobeats/time-span')()
+
+// Retry a page capture (screenshot/pdf) that races with a client-side
+// navigation. When the execution context is destroyed mid-capture, the page is
+// navigating: wait for it to settle via `waitUntilAuto` and retry in-place,
+// bounded by `timeout`, rather than failing the whole request. SPAs (e.g.
+// scribd) navigate client-side after load, so the initial capture often races.
+const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
+  const elapsed = timeSpanMs()
+  while (true) {
+    try {
+      return await capture()
+    } catch (error) {
+      if (!isContextDestroyed(error) || elapsed() >= timeout) throw error
+      debug('captureWithNavigationRetry', { error: error.message })
+      await goto.waitUntilAuto(page, { timeout })
+    }
+  }
 }
 
 const getPageSnapshot = page =>
@@ -170,13 +186,17 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const takeScreenshot = async opts => {
         const timeout = goto.timeouts.action(opts.timeout)
-        const elapsed = createElapsed()
+        const elapsed = timeSpanMs()
         let retry = 0
         let isWhite = false
         let isReady = false
 
         do {
-          screenshot = await page.screenshot(opts)
+          screenshot = await captureWithNavigationRetry(() => page.screenshot(opts), {
+            page,
+            goto,
+            timeout
+          })
           isWhite = await isWhiteScreenshot(screenshot)
           const snapshotResult = await pReflect(getPageSnapshot(page))
           const pageSnapshot = snapshotResult.isRejected ? {} : snapshotResult.value
@@ -210,7 +230,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
         if (waitUntil !== 'auto') {
           ;({ response } = await goto(page, { ...opts, url, waitUntil }))
           const screenshotOpts = await beforeScreenshot(page, response, opts)
-          screenshot = await page.screenshot({ ...opts, ...screenshotOpts })
+          screenshot = await captureWithNavigationRetry(
+            () => page.screenshot({ ...opts, ...screenshotOpts }),
+            { page, goto, timeout: goto.timeouts.action(opts.timeout) }
+          )
           debug('screenshot', { waitUntil, duration: timeScreenshot() })
         } else {
           ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
@@ -242,6 +265,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
   }
 }
 
+module.exports.captureWithNavigationRetry = captureWithNavigationRetry
 module.exports.isWhiteScreenshot = isWhiteScreenshot
 module.exports.waitForDomStability = waitForDomStability
 module.exports.resolveWaitForDom = resolveWaitForDom
