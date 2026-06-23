@@ -7,11 +7,11 @@ const pReflect = require('p-reflect')
 
 const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
-const timeSpan = require('./time-span')
+const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
 const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require('./wait-for-dom')
 
-const timeSpanMs = require('@kikobeats/time-span')()
+const timeSpan = require('@kikobeats/time-span')()
 
 // Retry a page capture (screenshot/pdf) that races with a client-side
 // navigation. When the execution context is destroyed mid-capture, the page is
@@ -19,7 +19,7 @@ const timeSpanMs = require('@kikobeats/time-span')()
 // bounded by `timeout`, rather than failing the whole request. SPAs (e.g.
 // scribd) navigate client-side after load, so the initial capture often races.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
-  const elapsed = timeSpanMs()
+  const elapsed = timeSpan()
   while (true) {
     try {
       return await capture()
@@ -186,7 +186,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const takeScreenshot = async opts => {
         const timeout = goto.timeouts.action(opts.timeout)
-        const elapsed = timeSpanMs()
+        const elapsed = timeSpan()
         let retry = 0
         let isWhite = false
         let isReady = false
@@ -225,7 +225,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
       page.on('dialog', onDialog)
 
       try {
-        const timeScreenshot = timeSpan()
+        const timeScreenshot = prettyTimeSpan()
 
         if (waitUntil !== 'auto') {
           ;({ response } = await goto(page, { ...opts, url, waitUntil }))
