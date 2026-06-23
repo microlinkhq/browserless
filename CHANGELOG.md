@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.8](https://github.com/microlinkhq/browserless/compare/v13.1.7...v13.1.8) (2026-06-23)
+
+### Bug Fixes
+
+* **lighthouse:** retry context teardown masked as perf-mark error ([#801](https://github.com/microlinkhq/browserless/issues/801)) ([b4cfe8a](https://github.com/microlinkhq/browserless/commit/b4cfe8ad22115da226daa680fc42f00305b89489))
+
 ## [13.1.7](https://github.com/microlinkhq/browserless/compare/v13.1.6...v13.1.7) (2026-06-23)
 
 ### Bug Fixes

@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.8](https://github.com/microlinkhq/browserless/compare/v13.1.7...v13.1.8) (2026-06-23)
+
+**Note:** Version bump only for package browserless
+
 ## [13.1.7](https://github.com/microlinkhq/browserless/compare/v13.1.6...v13.1.7) (2026-06-23)
 
 ### Bug Fixes
