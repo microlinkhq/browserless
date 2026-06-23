@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.1.7](https://github.com/microlinkhq/browserless/compare/v13.1.6...v13.1.7) (2026-06-23)
+
+### Bug Fixes
+
+* retry capture in-place on navigation race ([#799](https://github.com/microlinkhq/browserless/issues/799)) ([4fecf2b](https://github.com/microlinkhq/browserless/commit/4fecf2bb2a3b8009c5efef9efc5f6f5b0d007f0b)), closes [#793](https://github.com/microlinkhq/browserless/issues/793)
+
 ## [13.1.6](https://github.com/microlinkhq/browserless/compare/v13.1.5...v13.1.6) (2026-06-15)
 
 **Note:** Version bump only for package browserless
