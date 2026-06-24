@@ -106,6 +106,14 @@ const getMimeType = ({ type, audio, video, codec }) => {
   return resolvedCodec ? `${streamMimeType};codecs=${resolvedCodec}` : streamMimeType
 }
 
+const getScaledSize = viewport => {
+  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
+  return {
+    width: Math.round(viewport.width * dpr),
+    height: Math.round(viewport.height * dpr)
+  }
+}
+
 // Tab capture is change-driven: without a frame-rate floor Chromium only
 // delivers a frame when the page repaints, so a mostly-static page records at a
 // few fps. Pinning `minFrameRate` === `maxFrameRate` makes the capturer's
@@ -113,9 +121,7 @@ const getMimeType = ({ type, audio, video, codec }) => {
 const getVideoConstraints = (videoConstraints, viewport, fps) => {
   if (videoConstraints) return videoConstraints
 
-  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
-  const width = Math.round(viewport.width * dpr)
-  const height = Math.round(viewport.height * dpr)
+  const { width, height } = getScaledSize(viewport)
 
   return {
     mandatory: {
@@ -137,9 +143,7 @@ const MIN_VIDEO_BITRATE = 2_000_000
 const MAX_VIDEO_BITRATE = 12_000_000
 
 const getVideoBitrate = (viewport, fps) => {
-  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
-  const width = Math.round(viewport.width * dpr)
-  const height = Math.round(viewport.height * dpr)
+  const { width, height } = getScaledSize(viewport)
   const target = Math.round(width * height * fps * BITS_PER_PIXEL)
   return Math.min(Math.max(target, MIN_VIDEO_BITRATE), MAX_VIDEO_BITRATE)
 }
@@ -224,9 +228,8 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
   const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport, fps)
   const videoBitsPerSecond =
-    videoOpts.enabled && !videoOpts.constraints
-      ? opts.videoBitsPerSecond || getVideoBitrate(viewport, fps)
-      : opts.videoBitsPerSecond
+    opts.videoBitsPerSecond ||
+    (videoOpts.enabled && !videoOpts.constraints ? getVideoBitrate(viewport, fps) : undefined)
 
   let worker
   let workerPromise
@@ -295,7 +298,7 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     // The recorder is rolling: only now kick off navigation so the page's load
     // and intro animations are captured from the very first frame.
     if (typeof onStarted === 'function') {
-      await runWithDuration('onStarted', () => Promise.resolve(onStarted()))
+      await runWithDuration('onStarted', () => onStarted())
     }
   } catch (error) {
     if (!worker && workerPromise) {

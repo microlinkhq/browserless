@@ -370,6 +370,31 @@ test('starts recording before navigation', async t => {
   t.deepEqual(events, ['recording', 'goto'])
 })
 
+test('resolves the viewport from `goto.defaultDevice` when no device is given', async t => {
+  const createCapture = loadCapture()
+  let startRecordingPayload
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
+
+  let resolvedDevice
+  const goto = async () => ({ device: DEFAULT_DEVICE })
+  goto.defaultDevice = 'Macbook Pro 13'
+  goto.getDevice = ({ device }) => {
+    resolvedDevice = device
+    return DEFAULT_DEVICE
+  }
+
+  const capture = createCapture({ goto })
+  await capture(page)('https://example.com', { duration: 20, audio: false, video: true })
+
+  t.is(resolvedDevice, 'Macbook Pro 13')
+  t.is(startRecordingPayload.videoConstraints.mandatory.minWidth, 2560)
+})
+
 test('supports `type: webm`', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload

@@ -19,7 +19,7 @@ const resolveViewport = (goto, page, opts) => {
   if (typeof goto.getDevice === 'function') {
     const device = goto.getDevice({
       headers: { ...(opts.headers || {}) },
-      device: opts.device,
+      device: opts.device ?? goto.defaultDevice,
       viewport: opts.viewport
     })
     if (device && device.viewport) return device.viewport
