@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.2.0](https://github.com/microlinkhq/browserless/compare/v13.1.9...v13.2.0) (2026-06-24)
+
+### Features
+
+* **capture:** record from navigation start at a constant frame rate ([#803](https://github.com/microlinkhq/browserless/issues/803)) ([0b014a0](https://github.com/microlinkhq/browserless/commit/0b014a094be7d43ff8c3652937d7e0545cb4d77b))
+
 ## [13.1.9](https://github.com/microlinkhq/browserless/compare/v13.1.8...v13.1.9) (2026-06-24)
 
 **Note:** Version bump only for package @browserless/goto
