@@ -21,12 +21,14 @@ const DEFAULT_DEVICE = Object.freeze({
   }
 })
 
-const createGoto = onCall => {
+const createGoto = (onCall, { device = DEFAULT_DEVICE } = {}) => {
   const goto = async (page, opts) => {
     const result = typeof onCall === 'function' ? await onCall(page, opts) : null
     if (result && result.device) return result
-    return { device: DEFAULT_DEVICE }
+    return { device }
   }
+
+  goto.getDevice = () => device
 
   return goto
 }
@@ -260,7 +262,7 @@ test('exports capture format defaults', t => {
   t.is(createCapture.DEFAULT.type, 'mp4')
 })
 
-test('uses effective page viewport after goto', async t => {
+test('sizes constraints from the resolved device viewport', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
 
@@ -271,18 +273,16 @@ test('uses effective page viewport after goto', async t => {
   })
 
   const capture = createCapture({
-    goto: createGoto(async () => {
-      return {
-        device: {
-          ...DEFAULT_DEVICE,
-          viewport: {
-            width: 390,
-            height: 844,
-            deviceScaleFactor: 3,
-            isMobile: true,
-            hasTouch: true,
-            isLandscape: false
-          }
+    goto: createGoto(undefined, {
+      device: {
+        ...DEFAULT_DEVICE,
+        viewport: {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 3,
+          isMobile: true,
+          hasTouch: true,
+          isLandscape: false
         }
       }
     })
@@ -299,7 +299,9 @@ test('uses effective page viewport after goto', async t => {
       minWidth: 1170,
       minHeight: 2532,
       maxWidth: 1170,
-      maxHeight: 2532
+      maxHeight: 2532,
+      minFrameRate: 30,
+      maxFrameRate: 30
     }
   })
 })
@@ -322,9 +324,98 @@ test('injects viewport-based constraints by default', async t => {
       minWidth: 2560,
       minHeight: 1600,
       maxWidth: 2560,
-      maxHeight: 1600
+      maxHeight: 1600,
+      minFrameRate: 30,
+      maxFrameRate: 30
     }
   })
+  t.true(startRecordingPayload.videoBitsPerSecond > 0)
+})
+
+test('supports a custom `fps`', async t => {
+  const createCapture = loadCapture()
+  let startRecordingPayload
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
+
+  const capture = createCapture({ goto: createGoto() })
+  await capture(page)('https://example.com', { duration: 20, audio: false, video: true, fps: 60 })
+
+  t.is(startRecordingPayload.videoConstraints.mandatory.minFrameRate, 60)
+  t.is(startRecordingPayload.videoConstraints.mandatory.maxFrameRate, 60)
+})
+
+test('starts recording before navigation', async t => {
+  const createCapture = loadCapture()
+  const events = []
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(() => {
+    events.push('recording')
+  })
+
+  const capture = createCapture({
+    goto: createGoto(() => {
+      events.push('goto')
+    })
+  })
+
+  await capture(page)('https://example.com', { duration: 20, audio: false, video: true })
+
+  t.deepEqual(events, ['recording', 'goto'])
+})
+
+test('surfaces a navigation failure without waiting the full duration', async t => {
+  const createCapture = loadCapture()
+
+  const { page } = createFixture()
+  const browser = page.browser()
+
+  // A large duration means the fake recorder socket never closes on its own
+  // within the test window; if the navigation error waited for it, this would
+  // hang past ava's timeout instead of rejecting promptly.
+  const capture = createCapture({
+    goto: createGoto(() => {
+      throw new Error('navigation failed')
+    })
+  })
+
+  await t.throwsAsync(
+    () => capture(page)('https://example.com', { duration: 30_000, audio: false, video: true }),
+    { message: 'navigation failed' }
+  )
+
+  t.true(browser.__stopCalls() > 0)
+})
+
+test('resolves the viewport from `goto.defaultDevice` when no device is given', async t => {
+  const createCapture = loadCapture()
+  let startRecordingPayload
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
+
+  let resolvedDevice
+  const goto = async () => ({ device: DEFAULT_DEVICE })
+  goto.defaultDevice = 'Macbook Pro 13'
+  goto.getDevice = ({ device }) => {
+    resolvedDevice = device
+    return DEFAULT_DEVICE
+  }
+
+  const capture = createCapture({ goto })
+  await capture(page)('https://example.com', { duration: 20, audio: false, video: true })
+
+  t.is(resolvedDevice, 'Macbook Pro 13')
+  t.is(startRecordingPayload.videoConstraints.mandatory.minWidth, 2560)
 })
 
 test('supports `type: webm`', async t => {

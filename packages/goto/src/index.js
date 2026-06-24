@@ -613,6 +613,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   }
 
   goto.getDevice = getDevice
+  goto.defaultDevice = defaultDevice
   goto.devices = getDevice.devices
   goto.findDevice = getDevice.findDevice
   goto.deviceDescriptors = getDevice.deviceDescriptors

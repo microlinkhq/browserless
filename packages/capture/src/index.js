@@ -12,13 +12,30 @@ const {
 } = require('./constants')
 const runCapture = require('./capture')
 
+// Resolve the device (and therefore the viewport) without navigating, so the
+// recorder can be sized and started before `goto` runs. The viewport is derived
+// from the `device`/`viewport` opts, which are known ahead of navigation.
+const resolveViewport = (goto, page, opts) => {
+  if (typeof goto.getDevice === 'function') {
+    const device = goto.getDevice({
+      headers: { ...(opts.headers || {}) },
+      device: opts.device ?? goto.defaultDevice,
+      viewport: opts.viewport
+    })
+    if (device && device.viewport) return device.viewport
+  }
+  return page.viewport()
+}
+
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
   return function capture (page) {
     return async (url, opts = {}) => {
       const duration = debug.duration({ url })
-      const { device } = await goto(page, { ...opts, url, animations: true })
-      const result = await runCapture(page, opts, device.viewport)
+      const viewport = resolveViewport(goto, page, opts)
+      const result = await runCapture(page, opts, viewport, {
+        onStarted: () => goto(page, { ...opts, url, animations: true })
+      })
       duration.info()
       return result
     }
