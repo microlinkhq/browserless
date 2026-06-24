@@ -52,12 +52,10 @@ const autoconsentConfig = Object.freeze({
   enableCosmeticRules: true,
   /* enable rules auto-generated from common CMP patterns */
   enableGeneratedRules: true,
-  /* skip bundled ABP/uBO cosmetic filter list (saves bundle size) */
-  enableFilterList: false,
   /* detect CMPs using heuristics when no specific rule matches */
   enableHeuristicDetection: true,
-  /* fall back to heuristic click when no specific rule matches */
-  enableHeuristicAction: true,
+  /* heuristic popup handling when no specific rule matches: auto-reject */
+  heuristicMode: 'reject',
   /* run in the page's main world (false = isolated world) */
   isMainWorld: false,
   /* max ms to keep prehide CSS applied before removing it */
@@ -135,7 +133,9 @@ const setupAutoConsent = async (page, timeout) => {
      message carries the nonce, then run the autoconsent script. Child frames
      keep the raw CDP binding which lacks the nonce, so their messages are
      silently rejected. */
-  const nonceGuard = `(function(n){if(window.self!==window.top)return;var raw=window.autoconsentSendMessage;if(raw)window.autoconsentSendMessage=function(msg){return raw(Object.assign({},msg,{__nonce:n}))}})(${JSON.stringify(nonce)});`
+  const nonceGuard = `(function(n){if(window.self!==window.top)return;var raw=window.autoconsentSendMessage;if(raw)window.autoconsentSendMessage=function(msg){return raw(Object.assign({},msg,{__nonce:n}))}})(${JSON.stringify(
+    nonce
+  )});`
   await page.evaluateOnNewDocument(nonceGuard + autoconsentPlaywrightScript)
   page._autoconsentSetup = true
 }
