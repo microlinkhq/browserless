@@ -313,14 +313,13 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     captureError = error
   } finally {
     try {
-      if (recordingPromise && isRecordingStarted) {
-        const recordingResultPromise = recordingPromise.catch(error => {
-          if (!captureError) throw error
-          return Buffer.alloc(0)
-        })
+      // When something already failed (e.g. navigation in `onStarted`), the
+      // buffer is discarded, so don't wait the full `duration` for a recording
+      // we won't use — the inner `finally` stops the recorder immediately.
+      if (recordingPromise && isRecordingStarted && !captureError) {
         const safetyTimeoutMs = Math.ceil(duration * 1.5)
         const recordingWithTimeout = Promise.race([
-          recordingResultPromise,
+          recordingPromise,
           setTimeout(safetyTimeoutMs).then(() => {
             throw new Error('Recording timed out')
           })

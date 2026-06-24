@@ -370,6 +370,29 @@ test('starts recording before navigation', async t => {
   t.deepEqual(events, ['recording', 'goto'])
 })
 
+test('surfaces a navigation failure without waiting the full duration', async t => {
+  const createCapture = loadCapture()
+
+  const { page } = createFixture()
+  const browser = page.browser()
+
+  // A large duration means the fake recorder socket never closes on its own
+  // within the test window; if the navigation error waited for it, this would
+  // hang past ava's timeout instead of rejecting promptly.
+  const capture = createCapture({
+    goto: createGoto(() => {
+      throw new Error('navigation failed')
+    })
+  })
+
+  await t.throwsAsync(
+    () => capture(page)('https://example.com', { duration: 30_000, audio: false, video: true }),
+    { message: 'navigation failed' }
+  )
+
+  t.true(browser.__stopCalls() > 0)
+})
+
 test('resolves the viewport from `goto.defaultDevice` when no device is given', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
