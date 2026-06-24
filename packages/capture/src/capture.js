@@ -106,7 +106,11 @@ const getMimeType = ({ type, audio, video, codec }) => {
   return resolvedCodec ? `${streamMimeType};codecs=${resolvedCodec}` : streamMimeType
 }
 
-const getVideoConstraints = (videoConstraints, viewport) => {
+// Tab capture is change-driven: without a frame-rate floor Chromium only
+// delivers a frame when the page repaints, so a mostly-static page records at a
+// few fps. Pinning `minFrameRate` === `maxFrameRate` makes the capturer's
+// refresh timer re-deliver the last frame, yielding a constant cadence.
+const getVideoConstraints = (videoConstraints, viewport, fps) => {
   if (videoConstraints) return videoConstraints
 
   const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
@@ -118,9 +122,26 @@ const getVideoConstraints = (videoConstraints, viewport) => {
       minWidth: width,
       minHeight: height,
       maxWidth: width,
-      maxHeight: height
+      maxHeight: height,
+      minFrameRate: fps,
+      maxFrameRate: fps
     }
   }
+}
+
+// At 30 fps the MediaRecorder default (~2.5 Mbps) is too low for a DPR-scaled
+// viewport and the video turns blocky. Scale the target bitrate with the pixel
+// throughput, clamped to a sane range.
+const BITS_PER_PIXEL = 0.07
+const MIN_VIDEO_BITRATE = 2_000_000
+const MAX_VIDEO_BITRATE = 12_000_000
+
+const getVideoBitrate = (viewport, fps) => {
+  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
+  const width = Math.round(viewport.width * dpr)
+  const height = Math.round(viewport.height * dpr)
+  const target = Math.round(width * height * fps * BITS_PER_PIXEL)
+  return Math.min(Math.max(target, MIN_VIDEO_BITRATE), MAX_VIDEO_BITRATE)
 }
 
 const isTrackObject = value => value && typeof value === 'object' && !Array.isArray(value)
@@ -173,8 +194,16 @@ const getTargetId = async page => {
   }
 }
 
-module.exports = async (page, opts, viewport) => {
-  const { path: outputPath, duration = DEFAULT.duration, audio, video, type, codec } = opts
+module.exports = async (page, opts, viewport, { onStarted } = {}) => {
+  const {
+    path: outputPath,
+    duration = DEFAULT.duration,
+    fps = DEFAULT.fps,
+    audio,
+    video,
+    type,
+    codec
+  } = opts
 
   const audioOpts = getOpts(audio, false, 'audio')
   const videoOpts = getOpts(video, true, 'video')
@@ -193,7 +222,11 @@ module.exports = async (page, opts, viewport) => {
     video: videoOpts.enabled
   })
 
-  const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport)
+  const resolvedVideoConstraints = getVideoConstraints(videoOpts.constraints, viewport, fps)
+  const videoBitsPerSecond =
+    videoOpts.enabled && !videoOpts.constraints
+      ? opts.videoBitsPerSecond || getVideoBitrate(viewport, fps)
+      : opts.videoBitsPerSecond
 
   let worker
   let workerPromise
@@ -251,12 +284,19 @@ module.exports = async (page, opts, viewport) => {
             audio: audioOpts.enabled,
             mimeType: streamMimeType,
             videoConstraints: resolvedVideoConstraints,
-            audioConstraints: audioOpts.constraints
+            audioConstraints: audioOpts.constraints,
+            videoBitsPerSecond
           }
         }),
       { index, tabId }
     )
     isRecordingStarted = true
+
+    // The recorder is rolling: only now kick off navigation so the page's load
+    // and intro animations are captured from the very first frame.
+    if (typeof onStarted === 'function') {
+      await runWithDuration('onStarted', () => Promise.resolve(onStarted()))
+    }
   } catch (error) {
     if (!worker && workerPromise) {
       worker = await runWithDuration('awaitWorkerAfterError', () => workerPromise.catch(NOOP))

@@ -21,12 +21,14 @@ const DEFAULT_DEVICE = Object.freeze({
   }
 })
 
-const createGoto = onCall => {
+const createGoto = (onCall, { device = DEFAULT_DEVICE } = {}) => {
   const goto = async (page, opts) => {
     const result = typeof onCall === 'function' ? await onCall(page, opts) : null
     if (result && result.device) return result
-    return { device: DEFAULT_DEVICE }
+    return { device }
   }
+
+  goto.getDevice = () => device
 
   return goto
 }
@@ -260,7 +262,7 @@ test('exports capture format defaults', t => {
   t.is(createCapture.DEFAULT.type, 'mp4')
 })
 
-test('uses effective page viewport after goto', async t => {
+test('sizes constraints from the resolved device viewport', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
 
@@ -271,18 +273,16 @@ test('uses effective page viewport after goto', async t => {
   })
 
   const capture = createCapture({
-    goto: createGoto(async () => {
-      return {
-        device: {
-          ...DEFAULT_DEVICE,
-          viewport: {
-            width: 390,
-            height: 844,
-            deviceScaleFactor: 3,
-            isMobile: true,
-            hasTouch: true,
-            isLandscape: false
-          }
+    goto: createGoto(undefined, {
+      device: {
+        ...DEFAULT_DEVICE,
+        viewport: {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 3,
+          isMobile: true,
+          hasTouch: true,
+          isLandscape: false
         }
       }
     })
@@ -299,7 +299,9 @@ test('uses effective page viewport after goto', async t => {
       minWidth: 1170,
       minHeight: 2532,
       maxWidth: 1170,
-      maxHeight: 2532
+      maxHeight: 2532,
+      minFrameRate: 30,
+      maxFrameRate: 30
     }
   })
 })
@@ -322,9 +324,50 @@ test('injects viewport-based constraints by default', async t => {
       minWidth: 2560,
       minHeight: 1600,
       maxWidth: 2560,
-      maxHeight: 1600
+      maxHeight: 1600,
+      minFrameRate: 30,
+      maxFrameRate: 30
     }
   })
+  t.true(startRecordingPayload.videoBitsPerSecond > 0)
+})
+
+test('supports a custom `fps`', async t => {
+  const createCapture = loadCapture()
+  let startRecordingPayload
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(payload => {
+    startRecordingPayload = payload
+  })
+
+  const capture = createCapture({ goto: createGoto() })
+  await capture(page)('https://example.com', { duration: 20, audio: false, video: true, fps: 60 })
+
+  t.is(startRecordingPayload.videoConstraints.mandatory.minFrameRate, 60)
+  t.is(startRecordingPayload.videoConstraints.mandatory.maxFrameRate, 60)
+})
+
+test('starts recording before navigation', async t => {
+  const createCapture = loadCapture()
+  const events = []
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(() => {
+    events.push('recording')
+  })
+
+  const capture = createCapture({
+    goto: createGoto(() => {
+      events.push('goto')
+    })
+  })
+
+  await capture(page)('https://example.com', { duration: 20, audio: false, video: true })
+
+  t.deepEqual(events, ['recording', 'goto'])
 })
 
 test('supports `type: webm`', async t => {

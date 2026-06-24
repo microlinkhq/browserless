@@ -79,6 +79,7 @@ const START_RECORDING = async ({
   mimeType,
   videoConstraints,
   audioConstraints,
+  videoBitsPerSecond,
   duration = 0
 }) => {
   if (!port) throw new Error('Missing websocket port for recording session.')
@@ -124,7 +125,9 @@ const START_RECORDING = async ({
     throw error
   }
 
-  const recorder = new MediaRecorder(stream, { mimeType })
+  const recorderOptions = { mimeType }
+  if (videoBitsPerSecond) recorderOptions.videoBitsPerSecond = videoBitsPerSecond
+  const recorder = new MediaRecorder(stream, recorderOptions)
 
   const pending = new Set()
 
