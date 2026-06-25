@@ -2,7 +2,7 @@
 
 const test = require('ava')
 
-const { getOutputArgs, ENCODERS } = require('../src/screencast')
+const { getOutputArgs, ENCODERS } = require('../src/ffmpeg')
 
 const argsFor = opts => getOutputArgs({ width: 1280, height: 800, fps: 60, ...opts })
 

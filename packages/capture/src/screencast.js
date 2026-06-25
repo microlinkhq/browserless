@@ -1,15 +1,13 @@
 'use strict'
 
 const { setTimeout: delay } = require('timers/promises')
-const { spawn } = require('child_process')
 const fs = require('fs/promises')
 const debug = require('debug-logfmt')('browserless:capture')
 
 const createScreencast = require('@browserless/screencast')
 const { writeHeader, writeClusterHeader } = require('./ebml')
+const { getOutputArgs, spawnFfmpeg } = require('./ffmpeg')
 const { DEFAULT, NOOP } = require('./constants')
-
-const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg'
 
 // vp8/h264 require even dimensions.
 const even = value => Math.round(value) & ~1
@@ -24,94 +22,6 @@ const getViewportSize = viewport => ({
   width: even(viewport.width),
   height: even(viewport.height)
 })
-
-// Video encoder profiles, keyed by name and tagged with the container they mux
-// into. The MediaRecorder-style `codec` (e.g. avc1.640028) does not apply to
-// ffmpeg and is ignored here. Selectable per-request via the `encoder` opt so
-// combinations can be benchmarked against each other in production; defaults
-// (h264-ultrafast / vp8) are validated speed-first choices.
-const ENCODER_PROFILES = {
-  'h264-ultrafast': { container: 'mp4', codec: ['libx264', '-preset', 'ultrafast'] },
-  'h264-veryfast': { container: 'mp4', codec: ['libx264', '-preset', 'veryfast'] },
-  'h264-medium': { container: 'mp4', codec: ['libx264', '-preset', 'medium'] },
-  h265: { container: 'mp4', codec: ['libx265', '-preset', 'ultrafast', '-tag:v', 'hvc1'] },
-  av1: { container: 'mp4', codec: ['libsvtav1', '-preset', '8', '-crf', '35'] },
-  vp8: {
-    container: 'webm',
-    // vp8 realtime config (from Playwright) — predictable under load, unlike vp9
-    // realtime which drops frames.
-    codec: [
-      'libvpx',
-      '-qmin',
-      '0',
-      '-qmax',
-      '50',
-      '-crf',
-      '8',
-      '-deadline',
-      'realtime',
-      '-speed',
-      '8',
-      '-b:v',
-      '1M'
-    ]
-  },
-  vp9: {
-    container: 'webm',
-    codec: ['libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '8', '-crf', '30', '-b:v', '0']
-  }
-}
-
-const DEFAULT_ENCODER_BY_CONTAINER = { mp4: 'h264-ultrafast', webm: 'vp8' }
-
-// mp4 must be fragmented to stream to stdout (non-seekable output).
-const CONTAINER_ARGS = {
-  mp4: ['-movflags', '+frag_keyframe+empty_moov+default_base_moof', '-f', 'mp4', 'pipe:1'],
-  webm: ['-f', 'webm', 'pipe:1']
-}
-
-const resolveEncoder = (encoder, container) => {
-  const profile = ENCODER_PROFILES[encoder]
-  // Fall back to the container default for an unknown encoder or one that does
-  // not mux into the requested container (e.g. vp9 requested with type=mp4).
-  return profile && profile.container === container
-    ? profile
-    : ENCODER_PROFILES[DEFAULT_ENCODER_BY_CONTAINER[container]]
-}
-
-const getOutputArgs = ({ type, width, height, fps, encoder }) => {
-  const container = type === 'webm' ? 'webm' : 'mp4'
-  const { codec } = resolveEncoder(encoder, container)
-  // Read frame timing from the Matroska stream we mux (explicit per-frame
-  // timestamps) and emit a constant `fps`, duplicating frames as needed.
-  return [
-    '-loglevel',
-    'error',
-    '-f',
-    'matroska',
-    '-fpsprobesize',
-    '0',
-    '-probesize',
-    '32',
-    '-analyzeduration',
-    '0',
-    '-i',
-    'pipe:0',
-    '-y',
-    '-an',
-    '-r',
-    String(fps),
-    '-vf',
-    `pad=${width}:${height}:0:0:gray,crop=${width}:${height}:0:0`,
-    '-threads',
-    '1',
-    '-c:v',
-    ...codec,
-    '-pix_fmt',
-    'yuv420p',
-    ...CONTAINER_ARGS[container]
-  ]
-}
 
 // Maps incoming frames onto a constant-fps grid by their real (compositor swap)
 // timestamp, and muxes them into a Matroska stream for ffmpeg. Ported from the
@@ -159,38 +69,18 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     type = DEFAULT.type,
     encoder,
     quality = 90,
-    ffmpegPath = FFMPEG_PATH
+    ffmpegPath
   } = opts
 
   const { width, height } = getViewportSize(viewport)
 
-  const ffmpeg = spawn(ffmpegPath, getOutputArgs({ type, width, height, fps, encoder }), {
-    stdio: ['pipe', 'pipe', 'pipe']
+  const { stdin, output } = spawnFfmpeg({
+    ffmpegPath,
+    args: getOutputArgs({ type, width, height, fps, encoder })
   })
 
-  const chunks = []
-  let stderr = ''
-  ffmpeg.stdout.on('data', chunk => chunks.push(chunk))
-  ffmpeg.stderr.on('data', chunk => (stderr += chunk.toString()))
-  ffmpeg.stdin.on('error', NOOP)
-
-  const exited = new Promise((resolve, reject) => {
-    ffmpeg.on('error', err =>
-      reject(
-        new Error(
-          `ffmpeg failed to start (${ffmpegPath}): ${err.message}. Install ffmpeg to use the screencast backend.`
-        )
-      )
-    )
-    ffmpeg.on('close', code =>
-      code === 0
-        ? resolve(Buffer.concat(chunks))
-        : reject(new Error(`ffmpeg exited ${code}: ${stderr.slice(-300)}`))
-    )
-  })
-
-  const muxer = createFrameMuxer({ stdin: ffmpeg.stdin, fps, durationMs: duration })
-  ffmpeg.stdin.write(writeHeader(width, height))
+  const muxer = createFrameMuxer({ stdin, fps, durationMs: duration })
+  stdin.write(writeHeader(width, height))
 
   const screencast = createScreencast(page, {
     format: 'jpeg',
@@ -228,10 +118,10 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
   } finally {
     await screencast.stop().catch(NOOP)
     muxer.flush()
-    ffmpeg.stdin.end()
+    stdin.end()
   }
 
-  const buffer = await exited
+  const buffer = await output
   // Let navigation settle before returning so the caller doesn't tear the page
   // down mid-navigation (goto has its own timeout, so this can't hang).
   await navigation
@@ -250,6 +140,3 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
   return buffer
 }
-
-module.exports.ENCODERS = Object.keys(ENCODER_PROFILES)
-module.exports.getOutputArgs = getOutputArgs
