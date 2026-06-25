@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.3.0](https://github.com/microlinkhq/browserless/compare/v13.2.0...v13.3.0) (2026-06-25)
+
+### Features
+
+* **capture:** screencast backend (CDP + ffmpeg) behind a backend opt ([#805](https://github.com/microlinkhq/browserless/issues/805)) ([d0d43e2](https://github.com/microlinkhq/browserless/commit/d0d43e20789ea1b960aa0b6a449822fa338a0c05))
+
 ## [13.2.0](https://github.com/microlinkhq/browserless/compare/v13.1.9...v13.2.0) (2026-06-24)
 
 ### Features
