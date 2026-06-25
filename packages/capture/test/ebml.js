@@ -2,7 +2,7 @@
 
 const test = require('ava')
 
-const { writeHeader, writeClusterHeader } = require('../src/ebml')
+const { writeHeader, writeClusterHeader } = require('../src/recorder/ebml')
 
 test('writeHeader starts with the EBML magic and declares matroska/MJPEG', t => {
   const header = writeHeader(1280, 800)

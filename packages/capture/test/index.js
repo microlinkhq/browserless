@@ -260,34 +260,43 @@ test('exports capture format defaults', t => {
 
   t.deepEqual(createCapture.TYPES, ['webm', 'mp4'])
   t.is(createCapture.DEFAULT.type, 'mp4')
-  t.deepEqual(createCapture.BACKENDS, ['extension', 'screencast'])
+  t.deepEqual(createCapture.MODES, ['extension', 'screencast', 'screenshot'])
 })
 
-test('an unknown backend falls back to the default extension recorder', async t => {
+test('the default entry point ignores an unknown `mode` option', async t => {
   const createCapture = loadCapture()
   const { page } = createFixture()
   const capture = createCapture({ goto: createGoto() })
-  // The mock harness only implements the extension flow; a bogus backend must
-  // resolve to it rather than throwing.
+  // Mode is now selected at `require` time, so a stray `mode` option on the
+  // default (extension) entry point is inert rather than a dispatch key.
   const result = await capture(page)('https://example.com', {
     duration: 20,
     audio: false,
     video: true,
-    backend: 'does-not-exist'
+    mode: 'does-not-exist'
   })
   t.true(Buffer.isBuffer(result))
 })
 
-test('screencast backend rejects when `video` is disabled', async t => {
-  const createCapture = loadCapture()
+test('screencast entry point rejects when `video` is disabled', async t => {
+  const createScreencastCapture = require('../src/screencast')
   const { page } = createFixture()
-  const capture = createCapture({ goto: createGoto() })
+  const capture = createScreencastCapture({ goto: createGoto() })
   // Screencast is video-only; it must error rather than silently produce video.
-  await t.throwsAsync(
-    () =>
-      capture(page)('https://example.com', { backend: 'screencast', video: false, duration: 20 }),
-    { instanceOf: TypeError, message: /video.*cannot be disabled/ }
-  )
+  await t.throwsAsync(() => capture(page)('https://example.com', { video: false, duration: 20 }), {
+    instanceOf: TypeError,
+    message: /video.*cannot be disabled/
+  })
+})
+
+test('screenshot entry point rejects when `video` is disabled', async t => {
+  const createScreenshotCapture = require('../src/screenshot')
+  const { page } = createFixture()
+  const capture = createScreenshotCapture({ goto: createGoto() })
+  await t.throwsAsync(() => capture(page)('https://example.com', { video: false, duration: 20 }), {
+    instanceOf: TypeError,
+    message: /video.*cannot be disabled/
+  })
 })
 
 test('sizes constraints from the resolved device viewport', async t => {
@@ -328,8 +337,8 @@ test('sizes constraints from the resolved device viewport', async t => {
       minHeight: 2532,
       maxWidth: 1170,
       maxHeight: 2532,
-      minFrameRate: 30,
-      maxFrameRate: 30
+      minFrameRate: 60,
+      maxFrameRate: 60
     }
   })
 })
@@ -353,8 +362,8 @@ test('injects viewport-based constraints by default', async t => {
       minHeight: 1600,
       maxWidth: 2560,
       maxHeight: 1600,
-      minFrameRate: 30,
-      maxFrameRate: 30
+      minFrameRate: 60,
+      maxFrameRate: 60
     }
   })
   t.true(startRecordingPayload.videoBitsPerSecond > 0)

@@ -83,19 +83,41 @@ Returns a `Buffer` and writes to `opts.path` when provided.
 
 ## Options
 
+The capture mode is selected by [entry point](#modes), not by an option.
+
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `type` | `'webm' \| 'mp4'` | `'mp4'` | Output type selector mapped to MediaRecorder mime type. |
 | `codec` | `string` | Depends on `type` | MediaRecorder codec override. Defaults: `webm -> vp9`, `mp4 -> avc1.4D401F`. |
 | `path` | `string` | `undefined` | Write the captured media to disk. |
-| `duration` | `number` | `3000` | Capture duration in milliseconds. |
+| `duration` | `number` | `5000` | Capture duration in milliseconds. |
 | `audio` | `boolean \| object` | `false` | Capture audio. When object, it is used as audio track constraints. |
 | `video` | `boolean \| object` | `true` | Capture video. When object, it is used as video track constraints. |
+
+## Modes
+
+Each capture mode is a separate entry point, so you pull in only what you use
+(e.g. the `extension` mode doesn't load the ffmpeg-based deps):
+
+```js
+const createCapture = require('@browserless/capture') // extension (default)
+const createCapture = require('@browserless/capture/screencast')
+const createCapture = require('@browserless/capture/screenshot')
+```
+
+All three share the same factory signature — `createCapture({ goto })(page)(url, opts)`.
+
+| Entry point | How | Notes |
+| --- | --- | --- |
+| `@browserless/capture` (`/extension`) | In-browser MediaRecorder via the bundled extension (`tabCapture`). | Default. Device-pixel (retina) output. Captures `audio`. |
+| `@browserless/capture/screencast` | CDP `Page.startScreencast` frames muxed into ffmpeg. | Video-only (`video: false` throws). CSS-pixel output. Requires `ffmpeg`. |
+| `@browserless/capture/screenshot` | Polled `page.screenshot` frames muxed into ffmpeg. | Video-only. The only mode that captures accelerated layers (WebGL/canvas/video). Device-pixel output, bounded by screenshot latency. Requires `ffmpeg`. |
 
 ## Exports
 
 - `capture.extensionPath`: Absolute path to the bundled extension.
 - `capture.extensionId`: Extension ID used by the package.
+- `capture.MODES`: Names of the available capture modes (entry points).
 - `capture.types`: Supported values for `type`.
 `capture` uses `goto(...).device.viewport` as the capture viewport source.
 When `video` is `true` or omitted, video constraints are inferred from that viewport to keep capture framing aligned with screenshot/pdf rendering.

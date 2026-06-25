@@ -1,6 +1,6 @@
 'use strict'
 
-const { EXTENSION_ID, EXTENSION_PATH, NOOP } = require('./constants')
+const { EXTENSION_ID, EXTENSION_PATH, NOOP } = require('../constants')
 
 const BACKGROUND_PATH = `chrome-extension://${EXTENSION_ID}/background.js`
 const workerRuntimes = new WeakMap()

@@ -1,27 +1,20 @@
 'use strict'
 
+// Shared ffmpeg recording pipeline for the frame-based modes (screencast and
+// screenshot). Both feed real per-frame timestamps into a constant-fps Matroska
+// muxer that ffmpeg encodes; they differ only in how frames are sourced and how
+// the output is sized, which the caller supplies via `getSize`/`startSource`.
+
 const { setTimeout: delay } = require('timers/promises')
 const fs = require('fs/promises')
 const debug = require('debug-logfmt')('browserless:capture')
 
-const createScreencast = require('@browserless/screencast')
 const { writeHeader, writeClusterHeader } = require('./ebml')
 const { getOutputArgs, spawnFfmpeg } = require('./ffmpeg')
-const { DEFAULT, NOOP } = require('./constants')
+const { DEFAULT, NOOP } = require('../constants')
 
 // vp8/h264 require even dimensions.
 const even = value => Math.round(value) & ~1
-
-// CDP `Page.startScreencast` delivers frames at the CSS-pixel layout viewport,
-// NOT device pixels (unlike tab capture, which is retina/device-px). Size the
-// output to the CSS viewport so frames fill it exactly without padding/upscaling.
-// Net effect: the screencast backend is half the linear resolution of the
-// extension backend for a 2x-DPR device. (Distinct from capture.js's device-px
-// `getScaledSize`, hence the different name.)
-const getViewportSize = viewport => ({
-  width: even(viewport.width),
-  height: even(viewport.height)
-})
 
 // Maps incoming frames onto a constant-fps grid by their real (compositor swap)
 // timestamp, and muxes them into a Matroska stream for ffmpeg. Ported from the
@@ -61,7 +54,11 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
   }
 }
 
-module.exports = async (page, opts, viewport, { onStarted } = {}) => {
+// Run a frame-based capture end to end. `getSize(viewport)` returns the encoded
+// `{ width, height }`; `startSource({ page, muxer, width, height, fps, quality })`
+// begins producing frames into `muxer.write(buffer, tsSeconds)` and resolves to a
+// `stop()` that halts it. `label` tags errors/logs to the calling mode.
+const record = async (page, opts, viewport, { onStarted, getSize, startSource, label }) => {
   const {
     path: outputPath,
     duration = DEFAULT.duration,
@@ -72,13 +69,13 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     ffmpegPath
   } = opts
 
-  // The screencast backend captures video only (CDP screencast has no audio);
-  // mirror the extension backend's "must capture something" guard.
+  // These modes capture video only; mirror the extension mode's "must
+  // capture something" guard rather than silently producing video.
   if (opts.video === false) {
-    throw new TypeError('The screencast backend captures video; `video` cannot be disabled.')
+    throw new TypeError(`The ${label} mode captures video; \`video\` cannot be disabled.`)
   }
 
-  const { width, height } = getViewportSize(viewport)
+  const { width, height } = getSize(viewport)
 
   const { stdin, output } = spawnFfmpeg({
     ffmpegPath,
@@ -92,32 +89,20 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
   const muxer = createFrameMuxer({ stdin, fps, durationMs: duration })
   stdin.write(writeHeader(width, height))
 
-  const screencast = createScreencast(page, {
-    format: 'jpeg',
-    quality,
-    maxWidth: width,
-    maxHeight: height,
-    everyNthFrame: 1
-  })
-
-  // metadata.timestamp is the compositor frame-swap wall time, in seconds.
-  screencast.onFrame((data, metadata) =>
-    muxer.write(Buffer.from(data, 'base64'), metadata.timestamp)
-  )
-
   let captureError
   let navigation = Promise.resolve()
+  let stop = NOOP
   // Bounds the recording window; aborted early if navigation fails so a goto
   // error surfaces immediately instead of after the full `duration`.
   const recordingWindow = new AbortController()
   try {
-    // Apply the viewport before the first frame so the screencast captures at the
+    // Apply the viewport before the first frame so frames are captured at the
     // intended size from the start (goto re-applies it idempotently during nav).
     await page.setViewport(viewport).catch(NOOP)
-    await screencast.start()
+    stop = await startSource({ page, muxer, width, height, fps, quality })
 
-    // The screencast is rolling: only now kick off navigation so the page's load
-    // and intro animations are captured from the first frame. Navigation runs
+    // The source is rolling: only now kick off navigation so the page's load and
+    // intro animations are captured from the first frame. Navigation runs
     // concurrently — it does not extend the recording window (so the clip stays
     // bounded to `duration` on slow loads), but a failure ends it early.
     navigation = Promise.resolve(onStarted?.()).catch(error => {
@@ -128,7 +113,7 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
   } catch (error) {
     captureError = captureError || error
   } finally {
-    await screencast.stop().catch(NOOP)
+    await stop()
     muxer.flush()
     stdin.end()
   }
@@ -152,8 +137,10 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
   if (outputPath) {
     await fs.writeFile(outputPath, buffer)
-    debug('screencast.writeFile', { outputPath, bytes: buffer.length })
+    debug(`${label}.writeFile`, { outputPath, bytes: buffer.length })
   }
 
   return buffer
 }
+
+module.exports = { even, createFrameMuxer, record }

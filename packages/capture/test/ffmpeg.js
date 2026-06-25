@@ -2,7 +2,7 @@
 
 const test = require('ava')
 
-const { getOutputArgs, spawnFfmpeg, ENCODERS } = require('../src/ffmpeg')
+const { getOutputArgs, spawnFfmpeg, ENCODERS } = require('../src/recorder/ffmpeg')
 
 const argsFor = opts => getOutputArgs({ width: 1280, height: 800, fps: 60, ...opts })
 
