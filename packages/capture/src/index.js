@@ -53,5 +53,6 @@ module.exports.extensionPath = EXTENSION_PATH
 module.exports.extensionId = EXTENSION_ID
 module.exports.TYPES = TYPES
 module.exports.BACKENDS = Object.keys(BACKENDS)
+module.exports.ENCODERS = runScreencastCapture.ENCODERS
 module.exports.DEFAULT = DEFAULT
 module.exports.DEFAULT_CODEC_BY_TYPE = DEFAULT_CODEC_BY_TYPE
