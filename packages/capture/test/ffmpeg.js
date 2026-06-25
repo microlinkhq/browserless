@@ -2,7 +2,7 @@
 
 const test = require('ava')
 
-const { getOutputArgs, ENCODERS } = require('../src/ffmpeg')
+const { getOutputArgs, spawnFfmpeg, ENCODERS } = require('../src/ffmpeg')
 
 const argsFor = opts => getOutputArgs({ width: 1280, height: 800, fps: 60, ...opts })
 
@@ -45,4 +45,10 @@ test('exports the encoder profile names', t => {
   t.true(ENCODERS.includes('h264-ultrafast'))
   t.true(ENCODERS.includes('vp8'))
   t.true(ENCODERS.includes('av1'))
+})
+
+test('spawnFfmpeg kills the process and rejects when it exceeds the timeout', async t => {
+  // `sleep` stands in for a hung encoder that never exits on its own.
+  const { output } = spawnFfmpeg({ ffmpegPath: 'sleep', args: ['10'], timeout: 100 })
+  await t.throwsAsync(() => output, { message: /did not finish within 100ms/ })
 })

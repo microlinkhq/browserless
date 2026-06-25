@@ -82,7 +82,12 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
   const { stdin, output } = spawnFfmpeg({
     ffmpegPath,
-    args: getOutputArgs({ type, width, height, fps, encoder })
+    args: getOutputArgs({ type, width, height, fps, encoder }),
+    // Bound the whole process: the recording window (`duration`) plus generous
+    // headroom for the post-`stdin.end()` encode flush. Mirrors the extension
+    // backend's `duration * 1.5` safety timeout so a stuck ffmpeg can't hang the
+    // capture indefinitely.
+    timeout: Math.ceil(duration * 2) + 10_000
   })
 
   const muxer = createFrameMuxer({ stdin, fps, durationMs: duration })

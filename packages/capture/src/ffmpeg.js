@@ -100,8 +100,10 @@ const getOutputArgs = ({ type, width, height, fps, encoder }) => {
 
 // Spawn ffmpeg with the given args. Returns the child's `stdin` (the caller
 // writes the Matroska stream into it and ends it) and `output`, a promise that
-// resolves to the encoded video Buffer once ffmpeg exits cleanly.
-const spawnFfmpeg = ({ ffmpegPath = FFMPEG_PATH, args }) => {
+// resolves to the encoded video Buffer once ffmpeg exits cleanly. `timeout`
+// (ms) bounds the whole process: if ffmpeg hasn't exited by then it is killed
+// and `output` rejects, so a stuck encoder can't leave a capture open forever.
+const spawnFfmpeg = ({ ffmpegPath = FFMPEG_PATH, args, timeout }) => {
   const ffmpeg = spawn(ffmpegPath, args, { stdio: ['pipe', 'pipe', 'pipe'] })
 
   const chunks = []
@@ -111,18 +113,28 @@ const spawnFfmpeg = ({ ffmpegPath = FFMPEG_PATH, args }) => {
   ffmpeg.stdin.on('error', () => {})
 
   const output = new Promise((resolve, reject) => {
-    ffmpeg.on('error', err =>
+    const timer = timeout
+      ? setTimeout(() => {
+        ffmpeg.kill('SIGKILL')
+        reject(new Error(`ffmpeg did not finish within ${timeout}ms`))
+      }, timeout)
+      : null
+    timer?.unref()
+
+    ffmpeg.on('error', err => {
+      clearTimeout(timer)
       reject(
         new Error(
           `ffmpeg failed to start (${ffmpegPath}): ${err.message}. Install ffmpeg to use the screencast backend.`
         )
       )
-    )
-    ffmpeg.on('close', code =>
+    })
+    ffmpeg.on('close', code => {
+      clearTimeout(timer)
       code === 0
         ? resolve(Buffer.concat(chunks))
         : reject(new Error(`ffmpeg exited ${code}: ${stderr.slice(-300)}`))
-    )
+    })
   })
 
   return { stdin: ffmpeg.stdin, output }
