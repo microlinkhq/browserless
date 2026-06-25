@@ -260,6 +260,34 @@ test('exports capture format defaults', t => {
 
   t.deepEqual(createCapture.TYPES, ['webm', 'mp4'])
   t.is(createCapture.DEFAULT.type, 'mp4')
+  t.deepEqual(createCapture.BACKENDS, ['extension', 'screencast'])
+})
+
+test('an unknown backend falls back to the default extension recorder', async t => {
+  const createCapture = loadCapture()
+  const { page } = createFixture()
+  const capture = createCapture({ goto: createGoto() })
+  // The mock harness only implements the extension flow; a bogus backend must
+  // resolve to it rather than throwing.
+  const result = await capture(page)('https://example.com', {
+    duration: 20,
+    audio: false,
+    video: true,
+    backend: 'does-not-exist'
+  })
+  t.true(Buffer.isBuffer(result))
+})
+
+test('screencast backend rejects when `video` is disabled', async t => {
+  const createCapture = loadCapture()
+  const { page } = createFixture()
+  const capture = createCapture({ goto: createGoto() })
+  // Screencast is video-only; it must error rather than silently produce video.
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { backend: 'screencast', video: false, duration: 20 }),
+    { instanceOf: TypeError, message: /video.*cannot be disabled/ }
+  )
 })
 
 test('sizes constraints from the resolved device viewport', async t => {
