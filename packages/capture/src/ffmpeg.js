@@ -63,7 +63,9 @@ const resolveEncoder = (encoder, container) => {
 }
 
 const getOutputArgs = ({ type, width, height, fps, encoder }) => {
-  const container = type === 'webm' ? 'webm' : 'mp4'
+  // Normalize like the extension backend (trim/lowercase/strip leading dot) so
+  // `WEBM` or `.webm` resolve to the webm container rather than defaulting to mp4.
+  const container = String(type).trim().toLowerCase().replace(/^\./, '') === 'webm' ? 'webm' : 'mp4'
   const { codec } = resolveEncoder(encoder, container)
   // Read frame timing from the Matroska stream we mux (explicit per-frame
   // timestamps) and emit a constant `fps`, duplicating frames as needed.

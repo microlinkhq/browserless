@@ -11,6 +11,13 @@ test('defaults to libx264 for mp4 and libvpx (vp8) for webm', t => {
   t.true(argsFor({ type: 'webm' }).includes('libvpx'))
 })
 
+test('normalizes `type` (case / leading dot) when picking the container', t => {
+  for (const type of ['webm', 'WEBM', '.webm', ' webm ']) {
+    t.true(argsFor({ type }).includes('libvpx'), `expected webm for ${JSON.stringify(type)}`)
+  }
+  t.true(argsFor({ type: '.mp4' }).includes('libx264'))
+})
+
 test('encoder opt selects the requested codec', t => {
   t.true(argsFor({ type: 'mp4', encoder: 'av1' }).includes('libsvtav1'))
   t.true(argsFor({ type: 'mp4', encoder: 'h264-medium' }).join(' ').includes('-preset medium'))

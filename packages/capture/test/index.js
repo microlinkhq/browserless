@@ -278,6 +278,18 @@ test('an unknown backend falls back to the default extension recorder', async t 
   t.true(Buffer.isBuffer(result))
 })
 
+test('screencast backend rejects when `video` is disabled', async t => {
+  const createCapture = loadCapture()
+  const { page } = createFixture()
+  const capture = createCapture({ goto: createGoto() })
+  // Screencast is video-only; it must error rather than silently produce video.
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { backend: 'screencast', video: false, duration: 20 }),
+    { instanceOf: TypeError, message: /video.*cannot be disabled/ }
+  )
+})
+
 test('sizes constraints from the resolved device viewport', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload

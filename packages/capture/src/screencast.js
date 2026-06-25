@@ -72,6 +72,12 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     ffmpegPath
   } = opts
 
+  // The screencast backend captures video only (CDP screencast has no audio);
+  // mirror the extension backend's "must capture something" guard.
+  if (opts.video === false) {
+    throw new TypeError('The screencast backend captures video; `video` cannot be disabled.')
+  }
+
   const { width, height } = getViewportSize(viewport)
 
   const { stdin, output } = spawnFfmpeg({
@@ -97,6 +103,9 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
   let captureError
   let navigation = Promise.resolve()
+  // Bounds the recording window; aborted early if navigation fails so a goto
+  // error surfaces immediately instead of after the full `duration`.
+  const recordingWindow = new AbortController()
   try {
     // Apply the viewport before the first frame so the screencast captures at the
     // intended size from the start (goto re-applies it idempotently during nav).
@@ -105,14 +114,15 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
     // The screencast is rolling: only now kick off navigation so the page's load
     // and intro animations are captured from the first frame. Navigation runs
-    // concurrently and is NOT awaited here, so the recording window stays bounded
-    // to `duration` regardless of how long the page takes to load.
+    // concurrently — it does not extend the recording window (so the clip stays
+    // bounded to `duration` on slow loads), but a failure ends it early.
     navigation = (onStarted ? Promise.resolve().then(onStarted) : Promise.resolve()).catch(
       error => {
         captureError = error
+        recordingWindow.abort()
       }
     )
-    await delay(duration)
+    await delay(duration, undefined, { signal: recordingWindow.signal }).catch(() => {})
   } catch (error) {
     captureError = captureError || error
   } finally {
@@ -121,7 +131,14 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     stdin.end()
   }
 
-  const buffer = await output
+  let buffer
+  try {
+    buffer = await output
+  } catch (error) {
+    // Prefer the underlying capture/navigation failure over a downstream ffmpeg
+    // error (a non-zero exit is expected when an early abort leaves little data).
+    throw captureError || error
+  }
   // Let navigation settle before returning so the caller doesn't tear the page
   // down mid-navigation (goto has its own timeout, so this can't hang).
   await navigation
