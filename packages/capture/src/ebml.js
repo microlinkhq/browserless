@@ -42,6 +42,10 @@ const kSimpleBlock = Buffer.from('A3', 'hex')
 // "Unknown size" for a streaming Segment: an 8-byte EBML vint with all data bits set.
 const kUnknownSize = Buffer.from([0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 
+// Per-frame SimpleBlock constants (each MJPEG frame is its own keyframe Cluster).
+const kRelativeTimecode = Buffer.from([0x00, 0x00]) // int16, always 0 within its Cluster.
+const kKeyframeFlag = Buffer.from([0x80])
+
 // Encodes a value as an EBML variable-length size integer (vint): the leading bits select
 // the byte length and are followed by the big-endian value.
 const vint = value => {
@@ -124,8 +128,8 @@ const writeClusterHeader = (timestampMs, frameLength) => {
     kSimpleBlock,
     vint(4 + frameLength),
     vint(1), // Track number (1).
-    Buffer.from([0x00, 0x00]), // Relative timecode (int16), always 0 within its own Cluster.
-    Buffer.from([0x80]) // Flags: keyframe.
+    kRelativeTimecode,
+    kKeyframeFlag
   ])
   const timestamp = element(kTimestamp, uint(timestampMs))
   const clusterPayloadLength = timestamp.length + simpleBlockHeader.length + frameLength

@@ -12,16 +12,17 @@ const { DEFAULT, NOOP } = require('./constants')
 const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg'
 
 // vp8/h264 require even dimensions.
-const even = value => value & ~1
+const even = value => Math.round(value) & ~1
 
 // CDP `Page.startScreencast` delivers frames at the CSS-pixel layout viewport,
 // NOT device pixels (unlike tab capture, which is retina/device-px). Size the
 // output to the CSS viewport so frames fill it exactly without padding/upscaling.
 // Net effect: the screencast backend is half the linear resolution of the
-// extension backend for a 2x-DPR device.
-const getScaledSize = viewport => ({
-  width: even(Math.round(viewport.width)),
-  height: even(Math.round(viewport.height))
+// extension backend for a 2x-DPR device. (Distinct from capture.js's device-px
+// `getScaledSize`, hence the different name.)
+const getViewportSize = viewport => ({
+  width: even(viewport.width),
+  height: even(viewport.height)
 })
 
 // Output encoder is chosen by container `type`; the MediaRecorder-style `codec`
@@ -117,7 +118,7 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
       // A frame held on screen (no repaint) keeps its slot, so its real duration
       // is preserved instead of being collapsed.
       if (last && frameNumber !== last.frameNumber) emit(last.buffer, last.frameNumber)
-      last = { buffer, frameNumber, tsSeconds }
+      last = { buffer, frameNumber }
     },
     flush: () => {
       if (!last) return
@@ -128,8 +129,7 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
       // duplicates the held frame to fill the gap.
       const endFrameNumber = Math.floor((durationMs / 1000) * fps)
       if (endFrameNumber > last.frameNumber) emit(last.buffer, endFrameNumber)
-    },
-    hasFrames: () => last !== null
+    }
   }
 }
 
@@ -143,7 +143,7 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     ffmpegPath = FFMPEG_PATH
   } = opts
 
-  const { width, height } = getScaledSize(viewport)
+  const { width, height } = getViewportSize(viewport)
 
   const ffmpeg = spawn(ffmpegPath, getOutputArgs({ type, width, height, fps }), {
     stdio: ['pipe', 'pipe', 'pipe']
@@ -192,7 +192,7 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     // Apply the viewport before the first frame so the screencast captures at the
     // intended size from the start (goto re-applies it idempotently during nav).
     await page.setViewport(viewport).catch(NOOP)
-    await debugDuration('screencast.start', () => screencast.start())
+    await screencast.start()
 
     // The screencast is rolling: only now kick off navigation so the page's load
     // and intro animations are captured from the first frame. Navigation runs
@@ -230,16 +230,4 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
   }
 
   return buffer
-}
-
-const debugDuration = async (label, fn) => {
-  const d = debug.duration(label)
-  try {
-    const value = await fn()
-    d()
-    return value
-  } catch (error) {
-    d({ error: error && error.message })
-    throw error
-  }
 }
