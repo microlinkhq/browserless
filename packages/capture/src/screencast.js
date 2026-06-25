@@ -157,3 +157,7 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
   return buffer
 }
+
+// Shared by the screenshot backend (same constant-fps muxing onto an ffmpeg
+// Matroska stream from real per-frame timestamps).
+module.exports.createFrameMuxer = createFrameMuxer

@@ -12,9 +12,14 @@ const {
 } = require('./constants')
 const runCapture = require('./capture')
 const runScreencastCapture = require('./screencast')
+const runScreenshotCapture = require('./screenshot')
 const { ENCODERS } = require('./ffmpeg')
 
-const BACKENDS = { extension: runCapture, screencast: runScreencastCapture }
+const BACKENDS = {
+  extension: runCapture,
+  screencast: runScreencastCapture,
+  screenshot: runScreenshotCapture
+}
 const DEFAULT_BACKEND = 'extension'
 
 // Resolve the device (and therefore the viewport) without navigating, so the

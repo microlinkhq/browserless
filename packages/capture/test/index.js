@@ -260,7 +260,7 @@ test('exports capture format defaults', t => {
 
   t.deepEqual(createCapture.TYPES, ['webm', 'mp4'])
   t.is(createCapture.DEFAULT.type, 'mp4')
-  t.deepEqual(createCapture.BACKENDS, ['extension', 'screencast'])
+  t.deepEqual(createCapture.BACKENDS, ['extension', 'screencast', 'screenshot'])
 })
 
 test('an unknown backend falls back to the default extension recorder', async t => {
@@ -286,6 +286,17 @@ test('screencast backend rejects when `video` is disabled', async t => {
   await t.throwsAsync(
     () =>
       capture(page)('https://example.com', { backend: 'screencast', video: false, duration: 20 }),
+    { instanceOf: TypeError, message: /video.*cannot be disabled/ }
+  )
+})
+
+test('screenshot backend rejects when `video` is disabled', async t => {
+  const createCapture = loadCapture()
+  const { page } = createFixture()
+  const capture = createCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { backend: 'screenshot', video: false, duration: 20 }),
     { instanceOf: TypeError, message: /video.*cannot be disabled/ }
   )
 })
