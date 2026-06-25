@@ -43,6 +43,7 @@ const kSimpleBlock = Buffer.from('A3', 'hex')
 const kUnknownSize = Buffer.from([0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 
 // Per-frame SimpleBlock constants (each MJPEG frame is its own keyframe Cluster).
+const kTrackNumberVint = Buffer.from([0x81]) // vint(1) — single video track, constant per frame.
 const kRelativeTimecode = Buffer.from([0x00, 0x00]) // int16, always 0 within its Cluster.
 const kKeyframeFlag = Buffer.from([0x80])
 
@@ -127,7 +128,7 @@ const writeClusterHeader = (timestampMs, frameLength) => {
   const simpleBlockHeader = Buffer.concat([
     kSimpleBlock,
     vint(4 + frameLength),
-    vint(1), // Track number (1).
+    kTrackNumberVint,
     kRelativeTimecode,
     kKeyframeFlag
   ])

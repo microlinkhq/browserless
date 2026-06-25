@@ -83,10 +83,9 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
   const { stdin, output } = spawnFfmpeg({
     ffmpegPath,
     args: getOutputArgs({ type, width, height, fps, encoder }),
-    // Bound the whole process: the recording window (`duration`) plus generous
-    // headroom for the post-`stdin.end()` encode flush. Mirrors the extension
-    // backend's `duration * 1.5` safety timeout so a stuck ffmpeg can't hang the
-    // capture indefinitely.
+    // Bound the whole process so a stuck ffmpeg can't hang the capture: the
+    // recording window (`duration`) plus generous headroom for the post-
+    // `stdin.end()` encode flush (slower than realtime for heavy encoders).
     timeout: Math.ceil(duration * 2) + 10_000
   })
 
@@ -121,13 +120,11 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
     // and intro animations are captured from the first frame. Navigation runs
     // concurrently — it does not extend the recording window (so the clip stays
     // bounded to `duration` on slow loads), but a failure ends it early.
-    navigation = (onStarted ? Promise.resolve().then(onStarted) : Promise.resolve()).catch(
-      error => {
-        captureError = error
-        recordingWindow.abort()
-      }
-    )
-    await delay(duration, undefined, { signal: recordingWindow.signal }).catch(() => {})
+    navigation = Promise.resolve(onStarted?.()).catch(error => {
+      captureError = error
+      recordingWindow.abort()
+    })
+    await delay(duration, undefined, { signal: recordingWindow.signal }).catch(NOOP)
   } catch (error) {
     captureError = captureError || error
   } finally {
@@ -150,9 +147,7 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
   if (captureError) throw captureError
 
   if (buffer.length === 0) {
-    throw new Error(
-      'No video data was captured. Increase `duration` or verify playback in the tab.'
-    )
+    throw new Error('No video data was captured. Increase `duration` or verify the page renders.')
   }
 
   if (outputPath) {
