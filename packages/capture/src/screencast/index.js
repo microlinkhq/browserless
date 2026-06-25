@@ -1,14 +1,15 @@
 'use strict'
 
 const createScreencast = require('@browserless/screencast')
-const { even, record } = require('./recorder')
-const { NOOP } = require('./constants')
+const { even, record } = require('../recorder')
+const createCapture = require('../create-capture')
+const { NOOP } = require('../constants')
 
 // CDP `Page.startScreencast` delivers frames at the CSS-pixel layout viewport,
 // NOT device pixels (unlike tab capture, which is retina/device-px). Size the
 // output to the CSS viewport so frames fill it exactly without padding/upscaling.
-// Net effect: the screencast backend is half the linear resolution of the
-// extension backend for a 2x-DPR device. (Distinct from capture.js's device-px
+// Net effect: the screencast mode is half the linear resolution of the
+// extension mode for a 2x-DPR device. (Distinct from capture.js's device-px
 // `getScaledSize`, hence the different name.)
 const getViewportSize = viewport => ({
   width: even(viewport.width),
@@ -32,10 +33,12 @@ const startSource = async ({ page, muxer, width, height, quality }) => {
   return () => screencast.stop().catch(NOOP)
 }
 
-module.exports = (page, opts, viewport, hooks = {}) =>
+const runScreencast = (page, opts, viewport, hooks = {}) =>
   record(page, opts, viewport, {
     ...hooks,
     getSize: getViewportSize,
     startSource,
     label: 'screencast'
   })
+
+module.exports = createCapture(runScreencast, 'screencast')

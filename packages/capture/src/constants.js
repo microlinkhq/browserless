@@ -3,7 +3,7 @@
 const path = require('path')
 
 module.exports = {
-  DEFAULT: Object.freeze({ duration: 3000, type: 'mp4', fps: 30 }),
+  DEFAULT: Object.freeze({ duration: 5000, type: 'mp4', fps: 60 }),
   DEFAULT_CODEC_BY_TYPE: Object.freeze({
     webm: 'vp9',
     mp4: 'avc1.640028'

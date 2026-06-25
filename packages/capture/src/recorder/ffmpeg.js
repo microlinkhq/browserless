@@ -1,6 +1,6 @@
 'use strict'
 
-// ffmpeg encoding for the screencast backend: encoder profiles, output-arg
+// ffmpeg encoding for the frame-based modes: encoder profiles, output-arg
 // construction, and a thin spawn helper. The screencast recorder feeds this a
 // Matroska stream (see ./ebml.js) on stdin and reads the encoded video on stdout.
 
@@ -63,7 +63,7 @@ const resolveEncoder = (encoder, container) => {
 }
 
 const getOutputArgs = ({ type, width, height, fps, encoder }) => {
-  // Normalize like the extension backend (trim/lowercase/strip leading dot) so
+  // Normalize like the extension mode (trim/lowercase/strip leading dot) so
   // `WEBM` or `.webm` resolve to the webm container rather than defaulting to mp4.
   const container = String(type).trim().toLowerCase().replace(/^\./, '') === 'webm' ? 'webm' : 'mp4'
   const { codec } = resolveEncoder(encoder, container)
@@ -125,7 +125,7 @@ const spawnFfmpeg = ({ ffmpegPath = FFMPEG_PATH, args, timeout }) => {
       clearTimeout(timer)
       reject(
         new Error(
-          `ffmpeg failed to start (${ffmpegPath}): ${err.message}. Install ffmpeg to use the screencast backend.`
+          `ffmpeg failed to start (${ffmpegPath}): ${err.message}. Install ffmpeg to use the screencast or screenshot mode.`
         )
       )
     })

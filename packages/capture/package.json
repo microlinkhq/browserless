@@ -4,6 +4,13 @@
   "homepage": "https://browserless.js.org/#/?id=capturepage-options",
   "version": "13.3.0",
   "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./extension": "./src/extension/index.js",
+    "./screencast": "./src/screencast/index.js",
+    "./screenshot": "./src/screenshot/index.js",
+    "./package.json": "./package.json"
+  },
   "author": {
     "email": "hello@microlink.io",
     "name": "microlink.io",

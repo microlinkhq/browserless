@@ -4,10 +4,11 @@ const { setTimeout } = require('timers/promises')
 const fs = require('fs/promises')
 const debug = require('debug-logfmt')('browserless:capture')
 
-const { closeServer, createWebSocketServer } = require('./util')
-const extension = require('./extension')
+const { closeServer, createWebSocketServer } = require('./server')
+const extension = require('./runtime')
+const createCapture = require('../create-capture')
 
-const { DEFAULT, DEFAULT_CODEC_BY_TYPE, NOOP } = require('./constants')
+const { DEFAULT, DEFAULT_CODEC_BY_TYPE, NOOP } = require('../constants')
 
 let currentIndex = 0
 
@@ -135,9 +136,9 @@ const getVideoConstraints = (videoConstraints, viewport, fps) => {
   }
 }
 
-// At 30 fps the MediaRecorder default (~2.5 Mbps) is too low for a DPR-scaled
-// viewport and the video turns blocky. Scale the target bitrate with the pixel
-// throughput, clamped to a sane range.
+// The MediaRecorder default (~2.5 Mbps) is too low for a DPR-scaled viewport and
+// the video turns blocky. Scale the target bitrate with the pixel throughput
+// (width × height × fps), clamped to a sane range.
 const BITS_PER_PIXEL = 0.07
 const MIN_VIDEO_BITRATE = 2_000_000
 const MAX_VIDEO_BITRATE = 12_000_000
@@ -198,7 +199,7 @@ const getTargetId = async page => {
   }
 }
 
-module.exports = async (page, opts, viewport, { onStarted } = {}) => {
+const runExtension = async (page, opts, viewport, { onStarted } = {}) => {
   const {
     path: outputPath,
     duration = DEFAULT.duration,
@@ -357,3 +358,5 @@ module.exports = async (page, opts, viewport, { onStarted } = {}) => {
 
   return buffer
 }
+
+module.exports = createCapture(runExtension, 'extension')

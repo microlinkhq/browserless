@@ -1,6 +1,6 @@
 'use strict'
 
-// Shared ffmpeg recording pipeline for the frame-based backends (screencast and
+// Shared ffmpeg recording pipeline for the frame-based modes (screencast and
 // screenshot). Both feed real per-frame timestamps into a constant-fps Matroska
 // muxer that ffmpeg encodes; they differ only in how frames are sourced and how
 // the output is sized, which the caller supplies via `getSize`/`startSource`.
@@ -11,7 +11,7 @@ const debug = require('debug-logfmt')('browserless:capture')
 
 const { writeHeader, writeClusterHeader } = require('./ebml')
 const { getOutputArgs, spawnFfmpeg } = require('./ffmpeg')
-const { DEFAULT, NOOP } = require('./constants')
+const { DEFAULT, NOOP } = require('../constants')
 
 // vp8/h264 require even dimensions.
 const even = value => Math.round(value) & ~1
@@ -57,7 +57,7 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
 // Run a frame-based capture end to end. `getSize(viewport)` returns the encoded
 // `{ width, height }`; `startSource({ page, muxer, width, height, fps, quality })`
 // begins producing frames into `muxer.write(buffer, tsSeconds)` and resolves to a
-// `stop()` that halts it. `label` tags errors/logs to the calling backend.
+// `stop()` that halts it. `label` tags errors/logs to the calling mode.
 const record = async (page, opts, viewport, { onStarted, getSize, startSource, label }) => {
   const {
     path: outputPath,
@@ -69,10 +69,10 @@ const record = async (page, opts, viewport, { onStarted, getSize, startSource, l
     ffmpegPath
   } = opts
 
-  // These backends capture video only; mirror the extension backend's "must
+  // These modes capture video only; mirror the extension mode's "must
   // capture something" guard rather than silently producing video.
   if (opts.video === false) {
-    throw new TypeError(`The ${label} backend captures video; \`video\` cannot be disabled.`)
+    throw new TypeError(`The ${label} mode captures video; \`video\` cannot be disabled.`)
   }
 
   const { width, height } = getSize(viewport)
