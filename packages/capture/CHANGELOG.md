@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.4.0](https://github.com/microlinkhq/browserless/compare/v13.3.0...v13.4.0) (2026-06-25)
+
+### Features
+
+* **capture:** screenshot backend that captures WebGL/canvas ([#806](https://github.com/microlinkhq/browserless/issues/806)) ([8ee8983](https://github.com/microlinkhq/browserless/commit/8ee8983a4a2a8f8135965f0672831c3680288bd8))
+
 ## [13.3.0](https://github.com/microlinkhq/browserless/compare/v13.2.0...v13.3.0) (2026-06-25)
 
 ### Features
