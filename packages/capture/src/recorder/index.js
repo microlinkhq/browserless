@@ -96,9 +96,9 @@ const record = async (page, opts, viewport, { onStarted, getSize, startSource, l
   // error surfaces immediately instead of after the full `duration`.
   const recordingWindow = new AbortController()
   try {
-    // Apply the viewport before the first frame so frames are captured at the
-    // intended size from the start (goto re-applies it idempotently during nav).
-    await page.setViewport(viewport).catch(NOOP)
+    // The viewport is already applied (by `prepareViewport`) before the first
+    // frame, so frames are captured at the intended size from the start; goto
+    // re-applies it idempotently during navigation.
     stop = await startSource({ page, muxer, width, height, fps, quality })
 
     // The source is rolling: only now kick off navigation so the page's load and

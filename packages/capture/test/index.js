@@ -386,6 +386,41 @@ test('supports a custom `fps`', async t => {
   t.is(startRecordingPayload.videoConstraints.mandatory.maxFrameRate, 60)
 })
 
+test('applies the device viewport before recording starts', async t => {
+  const createCapture = loadCapture()
+
+  const deviceViewport = {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    isLandscape: false
+  }
+
+  const { page } = createFixture()
+  const browser = page.browser()
+
+  // Tab capture pins exact width/height from the device, so `getUserMedia` (run
+  // inside START_RECORDING) overconstrains unless the page already matches. Snap
+  // the viewport at that moment to prove it was applied before recording begins.
+  let viewportAtRecordingStart
+  browser.__setOnStartRecording(() => {
+    viewportAtRecordingStart = page.viewport()
+  })
+
+  const capture = createCapture({
+    goto: createGoto(undefined, {
+      device: { ...DEFAULT_DEVICE, viewport: deviceViewport }
+    })
+  })
+
+  await capture(page)('https://example.com', { duration: 20, audio: false, video: true })
+
+  t.deepEqual(viewportAtRecordingStart, deviceViewport)
+  t.deepEqual(page.viewport(), deviceViewport)
+})
+
 test('starts recording before navigation', async t => {
   const createCapture = loadCapture()
   const events = []
