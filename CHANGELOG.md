@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.5.0](https://github.com/microlinkhq/browserless/compare/v13.4.1...v13.5.0) (2026-06-26)
+
+### Features
+
+* **browserless:** add report() hardware & GPU diagnostics ([#810](https://github.com/microlinkhq/browserless/issues/810)) ([47b1865](https://github.com/microlinkhq/browserless/commit/47b1865493aa136ae5b928b58cb887b289dfe0e6))
+
 ## [13.4.1](https://github.com/microlinkhq/browserless/compare/v13.4.0...v13.4.1) (2026-06-26)
 
 ### Bug Fixes
