@@ -7,8 +7,38 @@ const path = require('path')
 const ava = require('ava')
 
 const { runServer, createBrowser, getBrowserContext, getBrowser } = require('@browserless/test')
+const { detectBuild } = require('../src/report')
 
 const test = process.env.CI ? ava.serial : ava
+
+test('detectBuild distinguishes testing builds from branded Chrome', t => {
+  // Chrome for Testing (puppeteer cache) -> 'chrome-for-testing'
+  t.is(
+    detectBuild('/root/.cache/chrome/linux-150.0.7871.24/chrome-linux64/chrome'),
+    'chrome-for-testing'
+  )
+  t.is(
+    detectBuild(
+      '/Users/x/.cache/puppeteer/chrome/mac_arm-150/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'
+    ),
+    'chrome-for-testing'
+  )
+  t.is(
+    detectBuild('C:\\Users\\x\\.cache\\chrome\\win64-150\\chrome-win64\\chrome.exe'),
+    'chrome-for-testing'
+  )
+  // chrome-headless-shell / Chromium
+  t.is(
+    detectBuild('/root/.cache/chrome-headless-shell/linux-150/chrome-headless-shell'),
+    'chrome-headless-shell'
+  )
+  t.is(detectBuild('/usr/lib/chromium/chromium'), 'Chromium')
+  // Branded Google Chrome must NOT be misreported as a testing build.
+  t.is(detectBuild('/opt/google/chrome/chrome'), null)
+  t.is(detectBuild('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'), null)
+  t.is(detectBuild('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'), null)
+  t.is(detectBuild('/usr/bin/google-chrome-stable'), null)
+})
 
 require('@browserless/test/suite')(getBrowser())
 test('pass specific options to a context', async t => {
@@ -52,6 +82,56 @@ test('pass specific options to a context', async t => {
     new URL(url).toString(),
     new URL('/favicon.ico', url).toString()
   ])
+})
+
+test('report() returns browser, GPU backend and host CPU', async t => {
+  const browserless = await getBrowserContext(t)
+  const { browser, environment, os, gpu, cpu, memory } = await browserless.report()
+
+  t.is(typeof browser.name, 'string')
+  t.is(typeof browser.headless, 'boolean')
+  t.true(browser.arguments === undefined || Array.isArray(browser.arguments))
+  t.true(browser.customArguments === undefined || Array.isArray(browser.customArguments))
+
+  t.is(typeof environment.virtualized, 'boolean')
+  t.is(typeof environment.container, 'boolean')
+
+  t.true(gpu.webgl.v1.supported)
+  t.true(gpu.webgl.v2.supported)
+  t.is(typeof gpu.graphics.name, 'string') // OpenGL / Vulkan / Metal / Direct3D11
+  t.true(['hardware', 'software'].includes(gpu.type))
+  t.is(typeof gpu.webgpu.supported, 'boolean')
+  // never a silent SwiftShader / 2D fallback (~4x slower on the GPU-less fleet).
+  t.false(/swiftshader/i.test(gpu.webgl.v1.unmaskedRenderer), gpu.webgl.v1.unmaskedRenderer)
+  t.true(Array.isArray(gpu.webgl.v1.extensions))
+  t.true(gpu.webgl.v1.capabilities.maxTextureSize > 0)
+  // --use-angle=gl resolves to Mesa llvmpipe on the GPU-less Linux target (CI
+  // under Xvfb); native GL elsewhere, so pin the software path only on CI.
+  if (process.env.CI) {
+    t.is(gpu.vendor, 'Mesa', gpu.webgl.v1.unmaskedRenderer)
+    t.is(gpu.device, 'llvmpipe', gpu.webgl.v1.unmaskedRenderer)
+    t.is(gpu.type, 'software')
+    t.is(gpu.graphics.translationLayer, 'ANGLE')
+    t.is(gpu.graphics.name, 'OpenGL')
+  }
+
+  t.is(typeof os.platform, 'string')
+  t.is(typeof os.release, 'string')
+  t.true(cpu.cores > 0)
+  t.true(cpu.threads > 0)
+  t.is(typeof cpu.model, 'string')
+  if (process.platform === 'linux') t.true(Array.isArray(cpu.flags))
+  t.true(memory.total > 0)
+})
+
+test('report({ benchmark: true }) includes a WebGL performance benchmark', async t => {
+  const browserless = await getBrowserContext(t)
+  const { performance } = await browserless.report({ benchmark: true })
+
+  t.truthy(performance)
+  t.true(performance.webgl.frames > 0)
+  t.true(performance.webgl.totalMs > 0)
+  t.true(performance.webgl.fps > 0)
 })
 
 test('ensure to destroy browser contexts', async t => {
