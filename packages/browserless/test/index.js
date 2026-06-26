@@ -7,8 +7,38 @@ const path = require('path')
 const ava = require('ava')
 
 const { runServer, createBrowser, getBrowserContext, getBrowser } = require('@browserless/test')
+const { detectBuild } = require('../src/report')
 
 const test = process.env.CI ? ava.serial : ava
+
+test('detectBuild distinguishes testing builds from branded Chrome', t => {
+  // Chrome for Testing (puppeteer cache) -> 'chrome-for-testing'
+  t.is(
+    detectBuild('/root/.cache/chrome/linux-150.0.7871.24/chrome-linux64/chrome'),
+    'chrome-for-testing'
+  )
+  t.is(
+    detectBuild(
+      '/Users/x/.cache/puppeteer/chrome/mac_arm-150/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'
+    ),
+    'chrome-for-testing'
+  )
+  t.is(
+    detectBuild('C:\\Users\\x\\.cache\\chrome\\win64-150\\chrome-win64\\chrome.exe'),
+    'chrome-for-testing'
+  )
+  // chrome-headless-shell / Chromium
+  t.is(
+    detectBuild('/root/.cache/chrome-headless-shell/linux-150/chrome-headless-shell'),
+    'chrome-headless-shell'
+  )
+  t.is(detectBuild('/usr/lib/chromium/chromium'), 'Chromium')
+  // Branded Google Chrome must NOT be misreported as a testing build.
+  t.is(detectBuild('/opt/google/chrome/chrome'), null)
+  t.is(detectBuild('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'), null)
+  t.is(detectBuild('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'), null)
+  t.is(detectBuild('/usr/bin/google-chrome-stable'), null)
+})
 
 require('@browserless/test/suite')(getBrowser())
 test('pass specific options to a context', async t => {

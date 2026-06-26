@@ -288,7 +288,13 @@ const sanitizeArgs = argv => argv.filter(arg => arg.startsWith('--') && !OMIT_AR
 const detectBuild = execPath => {
   if (/chrome-headless-shell/i.test(execPath)) return 'chrome-headless-shell'
   if (/chromium/i.test(execPath)) return 'Chromium'
-  if (/chrome-for-testing|chrome-linux|chrome-mac|chrome-win|[/\\]chrome[/\\]/i.test(execPath)) { return 'chrome-for-testing' }
+  // Chrome for Testing extracts under platform-arch dirs (chrome-linux64,
+  // chrome-mac-arm64, chrome-win64, ...). Match those specifically so branded
+  // Chrome paths (/opt/google/chrome/chrome, ...\Application\chrome.exe) are
+  // NOT misreported as a testing build.
+  if (/chrome-for-testing|chrome-(linux64|win64|win32|mac-(x64|arm64))/i.test(execPath)) {
+    return 'chrome-for-testing'
+  }
   return null
 }
 
@@ -443,3 +449,4 @@ const report =
 
 module.exports = report
 module.exports.parseRenderer = parseRenderer
+module.exports.detectBuild = detectBuild
