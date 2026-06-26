@@ -39,6 +39,7 @@ export interface Context {
   screenshot: (page: Page, opts?: ScreenshotOptions) => Promise<Buffer>
   text: (url: string, opts?: GotoOptions) => Promise<string>
   getDevice: (deviceName: string) => Viewport | undefined
+  report: (opts?: { benchmark?: boolean }) => Promise<HardwareInfo>
   destroyContext: (opts?: { force?: boolean }) => Promise<void>
   withPage: <T>(fn: (page: Page, goto: unknown) => Promise<T>, opts?: { timeout?: number }) => Promise<T>
 }
@@ -67,6 +68,103 @@ export interface ScreenshotOptions {
   }
   omitBackground?: boolean
   encoding?: 'binary' | 'base64'
+}
+
+export interface WebGLContextInfo {
+  supported: boolean
+  /** From WEBGL_debug_renderer_info; null if the extension is unavailable. */
+  unmaskedVendor?: string | null
+  unmaskedRenderer?: string | null
+  version?: string
+  shadingLanguageVersion?: string
+  /** GL MAX_* parameters (e.g. maxTextureSize). maxViewportDims is a [w, h] pair. */
+  capabilities?: Record<string, number | number[]>
+  extensions?: string[]
+}
+
+export interface WebGPUInfo {
+  supported: boolean
+  adapter?: {
+    vendor: string | null
+    architecture: string | null
+    device: string | null
+    description: string | null
+  }
+}
+
+export interface HardwareInfo {
+  browser: {
+    name: string
+    version: string | null
+    headless: boolean
+    /** Release channel ("stable" | "beta" | "dev" | "canary"), when detectable. */
+    channel?: string
+    /** Build flavor, e.g. "Chromium" | "chrome-for-testing" | "chrome-headless-shell". */
+    build?: string
+    /** Full sanitized command line; env-specific/sensitive args are omitted. */
+    arguments?: string[]
+    /** Only the flags this app intentionally adds (excludes Chromium/Puppeteer defaults). */
+    customArguments?: string[]
+  } | null
+  environment: {
+    virtualized: boolean
+    container: boolean
+  }
+  os: {
+    platform: string
+    release: string
+    distro?: string
+  }
+  cpu: {
+    model?: string
+    /** Physical cores. */
+    cores: number
+    /** Logical processors. */
+    threads: number
+    /** MHz; omitted when the platform does not report it. */
+    speed?: number
+    arch: string
+    flags?: string[]
+  }
+  memory: {
+    /** Total physical memory, in bytes. */
+    total: number
+  }
+  gpu: {
+    vendor: string | null
+    device: string | null
+    type: 'hardware' | 'software' | null
+    /** The graphics stack ANGLE translates to. */
+    graphics: {
+      /** Translation layer, e.g. "ANGLE"; null when the renderer is not wrapped. */
+      translationLayer: string | null
+      /** Graphics API: "OpenGL" | "Vulkan" | "Metal" | "Direct3D11" | "Direct3D12" | ... */
+      name: string | null
+      version: string | null
+    }
+    /** Mesa version (software path); read from the host package. */
+    mesa?: string
+    /** LLVM version backing llvmpipe (software path). */
+    llvm?: string
+    /** llvmpipe SIMD JIT width in bits (software path). */
+    simdWidth?: number
+    webgl: {
+      v1: WebGLContextInfo
+      v2: WebGLContextInfo
+    }
+    webgpu: WebGPUInfo
+  }
+  /** Present only when report({ benchmark: true }) is requested. */
+  performance?: {
+    webgl: {
+      frames: number
+      /** Total wall time for all frames, in milliseconds. */
+      totalMs: number
+      /** Mean per-frame time, in milliseconds. */
+      frameTimeMs: number
+      fps: number
+    }
+  }
 }
 
 export interface Browserless {
