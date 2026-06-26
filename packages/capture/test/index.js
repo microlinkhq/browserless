@@ -386,6 +386,50 @@ test('supports a custom `fps`', async t => {
   t.is(startRecordingPayload.videoConstraints.mandatory.maxFrameRate, 60)
 })
 
+test('applies the target device viewport before recording starts', async t => {
+  const createCapture = loadCapture()
+  const events = []
+
+  const mobileViewport = {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    isLandscape: false
+  }
+
+  const { page } = createFixture()
+  const browser = page.browser()
+  browser.__setOnStartRecording(() => {
+    events.push('recording')
+  })
+
+  const capture = createCapture({
+    goto: createGoto(
+      () => {
+        events.push('goto')
+      },
+      {
+        device: {
+          ...DEFAULT_DEVICE,
+          viewport: mobileViewport
+        }
+      }
+    )
+  })
+
+  await capture(page)('https://example.com', {
+    duration: 20,
+    audio: false,
+    video: true,
+    device: 'iPhone 13'
+  })
+
+  t.deepEqual(events, ['recording', 'goto'])
+  t.deepEqual(page.viewport(), mobileViewport)
+})
+
 test('starts recording before navigation', async t => {
   const createCapture = loadCapture()
   const events = []

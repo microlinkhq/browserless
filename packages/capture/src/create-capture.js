@@ -3,17 +3,23 @@
 const debug = require('debug-logfmt')('browserless:capture')
 const createGoto = require('@browserless/goto')
 
-// Resolve the device (and therefore the viewport) without navigating, so the
-// recorder can be sized and started before `goto` runs. The viewport is derived
-// from the `device`/`viewport` opts, which are known ahead of navigation.
-const resolveViewport = (goto, page, opts) => {
+// Resolve the device viewport and apply it before recording starts. Tab-capture
+// constraints pin exact width/height, so the page must already match the target
+// device when getUserMedia runs — otherwise a custom `device` can overconstrain
+// against the browser's default viewport and fail before navigation begins.
+// The ffmpeg-based modes also call `page.setViewport` in the recorder; the
+// duplicate apply is idempotent.
+const prepareViewport = async (goto, page, opts) => {
   if (typeof goto.getDevice === 'function') {
     const device = goto.getDevice({
       headers: { ...(opts.headers || {}) },
       device: opts.device ?? goto.defaultDevice,
       viewport: opts.viewport
     })
-    if (device && device.viewport) return device.viewport
+    if (device && device.viewport) {
+      await page.setViewport(device.viewport)
+      return device.viewport
+    }
   }
   return page.viewport()
 }
@@ -30,7 +36,7 @@ module.exports =
       return function capture (page) {
         return async (url, opts = {}) => {
           const duration = debug.duration({ url })
-          const viewport = resolveViewport(goto, page, opts)
+          const viewport = await prepareViewport(goto, page, opts)
           const result = await runMode(page, opts, viewport, {
             onStarted: () => goto(page, { ...opts, url, animations: true })
           })
