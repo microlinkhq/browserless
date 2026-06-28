@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.5.1](https://github.com/microlinkhq/browserless/compare/v13.5.0...v13.5.1) (2026-06-28)
+
+### Performance Improvements
+
+* **capture:** default mp4 encoder h264-ultrafast → veryfast ([#811](https://github.com/microlinkhq/browserless/issues/811)) ([bd9fba4](https://github.com/microlinkhq/browserless/commit/bd9fba47d16076ce2f8374ad15791a3937e45424))
+
 ## [13.5.0](https://github.com/microlinkhq/browserless/compare/v13.4.1...v13.5.0) (2026-06-26)
 
 ### Features
