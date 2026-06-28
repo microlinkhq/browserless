@@ -35,7 +35,6 @@ const kCodecID = Buffer.from('86', 'hex')
 const kVideo = Buffer.from('E0', 'hex')
 const kPixelWidth = Buffer.from('B0', 'hex')
 const kPixelHeight = Buffer.from('BA', 'hex')
-const kTimestamp = Buffer.from('E7', 'hex')
 const kClusterId = 0x1f43b675
 const kTimestampId = 0xe7
 const kSimpleBlockId = 0xa3
@@ -43,10 +42,9 @@ const kSimpleBlockId = 0xa3
 // "Unknown size" for a streaming Segment: an 8-byte EBML vint with all data bits set.
 const kUnknownSize = Buffer.from([0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 
-// Per-frame SimpleBlock constants (each MJPEG frame is its own keyframe Cluster).
-const kTrackNumberVint = Buffer.from([0x81]) // vint(1) — single video track, constant per frame.
-const kRelativeTimecode = Buffer.from([0x00, 0x00]) // int16, always 0 within its Cluster.
-const kKeyframeFlag = Buffer.from([0x80])
+// Per-frame SimpleBlock body that follows the block-size vint (each MJPEG frame is its own keyframe
+// Cluster): vint(1) track number, int16 relative timecode (always 0 within its Cluster), keyframe flag.
+const kSimpleBlockTrailer = Buffer.from([0x81, 0x00, 0x00, 0x80])
 
 // Encodes a value as an EBML variable-length size integer (vint): the leading bits select
 // the byte length and are followed by the big-endian value.
@@ -153,9 +151,8 @@ const writeClusterHeader = (timestampMs, frameLength) => {
   const blockSizeLength = vintLength(blockPayloadLength)
   const timestampLength = uintLength(timestampMs)
   const timestampSizeLength = vintLength(timestampLength)
-  const timestampElementLength = kTimestamp.length + timestampSizeLength + timestampLength
-  const simpleBlockHeaderLength =
-    1 + blockSizeLength + kTrackNumberVint.length + kRelativeTimecode.length + kKeyframeFlag.length
+  const timestampElementLength = 1 + timestampSizeLength + timestampLength
+  const simpleBlockHeaderLength = 1 + blockSizeLength + kSimpleBlockTrailer.length
   const clusterPayloadLength = timestampElementLength + simpleBlockHeaderLength + frameLength
   const clusterSizeLength = vintLength(clusterPayloadLength)
   const buffer = Buffer.allocUnsafe(
@@ -171,10 +168,7 @@ const writeClusterHeader = (timestampMs, frameLength) => {
   offset = writeUInt(buffer, offset, timestampMs, timestampLength)
   buffer[offset++] = kSimpleBlockId
   offset = writeVint(buffer, offset, blockPayloadLength, blockSizeLength)
-  buffer[offset++] = 0x81
-  buffer[offset++] = 0x00
-  buffer[offset++] = 0x00
-  buffer[offset++] = 0x80
+  offset += kSimpleBlockTrailer.copy(buffer, offset)
 
   return buffer
 }
