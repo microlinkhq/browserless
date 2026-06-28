@@ -27,6 +27,18 @@ test('writeClusterHeader encodes the cluster timestamp', t => {
   t.true(cluster.includes(Buffer.from([0xa3])))
 })
 
+test('writeClusterHeader keeps a stable byte layout', t => {
+  t.deepEqual(writeClusterHeader(0, 10), Buffer.from('1f43b67593e78100a38e81000080', 'hex'))
+  t.deepEqual(
+    writeClusterHeader(500, 1234),
+    Buffer.from('1f43b67544dde78201f4a344d681000080', 'hex')
+  )
+  t.deepEqual(
+    writeClusterHeader(3_600_000, 10_000_000),
+    Buffer.from('1f43b6751098968ee78336ee80a31098968481000080', 'hex')
+  )
+})
+
 test('cluster header does not embed the frame payload (no duplication)', t => {
   // The frame buffer is written separately by the caller, so the header length
   // must be independent of frameLength beyond the size vints.
