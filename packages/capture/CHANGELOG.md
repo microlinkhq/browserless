@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.5.2](https://github.com/microlinkhq/browserless/compare/v13.5.1...v13.5.2) (2026-06-28)
+
+### Performance Improvements
+
+* **capture:** optimize EBML cluster headers ([#815](https://github.com/microlinkhq/browserless/issues/815)) ([e830ad9](https://github.com/microlinkhq/browserless/commit/e830ad9ed827e794cccfee3c2965ea339c70f625))
+* **screencast:** frame backpressure ([#812](https://github.com/microlinkhq/browserless/issues/812)) ([52bd07c](https://github.com/microlinkhq/browserless/commit/52bd07c677f3c04a8d00ce8fdc7f2bb62e7c963e))
+
 ## [13.5.1](https://github.com/microlinkhq/browserless/compare/v13.5.0...v13.5.1) (2026-06-28)
 
 ### Performance Improvements
