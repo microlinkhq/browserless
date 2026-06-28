@@ -252,3 +252,29 @@ test('does not ack a frame whose async onFrame settles after stop()', async t =>
     )
   )
 })
+
+test('re-acks async frames after stop() then start() on the same instance', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+
+  const screencast = createScreencast(page, {})
+  screencast.onFrame(() => Promise.resolve())
+
+  await screencast.start()
+  await screencast.stop()
+  await screencast.start()
+
+  cdp.emit('Page.screencastFrame', {
+    data: 'frame',
+    metadata: { timestamp: 1 },
+    sessionId: 46
+  })
+  await settle()
+
+  // start() must clear the stopped flag so the restarted session acks again.
+  t.true(
+    calls.some(
+      ({ method, params }) => method === 'Page.screencastFrameAck' && params.sessionId === 46
+    )
+  )
+})
