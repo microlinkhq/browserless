@@ -67,10 +67,9 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
       const frameNumber = Math.floor((tsSeconds - firstTs) * fps)
       // A frame held on screen (no repaint) keeps its slot, so its real duration
       // is preserved instead of being collapsed.
-      const pending =
-        last && frameNumber !== last.frameNumber ? emit(last.buffer, last.frameNumber) : undefined
+      const prev = last
       last = { buffer, frameNumber }
-      return pending
+      if (prev && frameNumber !== prev.frameNumber) return emit(prev.buffer, prev.frameNumber)
     },
     flush: async () => {
       if (!last) return

@@ -6,16 +6,6 @@ const test = require('ava')
 
 const createScreencast = require('..')
 
-const createDeferred = () => {
-  let resolve
-  let reject
-  const promise = new Promise((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
-  return { promise, resolve, reject }
-}
-
 const settle = () => new Promise(resolve => setImmediate(resolve))
 
 const createFakeCdp = () => {
@@ -150,7 +140,7 @@ test('clean up cdp frame listeners across screencast sessions', async t => {
 test('acks screencast frames after async onFrame resolves', async t => {
   const { cdp, calls } = createFakeCdp()
   const page = { _client: () => cdp }
-  const frame = createDeferred()
+  const frame = Promise.withResolvers()
   let received
 
   const screencast = createScreencast(page, {})
@@ -229,7 +219,7 @@ test('acks and does not rethrow when a synchronous onFrame throws', async t => {
 test('does not ack a frame whose async onFrame settles after stop()', async t => {
   const { cdp, calls } = createFakeCdp()
   const page = { _client: () => cdp }
-  const frame = createDeferred()
+  const frame = Promise.withResolvers()
 
   const screencast = createScreencast(page, {})
   screencast.onFrame(() => frame.promise)
