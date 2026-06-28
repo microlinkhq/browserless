@@ -88,7 +88,8 @@ Creates a screencast instance for the given Puppeteer page.
 
 ### Options
 
-All options are passed directly to [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast):
+Options are passed to [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast)
+after applying these package defaults:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|

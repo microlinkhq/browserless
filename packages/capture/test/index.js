@@ -227,14 +227,15 @@ const waitUntil = async (predicate, { timeout = 500, interval = 10 } = {}) => {
   return true
 }
 
-test('frame muxer waits for ffmpeg stdin drain before writing more chunks', async t => {
+test('frame muxer writes header+payload atomically and waits for drain', async t => {
   const { createFrameMuxer } = require('../src/recorder')
   const stdin = new EventEmitter()
   const writes = []
 
+  // Header write succeeds; the payload write signals backpressure (returns false).
   stdin.write = chunk => {
     writes.push(chunk)
-    return writes.length !== 1
+    return writes.length < 2
   }
 
   const muxer = createFrameMuxer({ stdin, fps: 1, durationMs: 1000 })
@@ -242,14 +243,33 @@ test('frame muxer waits for ffmpeg stdin drain before writing more chunks', asyn
 
   const pending = muxer.write(Buffer.from('second'), 1)
 
+  // Both the cluster header and the payload are written before any await, so a
+  // concurrent emit can never splice between them and corrupt the stream.
+  t.is(writes.length, 2)
+  t.deepEqual(writes[1], Buffer.from('first'))
   t.true(pending instanceof Promise)
-  t.is(writes.length, 1)
 
   stdin.emit('drain')
   await pending
+})
 
+test('frame muxer stops writing once stdin errors', async t => {
+  const { createFrameMuxer } = require('../src/recorder')
+  const stdin = new EventEmitter()
+  const writes = []
+  stdin.write = chunk => {
+    writes.push(chunk)
+    return true
+  }
+
+  const muxer = createFrameMuxer({ stdin, fps: 1, durationMs: 1000 })
+  muxer.write(Buffer.from('first'), 0)
+  muxer.write(Buffer.from('second'), 1) // emits frame 0 → 2 writes
   t.is(writes.length, 2)
-  t.deepEqual(writes[1], Buffer.from('first'))
+
+  stdin.emit('error', new Error('EPIPE'))
+  muxer.write(Buffer.from('third'), 2) // emit must be a no-op after error
+  t.is(writes.length, 2)
 })
 
 test('capture returns a video buffer', async t => {

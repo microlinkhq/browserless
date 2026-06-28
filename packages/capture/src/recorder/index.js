@@ -30,32 +30,32 @@ const waitForWritable = stdin =>
     stdin.once('error', done)
   })
 
-const writeAndDrain = (stdin, buffer) => {
-  if (stdin.write(buffer)) return
-  return waitForWritable(stdin)
-}
-
-const writeChunks = (stdin, chunks) => {
-  let pending
-
-  for (const chunk of chunks) {
-    if (pending) pending = pending.then(() => writeAndDrain(stdin, chunk))
-    else pending = writeAndDrain(stdin, chunk)
-  }
-
-  return pending
-}
-
 // Maps incoming frames onto a constant-fps grid by their real (compositor swap)
 // timestamp, and muxes them into a Matroska stream for ffmpeg. Ported from the
 // timing logic in Playwright's FfmpegVideoRecorder (Apache-2.0).
 const createFrameMuxer = ({ stdin, fps, durationMs }) => {
   let firstTs
   let last = null
+  // Stop writing once ffmpeg's stdin dies (EPIPE on early abort / crash); the
+  // underlying failure surfaces via the `output` promise in record(). Without
+  // this, a write after error/close throws or is silently dropped mid-frame.
+  let writable = true
+  const stopWriting = () => (writable = false)
+  stdin.once('error', stopWriting)
+  stdin.once('close', stopWriting)
 
+  // A frame's cluster header and payload must reach ffmpeg contiguously. Write
+  // both back-to-back (Node queues them in order regardless of the backpressure
+  // hint), then await a single `drain`. Splitting them across an `await` would
+  // let a concurrent emit — flush() racing the last in-flight capture write —
+  // splice between the header and its payload and corrupt the Matroska stream.
   const emit = (buffer, frameNumber) => {
+    if (!writable) return
     const timestampMs = Math.max(0, Math.round((frameNumber * 1000) / fps))
-    return writeChunks(stdin, [writeClusterHeader(timestampMs, buffer.length), buffer])
+    const headerWritten = stdin.write(writeClusterHeader(timestampMs, buffer.length))
+    const payloadWritten = stdin.write(buffer)
+    if (headerWritten && payloadWritten) return
+    return waitForWritable(stdin)
   }
 
   return {

@@ -29,6 +29,49 @@ const createFakeCdp = () => {
   return { cdp, calls }
 }
 
+test('starts screencast with jpeg defaults', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  const screencast = createScreencast(page)
+
+  screencast.onFrame(() => {})
+  await screencast.start()
+
+  t.deepEqual(calls, [
+    {
+      method: 'Page.startScreencast',
+      params: {
+        format: 'jpeg',
+        quality: 80
+      }
+    }
+  ])
+})
+
+test('lets screencast options override defaults', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  const screencast = createScreencast(page, {
+    format: 'png',
+    quality: 100,
+    everyNthFrame: 2
+  })
+
+  screencast.onFrame(() => {})
+  await screencast.start()
+
+  t.deepEqual(calls, [
+    {
+      method: 'Page.startScreencast',
+      params: {
+        format: 'png',
+        quality: 100,
+        everyNthFrame: 2
+      }
+    }
+  ])
+})
+
 test('capture frames', async t => {
   const frames = []
 
@@ -130,7 +173,7 @@ test('acks screencast frames after async onFrame resolves', async t => {
   await settle()
 
   t.deepEqual(calls, [
-    { method: 'Page.startScreencast', params: {} },
+    { method: 'Page.startScreencast', params: { format: 'jpeg', quality: 80 } },
     { method: 'Page.screencastFrameAck', params: { sessionId: 42 } }
   ])
 })
@@ -151,7 +194,61 @@ test('acks screencast frames after async onFrame rejects', async t => {
   await settle()
 
   t.deepEqual(calls, [
-    { method: 'Page.startScreencast', params: {} },
+    { method: 'Page.startScreencast', params: { format: 'jpeg', quality: 80 } },
     { method: 'Page.screencastFrameAck', params: { sessionId: 43 } }
   ])
+})
+
+test('acks and does not rethrow when a synchronous onFrame throws', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+
+  const screencast = createScreencast(page, {})
+  screencast.onFrame(() => {
+    throw new Error('frame failed')
+  })
+
+  await screencast.start()
+
+  // A sync throw must be swallowed, not propagated into the CDP dispatch loop.
+  t.notThrows(() =>
+    cdp.emit('Page.screencastFrame', {
+      data: 'frame',
+      metadata: { timestamp: 1 },
+      sessionId: 44
+    })
+  )
+  await settle()
+
+  t.deepEqual(calls, [
+    { method: 'Page.startScreencast', params: { format: 'jpeg', quality: 80 } },
+    { method: 'Page.screencastFrameAck', params: { sessionId: 44 } }
+  ])
+})
+
+test('does not ack a frame whose async onFrame settles after stop()', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  const frame = createDeferred()
+
+  const screencast = createScreencast(page, {})
+  screencast.onFrame(() => frame.promise)
+
+  await screencast.start()
+  cdp.emit('Page.screencastFrame', {
+    data: 'frame',
+    metadata: { timestamp: 1 },
+    sessionId: 45
+  })
+
+  await screencast.stop()
+  frame.resolve()
+  await settle()
+
+  // No ack for the in-flight frame: its session was torn down by stop().
+  t.false(
+    calls.some(
+      ({ method, params }) => method === 'Page.screencastFrameAck' && params.sessionId === 45
+    )
+  )
 })
