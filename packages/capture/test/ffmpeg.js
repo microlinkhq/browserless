@@ -11,6 +11,10 @@ test('defaults to libx264 for mp4 and libvpx (vp8) for webm', t => {
   t.true(argsFor({ type: 'webm' }).includes('libvpx'))
 })
 
+test('mp4 default preset is veryfast (not the bloated ultrafast)', t => {
+  t.true(argsFor({ type: 'mp4' }).join(' ').includes('-preset veryfast'))
+})
+
 test('normalizes `type` (case / leading dot) when picking the container', t => {
   for (const type of ['webm', 'WEBM', '.webm', ' webm ']) {
     t.true(argsFor({ type }).includes('libvpx'), `expected webm for ${JSON.stringify(type)}`)
