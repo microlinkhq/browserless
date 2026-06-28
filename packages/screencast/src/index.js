@@ -13,28 +13,18 @@ module.exports = (page, opts) => {
 
   const ack = sessionId => cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
 
-  const onScreencastFrame = ({ data, metadata, sessionId }) => {
-    if (!metadata.timestamp || !onFrame) return ack(sessionId)
-
-    let result
+  const onScreencastFrame = async ({ data, metadata, sessionId }) => {
     try {
-      result = onFrame(data, metadata)
+      if (metadata.timestamp && onFrame) await onFrame(data, metadata)
     } catch {
-      // Swallow like the async-rejection path below: a frame-callback error must
-      // not propagate into puppeteer's CDP dispatch loop. Still ack so the
-      // screencast stream cannot stall on a single bad frame.
-      return ack(sessionId)
+      // Swallow any onFrame error (sync throw or async rejection): a frame-callback
+      // failure must not propagate into puppeteer's CDP dispatch loop, and the
+      // screencast stream must not stall on a single bad frame.
     }
-
-    if (!result || typeof result.then !== 'function') return ack(sessionId)
-
-    return (
-      Promise.resolve(result)
-        .catch(() => {})
-        // The frame may settle after stop(); don't ack a torn-down session (a
-        // stale ack could otherwise race a subsequent screencast on the same page).
-        .then(() => stopped || ack(sessionId))
-    )
+    // Ack regardless of outcome, but the frame may settle after stop(): don't ack
+    // a torn-down session (a stale ack could race a subsequent screencast on the
+    // same page).
+    if (!stopped) ack(sessionId)
   }
 
   const attachFrameListener = () => {
