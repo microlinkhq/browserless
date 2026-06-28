@@ -13,8 +13,15 @@ module.exports = (page, opts) => {
 
   const ack = sessionId => cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
 
+  // Never ack a torn-down session: a stale ack could race a subsequent screencast
+  // on the same page. `stopped` flips true when stop() runs — including a
+  // reentrant stop() from inside onFrame, or an async frame settling after stop().
+  const ackIfActive = sessionId => {
+    if (!stopped) return ack(sessionId)
+  }
+
   const onScreencastFrame = ({ data, metadata, sessionId }) => {
-    if (!metadata.timestamp || !onFrame) return ack(sessionId)
+    if (!metadata.timestamp || !onFrame) return ackIfActive(sessionId)
 
     let result
     try {
@@ -22,19 +29,17 @@ module.exports = (page, opts) => {
     } catch {
       // A synchronous onFrame throw must not propagate into puppeteer's CDP
       // dispatch loop; still ack so the stream can't stall on one bad frame.
-      return ack(sessionId)
+      return ackIfActive(sessionId)
     }
 
     // Common path: onFrame did nothing async (e.g. muxer.write applied no
     // backpressure). Ack synchronously — no Promise/microtask hop per frame.
-    if (!result || typeof result.then !== 'function') return ack(sessionId)
+    if (!result || typeof result.then !== 'function') return ackIfActive(sessionId)
 
-    // Backpressure path: defer the ack until the frame is consumed. It may
-    // settle after stop(); don't ack a torn-down session (a stale ack could
-    // race a subsequent screencast on the same page).
+    // Backpressure path: defer the ack until the frame is consumed.
     return Promise.resolve(result)
       .catch(() => {})
-      .then(() => stopped || ack(sessionId))
+      .then(() => ackIfActive(sessionId))
   }
 
   const attachFrameListener = () => {

@@ -243,6 +243,30 @@ test('does not ack a frame whose async onFrame settles after stop()', async t =>
   )
 })
 
+test('does not ack a frame whose synchronous onFrame stops mid-frame', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+
+  const screencast = createScreencast(page, {})
+  // "capture then stop" pattern: a synchronous onFrame that tears down the
+  // session and returns undefined — the sync ack path must honor stopped too.
+  screencast.onFrame(() => screencast.stop())
+
+  await screencast.start()
+  cdp.emit('Page.screencastFrame', {
+    data: 'frame',
+    metadata: { timestamp: 1 },
+    sessionId: 47
+  })
+  await settle()
+
+  t.false(
+    calls.some(
+      ({ method, params }) => method === 'Page.screencastFrameAck' && params.sessionId === 47
+    )
+  )
+})
+
 test('re-acks async frames after stop() then start() on the same instance', async t => {
   const { cdp, calls } = createFakeCdp()
   const page = { _client: () => cdp }
