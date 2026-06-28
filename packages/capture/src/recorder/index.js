@@ -16,6 +16,36 @@ const { DEFAULT, NOOP } = require('../constants')
 // vp8/h264 require even dimensions.
 const even = value => Math.round(value) & ~1
 
+const waitForWritable = stdin =>
+  new Promise(resolve => {
+    const done = () => {
+      stdin.off('close', done)
+      stdin.off('drain', done)
+      stdin.off('error', done)
+      resolve()
+    }
+
+    stdin.once('close', done)
+    stdin.once('drain', done)
+    stdin.once('error', done)
+  })
+
+const writeAndDrain = (stdin, buffer) => {
+  if (stdin.write(buffer)) return
+  return waitForWritable(stdin)
+}
+
+const writeChunks = (stdin, chunks) => {
+  let pending
+
+  for (const chunk of chunks) {
+    if (pending) pending = pending.then(() => writeAndDrain(stdin, chunk))
+    else pending = writeAndDrain(stdin, chunk)
+  }
+
+  return pending
+}
+
 // Maps incoming frames onto a constant-fps grid by their real (compositor swap)
 // timestamp, and muxes them into a Matroska stream for ffmpeg. Ported from the
 // timing logic in Playwright's FfmpegVideoRecorder (Apache-2.0).
@@ -25,8 +55,7 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
 
   const emit = (buffer, frameNumber) => {
     const timestampMs = Math.max(0, Math.round((frameNumber * 1000) / fps))
-    stdin.write(writeClusterHeader(timestampMs, buffer.length))
-    stdin.write(buffer)
+    return writeChunks(stdin, [writeClusterHeader(timestampMs, buffer.length), buffer])
   }
 
   return {
@@ -38,18 +67,20 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
       const frameNumber = Math.floor((tsSeconds - firstTs) * fps)
       // A frame held on screen (no repaint) keeps its slot, so its real duration
       // is preserved instead of being collapsed.
-      if (last && frameNumber !== last.frameNumber) emit(last.buffer, last.frameNumber)
+      const pending =
+        last && frameNumber !== last.frameNumber ? emit(last.buffer, last.frameNumber) : undefined
       last = { buffer, frameNumber }
+      return pending
     },
-    flush: () => {
+    flush: async () => {
       if (!last) return
-      emit(last.buffer, last.frameNumber)
+      await emit(last.buffer, last.frameNumber)
       // Hold the last frame out to the full requested duration. Screencast is
       // change-driven (no frame after the last repaint), so without this a page
       // that goes static produces a clip shorter than `duration`. ffmpeg `-r`
       // duplicates the held frame to fill the gap.
       const endFrameNumber = Math.floor((durationMs / 1000) * fps)
-      if (endFrameNumber > last.frameNumber) emit(last.buffer, endFrameNumber)
+      if (endFrameNumber > last.frameNumber) await emit(last.buffer, endFrameNumber)
     }
   }
 }
@@ -114,7 +145,7 @@ const record = async (page, opts, viewport, { onStarted, getSize, startSource, l
     captureError = captureError || error
   } finally {
     await stop()
-    muxer.flush()
+    await muxer.flush()
     stdin.end()
   }
 

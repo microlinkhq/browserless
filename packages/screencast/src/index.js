@@ -5,9 +5,24 @@ module.exports = (page, opts) => {
   let onFrame
   let hasFrameListener = false
 
+  const ack = sessionId => cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
+
   const onScreencastFrame = ({ data, metadata, sessionId }) => {
-    cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
-    if (metadata.timestamp && onFrame) onFrame(data, metadata)
+    if (!metadata.timestamp || !onFrame) return ack(sessionId)
+
+    let result
+    try {
+      result = onFrame(data, metadata)
+    } catch (error) {
+      ack(sessionId)
+      throw error
+    }
+
+    if (!result || typeof result.then !== 'function') return ack(sessionId)
+
+    return Promise.resolve(result)
+      .catch(() => {})
+      .then(() => ack(sessionId))
   }
 
   const attachFrameListener = () => {

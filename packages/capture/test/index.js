@@ -227,6 +227,31 @@ const waitUntil = async (predicate, { timeout = 500, interval = 10 } = {}) => {
   return true
 }
 
+test('frame muxer waits for ffmpeg stdin drain before writing more chunks', async t => {
+  const { createFrameMuxer } = require('../src/recorder')
+  const stdin = new EventEmitter()
+  const writes = []
+
+  stdin.write = chunk => {
+    writes.push(chunk)
+    return writes.length !== 1
+  }
+
+  const muxer = createFrameMuxer({ stdin, fps: 1, durationMs: 1000 })
+  muxer.write(Buffer.from('first'), 0)
+
+  const pending = muxer.write(Buffer.from('second'), 1)
+
+  t.true(pending instanceof Promise)
+  t.is(writes.length, 1)
+
+  stdin.emit('drain')
+  await pending
+
+  t.is(writes.length, 2)
+  t.deepEqual(writes[1], Buffer.from('first'))
+})
+
 test('capture returns a video buffer', async t => {
   const createCapture = loadCapture()
   const { page } = createFixture()

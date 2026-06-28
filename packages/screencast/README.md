@@ -109,6 +109,10 @@ screencast.onFrame((data, metadata) => {
 })
 ```
 
+If the callback returns a promise, the next CDP frame is acknowledged after that
+promise settles. Use this to apply backpressure when writing frames to a slow
+stream or encoder.
+
 | Argument | Type | Description |
 |----------|------|-------------|
 | `data` | `string` | Base64-encoded frame image |
