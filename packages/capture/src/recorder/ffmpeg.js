@@ -11,8 +11,10 @@ const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg'
 // Video encoder profiles, keyed by name and tagged with the container they mux
 // into. The MediaRecorder-style `codec` (e.g. avc1.640028) does not apply to
 // ffmpeg and is ignored here. Selectable per-request via the `encoder` opt so
-// combinations can be benchmarked against each other in production; defaults
-// (h264-ultrafast / vp8) are validated speed-first choices.
+// combinations can be benchmarked against each other in production. The mp4
+// default is `h264-veryfast`: benchmarking showed `ultrafast` produced ~5x
+// larger files for the same end-to-end latency (its only edge — lower CPU — did
+// not translate into faster requests), so veryfast is the better default.
 const ENCODER_PROFILES = {
   'h264-ultrafast': { container: 'mp4', codec: ['libx264', '-preset', 'ultrafast'] },
   'h264-veryfast': { container: 'mp4', codec: ['libx264', '-preset', 'veryfast'] },
@@ -45,7 +47,7 @@ const ENCODER_PROFILES = {
   }
 }
 
-const DEFAULT_ENCODER_BY_CONTAINER = { mp4: 'h264-ultrafast', webm: 'vp8' }
+const DEFAULT_ENCODER_BY_CONTAINER = { mp4: 'h264-veryfast', webm: 'vp8' }
 
 // mp4 must be fragmented to stream to stdout (non-seekable output).
 const CONTAINER_ARGS = {
