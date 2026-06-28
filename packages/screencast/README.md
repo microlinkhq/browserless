@@ -88,7 +88,8 @@ Creates a screencast instance for the given Puppeteer page.
 
 ### Options
 
-All options are passed directly to [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast):
+Options are passed to [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast)
+after applying these package defaults:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -108,6 +109,10 @@ screencast.onFrame((data, metadata) => {
   // metadata: { timestamp, ... }
 })
 ```
+
+If the callback returns a promise, the next CDP frame is acknowledged after that
+promise settles. Use this to apply backpressure when writing frames to a slow
+stream or encoder.
 
 | Argument | Type | Description |
 |----------|------|-------------|
