@@ -253,6 +253,37 @@ test('frame muxer writes header+payload atomically and waits for drain', async t
   await pending
 })
 
+test('frame muxer serializes concurrent emits under backpressure', async t => {
+  const { createFrameMuxer } = require('../src/recorder')
+  const stdin = new EventEmitter()
+  const writes = []
+
+  // Backpressure on every payload write so each emit returns a promise.
+  stdin.write = chunk => {
+    writes.push(chunk)
+    return writes.length % 2 === 0
+  }
+
+  const muxer = createFrameMuxer({ stdin, fps: 10, durationMs: 1000 })
+  muxer.write(Buffer.from('first'), 0)
+  const pending = muxer.write(Buffer.from('second'), 0.1)
+  // Fire-and-forget like screenshot polling: must queue behind the emit above.
+  const queued = muxer.write(Buffer.from('third'), 0.2)
+
+  t.is(writes.length, 2)
+  t.true(pending instanceof Promise)
+  t.true(queued instanceof Promise)
+
+  stdin.emit('drain')
+  await pending
+  stdin.emit('drain')
+  await queued
+
+  t.is(writes.length, 4)
+  t.deepEqual(writes[1], Buffer.from('first'))
+  t.deepEqual(writes[3], Buffer.from('second'))
+})
+
 test('frame muxer stops writing once stdin errors', async t => {
   const { createFrameMuxer } = require('../src/recorder')
   const stdin = new EventEmitter()

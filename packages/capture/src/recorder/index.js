@@ -44,18 +44,45 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
   stdin.once('error', stopWriting)
   stdin.once('close', stopWriting)
 
+  // Serialize emits only while one is awaiting backpressure, so callers that
+  // don't await `write()` (screenshot polling) or `flush()` racing an in-flight
+  // write can't interleave cluster headers/payloads. When stdin accepts writes
+  // synchronously, `write()` still returns undefined and screencast keeps its
+  // sync-ack fast path.
+  let pendingAsync = null
+
   // A frame's cluster header and payload must reach ffmpeg contiguously. Write
   // both back-to-back (Node queues them in order regardless of the backpressure
   // hint), then await a single `drain`. Splitting them across an `await` would
   // let a concurrent emit — flush() racing the last in-flight capture write —
   // splice between the header and its payload and corrupt the Matroska stream.
-  const emit = (buffer, frameNumber) => {
+  const emitNow = (buffer, frameNumber) => {
     if (!writable) return
     const timestampMs = Math.max(0, Math.round((frameNumber * 1000) / fps))
     const headerWritten = stdin.write(writeClusterHeader(timestampMs, buffer.length))
     const payloadWritten = stdin.write(buffer)
     if (headerWritten && payloadWritten) return
     return waitForWritable(stdin)
+  }
+
+  const enqueueEmit = (buffer, frameNumber) => {
+    if (!pendingAsync) {
+      const result = emitNow(buffer, frameNumber)
+      if (!result || typeof result.then !== 'function') return result
+      pendingAsync = Promise.resolve(result).finally(() => {
+        pendingAsync = null
+      })
+      return pendingAsync
+    }
+
+    const next = pendingAsync.then(
+      () => emitNow(buffer, frameNumber),
+      () => emitNow(buffer, frameNumber)
+    )
+    pendingAsync = next.catch(() => {}).finally(() => {
+      if (pendingAsync === next) pendingAsync = null
+    })
+    return next
   }
 
   return {
@@ -69,17 +96,17 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
       // is preserved instead of being collapsed.
       const prev = last
       last = { buffer, frameNumber }
-      if (prev && frameNumber !== prev.frameNumber) return emit(prev.buffer, prev.frameNumber)
+      if (prev && frameNumber !== prev.frameNumber) return enqueueEmit(prev.buffer, prev.frameNumber)
     },
     flush: async () => {
       if (!last) return
-      await emit(last.buffer, last.frameNumber)
+      await enqueueEmit(last.buffer, last.frameNumber)
       // Hold the last frame out to the full requested duration. Screencast is
       // change-driven (no frame after the last repaint), so without this a page
       // that goes static produces a clip shorter than `duration`. ffmpeg `-r`
       // duplicates the held frame to fill the gap.
       const endFrameNumber = Math.floor((durationMs / 1000) * fps)
-      if (endFrameNumber > last.frameNumber) await emit(last.buffer, endFrameNumber)
+      if (endFrameNumber > last.frameNumber) await enqueueEmit(last.buffer, endFrameNumber)
     }
   }
 }
