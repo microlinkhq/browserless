@@ -1,7 +1,7 @@
 'use strict'
 
 const { execFile } = require('child_process')
-const { readFileSync, existsSync } = require('fs')
+const { readFileSync, readdirSync, existsSync } = require('fs')
 const { promisify } = require('util')
 const os = require('os')
 
@@ -225,9 +225,38 @@ const parseRenderer = renderer => {
   }
 }
 
-// ANGLE hides the underlying Mesa version, so read it from the installed driver
-// package. Best-effort: null off Debian/Ubuntu (e.g. macOS dev) or if dpkg fails.
+// Directories where the loaded Mesa Gallium driver may live. The multiarch path
+// is resolved at runtime so this works on amd64 and arm64 without a hardcode.
+const GALLIUM_LIB_DIRS = [
+  `/usr/lib/${process.arch === 'arm64' ? 'aarch64' : 'x86_64'}-linux-gnu`,
+  '/usr/lib',
+  '/usr/local/lib'
+]
+
+// Modern Mesa ships the version in the shared-object filename, e.g.
+// `libgallium-26.1.3.so`. Pure so it can be unit-tested without a filesystem.
+const parseGalliumVersion = filenames => {
+  for (const name of filenames) {
+    const m = /^libgallium-(\d+\.\d+(?:\.\d+)?)\.so$/.exec(name)
+    if (m) return m[1]
+  }
+  return null
+}
+
+// ANGLE hides the underlying Mesa version. Read it from the ACTUALLY loaded
+// Gallium driver (`libgallium-<ver>.so`) first — when Mesa is side-loaded over
+// the distro package (our Docker image COPYs a source build over apt's), dpkg
+// still reports the stale apt version while this reflects what Chromium loads.
+// Fall back to the dpkg package version, then null (e.g. macOS dev, no Mesa).
 const readMesaVersion = async () => {
+  for (const dir of GALLIUM_LIB_DIRS) {
+    try {
+      const version = parseGalliumVersion(readdirSync(dir))
+      if (version) return version
+    } catch {
+      // dir absent / unreadable — try the next candidate.
+    }
+  }
   try {
     // Default output is `<name>\t<version>`; take the version field.
     const { stdout } = await execFileAsync('dpkg-query', ['-W', 'libgl1-mesa-dri'], {
@@ -449,4 +478,5 @@ const report =
 
 module.exports = report
 module.exports.parseRenderer = parseRenderer
+module.exports.parseGalliumVersion = parseGalliumVersion
 module.exports.detectBuild = detectBuild

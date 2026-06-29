@@ -7,7 +7,7 @@ const path = require('path')
 const ava = require('ava')
 
 const { runServer, createBrowser, getBrowserContext, getBrowser } = require('@browserless/test')
-const { detectBuild } = require('../src/report')
+const { detectBuild, parseGalliumVersion } = require('../src/report')
 
 const test = process.env.CI ? ava.serial : ava
 
@@ -38,6 +38,20 @@ test('detectBuild distinguishes testing builds from branded Chrome', t => {
   t.is(detectBuild('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'), null)
   t.is(detectBuild('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'), null)
   t.is(detectBuild('/usr/bin/google-chrome-stable'), null)
+})
+
+test('parseGalliumVersion reads the loaded Mesa version from the .so filename', t => {
+  // Source-built Mesa side-loaded over the distro package: the version comes from
+  // the actual driver, NOT dpkg (which would report the stale apt package).
+  t.is(
+    parseGalliumVersion(['libGLX_mesa.so.0', 'libgallium-26.1.3.so', 'libEGL_mesa.so.0']),
+    '26.1.3'
+  )
+  // Two-component versions are valid too.
+  t.is(parseGalliumVersion(['libgallium-25.0.so']), '25.0')
+  // No versioned gallium driver present -> null (caller falls back to dpkg).
+  t.is(parseGalliumVersion(['libgallium.so', 'libGLX_mesa.so.0']), null)
+  t.is(parseGalliumVersion([]), null)
 })
 
 require('@browserless/test/suite')(getBrowser())
