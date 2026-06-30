@@ -49,7 +49,26 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
   // write can't interleave cluster headers/payloads. When stdin accepts writes
   // synchronously, `write()` still returns undefined and screencast keeps its
   // sync-ack fast path.
-  let pendingAsync = null
+  //
+  // `tail` settles when the in-flight emit chain has fully drained, and is
+  // cleared with an identity guard so a later emit that extends the chain isn't
+  // clobbered: clearing only when the still-current tail is the one that
+  // settled keeps the queue intact until the LAST emit drains.
+  let tail = null
+
+  // Park `emitPromise` as the new `tail` so the next emit chains directly on it
+  // (queued emits run the instant it drains, no extra microtask hop), and clear
+  // `tail` on a side-channel once it drains — only if no later emit has extended
+  // the chain. The side-channel handles rejection both ways so a failed emit
+  // neither leaks an unhandled rejection nor stalls the queue.
+  const chain = emitPromise => {
+    tail = emitPromise
+    const reset = () => {
+      if (tail === emitPromise) tail = null
+    }
+    emitPromise.then(reset, reset)
+    return emitPromise
+  }
 
   // A frame's cluster header and payload must reach ffmpeg contiguously. Write
   // both back-to-back (Node queues them in order regardless of the backpressure
@@ -66,23 +85,22 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
   }
 
   const enqueueEmit = (buffer, frameNumber) => {
-    if (!pendingAsync) {
+    // Fast path: nothing in flight and the write drains synchronously — return
+    // undefined so screencast acks without a Promise/microtask hop per frame.
+    if (!tail) {
       const result = emitNow(buffer, frameNumber)
       if (!result || typeof result.then !== 'function') return result
-      pendingAsync = Promise.resolve(result).finally(() => {
-        pendingAsync = null
-      })
-      return pendingAsync
+      return chain(Promise.resolve(result))
     }
 
-    const next = pendingAsync.then(
-      () => emitNow(buffer, frameNumber),
-      () => emitNow(buffer, frameNumber)
+    // An emit is still draining: run this one only after the chain settles, so
+    // its writes can't race ahead of an in-flight emit awaiting backpressure.
+    return chain(
+      tail.then(
+        () => emitNow(buffer, frameNumber),
+        () => emitNow(buffer, frameNumber)
+      )
     )
-    pendingAsync = next.catch(() => {}).finally(() => {
-      if (pendingAsync === next) pendingAsync = null
-    })
-    return next
   }
 
   return {
@@ -96,7 +114,7 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
       // is preserved instead of being collapsed.
       const prev = last
       last = { buffer, frameNumber }
-      if (prev && frameNumber !== prev.frameNumber) return enqueueEmit(prev.buffer, prev.frameNumber)
+      if (prev && frameNumber !== prev.frameNumber) { return enqueueEmit(prev.buffer, prev.frameNumber) }
     },
     flush: async () => {
       if (!last) return
