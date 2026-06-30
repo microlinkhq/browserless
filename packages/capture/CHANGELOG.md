@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.5.3](https://github.com/microlinkhq/browserless/compare/v13.5.2...v13.5.3) (2026-06-30)
+
+### Bug Fixes
+
+* **capture:** serialize muxer emits under stdin backpressure ([#819](https://github.com/microlinkhq/browserless/issues/819)) ([1099700](https://github.com/microlinkhq/browserless/commit/109970017c7c38f42ab46fde82cbf1c1656de4b2))
+
 ## [13.5.2](https://github.com/microlinkhq/browserless/compare/v13.5.1...v13.5.2) (2026-06-28)
 
 ### Performance Improvements

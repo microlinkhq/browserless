@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.5.3](https://github.com/microlinkhq/browserless/compare/v13.5.2...v13.5.3) (2026-06-30)
+
+### Bug Fixes
+
+* **report:** read loaded Mesa version from libgallium .so ([#817](https://github.com/microlinkhq/browserless/issues/817)) ([0d592d8](https://github.com/microlinkhq/browserless/commit/0d592d891c67a9de71d4fd6d1a4f5334ab41c47d))
+
 ## [13.5.0](https://github.com/microlinkhq/browserless/compare/v13.4.1...v13.5.0) (2026-06-26)
 
 ### Features
