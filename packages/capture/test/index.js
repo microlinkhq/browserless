@@ -253,6 +253,118 @@ test('frame muxer writes header+payload atomically and waits for drain', async t
   await pending
 })
 
+test('frame muxer serializes concurrent emits under backpressure', async t => {
+  const { createFrameMuxer } = require('../src/recorder')
+  const stdin = new EventEmitter()
+  const writes = []
+
+  // Backpressure on every payload write so each emit returns a promise.
+  stdin.write = chunk => {
+    writes.push(chunk)
+    return writes.length % 2 === 0
+  }
+
+  const muxer = createFrameMuxer({ stdin, fps: 10, durationMs: 1000 })
+  muxer.write(Buffer.from('first'), 0)
+  const pending = muxer.write(Buffer.from('second'), 0.1)
+  // Fire-and-forget like screenshot polling: must queue behind the emit above.
+  const queued = muxer.write(Buffer.from('third'), 0.2)
+
+  t.is(writes.length, 2)
+  t.true(pending instanceof Promise)
+  t.true(queued instanceof Promise)
+
+  stdin.emit('drain')
+  await pending
+  stdin.emit('drain')
+  await queued
+
+  t.is(writes.length, 4)
+  t.deepEqual(writes[1], Buffer.from('first'))
+  t.deepEqual(writes[3], Buffer.from('second'))
+})
+
+test('frame muxer does not let a new emit bypass an in-flight queued emit', async t => {
+  const { createFrameMuxer } = require('../src/recorder')
+  const flushMicrotasks = () => new Promise(resolve => setImmediate(resolve))
+  const stdin = new EventEmitter()
+  const writes = []
+
+  // Header accepted, payload backpressures: every emit awaits a drain.
+  stdin.write = chunk => {
+    const accept = writes.length % 2 === 0
+    writes.push(chunk)
+    return accept
+  }
+
+  const muxer = createFrameMuxer({ stdin, fps: 10, durationMs: 100000 })
+  muxer.write(Buffer.from('A'), 0.0) // frame 0, no emit yet
+  const head = muxer.write(Buffer.from('B'), 0.1) // emits frame 0 (head)
+  const queued = muxer.write(Buffer.from('C'), 0.2) // emits frame 1, queued behind head
+
+  t.is(writes.length, 2) // only the head emit's header+payload are out
+  t.true(head instanceof Promise)
+  t.true(queued instanceof Promise)
+
+  // Drain the head emit; the queued emit now runs and awaits its OWN drain.
+  stdin.emit('drain')
+  await head
+  await flushMicrotasks()
+  t.is(writes.length, 4) // queued emit's header+payload written, awaiting drain
+
+  // A new frame arriving while the queued emit is still in flight must wait
+  // behind it, not write immediately. The earlier bug nulled the chain when the
+  // head drained, letting this emit race the in-flight one (writes -> 6 here).
+  const before = writes.length
+  const late = muxer.write(Buffer.from('D'), 0.3) // emits frame 2
+  t.is(writes.length, before) // queued, nothing written yet
+  t.true(late instanceof Promise)
+
+  // Drain the rest and confirm strict frame order on the payload writes.
+  stdin.emit('drain')
+  await queued
+  stdin.emit('drain')
+  await late
+  await flushMicrotasks()
+
+  t.is(writes.length, 6)
+  t.deepEqual(
+    [writes[1], writes[3], writes[5]],
+    [Buffer.from('A'), Buffer.from('B'), Buffer.from('C')]
+  )
+})
+
+test('frame muxer restores the synchronous fast path after a backpressure chain drains', async t => {
+  const { createFrameMuxer } = require('../src/recorder')
+  const flushMicrotasks = () => new Promise(resolve => setImmediate(resolve))
+  const stdin = new EventEmitter()
+  const writes = []
+  let backpressure = true
+
+  stdin.write = chunk => {
+    writes.push(chunk)
+    // While backpressure is on: header accepted, payload backpressures.
+    return backpressure ? writes.length % 2 === 1 : true
+  }
+
+  const muxer = createFrameMuxer({ stdin, fps: 10, durationMs: 100000 })
+  muxer.write(Buffer.from('A'), 0.0)
+  const head = muxer.write(Buffer.from('B'), 0.1) // emit frame 0 (backpressure)
+  const queued = muxer.write(Buffer.from('C'), 0.2) // emit frame 1 (queued)
+
+  stdin.emit('drain')
+  await head
+  stdin.emit('drain')
+  await queued
+  await flushMicrotasks()
+
+  // Chain fully drained: stdin now accepts writes synchronously, so a new emit
+  // must return undefined again (screencast's sync-ack path), not a Promise.
+  backpressure = false
+  const sync = muxer.write(Buffer.from('D'), 0.3) // emit frame 2
+  t.is(sync, undefined)
+})
+
 test('frame muxer stops writing once stdin errors', async t => {
   const { createFrameMuxer } = require('../src/recorder')
   const stdin = new EventEmitter()
