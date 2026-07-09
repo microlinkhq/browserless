@@ -494,16 +494,18 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       clearStopLoadingTimer()
 
       if (withAdblock) {
-        await run({
-          fn: adblock.runAutoConsent(page),
-          timeout: actionTimeout,
-          debug: 'autoconsent:run'
-        })
-        await run({
-          fn: dismiss.run(page),
-          timeout: actionTimeout,
-          debug: 'dismiss:run'
-        })
+        await Promise.all([
+          run({
+            fn: adblock.runAutoConsent(page),
+            timeout: actionTimeout,
+            debug: 'autoconsent:run'
+          }),
+          run({
+            fn: dismiss.run(page),
+            timeout: actionTimeout,
+            debug: 'dismiss:run'
+          })
+        ])
       }
 
       if (waitForSelector) {

@@ -15,8 +15,8 @@ const debug = require('debug-logfmt')('browserless:goto:dismiss')
  *  - only buttons, never anchors, so a click cannot navigate.
  */
 const dismissOverlays = () => {
-  if (window.self !== window.top) return
-  if (window.__browserlessDismiss) return
+  if (window.self !== window.top) return 0
+  if (window.__browserlessDismiss) return window.__browserlessDismiss.clicked
   const state = (window.__browserlessDismiss = { clicked: 0 })
 
   const MAX_CLICKS = 3
@@ -98,6 +98,8 @@ const dismissOverlays = () => {
   } else {
     start()
   }
+
+  return state.clicked
 }
 
 const setup = page => page.evaluateOnNewDocument(dismissOverlays)
@@ -105,12 +107,9 @@ const setup = page => page.evaluateOnNewDocument(dismissOverlays)
 /* Re-run for documents where the new-document injection did not fire;
    the script is idempotent (guarded by `window.__browserlessDismiss`). */
 const run = page =>
-  page
-    .evaluate(dismissOverlays)
-    .then(() => page.evaluate(() => window.__browserlessDismiss.clicked))
-    .then(clicked => {
-      if (clicked > 0) debug('clicked', { clicked })
-      return clicked
-    })
+  page.evaluate(dismissOverlays).then(clicked => {
+    if (clicked > 0) debug('clicked', { clicked })
+    return clicked
+  })
 
 module.exports = { setup, run }
