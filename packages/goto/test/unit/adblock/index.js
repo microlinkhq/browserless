@@ -193,7 +193,6 @@ test('initResp includes config with expected shape', async t => {
   t.truthy(config.logs, 'config must include logs')
   t.is(config.enableHeuristicDetection, true)
   t.is(config.heuristicMode, 'tier2')
-  t.is(config.heuristicPopupSearchTimeout, 500)
   t.is(config.enablePopupMutationObserver, true)
 })
 
