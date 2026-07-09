@@ -116,6 +116,8 @@ page.disableAdblock()
 
 Cookie consent handling (opt-out) is included as part of `adblock: true` and powered by [duckduckgo/autoconsent](https://github.com/duckduckgo/autoconsent).
 
+`adblock: true` also dismisses generic announcement dialogs that autoconsent does not cover: ARIA dialogs (`role="dialog"`, `role="alertdialog"`, `aria-modal`, `<dialog open>`) with no consent language and a single acknowledge-style button ("I understand", "Got it", "OK", or an `aria-label="close"` button). Dialogs containing form fields are left untouched unless they expose an explicit close button, and only `<button>` elements are clicked so a dismissal can never navigate.
+
 ### Script and style injection
 
 Inject external resources or inline code:

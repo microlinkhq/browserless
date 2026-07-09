@@ -54,8 +54,13 @@ const autoconsentConfig = Object.freeze({
   enableGeneratedRules: true,
   /* detect CMPs using heuristics when no specific rule matches */
   enableHeuristicDetection: true,
-  /* heuristic popup handling when no specific rule matches: auto-reject */
-  heuristicMode: 'reject',
+  /* heuristic popup handling when no specific rule matches:
+     click reject if present, else acknowledge (ok/got it), else a lone accept */
+  heuristicMode: 'tier2',
+  /* ms budget for each heuristic DOM scan looking for popups (default 100) */
+  heuristicPopupSearchTimeout: 500,
+  /* also wait on DOM mutations (not just polling) to catch late-mounted popups */
+  enablePopupMutationObserver: true,
   /* run in the page's main world (false = isolated world) */
   isMainWorld: false,
   /* max ms to keep prehide CSS applied before removing it */
@@ -136,13 +141,17 @@ const setupAutoConsent = async (page, timeout) => {
   const nonceGuard = `(function(n){if(window.self!==window.top)return;var raw=window.autoconsentSendMessage;if(raw)window.autoconsentSendMessage=function(msg){return raw(Object.assign({},msg,{__nonce:n}))}})(${JSON.stringify(
     nonce
   )});`
-  await page.evaluateOnNewDocument(nonceGuard + autoconsentPlaywrightScript)
+  page._autoconsentScript = nonceGuard + autoconsentPlaywrightScript
+  await page.evaluateOnNewDocument(page._autoconsentScript)
   page._autoconsentSetup = true
 }
 
+/* Fallback for documents where the new-document injection did not run.
+   It must re-inject the nonce guard too: without it the messages lack the
+   nonce and are silently dropped by the exposed function. */
 const runAutoConsent = async page => {
-  if (page._autoconsentInitDone) return
-  return page.evaluate(await getAutoconsentPlaywrightScript())
+  if (page._autoconsentInitDone || !page._autoconsentScript) return
+  return page.evaluate(page._autoconsentScript)
 }
 
 const enableBlockingInPage = (page, run, timeout) => {

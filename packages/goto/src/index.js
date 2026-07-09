@@ -11,6 +11,7 @@ const isUrl = require('is-url-http')
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 
 const adblock = require('./adblock')
+const dismiss = require('./dismiss')
 
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
@@ -346,6 +347,13 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     if (withAdblock) {
       prePromises.push(...adblock.enableBlockingInPage(page, run, actionTimeout))
+      prePromises.push(
+        run({
+          fn: dismiss.setup(page),
+          timeout: actionTimeout,
+          debug: 'dismiss:setup'
+        })
+      )
     }
 
     if (javascript === false) {
@@ -486,11 +494,18 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       clearStopLoadingTimer()
 
       if (withAdblock) {
-        await run({
-          fn: adblock.runAutoConsent(page),
-          timeout: actionTimeout,
-          debug: 'autoconsent:run'
-        })
+        await Promise.all([
+          run({
+            fn: adblock.runAutoConsent(page),
+            timeout: actionTimeout,
+            debug: 'autoconsent:run'
+          }),
+          run({
+            fn: dismiss.run(page),
+            timeout: actionTimeout,
+            debug: 'dismiss:run'
+          })
+        ])
       }
 
       if (waitForSelector) {

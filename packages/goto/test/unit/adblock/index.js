@@ -142,7 +142,10 @@ test('initResp includes rules', async t => {
   t.truthy(received, 'initResp should be received')
   t.not(received, 'TIMEOUT', 'timed out, no initResp received')
   t.snapshot(received, 'diagnostic snapshot of initResp')
-  t.true(received.hasRules, `initResp must include rules (keys: ${received.msgKeys}, config: ${received.configKeys}, messages: ${received.messages})`)
+  t.true(
+    received.hasRules,
+    `initResp must include rules (keys: ${received.msgKeys}, config: ${received.configKeys}, messages: ${received.messages})`
+  )
   t.true(received.hasR, 'compact rules must contain r (rules) field')
   t.true(received.hasIndex, 'compact rules must contain index field')
 })
@@ -181,9 +184,96 @@ test('initResp includes config with expected shape', async t => {
   t.is(config.enabled, true)
   t.is(config.autoAction, 'optOut')
   t.is(config.enablePrehide, true)
-  t.is(config.isMainWorld, false, `config keys: ${received.configKeys}, msg keys: ${received.msgKeys}`)
+  t.is(
+    config.isMainWorld,
+    false,
+    `config keys: ${received.configKeys}, msg keys: ${received.msgKeys}`
+  )
   t.is(typeof config.detectRetries, 'number')
   t.truthy(config.logs, 'config must include logs')
+  t.is(config.enableHeuristicDetection, true)
+  t.is(config.heuristicMode, 'tier2')
+  t.is(config.heuristicPopupSearchTimeout, 500)
+  t.is(config.enablePopupMutationObserver, true)
+})
+
+test('runAutoConsent fallback initializes autoconsent when injection did not run', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    /* simulate a document where the new-document injection never ran */
+    page.evaluateOnNewDocument = async () => {}
+    await goto(page, { url })
+
+    /* goto already invoked the runAutoConsent fallback; the init message
+       travels page → node async, so poll for the flag */
+    for (let i = 0; i < 30 && !page._autoconsentInitDone; i++) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    return page._autoconsentInitDone === true
+  })
+
+  t.true(await run(), 'fallback injection must complete the init handshake')
+})
+
+const consentBanner = buttons => `<html><body>
+  <h1>hello</h1>
+  <div id="consent-fixture" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px;z-index:9999">
+    <p>We use cookies on this website to improve your experience.</p>
+    ${buttons}
+  </div>
+</body></html>`
+
+/* poll from Node: in-page timers/rAF can be throttled for background pages */
+const waitForClicked = async page => {
+  for (let attempts = 0; attempts < 150; attempts++) {
+    const clicked = await page.evaluate(() => window.__clicked || false).catch(() => false)
+    if (clicked) return clicked
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+  return false
+}
+
+test('heuristic dismisses a consent banner with only an acknowledge button', async t => {
+  const browserless = await getBrowserContext(t)
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(
+      consentBanner(
+        "<button onclick=\"window.__clicked='acknowledge';document.getElementById('consent-fixture').remove()\">Got it</button>"
+      )
+    )
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitForClicked(page)
+  })
+
+  t.is(await run(), 'acknowledge', 'tier1 heuristic must click the acknowledge button')
+})
+
+test('heuristic prefers the reject button over acknowledge', async t => {
+  const browserless = await getBrowserContext(t)
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(
+      consentBanner(
+        "<button onclick=\"window.__clicked='reject';document.getElementById('consent-fixture').remove()\">Reject all</button>" +
+          "<button onclick=\"window.__clicked='acknowledge';document.getElementById('consent-fixture').remove()\">Got it</button>"
+      )
+    )
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitForClicked(page)
+  })
+
+  t.is(await run(), 'reject', 'reject must win over acknowledge')
 })
 
 test('eval that succeeds returns the actual result', async t => {
