@@ -184,3 +184,53 @@ test('dismiss.run fallback works when injection did not run', async t => {
 
   t.is(await run(), 'ack')
 })
+
+/* inject after goto so only dismiss's re-scan runs on it, isolating the
+   consent guard from autoconsent (which legitimately handles such dialogs) */
+test('dismiss leaves cookie-consent dialogs to autoconsent', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(t, '<p>no dialog yet</p>')
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return page.evaluate(() => {
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<div id="consent" role="dialog" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px">
+           <p>We use cookies to improve your experience on this website.</p>
+           <button type="button" onclick="window.__clicked='ok';document.getElementById('consent').remove()">OK</button>
+         </div>`
+      )
+      window.__browserlessDismiss.rescan()
+      return { clicked: window.__clicked || false, present: !!document.querySelector('#consent') }
+    })
+  })
+
+  const { clicked, present } = await run()
+  t.is(clicked, false, 'dismiss must not click a consent dialog')
+  t.is(present, true, 'consent dialog must remain for autoconsent')
+})
+
+test('re-scans on the post-navigation run for dialogs mounted after the initial scan', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(t, '<p>no dialog yet</p>')
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    /* mount a dialog after setup, then trigger the same re-scan the run
+       fallback performs once goto resolves */
+    await page.evaluate(() => {
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<div id="late" role="alertdialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px">
+           <p>Scheduled maintenance this weekend.</p>
+           <button onclick="window.__clicked='ack';document.getElementById('late').remove()">Got it</button>
+         </div>`
+      )
+      window.__browserlessDismiss.rescan()
+    })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'ack')
+})

@@ -10,19 +10,31 @@ const debug = require('debug-logfmt')('browserless:goto:dismiss')
  * Scope is deliberately narrow to avoid false positives:
  *  - only ARIA dialogs (`role="dialog"`, `role="alertdialog"`, `aria-modal`,
  *    `<dialog open>`), never arbitrary fixed-position elements.
+ *  - dialogs whose copy mentions cookies/consent/privacy are left untouched
+ *    so autoconsent owns the opt-out decision (never clicked as "accept").
  *  - dialogs containing form fields are skipped, except for an explicit
  *    close button (`aria-label="close"`) outside a form.
  *  - only buttons, never anchors, so a click cannot navigate.
+ *
+ * Re-invoking is idempotent (guarded by `window.__browserlessDismiss`) and
+ * triggers a fresh scan, so the post-navigation `run` fallback catches
+ * dialogs mounted after a slow `goto`, even once the observer has stopped.
  */
 const dismissOverlays = () => {
   if (window.self !== window.top) return 0
-  if (window.__browserlessDismiss) return window.__browserlessDismiss.clicked
+  if (window.__browserlessDismiss) {
+    window.__browserlessDismiss.rescan()
+    return window.__browserlessDismiss.clicked
+  }
   const state = (window.__browserlessDismiss = { clicked: 0 })
 
   const MAX_CLICKS = 3
   const WATCH_MS = 15000
   const ACK_TEXT = /^(ok(ay)?|got it|i understand|understood|dismiss|close|continue|x|×|✕)$/
   const CLOSE_LABEL = /^(close|dismiss)( \S+){0,3}$/
+  /* consent copy: leave these dialogs to autoconsent's opt-out flow */
+  const CONSENT_TEXT =
+    /\b(cookies?|consent|gdpr|ccpa|privacy|data protection|personali[sz]ed? ads|tracking technolog)/i
 
   const normalize = text =>
     (text || '')
@@ -40,6 +52,7 @@ const dismissOverlays = () => {
   const seen = new WeakSet()
 
   const dismiss = dialog => {
+    if (CONSENT_TEXT.test(dialog.innerText || '')) return false
     const hasFields = !!dialog.querySelector('input, select, textarea')
     const buttons = dialog.querySelectorAll('button, [role="button"], input[type="button"]')
 
@@ -70,6 +83,7 @@ const dismissOverlays = () => {
       if (state.clicked >= MAX_CLICKS) return
     }
   }
+  state.rescan = scan
 
   let timer
   const schedule = () => {
