@@ -57,8 +57,6 @@ const autoconsentConfig = Object.freeze({
   /* heuristic popup handling when no specific rule matches:
      click reject if present, else acknowledge (ok/got it), else a lone accept */
   heuristicMode: 'tier2',
-  /* ms budget for each heuristic DOM scan looking for popups (default 100) */
-  heuristicPopupSearchTimeout: 500,
   /* also wait on DOM mutations (not just polling) to catch late-mounted popups */
   enablePopupMutationObserver: true,
   /* run in the page's main world (false = isolated world) */
