@@ -32,6 +32,9 @@ const dismissOverlays = () => {
   const WATCH_MS = 15000
   const ACK_TEXT = /^(ok(ay)?|got it|i understand|understood|dismiss|close|continue|x|×|✕)$/
   const CLOSE_LABEL = /^(close|dismiss)( \S+){0,3}$/
+  /* reject-style buttons: leave the opt-out decision to autoconsent */
+  const REJECT_TEXT =
+    /^(reject( all)?|decline( all)?|deny( all)?|refuse( all)?|necessary only|only necessary( cookies)?|essential only)$/
   /* consent copy: leave these dialogs to autoconsent's opt-out flow */
   const CONSENT_TEXT =
     /\b(cookies?|consent|gdpr|ccpa|privacy|data protection|personali[sz]ed? ads|tracking technolog)/i
@@ -51,10 +54,21 @@ const dismissOverlays = () => {
 
   const seen = new WeakSet()
 
+  const hasRejectButton = buttons => {
+    for (const button of buttons) {
+      if (!isVisible(button) || button.disabled) continue
+      const text = normalize(button.innerText || button.value)
+      const label = normalize(button.getAttribute('aria-label'))
+      if (REJECT_TEXT.test(text) || REJECT_TEXT.test(label)) return true
+    }
+    return false
+  }
+
   const dismiss = dialog => {
     if (CONSENT_TEXT.test(dialog.innerText || '')) return false
     const hasFields = !!dialog.querySelector('input, select, textarea')
     const buttons = dialog.querySelectorAll('button, [role="button"], input[type="button"]')
+    if (hasRejectButton(buttons)) return false
 
     for (const button of buttons) {
       if (!isVisible(button) || button.disabled) continue
