@@ -213,53 +213,60 @@ test('dismiss leaves cookie-consent dialogs to autoconsent', async t => {
 
 test('dismiss leaves CMP dialogs with a reject button to autoconsent', async t => {
   const browserless = await getBrowserContext(t)
-  const url = await serve(
-    t,
-    `<div id="cmp" role="dialog" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px">
-       <p>We need your permission to track you across the web.</p>
-       <button type="button" onclick="window.__clicked='reject';document.getElementById('cmp').remove()">Reject all</button>
-       <button type="button" onclick="window.__clicked='ok';document.getElementById('cmp').remove()">OK</button>
-     </div>`
-  )
+  const url = await serve(t, '<p>no dialog yet</p>')
 
   const run = browserless.withPage((page, goto) => async () => {
     await goto(page, { url })
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    return {
-      clicked: await page.evaluate(() => window.__clicked || false),
-      present: await stillPresent(page, '#cmp')
-    }
+    return page.evaluate(() => {
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<div id="cmp" role="dialog" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px">
+           <p>We need your permission to track you across the web.</p>
+           <button type="button" onclick="window.__clicked='reject';document.getElementById('cmp').remove()">Reject all</button>
+           <button type="button" onclick="window.__clicked='ok';document.getElementById('cmp').remove()">OK</button>
+         </div>`
+      )
+      window.__browserlessDismiss.rescan()
+      return {
+        clicked: window.__clicked || false,
+        dismissClicks: window.__browserlessDismiss.clicked,
+        present: !!document.querySelector('#cmp')
+      }
+    })
   })
 
-  const { clicked, present } = await run()
+  const { clicked, dismissClicks, present } = await run()
   t.is(clicked, false, 'dismiss must not click OK when a reject button is present')
+  t.is(dismissClicks, 0, 'dismiss must not register any clicks')
   t.is(present, true, 'CMP dialog must remain for autoconsent')
 })
 
 test('dismiss leaves CMP dialogs with a reject button before consent copy loads', async t => {
   const browserless = await getBrowserContext(t)
-  const url = await serve(
-    t,
-    `<div id="cmp" role="dialog" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px">
-       <button type="button" onclick="window.__clicked='reject';document.getElementById('cmp').remove()">Reject all</button>
-       <button type="button" onclick="window.__clicked='ok';document.getElementById('cmp').remove()">OK</button>
-     </div>
-     <script>setTimeout(() => {
-       document.querySelector('#cmp').insertAdjacentHTML('afterbegin', '<p>We need your permission to track you across the web.</p>')
-     }, 300)</script>`
-  )
+  const url = await serve(t, '<p>no dialog yet</p>')
 
   const run = browserless.withPage((page, goto) => async () => {
     await goto(page, { url })
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    return {
-      clicked: await page.evaluate(() => window.__clicked || false),
-      present: await stillPresent(page, '#cmp')
-    }
+    return page.evaluate(() => {
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<div id="cmp" role="dialog" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px">
+           <button type="button" onclick="window.__clicked='reject';document.getElementById('cmp').remove()">Reject all</button>
+           <button type="button" onclick="window.__clicked='ok';document.getElementById('cmp').remove()">OK</button>
+         </div>`
+      )
+      window.__browserlessDismiss.rescan()
+      return {
+        clicked: window.__clicked || false,
+        dismissClicks: window.__browserlessDismiss.clicked,
+        present: !!document.querySelector('#cmp')
+      }
+    })
   })
 
-  const { clicked, present } = await run()
+  const { clicked, dismissClicks, present } = await run()
   t.is(clicked, false, 'dismiss must not click OK before consent copy is present')
+  t.is(dismissClicks, 0, 'dismiss must not register any clicks')
   t.is(present, true, 'CMP dialog must remain for autoconsent')
 })
 
