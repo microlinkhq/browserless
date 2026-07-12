@@ -97,36 +97,31 @@ const dismissOverlays = () => {
 
   const seen = new WeakSet()
 
-  const hasRejectButton = buttons => {
-    for (const button of buttons) {
-      if (!isVisible(button) || button.disabled) continue
-      const text = normalize(button.innerText || button.value)
-      const label = normalize(button.getAttribute('aria-label'))
-      if (REJECT_TEXT.test(text) || REJECT_TEXT.test(label)) return true
-    }
-    return false
-  }
-
   const dismiss = dialog => {
     if (CONSENT_TEXT.test(dialog.innerText || '')) return false
     const hasFields = !!dialog.querySelector('input, select, textarea')
     const buttons = dialog.querySelectorAll('button, [role="button"], input[type="button"]')
-    if (hasRejectButton(buttons)) return false
 
+    /* Single pass: defer the click so a reject button anywhere in the dialog
+       still aborts it (leaving the opt-out to autoconsent), while the first
+       acknowledge/close button becomes the candidate to click if none appears. */
+    let candidate = null
     for (const button of buttons) {
       if (!isVisible(button) || button.disabled) continue
       const text = normalize(button.innerText || button.value)
       const label = normalize(button.getAttribute('aria-label'))
-      const isClose = CLOSE_LABEL.test(label) && !button.closest('form')
-      const isAcknowledge = !hasFields && ACK_TEXT.test(text)
-      if (isAcknowledge || isClose) {
-        seen.add(dialog)
-        state.clicked++
-        button.click()
-        return true
+      if (REJECT_TEXT.test(text) || REJECT_TEXT.test(label)) return false
+      if (!candidate) {
+        const isClose = CLOSE_LABEL.test(label) && !button.closest('form')
+        const isAcknowledge = !hasFields && ACK_TEXT.test(text)
+        if (isAcknowledge || isClose) candidate = button
       }
     }
-    return false
+    if (!candidate) return false
+    seen.add(dialog)
+    state.clicked++
+    candidate.click()
+    return true
   }
 
   const scan = () => {
