@@ -12,6 +12,9 @@ const debug = require('debug-logfmt')('browserless:goto:dismiss')
  *    `<dialog open>`), never arbitrary fixed-position elements.
  *  - dialogs whose copy mentions cookies/consent/privacy are left untouched
  *    so autoconsent owns the opt-out decision (never clicked as "accept").
+ *  - dialogs exposing a reject-style button ("Reject all", "Decline",
+ *    "Necessary only") are left untouched even without consent copy, so a
+ *    CMP is never acknowledged as "accept" before autoconsent opts out.
  *  - dialogs containing form fields are skipped, except for an explicit
  *    close button (`aria-label="close"`) outside a form.
  *  - only buttons, never anchors, so a click cannot navigate.
@@ -34,7 +37,7 @@ const dismissOverlays = () => {
   const CLOSE_LABEL = /^(close|dismiss)( \S+){0,3}$/
   /* reject-style buttons: leave the opt-out decision to autoconsent */
   const REJECT_TEXT =
-    /^(reject( all)?|decline( all)?|deny( all)?|refuse( all)?|necessary only|only necessary( cookies)?|essential only)$/
+    /^(reject( all)?( cookies)?|decline( all)?( cookies)?|deny( all)?( cookies)?|refuse( all)?( cookies)?|disagree|continue without accepting|necessary only|only necessary( cookies)?|essential only|only essential( cookies)?)$/
   /* consent copy: leave these dialogs to autoconsent's opt-out flow */
   const CONSENT_TEXT =
     /\b(cookies?|consent|gdpr|ccpa|privacy|data protection|personali[sz]ed? ads|tracking technolog)/i
