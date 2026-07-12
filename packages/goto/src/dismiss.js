@@ -13,8 +13,9 @@ const debug = require('debug-logfmt')('browserless:goto:dismiss')
  *  - dialogs whose copy mentions cookies/consent/privacy are left untouched
  *    so autoconsent owns the opt-out decision (never clicked as "accept").
  *  - dialogs exposing a reject-style button ("Reject all", "Decline",
- *    "Necessary only") are left untouched even without consent copy, so a
- *    CMP is never acknowledged as "accept" before autoconsent opts out.
+ *    "Ablehnen", "Tout refuser", "Rechazar"...) are left untouched even
+ *    without consent copy, so a CMP is never acknowledged as "accept"
+ *    before autoconsent opts out; the reject vocabulary is multilingual.
  *  - dialogs containing form fields are skipped, except for an explicit
  *    close button (`aria-label="close"`) outside a form.
  *  - only buttons, never anchors, so a click cannot navigate.
@@ -35,9 +36,48 @@ const dismissOverlays = () => {
   const WATCH_MS = 15000
   const ACK_TEXT = /^(ok(ay)?|got it|i understand|understood|dismiss|close|continue|x|×|✕)$/
   const CLOSE_LABEL = /^(close|dismiss)( \S+){0,3}$/
-  /* reject-style buttons: leave the opt-out decision to autoconsent */
-  const REJECT_TEXT =
-    /^(reject( all)?( cookies)?|decline( all)?( cookies)?|deny( all)?( cookies)?|refuse( all)?( cookies)?|disagree|continue without accepting|necessary only|only necessary( cookies)?|essential only|only essential( cookies)?)$/
+  /* reject-style buttons across the languages browserless screenshots most:
+     a match means a reject/opt-out choice exists, so dismiss steps aside and
+     lets autoconsent make it. Enumerated (not stemmed) to stay precise; a
+     false positive only makes dismiss a no-op, never a wrong click. */
+  const REJECT_WORDS = [
+    /* English */
+    'reject( all)?( cookies)?',
+    'decline( all)?( cookies)?',
+    'deny( all)?( cookies)?',
+    'refuse( all)?( cookies)?',
+    'disagree',
+    'continue without accepting',
+    'necessary only',
+    'only necessary( cookies)?',
+    'essential only',
+    'only essential( cookies)?',
+    /* German */
+    '(alle |auswahl )?ablehnen',
+    'nur (notwendige|erforderliche|essenzielle)( cookies)?',
+    /* French */
+    'refuser( tout)?',
+    'tout refuser',
+    'continuer sans accepter',
+    /* Spanish */
+    'rechazar( todo| todas)?',
+    's[oó]lo( las)? necesarias',
+    /* Italian */
+    'rifiuta( tutto| tutti)?',
+    'continua senza accettare',
+    'solo( i)? necessari',
+    /* Portuguese */
+    'rejeitar( tudo)?',
+    'recusar( tudo)?',
+    'apenas( os)? (essenciais|necess[aá]rios)',
+    /* Dutch */
+    '(alles )?weigeren',
+    'alleen (noodzakelijke|essenti[eë]le)( cookies)?',
+    /* Polish */
+    'odrzu[cć]( wszystko| wszystkie)?',
+    'tylko niezb[eę]dne'
+  ]
+  const REJECT_TEXT = new RegExp(`^(${REJECT_WORDS.join('|')})$`)
   /* consent copy: leave these dialogs to autoconsent's opt-out flow */
   const CONSENT_TEXT =
     /\b(cookies?|consent|gdpr|ccpa|privacy|data protection|personali[sz]ed? ads|tracking technolog)/i
