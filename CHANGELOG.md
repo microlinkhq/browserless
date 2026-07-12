@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.1](https://github.com/microlinkhq/browserless/compare/v13.6.0...v13.6.1) (2026-07-12)
+
+### Bug Fixes
+
+* **goto:** skip dismiss when CMP exposes a reject button (multilingual) ([#829](https://github.com/microlinkhq/browserless/issues/829)) ([24e99d1](https://github.com/microlinkhq/browserless/commit/24e99d13809d88607cd94ceb3c4bb879d0f3844e))
+
 ## [13.6.0](https://github.com/microlinkhq/browserless/compare/v13.5.3...v13.6.0) (2026-07-09)
 
 ### Features

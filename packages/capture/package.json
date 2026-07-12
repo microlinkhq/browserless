@@ -2,7 +2,7 @@
   "name": "@browserless/capture",
   "description": "Record a Puppeteer page using tabCapture API",
   "homepage": "https://browserless.js.org/#/?id=capturepage-options",
-  "version": "13.6.0",
+  "version": "13.6.1",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
