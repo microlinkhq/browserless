@@ -211,6 +211,72 @@ test('dismiss leaves cookie-consent dialogs to autoconsent', async t => {
   t.is(present, true, 'consent dialog must remain for autoconsent')
 })
 
+/* A CMP that exposes a reject button must be left to autoconsent's opt-out,
+   never acknowledged via its "OK". Each case varies only the consent copy and
+   the reject button's label (the reject vocabulary under test). */
+const REJECT_CASES = [
+  {
+    name: 'a reject button',
+    copy: '<p>We need your permission to track you across the web.</p>',
+    reject: 'Reject all'
+  },
+  {
+    name: 'a reject button before consent copy loads',
+    copy: '',
+    reject: 'Reject all'
+  },
+  {
+    name: 'a reject button with the "cookies" suffix',
+    copy: '<p>We need your permission to track you across the web.</p>',
+    reject: 'Reject all cookies'
+  },
+  {
+    name: 'a German "Ablehnen" button',
+    copy: '<p>Wir und unsere Partner verarbeiten Daten fuer Werbung.</p>',
+    reject: 'Ablehnen'
+  },
+  {
+    name: 'a French "Continuer sans accepter" button',
+    copy: '<p>Nous et nos partenaires suivons votre navigation.</p>',
+    reject: 'Continuer sans accepter'
+  }
+]
+
+for (const { name, copy, reject } of REJECT_CASES) {
+  test(`dismiss leaves a CMP with ${name} to autoconsent`, async t => {
+    const browserless = await getBrowserContext(t)
+    const url = await serve(t, '<p>no dialog yet</p>')
+
+    const run = browserless.withPage((page, goto) => async () => {
+      await goto(page, { url })
+      return page.evaluate(
+        ({ copy, reject }) => {
+          document.body.insertAdjacentHTML(
+            'beforeend',
+            `<div id="cmp" role="dialog" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px">
+               ${copy}
+               <button type="button" onclick="window.__clicked='reject';document.getElementById('cmp').remove()">${reject}</button>
+               <button type="button" onclick="window.__clicked='ok';document.getElementById('cmp').remove()">OK</button>
+             </div>`
+          )
+          window.__browserlessDismiss.rescan()
+          return {
+            clicked: window.__clicked || false,
+            dismissClicks: window.__browserlessDismiss.clicked,
+            present: !!document.querySelector('#cmp')
+          }
+        },
+        { copy, reject }
+      )
+    })
+
+    const { clicked, dismissClicks, present } = await run()
+    t.is(clicked, false, `dismiss must not click OK when "${reject}" is present`)
+    t.is(dismissClicks, 0, 'dismiss must not register any clicks')
+    t.is(present, true, 'CMP dialog must remain for autoconsent')
+  })
+}
+
 test('re-scans on the post-navigation run for dialogs mounted after the initial scan', async t => {
   const browserless = await getBrowserContext(t)
   const url = await serve(t, '<p>no dialog yet</p>')
