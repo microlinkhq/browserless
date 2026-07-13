@@ -141,10 +141,14 @@ test('initResp includes rules', async t => {
   const received = await run()
   t.truthy(received, 'initResp should be received')
   t.not(received, 'TIMEOUT', 'timed out, no initResp received')
-  t.snapshot(received, 'diagnostic snapshot of initResp')
+  /* `messages` records autoconsent's internal message ordering, which is
+     timing-dependent and shifts across dependency bumps; keep it in the
+     failure diagnostics below but out of the snapshot */
+  const { messages, ...snapshot } = received
+  t.snapshot(snapshot, 'diagnostic snapshot of initResp')
   t.true(
     received.hasRules,
-    `initResp must include rules (keys: ${received.msgKeys}, config: ${received.configKeys}, messages: ${received.messages})`
+    `initResp must include rules (keys: ${received.msgKeys}, config: ${received.configKeys}, messages: ${messages})`
   )
   t.true(received.hasR, 'compact rules must contain r (rules) field')
   t.true(received.hasIndex, 'compact rules must contain index field')
