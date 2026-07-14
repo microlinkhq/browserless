@@ -100,23 +100,18 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       const ready = await waitForReady(page, { timeout })
       debug('ready', { ...ready, duration: readyTime() })
 
-      // Fast path: real painted content — decoded images in a document taller
-      // than the viewport can't be a blank shell, so skip the screenshot poll.
+      // Fast path: the page settled with real painted content — decoded images
+      // in a document taller than the viewport can't be a blank shell, so skip
+      // the screenshot poll. A gate that timed out never settled, so don't trust
+      // its partial snapshot: fall through to the blank check.
       const viewportHeight = (page.viewport() || {}).height || 0
-      if (ready.decoded > 0 && ready.height > viewportHeight) return
+      if (!ready.timedOut && ready.decoded > 0 && ready.height > viewportHeight) return
 
-      // Otherwise a single white-screen check, now that the page has settled (so
-      // it won't race a navigation). A genuinely blank page falls back to the
-      // original screenshot poll to keep the blank-SPA protection.
-      const shot = await pReflect(
-        captureWithNavigationRetry(
-          () => page.screenshot({ ...rest, optimizeForSpeed: true, type: 'jpeg', quality: 30 }),
-          { page, goto, timeout }
-        )
-      )
-      if (shot.isFulfilled && !(await isWhiteScreenshot(shot.value))) return
-
-      let isWhite = true
+      // Otherwise fall back to the screenshot poll — re-wait while the first
+      // paint is still blank — to keep the blank-SPA protection. The page has
+      // already settled, so the first capture won't race a navigation, and a
+      // non-blank page exits after that single shot without an extra re-wait.
+      let isWhite = false
       let retry = -1
       const timePdf = timeSpan()
       do {

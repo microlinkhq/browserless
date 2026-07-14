@@ -8,7 +8,7 @@
 // execution context is destroyed mid-check the quiet window resets and polling
 // continues instead of throwing (SPAs re-commit their own URL after load).
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+const { setTimeout: sleep } = require('node:timers/promises')
 
 // Evaluated in-page: a cheap snapshot of the paint/settle signals.
 const snapshot = () => {
@@ -26,12 +26,8 @@ const snapshot = () => {
   }
 }
 
-const DEFAULT_READY_OPTS = { quietMs: 600, poll: 150 }
-
-const waitForReady = async (
-  page,
-  { timeout, quietMs = DEFAULT_READY_OPTS.quietMs, poll = DEFAULT_READY_OPTS.poll } = {}
-) => {
+const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) => {
+  if (typeof timeout !== 'number') throw new TypeError('timeout must be a number')
   const deadline = Date.now() + timeout
   let lastHeight = -1
   let quietSince = 0
@@ -70,4 +66,4 @@ const waitForReady = async (
   return { ...last, resets, timedOut: true }
 }
 
-module.exports = { waitForReady, DEFAULT_READY_OPTS }
+module.exports = { waitForReady }

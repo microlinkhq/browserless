@@ -55,6 +55,13 @@ test('times out when the page never settles (height keeps growing)', async t => 
   t.true(r.timedOut)
 })
 
+test('fails fast when `timeout` is missing instead of returning a NaN deadline', async t => {
+  const page = scriptedPage([READY])
+  await t.throwsAsync(() => waitForReady(page, { quietMs: 40, poll: 10 }), {
+    instanceOf: TypeError
+  })
+})
+
 test('an imageless page is ready on height/readyState quiet alone', async t => {
   const s = { height: 800, images: 0, decoded: 0, complete: true }
   const page = scriptedPage([s, s, s, s, s])
