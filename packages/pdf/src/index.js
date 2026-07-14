@@ -22,6 +22,11 @@ const PDF_DEFAULT_OPTS = {
   waitUntil: 'auto'
 }
 
+// Share of the action budget the readiness gate may consume in `auto` mode. The
+// remainder is reserved for the blank-SPA screenshot poll to re-wait, so the
+// gate can't starve the fallback while total prepare stays within one `timeout`.
+const READY_BUDGET_RATIO = 0.5
+
 const getMargin = unit => {
   if (!unit) return unit
   if (typeof unit === 'object') return unit
@@ -99,8 +104,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       // Cheap, navigation-tolerant readiness — no screenshots. Resolves once the
       // page is visually quiet (height stable, images decoded, load complete),
       // absorbing the client-side re-navigation that makes a screenshot poll
-      // throw `Execution context was destroyed`.
-      const ready = await waitForReady(page, { timeout })
+      // throw `Execution context was destroyed`. Capped at a share of the budget
+      // so a slow gate still leaves the blank-SPA poll room to re-wait.
+      const ready = await waitForReady(page, { timeout: Math.round(timeout * READY_BUDGET_RATIO) })
       debug('ready', { ...ready, duration: elapsed() })
 
       // Fast path: the page settled with real painted content — decoded images
