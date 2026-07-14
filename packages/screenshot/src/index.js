@@ -109,6 +109,14 @@ const waitForElement = async (page, element) => {
   return screenshotOpts
 }
 
+const SCREENSHOT_DEFAULT_OPTS = {
+  codeScheme: 'atom-dark',
+  overlay: {},
+  waitUntil: 'auto',
+  waitForDom: DEFAULT_WAIT_FOR_DOM,
+  isPageReady: defaultIsPageReady
+}
+
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
@@ -116,11 +124,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
     return async (
       url,
       {
-        codeScheme = 'atom-dark',
-        overlay: overlayOpts = {},
-        waitUntil = 'auto',
-        waitForDom = DEFAULT_WAIT_FOR_DOM,
-        isPageReady = defaultIsPageReady,
+        codeScheme = SCREENSHOT_DEFAULT_OPTS.codeScheme,
+        overlay: overlayOpts = SCREENSHOT_DEFAULT_OPTS.overlay,
+        waitUntil = SCREENSHOT_DEFAULT_OPTS.waitUntil,
+        waitForDom = SCREENSHOT_DEFAULT_OPTS.waitForDom,
+        isPageReady = SCREENSHOT_DEFAULT_OPTS.isPageReady,
         ...opts
       } = {}
     ) => {
@@ -269,4 +277,4 @@ module.exports.captureWithNavigationRetry = captureWithNavigationRetry
 module.exports.isWhiteScreenshot = isWhiteScreenshot
 module.exports.waitForDomStability = waitForDomStability
 module.exports.resolveWaitForDom = resolveWaitForDom
-module.exports.DEFAULT_WAIT_FOR_DOM = DEFAULT_WAIT_FOR_DOM
+module.exports.SCREENSHOT_DEFAULT_OPTS = SCREENSHOT_DEFAULT_OPTS
