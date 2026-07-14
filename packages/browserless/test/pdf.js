@@ -13,6 +13,23 @@ const noWhiteScreenshot = fs.readFileSync(
   path.resolve(__dirname, '../../screenshot/test/fixtures/no-white-5k.png')
 )
 
+// `waitUntilAuto` runs two in-page evaluates: `waitForDomStability` (invoked
+// with an options arg) and the readiness `snapshot` (invoked with none). This
+// helper answers the first by recording its arg, and the second with a scripted
+// paint snapshot. `imageless` (no decoded images) keeps `waitForReady` off its
+// fast path so the white-screen poll still runs.
+const scriptEvaluate = (snapshot, onDomStability) => async (_fn, args) => {
+  if (args !== undefined) {
+    onDomStability(args)
+    return { status: 'idle' }
+  }
+  return snapshot
+}
+
+const IMAGELESS_READY = { height: 800, images: 0, decoded: 0, complete: true }
+const PAINTED_READY = { height: 2000, images: 3, decoded: 3, complete: true }
+const viewport = () => ({ width: 1280, height: 720 })
+
 test('waitUntil auto should generate final pdf once', async t => {
   let screenshotCalls = 0
   let pdfCalls = 0
@@ -20,11 +37,9 @@ test('waitUntil auto should generate final pdf once', async t => {
   let domStabilityArgs
 
   const page = {
+    viewport,
     screenshot: async () => (screenshotCalls++ === 0 ? whiteScreenshot : noWhiteScreenshot),
-    evaluate: async (_fn, args) => {
-      domStabilityArgs = args
-      return { status: 'idle' }
-    },
+    evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
     pdf: async () => {
       pdfCalls += 1
       return Buffer.from(`pdf-${pdfCalls}`)
@@ -58,11 +73,9 @@ test('waitUntil auto should honor custom waitForDom', async t => {
   let domStabilityArgs
 
   const page = {
+    viewport,
     screenshot: async () => noWhiteScreenshot,
-    evaluate: async (_fn, args) => {
-      domStabilityArgs = args
-      return { status: 'idle' }
-    },
+    evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
     pdf: async () => Buffer.from('pdf')
   }
 
@@ -88,8 +101,9 @@ test('retries pdf generation when navigation destroys the execution context', as
   let waitUntilAutoCalls = 0
 
   const page = {
+    viewport,
     screenshot: async () => noWhiteScreenshot,
-    evaluate: async () => ({ status: 'idle' }),
+    evaluate: scriptEvaluate(IMAGELESS_READY, () => {}),
     pdf: async () => {
       if (pdfCalls++ === 0) {
         throw new Error('Execution context was destroyed, most likely because of a navigation.')
@@ -114,4 +128,36 @@ test('retries pdf generation when navigation destroys the execution context', as
   t.deepEqual(buffer, Buffer.from('pdf-ok'))
   t.is(pdfCalls, 2)
   t.is(waitUntilAutoCalls, 1)
+})
+
+test('waitUntil auto skips the screenshot poll for painted content', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    viewport,
+    screenshot: async () => {
+      screenshotCalls += 1
+      return whiteScreenshot
+    },
+    evaluate: scriptEvaluate(PAINTED_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = async (page, opts = {}) => {
+    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
+    return { response: {} }
+  }
+
+  goto.timeouts = { action: () => 100000 }
+  goto.waitUntilAuto = async () => {}
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  t.is(screenshotCalls, 0)
+  t.is(pdfCalls, 1)
 })
