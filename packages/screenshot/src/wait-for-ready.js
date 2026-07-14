@@ -29,6 +29,9 @@ const snapshot = () => {
 
 const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) => {
   if (!Number.isFinite(timeout)) throw new TypeError('timeout must be a finite number')
+  // The quiet window must fit within the budget with room to observe it, or the
+  // gate could never satisfy its own requirement and would always time out.
+  quietMs = Math.min(quietMs, Math.floor(timeout / 2))
   const deadline = Date.now() + timeout
   let lastHeight = -1
   let quietSince = 0

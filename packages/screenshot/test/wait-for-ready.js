@@ -46,6 +46,14 @@ test('navigation-tolerant: a destroyed context resets the quiet window, then res
   t.is(r.height, 1000)
 })
 
+test('clamps the quiet window to the budget so a tiny timeout still resolves', async t => {
+  const page = scriptedPage([READY, READY, READY, READY, READY, READY])
+  // quietMs (5000) far exceeds timeout (300): without clamping, the gate could
+  // never observe 5s of quiet within a 300ms budget and would always time out.
+  const r = await waitForReady(page, { timeout: 300, quietMs: 5000, poll: 10 })
+  t.false(r.timedOut)
+})
+
 test('a non-navigation evaluate error surfaces instead of spinning to a timeout', async t => {
   const boom = new Error('Evaluation failed: ReferenceError: snapshot is not defined')
   const page = scriptedPage([READY, boom])
