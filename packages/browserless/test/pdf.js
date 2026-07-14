@@ -26,8 +26,11 @@ const scriptEvaluate = (snapshot, onDomStability) => async (_fn, args) => {
   return snapshot
 }
 
-const IMAGELESS_READY = { height: 800, images: 0, decoded: 0, complete: true }
-const PAINTED_READY = { height: 2000, images: 3, decoded: 3, complete: true }
+const IMAGELESS_READY = { height: 800, images: 0, decoded: 0, painted: 0, complete: true }
+const PAINTED_READY = { height: 2000, images: 3, decoded: 3, painted: 3, complete: true }
+// A blank shell: an image decoded (e.g. a tracking pixel) but nothing visibly
+// painted, in a document taller than the viewport.
+const PIXEL_ONLY_READY = { height: 2000, images: 1, decoded: 1, painted: 0, complete: true }
 const viewport = () => ({ width: 1280, height: 720 })
 
 test('waitUntil auto should generate final pdf once', async t => {
@@ -162,6 +165,40 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
   t.is(pdfCalls, 1)
 })
 
+test('waitUntil auto: a decoded tracking pixel does not trip the painted fast path', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    viewport,
+    screenshot: async () => {
+      screenshotCalls += 1
+      return noWhiteScreenshot
+    },
+    evaluate: scriptEvaluate(PIXEL_ONLY_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = async (page, opts = {}) => {
+    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
+    return { response: {} }
+  }
+
+  goto.timeouts = { action: () => 100000 }
+  goto.waitUntilAuto = async () => {}
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  // Fast path skipped: the white-screen check still runs even though an image
+  // decoded, because nothing was visibly painted.
+  t.is(screenshotCalls, 1)
+  t.is(pdfCalls, 1)
+})
+
 test('waitUntil auto: a timed-out gate does not take the painted fast path', async t => {
   let screenshotCalls = 0
   let pdfCalls = 0
@@ -177,7 +214,7 @@ test('waitUntil auto: a timed-out gate does not take the painted fast path', asy
     },
     evaluate: async (_fn, args) => {
       if (args !== undefined) return { status: 'idle' }
-      return { height: (height += 100), images: 3, decoded: 3, complete: true }
+      return { height: (height += 100), images: 3, decoded: 3, painted: 3, complete: true }
     },
     pdf: async () => {
       pdfCalls += 1

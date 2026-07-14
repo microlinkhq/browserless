@@ -109,12 +109,13 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       const ready = await waitForReady(page, { timeout: Math.round(timeout * READY_BUDGET_RATIO) })
       debug('ready', { ...ready, duration: elapsed() })
 
-      // Fast path: the page settled with real painted content — decoded images
-      // in a document taller than the viewport can't be a blank shell, so skip
-      // the screenshot poll. A gate that timed out never settled, so don't trust
-      // its partial snapshot: fall through to the blank check.
+      // Fast path: the page settled with real painted content — a visibly
+      // rendered image (not a tracking pixel) in a document taller than the
+      // viewport can't be a blank shell, so skip the screenshot poll. A gate
+      // that timed out never settled, so don't trust its partial snapshot: fall
+      // through to the blank check.
       const viewportHeight = (page.viewport() || {}).height || 0
-      if (!ready.timedOut && ready.decoded > 0 && ready.height > viewportHeight) return
+      if (!ready.timedOut && ready.painted > 0 && ready.height > viewportHeight) return
 
       // Otherwise fall back to the screenshot poll — re-wait while the first
       // paint is still blank — to keep the blank-SPA protection. The page has

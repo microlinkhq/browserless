@@ -11,18 +11,26 @@
 const { setTimeout: sleep } = require('node:timers/promises')
 const { isContextDestroyed } = require('@browserless/errors')
 
-// Evaluated in-page: a cheap snapshot of the paint/settle signals.
+// Evaluated in-page: a cheap snapshot of the paint/settle signals. `decoded`
+// counts every loaded image (the load-settled signal); `painted` counts only
+// images rendered at a visible size — a 16×16 box or larger — so a lone
+// tracking pixel or 1×1 beacon can't pass for real content.
 const snapshot = () => {
   const images = document.images
   let decoded = 0
+  let painted = 0
   for (let i = 0; i < images.length; i++) {
     const img = images[i]
-    if (img.complete && img.naturalWidth > 0) decoded++
+    if (!img.complete || img.naturalWidth === 0) continue
+    decoded++
+    const { width, height } = img.getBoundingClientRect()
+    if (width * height >= 256) painted++
   }
   return {
     height: document.documentElement.scrollHeight,
     images: images.length,
     decoded,
+    painted,
     complete: document.readyState === 'complete'
   }
 }
@@ -36,7 +44,7 @@ const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) =
   let lastHeight = -1
   let quietSince = 0
   let resets = 0
-  let last = { height: 0, images: 0, decoded: 0, complete: false }
+  let last = { height: 0, images: 0, decoded: 0, painted: 0, complete: false }
 
   while (Date.now() < deadline) {
     let snap
