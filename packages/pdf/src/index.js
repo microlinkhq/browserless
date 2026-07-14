@@ -1,16 +1,25 @@
 'use strict'
 
 const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
+const debug = require('debug-logfmt')('browserless:pdf')
+const createGoto = require('@browserless/goto')
 const pReflect = require('p-reflect')
+
 const {
   captureWithNavigationRetry,
   isWhiteScreenshot,
   waitForDomStability,
   resolveWaitForDom,
-  DEFAULT_WAIT_FOR_DOM
+  SCREENSHOT_DEFAULT_OPTS
 } = require('@browserless/screenshot')
-const debug = require('debug-logfmt')('browserless:pdf')
-const createGoto = require('@browserless/goto')
+
+const PDF_DEFAULT_OPTS = {
+  waitForDom: SCREENSHOT_DEFAULT_OPTS.waitForDom,
+  margin: '0.35cm',
+  scale: 0.65,
+  printBackground: true,
+  waitUntil: 'auto'
+}
 
 const getMargin = unit => {
   if (!unit) return unit
@@ -26,83 +35,97 @@ const getMargin = unit => {
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
-  return function pdf (page) {
-    return async (
-      url,
-      {
-        margin = '0.35cm',
-        scale = 0.65,
-        printBackground = true,
-        waitUntil = 'auto',
-        waitForDom = DEFAULT_WAIT_FOR_DOM,
-        ...opts
-      } = {}
-    ) => {
-      let pdfBuffer
-      const waitForDomOpts = resolveWaitForDom(waitForDom)
+  // Render an already-prepared page to a PDF buffer. Split out from the load so
+  // a single load can be reused across page-range chunks (microlink-api's
+  // parallel renderer) without re-navigating.
+  const render = (page, opts = {}) => {
+    const {
+      margin = PDF_DEFAULT_OPTS.margin,
+      scale = PDF_DEFAULT_OPTS.scale,
+      printBackground = PDF_DEFAULT_OPTS.printBackground,
+      waitUntil,
+      waitForDom,
+      ...rest
+    } = opts
+    return captureWithNavigationRetry(
+      () => page.pdf({ ...rest, margin: getMargin(margin), printBackground, scale }),
+      { page, goto, timeout: goto.timeouts.action(rest.timeout) }
+    )
+  }
 
-      const generatePdf = page =>
-        captureWithNavigationRetry(
+  // Navigate `page` to `url` and wait until it is ready to print: DOM stability
+  // plus, in `auto` mode, a screenshot poll that re-waits while the first paint
+  // is still blank.
+  const prepare = async (page, url, opts = {}) => {
+    const {
+      margin,
+      scale,
+      printBackground,
+      waitUntil = PDF_DEFAULT_OPTS.waitUntil,
+      waitForDom = PDF_DEFAULT_OPTS.waitForDom,
+      ...rest
+    } = opts
+    const waitForDomOpts = resolveWaitForDom(waitForDom)
+
+    const waitForDomStabilityResult = async page => {
+      if (!waitForDomOpts) return
+
+      const result = await pReflect(page.evaluate(waitForDomStability, waitForDomOpts))
+      debug(
+        'waitForDomStability',
+        result.isRejected
+          ? { ...waitForDomOpts, error: result.reason.message || result.reason }
+          : { ...waitForDomOpts, ...result.value }
+      )
+    }
+
+    if (waitUntil !== 'auto') {
+      await goto(page, { ...rest, url, waitUntil })
+      await waitForDomStabilityResult(page)
+      return
+    }
+
+    await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
+    async function waitUntilAuto (page) {
+      await waitForDomStabilityResult(page)
+      const timeout = goto.timeouts.action(rest.timeout)
+      let isWhite = false
+      let retry = -1
+
+      const timePdf = timeSpan()
+
+      do {
+        ++retry
+        const screenshotTime = timeSpan()
+        const screenshot = await captureWithNavigationRetry(
           () =>
-            page.pdf({
-              ...opts,
-              margin: getMargin(margin),
-              printBackground,
-              scale
+            page.screenshot({
+              ...rest,
+              optimizeForSpeed: true,
+              type: 'jpeg',
+              quality: 30
             }),
-          { page, goto, timeout: goto.timeouts.action(opts.timeout) }
+          { page, goto, timeout }
         )
+        isWhite = await isWhiteScreenshot(screenshot)
+        if (isWhite) await goto.waitUntilAuto(page, { timeout: rest.timeout })
+        debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
+      } while (isWhite && timePdf() < timeout)
 
-      const waitForDomStabilityResult = async page => {
-        if (!waitForDomOpts) return
-
-        const result = await pReflect(page.evaluate(waitForDomStability, waitForDomOpts))
-        debug(
-          'waitForDomStability',
-          result.isRejected
-            ? { ...waitForDomOpts, error: result.reason.message || result.reason }
-            : { ...waitForDomOpts, ...result.value }
-        )
-      }
-
-      if (waitUntil !== 'auto') {
-        await goto(page, { ...opts, url, waitUntil })
-        await waitForDomStabilityResult(page)
-        pdfBuffer = await generatePdf(page)
-      } else {
-        await goto(page, { ...opts, url, waitUntil, waitUntilAuto })
-        async function waitUntilAuto (page) {
-          await waitForDomStabilityResult(page)
-          const timeout = goto.timeouts.action(opts.timeout)
-          let isWhite = false
-          let retry = -1
-
-          const timePdf = timeSpan()
-
-          do {
-            ++retry
-            const screenshotTime = timeSpan()
-            const screenshot = await captureWithNavigationRetry(
-              () =>
-                page.screenshot({
-                  ...opts,
-                  optimizeForSpeed: true,
-                  type: 'jpeg',
-                  quality: 30
-                }),
-              { page, goto, timeout }
-            )
-            isWhite = await isWhiteScreenshot(screenshot)
-            if (isWhite) await goto.waitUntilAuto(page, { timeout: opts.timeout })
-            debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
-          } while (isWhite && timePdf() < timeout)
-
-          debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(timePdf()) })
-        }
-        pdfBuffer = await generatePdf(page)
-      }
-
-      return pdfBuffer
+      debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(timePdf()) })
     }
   }
+
+  const pdf =
+    page =>
+      async (url, opts = {}) => {
+        await prepare(page, url, opts)
+        return render(page, opts)
+      }
+
+  pdf.prepare = prepare
+  pdf.render = render
+  return pdf
 }
+
+module.exports.DEFAULT_OPTS = PDF_DEFAULT_OPTS
