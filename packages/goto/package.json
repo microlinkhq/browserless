@@ -43,8 +43,7 @@
   },
   "devDependencies": {
     "@browserless/test": "workspace:*",
-    "ava": "5",
-    "p-wait-for": "3"
+    "ava": "5"
   },
   "engines": {
     "node": ">= 24"

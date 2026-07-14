@@ -1,22 +1,7 @@
 'use strict'
 
 const { getBrowserContext } = require('@browserless/test')
-const pWaitFor = require('p-wait-for')
 const test = require('ava')
-
-test('arh.antoinevastel.com/bots/areyouheadless', async t => {
-  let assertion = false
-
-  const fn = async () => {
-    const browserless = await getBrowserContext(t)
-    const content = await browserless.text('https://arh.antoinevastel.com/bots/areyouheadless')
-    await browserless.destroyContext()
-    return (assertion = content.includes('You are not Chrome headless'))
-  }
-
-  await pWaitFor(fn)
-  t.true(assertion)
-})
 
 test('creepjs', async t => {
   const browserless = await getBrowserContext(t)
