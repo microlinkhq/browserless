@@ -10,6 +10,7 @@ const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
 const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require('./wait-for-dom')
+const { waitForReady, DEFAULT_READY_OPTS } = require('./wait-for-ready')
 
 const timeSpan = require('@kikobeats/time-span')()
 
@@ -277,4 +278,6 @@ module.exports.captureWithNavigationRetry = captureWithNavigationRetry
 module.exports.isWhiteScreenshot = isWhiteScreenshot
 module.exports.waitForDomStability = waitForDomStability
 module.exports.resolveWaitForDom = resolveWaitForDom
+module.exports.waitForReady = waitForReady
+module.exports.DEFAULT_READY_OPTS = DEFAULT_READY_OPTS
 module.exports.SCREENSHOT_DEFAULT_OPTS = SCREENSHOT_DEFAULT_OPTS

@@ -9,6 +9,7 @@ const {
   captureWithNavigationRetry,
   isWhiteScreenshot,
   waitForDomStability,
+  waitForReady,
   resolveWaitForDom,
   SCREENSHOT_DEFAULT_OPTS
 } = require('@browserless/screenshot')
@@ -54,8 +55,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   }
 
   // Navigate `page` to `url` and wait until it is ready to print: DOM stability
-  // plus, in `auto` mode, a screenshot poll that re-waits while the first paint
-  // is still blank.
+  // plus, in `auto` mode, a navigation-tolerant readiness gate. Only a page that
+  // settles still-blank falls back to the (expensive, navigation-fragile)
+  // screenshot poll.
   const prepare = async (page, url, opts = {}) => {
     const {
       margin,
@@ -89,11 +91,34 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     async function waitUntilAuto (page) {
       await waitForDomStabilityResult(page)
       const timeout = goto.timeouts.action(rest.timeout)
-      let isWhite = false
+
+      // Cheap, navigation-tolerant readiness — no screenshots. Resolves once the
+      // page is visually quiet (height stable, images decoded, load complete),
+      // absorbing the client-side re-navigation that makes a screenshot poll
+      // throw `Execution context was destroyed`.
+      const readyTime = timeSpan()
+      const ready = await waitForReady(page, { timeout })
+      debug('ready', { ...ready, duration: readyTime() })
+
+      // Fast path: real painted content — decoded images in a document taller
+      // than the viewport can't be a blank shell, so skip the screenshot poll.
+      const viewportHeight = (page.viewport() || {}).height || 0
+      if (ready.decoded > 0 && ready.height > viewportHeight) return
+
+      // Otherwise a single white-screen check, now that the page has settled (so
+      // it won't race a navigation). A genuinely blank page falls back to the
+      // original screenshot poll to keep the blank-SPA protection.
+      const shot = await pReflect(
+        captureWithNavigationRetry(
+          () => page.screenshot({ ...rest, optimizeForSpeed: true, type: 'jpeg', quality: 30 }),
+          { page, goto, timeout }
+        )
+      )
+      if (shot.isFulfilled && !(await isWhiteScreenshot(shot.value))) return
+
+      let isWhite = true
       let retry = -1
-
       const timePdf = timeSpan()
-
       do {
         ++retry
         const screenshotTime = timeSpan()
