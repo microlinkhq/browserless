@@ -161,3 +161,41 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
   t.is(screenshotCalls, 0)
   t.is(pdfCalls, 1)
 })
+
+test('waitUntil auto: a timed-out gate does not take the painted fast path', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+  let height = 1000
+
+  // Never settles (height keeps growing), so the gate times out while still
+  // reporting painted content. The fast path must be skipped and the poll run.
+  const page = {
+    viewport,
+    screenshot: async () => {
+      screenshotCalls += 1
+      return noWhiteScreenshot
+    },
+    evaluate: async (_fn, args) => {
+      if (args !== undefined) return { status: 'idle' }
+      return { height: (height += 100), images: 3, decoded: 3, complete: true }
+    },
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = async (page, opts = {}) => {
+    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
+    return { response: {} }
+  }
+
+  goto.timeouts = { action: () => 300 }
+  goto.waitUntilAuto = async () => {}
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 300 })
+
+  t.true(screenshotCalls >= 1)
+  t.is(pdfCalls, 1)
+})
