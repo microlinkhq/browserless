@@ -13,9 +13,12 @@ const { isContextDestroyed } = require('@browserless/errors')
 
 // Evaluated in-page: a cheap snapshot of the paint/settle signals. `decoded`
 // counts every loaded image (the load-settled signal); `painted` counts only
-// images rendered at a visible size — a 16×16 box or larger — so a lone
-// tracking pixel or 1×1 beacon can't pass for real content.
+// images a screenshot would actually see — decoded, rendered at a visible size
+// (a 16×16 box or larger, so a tracking pixel doesn't count), inside the
+// viewport, and not hidden via CSS — so a blank shell can't pass for content.
 const snapshot = () => {
+  const vw = window.innerWidth || document.documentElement.clientWidth
+  const vh = window.innerHeight || document.documentElement.clientHeight
   const images = document.images
   let decoded = 0
   let painted = 0
@@ -23,8 +26,16 @@ const snapshot = () => {
     const img = images[i]
     if (!img.complete || img.naturalWidth === 0) continue
     decoded++
-    const { width, height } = img.getBoundingClientRect()
-    if (width * height >= 256) painted++
+    const rect = img.getBoundingClientRect()
+    if (rect.width * rect.height < 256) continue
+    if (rect.bottom <= 0 || rect.right <= 0 || rect.top >= vh || rect.left >= vw) continue
+    if (
+      typeof img.checkVisibility === 'function' &&
+      !img.checkVisibility({ visibilityProperty: true, opacityProperty: true })
+    ) {
+      continue
+    }
+    painted++
   }
   return {
     height: document.documentElement.scrollHeight,
