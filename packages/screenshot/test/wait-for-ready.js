@@ -46,6 +46,14 @@ test('navigation-tolerant: a destroyed context resets the quiet window, then res
   t.is(r.height, 1000)
 })
 
+test('a non-navigation evaluate error surfaces instead of spinning to a timeout', async t => {
+  const boom = new Error('Evaluation failed: ReferenceError: snapshot is not defined')
+  const page = scriptedPage([READY, boom])
+  await t.throwsAsync(() => waitForReady(page, { timeout: 2000, quietMs: 40, poll: 10 }), {
+    message: /Evaluation failed/
+  })
+})
+
 test('times out when the page never settles (height keeps growing)', async t => {
   let h = 0
   const page = {

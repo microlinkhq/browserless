@@ -91,14 +91,17 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     async function waitUntilAuto (page) {
       await waitForDomStabilityResult(page)
       const timeout = goto.timeouts.action(rest.timeout)
+      // One action budget shared by the readiness gate and the screenshot poll,
+      // so worst-case prepare stays within a single `timeout` instead of one
+      // per stage.
+      const elapsed = timeSpan()
 
       // Cheap, navigation-tolerant readiness — no screenshots. Resolves once the
       // page is visually quiet (height stable, images decoded, load complete),
       // absorbing the client-side re-navigation that makes a screenshot poll
       // throw `Execution context was destroyed`.
-      const readyTime = timeSpan()
       const ready = await waitForReady(page, { timeout })
-      debug('ready', { ...ready, duration: readyTime() })
+      debug('ready', { ...ready, duration: elapsed() })
 
       // Fast path: the page settled with real painted content — decoded images
       // in a document taller than the viewport can't be a blank shell, so skip
@@ -113,7 +116,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       // non-blank page exits after that single shot without an extra re-wait.
       let isWhite = false
       let retry = -1
-      const timePdf = timeSpan()
       do {
         ++retry
         const screenshotTime = timeSpan()
@@ -130,9 +132,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
         isWhite = await isWhiteScreenshot(screenshot)
         if (isWhite) await goto.waitUntilAuto(page, { timeout: rest.timeout })
         debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
-      } while (isWhite && timePdf() < timeout)
+      } while (isWhite && elapsed() < timeout)
 
-      debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(timePdf()) })
+      debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(elapsed()) })
     }
   }
 

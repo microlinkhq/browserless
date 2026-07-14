@@ -9,6 +9,7 @@
 // continues instead of throwing (SPAs re-commit their own URL after load).
 
 const { setTimeout: sleep } = require('node:timers/promises')
+const { isContextDestroyed } = require('@browserless/errors')
 
 // Evaluated in-page: a cheap snapshot of the paint/settle signals.
 const snapshot = () => {
@@ -27,7 +28,7 @@ const snapshot = () => {
 }
 
 const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) => {
-  if (typeof timeout !== 'number') throw new TypeError('timeout must be a number')
+  if (!Number.isFinite(timeout)) throw new TypeError('timeout must be a finite number')
   const deadline = Date.now() + timeout
   let lastHeight = -1
   let quietSince = 0
@@ -38,9 +39,12 @@ const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) =
     let snap
     try {
       snap = await page.evaluate(snapshot)
-    } catch {
-      // Execution context destroyed by a client-side navigation: reset the
-      // quiet window and keep polling instead of failing the capture.
+    } catch (error) {
+      // Only a client-side navigation tearing down the execution context is
+      // absorbed: reset the quiet window and keep polling. Any other evaluate
+      // failure is a real error and surfaces instead of masquerading as a
+      // timeout.
+      if (!isContextDestroyed(error)) throw error
       resets++
       lastHeight = -1
       quietSince = 0
