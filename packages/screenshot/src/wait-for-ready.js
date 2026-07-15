@@ -11,21 +11,35 @@
 const { setTimeout: sleep } = require('node:timers/promises')
 const { isContextDestroyed } = require('@browserless/errors')
 
-// Evaluated in-page: a cheap snapshot of the paint/settle signals. `decoded`
-// counts every image that finished loading — a broken `<img>` counts too, so it
-// can't stall the settle gate — while `painted` counts only images a screenshot
-// would actually see: successfully decoded, rendered at a visible size (a 16×16
-// box or larger, so a tracking pixel doesn't count), inside the viewport, and
-// not hidden via CSS — so a blank shell can't pass for content.
+// Evaluated in-page: a cheap snapshot of the paint/settle signals. `images`
+// counts only images expected to settle: a lazy image well below the viewport
+// sits outside Chromium's lazy-load fetch threshold and never starts loading
+// without a scroll, so counting it could only stall the gate into its timeout.
+// `decoded` counts every counted image that finished loading — a broken `<img>`
+// counts too, so it can't stall the settle gate — while `painted` counts only
+// images a screenshot would actually see: successfully decoded, rendered at a
+// visible size (a 16×16 box or larger, so a tracking pixel doesn't count),
+// inside the viewport, and not hidden via CSS — so a blank shell can't pass for
+// content.
 const snapshot = () => {
   const vw = window.innerWidth || document.documentElement.clientWidth
   const vh = window.innerHeight || document.documentElement.clientHeight
-  const images = document.images
+  const imgs = document.images
+  let images = 0
   let decoded = 0
   let painted = 0
-  for (let i = 0; i < images.length; i++) {
-    const img = images[i]
-    if (!img.complete) continue
+  for (let i = 0; i < imgs.length; i++) {
+    const img = imgs[i]
+    if (!img.complete) {
+      // Two viewports of headroom stays inside the smallest fetch threshold
+      // Chromium uses for lazy images (~1250px on fast connections), so an
+      // undecoded lazy image within it is loading and worth waiting for;
+      // beyond it, the fetch never starts.
+      if (img.loading === 'lazy' && img.getBoundingClientRect().top > vh * 2) continue
+      images++
+      continue
+    }
+    images++
     decoded++
     if (img.naturalWidth === 0) continue
     const rect = img.getBoundingClientRect()
@@ -41,7 +55,7 @@ const snapshot = () => {
   }
   return {
     height: document.documentElement.scrollHeight,
-    images: images.length,
+    images,
     decoded,
     painted,
     complete: document.readyState === 'complete'

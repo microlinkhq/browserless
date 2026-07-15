@@ -79,3 +79,20 @@ test('broken image: counts as settled (decoded) so it never stalls the gate', as
   t.is(r.decoded, 1)
   t.is(r.painted, 0)
 })
+
+test('below-fold lazy image: excluded from the settle gate so it cannot stall it', async t => {
+  const browserless = await getBrowserContext(t)
+  // 20000px down is beyond every lazy-load fetch threshold Chromium uses, so
+  // the image never starts loading (`complete` stays false forever). The src
+  // is a real HTTP URL: had the exclusion failed and the fetch happened, the
+  // server's HTML reply would error the <img> into `complete`, showing up as
+  // `images: 2, decoded: 2` instead of a timeout.
+  const r = await ready(
+    browserless,
+    `<img src="${PIXEL}" width="300" height="300">` +
+      '<img src="lazy.png" loading="lazy" width="300" height="300" style="position:absolute;top:20000px">'
+  )(t)
+  t.false(r.timedOut)
+  t.is(r.images, 1)
+  t.is(r.decoded, 1)
+})
