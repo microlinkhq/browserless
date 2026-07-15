@@ -111,6 +111,10 @@ const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) =
   // gate could never satisfy its own requirement and would always time out.
   quietMs = Math.min(quietMs, Math.floor(timeout / 2))
   const deadline = Date.now() + timeout
+  // Never sleep past the deadline: with a poll larger than the remaining
+  // budget, a full-length sleep would overshoot the timeout and steal time
+  // from whatever shares the caller's budget (the blank-SPA screenshot poll).
+  const nextPoll = () => sleep(Math.min(poll, Math.max(0, deadline - Date.now())))
   let lastHeight = -1
   let quietSince = 0
   let resets = 0
@@ -138,7 +142,7 @@ const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) =
       resets++
       lastHeight = -1
       quietSince = 0
-      await sleep(poll)
+      await nextPoll()
       continue
     }
 
@@ -154,7 +158,7 @@ const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) =
       lastHeight = snap.height
     }
 
-    await sleep(poll)
+    await nextPoll()
   }
 
   return { ...last, resets, timedOut: true }

@@ -71,6 +71,19 @@ test('times out when the page never settles (height keeps growing)', async t => 
   t.true(r.timedOut)
 })
 
+test('the poll sleep is clamped to the deadline so a huge poll cannot overshoot', async t => {
+  let h = 0
+  const page = {
+    evaluate: async () => ({ height: (h += 100), images: 0, decoded: 0, complete: true })
+  }
+  const start = Date.now()
+  // poll (10s) dwarfs the budget (120ms): an unclamped sleep would hold the
+  // gate ~10s past its deadline, stealing that time from the caller's budget.
+  const r = await waitForReady(page, { timeout: 120, quietMs: 40, poll: 10000 })
+  t.true(r.timedOut)
+  t.true(Date.now() - start < 1000)
+})
+
 test('fails fast when `timeout` is missing instead of returning a NaN deadline', async t => {
   const page = scriptedPage([READY])
   await t.throwsAsync(() => waitForReady(page, { quietMs: 40, poll: 10 }), {

@@ -144,7 +144,10 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
               type: 'jpeg',
               quality: 30
             }),
-          { page, goto, timeout }
+          // The retry loop keeps its own clock, so hand it only what is left
+          // of the shared budget — a fresh full `timeout` here would let one
+          // navigation-racing capture double the worst-case prepare time.
+          { page, goto, timeout: Math.max(0, timeout - elapsed()) }
         )
         isWhite = await isWhiteScreenshot(screenshot)
         if (isWhite) await goto.waitUntilAuto(page, { timeout: rest.timeout })

@@ -245,6 +245,45 @@ test('waitUntil auto: a timed-out gate does not take the painted fast path', asy
   t.is(pdfCalls, 1)
 })
 
+test('the capture retry budget is the remaining action budget, not a fresh one', async t => {
+  let height = 1000
+
+  // Worst case on both stages: the gate never settles (eats its half of the
+  // budget), then every capture races a navigation. The retry loop must give
+  // up when the SHARED budget is spent — handing it a fresh full timeout
+  // would let prepare run ~1.5x the action budget (gate half + full retry).
+  const page = {
+    screenshot: async () => {
+      throw new Error('Execution context was destroyed, most likely because of a navigation.')
+    },
+    evaluate: async fn => {
+      if (fn === waitForDomStability) return { status: 'idle' }
+      return {
+        height: (height += 100),
+        viewport: 720,
+        images: 0,
+        decoded: 0,
+        painted: 0,
+        text: 0,
+        fonts: true,
+        complete: true
+      }
+    },
+    pdf: async () => Buffer.from('pdf')
+  }
+
+  const goto = makeGoto({ action: 2000 })
+
+  const pdf = createPdf({ goto })(page)
+  const start = Date.now()
+  await t.throwsAsync(() => pdf('https://example.com', { waitUntil: 'auto', timeout: 2000 }), {
+    message: /Execution context was destroyed/
+  })
+  // gate ~1000ms + retries bounded by the remaining ~1000ms ≈ 2000ms total;
+  // a fresh per-capture budget would push this to ~3000ms.
+  t.true(Date.now() - start < 2600)
+})
+
 test('waitUntil auto skips the screenshot poll for visible text', async t => {
   let screenshotCalls = 0
   let pdfCalls = 0
