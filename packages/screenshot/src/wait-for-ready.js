@@ -20,7 +20,11 @@ const { isContextDestroyed } = require('@browserless/errors')
 // images a screenshot would actually see: successfully decoded, rendered at a
 // visible size (a 16×16 box or larger, so a tracking pixel doesn't count),
 // inside the viewport, and not hidden via CSS — so a blank shell can't pass for
-// content.
+// content. `text` is the equivalent paint signal for imageless pages: visible
+// characters inside the viewport, counted up to 200 (the threshold consumers
+// rely on), and `fonts` reports whether webfonts finished loading — during a
+// `font-display: block` period text renders invisible, exactly when a capture
+// would be white.
 const snapshot = () => {
   const vw = window.innerWidth || document.documentElement.clientWidth
   const vh = window.innerHeight || document.documentElement.clientHeight
@@ -53,11 +57,42 @@ const snapshot = () => {
     }
     painted++
   }
+  // Counting stops at 200 chars, so a text-heavy page costs a handful of nodes,
+  // not a full DOM walk; only a near-blank shell walks every text node.
+  let text = 0
+  const walker = document.createTreeWalker(
+    document.body || document.documentElement,
+    window.NodeFilter.SHOW_TEXT
+  )
+  while (text < 200) {
+    const node = walker.nextNode()
+    if (!node) break
+    const value = node.nodeValue.trim()
+    if (!value) continue
+    const el = node.parentElement
+    if (!el) continue
+    const tag = el.tagName
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEMPLATE') continue
+    if (
+      typeof el.checkVisibility === 'function' &&
+      !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })
+    ) {
+      continue
+    }
+    const range = document.createRange()
+    range.selectNodeContents(node)
+    const rect = range.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) continue
+    if (rect.bottom <= 0 || rect.right <= 0 || rect.top >= vh || rect.left >= vw) continue
+    text += value.length
+  }
   return {
     height: document.documentElement.scrollHeight,
     images,
     decoded,
     painted,
+    text,
+    fonts: !document.fonts || document.fonts.status === 'loaded',
     complete: document.readyState === 'complete'
   }
 }
@@ -71,7 +106,15 @@ const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) =
   let lastHeight = -1
   let quietSince = 0
   let resets = 0
-  let last = { height: 0, images: 0, decoded: 0, painted: 0, complete: false }
+  let last = {
+    height: 0,
+    images: 0,
+    decoded: 0,
+    painted: 0,
+    text: 0,
+    fonts: false,
+    complete: false
+  }
 
   while (Date.now() < deadline) {
     let snap

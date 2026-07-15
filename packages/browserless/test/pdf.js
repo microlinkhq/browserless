@@ -26,11 +26,49 @@ const scriptEvaluate = (snapshot, onDomStability) => async (_fn, args) => {
   return snapshot
 }
 
-const IMAGELESS_READY = { height: 800, images: 0, decoded: 0, painted: 0, complete: true }
-const PAINTED_READY = { height: 2000, images: 3, decoded: 3, painted: 3, complete: true }
+const IMAGELESS_READY = {
+  height: 800,
+  images: 0,
+  decoded: 0,
+  painted: 0,
+  text: 0,
+  fonts: true,
+  complete: true
+}
+const PAINTED_READY = {
+  height: 2000,
+  images: 3,
+  decoded: 3,
+  painted: 3,
+  text: 0,
+  fonts: true,
+  complete: true
+}
 // A blank shell: an image decoded (e.g. a tracking pixel) but nothing visibly
 // painted, in a document taller than the viewport.
-const PIXEL_ONLY_READY = { height: 2000, images: 1, decoded: 1, painted: 0, complete: true }
+const PIXEL_ONLY_READY = {
+  height: 2000,
+  images: 1,
+  decoded: 1,
+  painted: 0,
+  text: 0,
+  fonts: true,
+  complete: true
+}
+// A text-only article: no images, but enough visible text in the viewport with
+// webfonts loaded — painted content without a single <img>.
+const TEXT_READY = {
+  height: 2000,
+  images: 0,
+  decoded: 0,
+  painted: 0,
+  text: 200,
+  fonts: true,
+  complete: true
+}
+// Same text, but a webfont still loading: during `font-display: block` the
+// text renders invisible, so it must not count as painted.
+const FONT_PENDING_READY = { ...TEXT_READY, fonts: false }
 const viewport = () => ({ width: 1280, height: 720 })
 
 // A `goto` stub that just runs the `waitUntilAuto` hook and reports an action
@@ -200,5 +238,59 @@ test('waitUntil auto: a timed-out gate does not take the painted fast path', asy
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 300 })
 
   t.true(screenshotCalls >= 1)
+  t.is(pdfCalls, 1)
+})
+
+test('waitUntil auto skips the screenshot poll for visible text', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    viewport,
+    screenshot: async () => {
+      screenshotCalls += 1
+      return whiteScreenshot
+    },
+    evaluate: scriptEvaluate(TEXT_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto()
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  t.is(screenshotCalls, 0)
+  t.is(pdfCalls, 1)
+})
+
+test('waitUntil auto: text behind a loading webfont does not trip the fast path', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    viewport,
+    screenshot: async () => {
+      screenshotCalls += 1
+      return noWhiteScreenshot
+    },
+    evaluate: scriptEvaluate(FONT_PENDING_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto()
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  // The text is there but invisible while the font blocks: the white-screen
+  // check must still run.
+  t.is(screenshotCalls, 1)
   t.is(pdfCalls, 1)
 })

@@ -80,6 +80,34 @@ test('broken image: counts as settled (decoded) so it never stalls the gate', as
   t.is(r.painted, 0)
 })
 
+test('text: 200+ visible characters in the viewport count as painted text', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(browserless, `<p>${'lorem ipsum '.repeat(20)}</p>`)(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.true(r.fonts)
+})
+
+test('hidden text does not count toward the text signal', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    `<p style="visibility:hidden">${'lorem ipsum '.repeat(20)}</p>`
+  )(t)
+  t.false(r.timedOut)
+  t.is(r.text, 0)
+})
+
+test('below-viewport text does not count toward the text signal', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    `<p style="position:absolute;top:5000px">${'lorem ipsum '.repeat(20)}</p>`
+  )(t)
+  t.false(r.timedOut)
+  t.is(r.text, 0)
+})
+
 test('below-fold lazy image: excluded from the settle gate so it cannot stall it', async t => {
   const browserless = await getBrowserContext(t)
   // 20000px down is beyond every lazy-load fetch threshold Chromium uses, so

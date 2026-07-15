@@ -27,6 +27,11 @@ const PDF_DEFAULT_OPTS = {
 // gate can't starve the fallback while total prepare stays within one `timeout`.
 const READY_BUDGET_RATIO = 0.5
 
+// Minimum visible characters for the text fast path. Matches the counting cap
+// in `waitForReady`'s snapshot, which stops walking text nodes once reached —
+// raising this above the cap would make the text fast path unreachable.
+const TEXT_PAINTED_MIN = 200
+
 const getMargin = unit => {
   if (!unit) return unit
   if (typeof unit === 'object') return unit
@@ -109,13 +114,16 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       const ready = await waitForReady(page, { timeout: Math.round(timeout * READY_BUDGET_RATIO) })
       debug('ready', { ...ready, duration: elapsed() })
 
-      // Fast path: the page settled with real painted content — a visibly
-      // rendered image (not a tracking pixel) in a document taller than the
-      // viewport can't be a blank shell, so skip the screenshot poll. A gate
-      // that timed out never settled, so don't trust its partial snapshot: fall
-      // through to the blank check.
+      // Fast path: the page settled with real painted content in a document
+      // taller than the viewport — a visibly rendered image (not a tracking
+      // pixel), or enough visible text with webfonts loaded (a pending
+      // `font-display: block` font renders text invisible, exactly when a
+      // capture would be white) — so it can't be a blank shell: skip the
+      // screenshot poll. A gate that timed out never settled, so don't trust
+      // its partial snapshot: fall through to the blank check.
       const viewportHeight = (page.viewport() || {}).height || 0
-      if (!ready.timedOut && ready.painted > 0 && ready.height > viewportHeight) return
+      const painted = ready.painted > 0 || (ready.text >= TEXT_PAINTED_MIN && ready.fonts)
+      if (!ready.timedOut && painted && ready.height > viewportHeight) return
 
       // Otherwise fall back to the screenshot poll — re-wait while the first
       // paint is still blank — to keep the blank-SPA protection. The page has
