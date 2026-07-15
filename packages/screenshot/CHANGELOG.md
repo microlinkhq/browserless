@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.3](https://github.com/microlinkhq/browserless/compare/v13.6.2...v13.6.3) (2026-07-15)
+
+### Bug Fixes
+
+* **pdf:** navigation-tolerant readiness gate; skip screenshot poll for painted pages ([#837](https://github.com/microlinkhq/browserless/issues/837)) ([b599f2e](https://github.com/microlinkhq/browserless/commit/b599f2ee1c0f46c054e96170ad9174979713510e))
+
 ## [13.6.2](https://github.com/microlinkhq/browserless/compare/v13.6.1...v13.6.2) (2026-07-14)
 
 **Note:** Version bump only for package @browserless/screenshot
