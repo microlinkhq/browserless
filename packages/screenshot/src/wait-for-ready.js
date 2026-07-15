@@ -100,7 +100,12 @@ const snapshot = () => {
   }
 }
 
-const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) => {
+// 300ms of held quiet plus one 150ms poll to prove height stability puts the
+// gate's floor at ~450ms. The hold guards against lulls (a page momentarily
+// stable between async chunks); height stability + all images decoded +
+// `readyState === 'complete'` carry most of the settle signal, so a longer
+// hold buys little — below ~300ms it would start trusting coincidences.
+const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) => {
   if (!Number.isFinite(timeout)) throw new TypeError('timeout must be a finite number')
   // The quiet window must fit within the budget with room to observe it, or the
   // gate could never satisfy its own requirement and would always time out.
