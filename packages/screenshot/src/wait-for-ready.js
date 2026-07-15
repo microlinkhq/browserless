@@ -12,10 +12,11 @@ const { setTimeout: sleep } = require('node:timers/promises')
 const { isContextDestroyed } = require('@browserless/errors')
 
 // Evaluated in-page: a cheap snapshot of the paint/settle signals. `decoded`
-// counts every loaded image (the load-settled signal); `painted` counts only
-// images a screenshot would actually see — decoded, rendered at a visible size
-// (a 16×16 box or larger, so a tracking pixel doesn't count), inside the
-// viewport, and not hidden via CSS — so a blank shell can't pass for content.
+// counts every image that finished loading — a broken `<img>` counts too, so it
+// can't stall the settle gate — while `painted` counts only images a screenshot
+// would actually see: successfully decoded, rendered at a visible size (a 16×16
+// box or larger, so a tracking pixel doesn't count), inside the viewport, and
+// not hidden via CSS — so a blank shell can't pass for content.
 const snapshot = () => {
   const vw = window.innerWidth || document.documentElement.clientWidth
   const vh = window.innerHeight || document.documentElement.clientHeight
@@ -24,8 +25,9 @@ const snapshot = () => {
   let painted = 0
   for (let i = 0; i < images.length; i++) {
     const img = images[i]
-    if (!img.complete || img.naturalWidth === 0) continue
+    if (!img.complete) continue
     decoded++
+    if (img.naturalWidth === 0) continue
     const rect = img.getBoundingClientRect()
     if (rect.width * rect.height < 256) continue
     if (rect.bottom <= 0 || rect.right <= 0 || rect.top >= vh || rect.left >= vw) continue

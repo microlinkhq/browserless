@@ -11,6 +11,9 @@ const { waitForReady } = require('..')
 // what distinguishes "painted" is the rendered box, viewport, and visibility.
 const PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC'
+// Valid data-URI syntax, but the payload ("hello") isn't a decodable image, so
+// the <img> finishes loading with an error: complete, naturalWidth 0.
+const BROKEN = 'data:image/png;base64,aGVsbG8='
 
 const html = body =>
   `<!doctype html><html><body style="margin:0;height:3000px">${body}</body></html>`
@@ -66,5 +69,13 @@ test('imageless page: no images, nothing painted', async t => {
   const r = await ready(browserless, '<h1>ok</h1>')(t)
   t.false(r.timedOut)
   t.is(r.images, 0)
+  t.is(r.painted, 0)
+})
+
+test('broken image: counts as settled (decoded) so it never stalls the gate', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(browserless, `<img src="${BROKEN}" width="300" height="300">`)(t)
+  t.false(r.timedOut)
+  t.is(r.decoded, 1)
   t.is(r.painted, 0)
 })
