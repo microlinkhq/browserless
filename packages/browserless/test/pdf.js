@@ -1,5 +1,6 @@
 'use strict'
 
+const { waitForDomStability } = require('@browserless/screenshot')
 const createPdf = require('@browserless/pdf')
 const path = require('path')
 const fs = require('fs')
@@ -13,13 +14,12 @@ const noWhiteScreenshot = fs.readFileSync(
   path.resolve(__dirname, '../../screenshot/test/fixtures/no-white-5k.png')
 )
 
-// `waitUntilAuto` runs two in-page evaluates: `waitForDomStability` (invoked
-// with an options arg) and the readiness `snapshot` (invoked with none). This
-// helper answers the first by recording its arg, and the second with a scripted
-// paint snapshot. `imageless` (no decoded images) keeps `waitForReady` off its
-// fast path so the white-screen poll still runs.
-const scriptEvaluate = (snapshot, onDomStability) => async (_fn, args) => {
-  if (args !== undefined) {
+// `waitUntilAuto` runs two in-page evaluates: `waitForDomStability` and the
+// readiness `snapshot`. Dispatch on function identity — the workspace resolves
+// both packages to the same module instance — so the stub keeps routing
+// correctly even if either evaluate's signature changes.
+const scriptEvaluate = (snapshot, onDomStability) => async (fn, args) => {
+  if (fn === waitForDomStability) {
     onDomStability(args)
     return { status: 'idle' }
   }
@@ -28,6 +28,7 @@ const scriptEvaluate = (snapshot, onDomStability) => async (_fn, args) => {
 
 const IMAGELESS_READY = {
   height: 800,
+  viewport: 720,
   images: 0,
   decoded: 0,
   painted: 0,
@@ -37,6 +38,7 @@ const IMAGELESS_READY = {
 }
 const PAINTED_READY = {
   height: 2000,
+  viewport: 720,
   images: 3,
   decoded: 3,
   painted: 3,
@@ -48,6 +50,7 @@ const PAINTED_READY = {
 // painted, in a document taller than the viewport.
 const PIXEL_ONLY_READY = {
   height: 2000,
+  viewport: 720,
   images: 1,
   decoded: 1,
   painted: 0,
@@ -59,6 +62,7 @@ const PIXEL_ONLY_READY = {
 // webfonts loaded — painted content without a single <img>.
 const TEXT_READY = {
   height: 2000,
+  viewport: 720,
   images: 0,
   decoded: 0,
   painted: 0,
@@ -69,7 +73,6 @@ const TEXT_READY = {
 // Same text, but a webfont still loading: during `font-display: block` the
 // text renders invisible, so it must not count as painted.
 const FONT_PENDING_READY = { ...TEXT_READY, fonts: false }
-const viewport = () => ({ width: 1280, height: 720 })
 
 // A `goto` stub that just runs the `waitUntilAuto` hook and reports an action
 // timeout. `onWaitUntilAuto` observes the blank-SPA re-wait `prepare` triggers.
@@ -90,7 +93,6 @@ test('waitUntil auto should generate final pdf once', async t => {
   let domStabilityArgs
 
   const page = {
-    viewport,
     screenshot: async () => (screenshotCalls++ === 0 ? whiteScreenshot : noWhiteScreenshot),
     evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
     pdf: async () => {
@@ -115,7 +117,6 @@ test('waitUntil auto should honor custom waitForDom', async t => {
   let domStabilityArgs
 
   const page = {
-    viewport,
     screenshot: async () => noWhiteScreenshot,
     evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
     pdf: async () => Buffer.from('pdf')
@@ -134,7 +135,6 @@ test('retries pdf generation when navigation destroys the execution context', as
   let waitUntilAutoCalls = 0
 
   const page = {
-    viewport,
     screenshot: async () => noWhiteScreenshot,
     evaluate: scriptEvaluate(IMAGELESS_READY, () => {}),
     pdf: async () => {
@@ -160,7 +160,6 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
   let pdfCalls = 0
 
   const page = {
-    viewport,
     screenshot: async () => {
       screenshotCalls += 1
       return whiteScreenshot
@@ -186,7 +185,6 @@ test('waitUntil auto: a decoded tracking pixel does not trip the painted fast pa
   let pdfCalls = 0
 
   const page = {
-    viewport,
     screenshot: async () => {
       screenshotCalls += 1
       return noWhiteScreenshot
@@ -217,14 +215,20 @@ test('waitUntil auto: a timed-out gate does not take the painted fast path', asy
   // Never settles (height keeps growing), so the gate times out while still
   // reporting painted content. The fast path must be skipped and the poll run.
   const page = {
-    viewport,
     screenshot: async () => {
       screenshotCalls += 1
       return noWhiteScreenshot
     },
-    evaluate: async (_fn, args) => {
-      if (args !== undefined) return { status: 'idle' }
-      return { height: (height += 100), images: 3, decoded: 3, painted: 3, complete: true }
+    evaluate: async fn => {
+      if (fn === waitForDomStability) return { status: 'idle' }
+      return {
+        height: (height += 100),
+        viewport: 720,
+        images: 3,
+        decoded: 3,
+        painted: 3,
+        complete: true
+      }
     },
     pdf: async () => {
       pdfCalls += 1
@@ -246,7 +250,6 @@ test('waitUntil auto skips the screenshot poll for visible text', async t => {
   let pdfCalls = 0
 
   const page = {
-    viewport,
     screenshot: async () => {
       screenshotCalls += 1
       return whiteScreenshot
@@ -272,7 +275,6 @@ test('waitUntil auto: text behind a loading webfont does not trip the fast path'
   let pdfCalls = 0
 
   const page = {
-    viewport,
     screenshot: async () => {
       screenshotCalls += 1
       return noWhiteScreenshot

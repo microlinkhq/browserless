@@ -29,9 +29,8 @@ const ready = (browserless, body) => {
     return browserless.withPage((page, goto) => async () => {
       await goto(page, { url, waitUntil: 'load', adblock: false, timeout: 5000 })
       const result = await waitForReady(page, { timeout: 5000, quietMs: 100, poll: 50 })
-      const viewportHeight = await page.evaluate(() => window.innerHeight)
       await page.close()
-      return { ...result, viewportHeight }
+      return result
     })()
   }
 }
@@ -42,7 +41,8 @@ test('painted: a visibly rendered image in a tall document', async t => {
   t.false(r.timedOut)
   t.is(r.decoded, 1)
   t.true(r.painted >= 1)
-  t.true(r.height > r.viewportHeight)
+  t.true(r.viewport > 0)
+  t.true(r.height > r.viewport)
 })
 
 test('tracking pixel: decoded but not painted', async t => {

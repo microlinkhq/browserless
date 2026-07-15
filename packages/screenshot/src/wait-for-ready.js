@@ -24,7 +24,9 @@ const { isContextDestroyed } = require('@browserless/errors')
 // characters inside the viewport, counted up to 200 (the threshold consumers
 // rely on), and `fonts` reports whether webfonts finished loading — during a
 // `font-display: block` period text renders invisible, exactly when a capture
-// would be white.
+// would be white. `viewport` is the in-page viewport height, so consumers can
+// compare it against `height` without relying on `page.viewport()`, which is
+// null under `defaultViewport: null`.
 const snapshot = () => {
   const vw = window.innerWidth || document.documentElement.clientWidth
   const vh = window.innerHeight || document.documentElement.clientHeight
@@ -88,6 +90,7 @@ const snapshot = () => {
   }
   return {
     height: document.documentElement.scrollHeight,
+    viewport: vh,
     images,
     decoded,
     painted,
@@ -108,6 +111,7 @@ const waitForReady = async (page, { timeout, quietMs = 600, poll = 150 } = {}) =
   let resets = 0
   let last = {
     height: 0,
+    viewport: 0,
     images: 0,
     decoded: 0,
     painted: 0,
