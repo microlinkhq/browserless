@@ -9,6 +9,7 @@ const {
   captureWithNavigationRetry,
   isWhiteScreenshot,
   waitForDomStability,
+  waitForReady,
   resolveWaitForDom,
   SCREENSHOT_DEFAULT_OPTS
 } = require('@browserless/screenshot')
@@ -20,6 +21,16 @@ const PDF_DEFAULT_OPTS = {
   printBackground: true,
   waitUntil: 'auto'
 }
+
+// Share of the action budget the readiness gate may consume in `auto` mode. The
+// remainder is reserved for the blank-SPA screenshot poll to re-wait, so the
+// gate can't starve the fallback while total prepare stays within one `timeout`.
+const READY_BUDGET_RATIO = 0.5
+
+// Minimum visible characters for the text fast path. Matches the counting cap
+// in `waitForReady`'s snapshot, which stops walking text nodes once reached —
+// raising this above the cap would make the text fast path unreachable.
+const TEXT_PAINTED_MIN = 200
 
 const getMargin = unit => {
   if (!unit) return unit
@@ -54,8 +65,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   }
 
   // Navigate `page` to `url` and wait until it is ready to print: DOM stability
-  // plus, in `auto` mode, a screenshot poll that re-waits while the first paint
-  // is still blank.
+  // plus, in `auto` mode, a navigation-tolerant readiness gate. Only a page that
+  // settles still-blank falls back to the (expensive, navigation-fragile)
+  // screenshot poll.
   const prepare = async (page, url, opts = {}) => {
     const {
       margin,
@@ -89,11 +101,38 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     async function waitUntilAuto (page) {
       await waitForDomStabilityResult(page)
       const timeout = goto.timeouts.action(rest.timeout)
+      // One action budget shared by the readiness gate and the screenshot poll,
+      // so worst-case prepare stays within a single `timeout` instead of one
+      // per stage.
+      const elapsed = timeSpan()
+
+      // Cheap, navigation-tolerant readiness — no screenshots. Resolves once the
+      // page is visually quiet (height stable, images decoded, load complete),
+      // absorbing the client-side re-navigation that makes a screenshot poll
+      // throw `Execution context was destroyed`. Capped at a share of the budget
+      // so a slow gate still leaves the blank-SPA poll room to re-wait.
+      const ready = await waitForReady(page, { timeout: Math.round(timeout * READY_BUDGET_RATIO) })
+      debug('ready', { ...ready, duration: elapsed() })
+
+      // Fast path: the page settled with real painted content in a document
+      // taller than the viewport — a visibly rendered image (not a tracking
+      // pixel), or enough visible text with webfonts loaded (a pending
+      // `font-display: block` font renders text invisible, exactly when a
+      // capture would be white) — so it can't be a blank shell: skip the
+      // screenshot poll. Height and viewport come from the same in-page
+      // snapshot (`page.viewport()` is null under `defaultViewport: null`),
+      // and an unknown viewport skips the fast path rather than dropping the
+      // taller-than-viewport guard. A gate that timed out never settled, so
+      // don't trust its partial snapshot: fall through to the blank check.
+      const painted = ready.painted > 0 || (ready.text >= TEXT_PAINTED_MIN && ready.fonts)
+      if (!ready.timedOut && painted && ready.viewport > 0 && ready.height > ready.viewport) return
+
+      // Otherwise fall back to the screenshot poll — re-wait while the first
+      // paint is still blank — to keep the blank-SPA protection. The page has
+      // already settled, so the first capture won't race a navigation, and a
+      // non-blank page exits after that single shot without an extra re-wait.
       let isWhite = false
       let retry = -1
-
-      const timePdf = timeSpan()
-
       do {
         ++retry
         const screenshotTime = timeSpan()
@@ -105,14 +144,17 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
               type: 'jpeg',
               quality: 30
             }),
-          { page, goto, timeout }
+          // The retry loop keeps its own clock, so hand it only what is left
+          // of the shared budget — a fresh full `timeout` here would let one
+          // navigation-racing capture double the worst-case prepare time.
+          { page, goto, timeout: Math.max(0, timeout - elapsed()) }
         )
         isWhite = await isWhiteScreenshot(screenshot)
         if (isWhite) await goto.waitUntilAuto(page, { timeout: rest.timeout })
         debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
-      } while (isWhite && timePdf() < timeout)
+      } while (isWhite && elapsed() < timeout)
 
-      debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(timePdf()) })
+      debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(elapsed()) })
     }
   }
 

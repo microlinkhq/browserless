@@ -1,5 +1,6 @@
 'use strict'
 
+const { waitForDomStability } = require('@browserless/screenshot')
 const createPdf = require('@browserless/pdf')
 const path = require('path')
 const fs = require('fs')
@@ -13,6 +14,78 @@ const noWhiteScreenshot = fs.readFileSync(
   path.resolve(__dirname, '../../screenshot/test/fixtures/no-white-5k.png')
 )
 
+// `waitUntilAuto` runs two in-page evaluates: `waitForDomStability` and the
+// readiness `snapshot`. Dispatch on function identity — the workspace resolves
+// both packages to the same module instance — so the stub keeps routing
+// correctly even if either evaluate's signature changes.
+const scriptEvaluate = (snapshot, onDomStability) => async (fn, args) => {
+  if (fn === waitForDomStability) {
+    onDomStability(args)
+    return { status: 'idle' }
+  }
+  return snapshot
+}
+
+const IMAGELESS_READY = {
+  height: 800,
+  viewport: 720,
+  images: 0,
+  decoded: 0,
+  painted: 0,
+  text: 0,
+  fonts: true,
+  complete: true
+}
+const PAINTED_READY = {
+  height: 2000,
+  viewport: 720,
+  images: 3,
+  decoded: 3,
+  painted: 3,
+  text: 0,
+  fonts: true,
+  complete: true
+}
+// A blank shell: an image decoded (e.g. a tracking pixel) but nothing visibly
+// painted, in a document taller than the viewport.
+const PIXEL_ONLY_READY = {
+  height: 2000,
+  viewport: 720,
+  images: 1,
+  decoded: 1,
+  painted: 0,
+  text: 0,
+  fonts: true,
+  complete: true
+}
+// A text-only article: no images, but enough visible text in the viewport with
+// webfonts loaded — painted content without a single <img>.
+const TEXT_READY = {
+  height: 2000,
+  viewport: 720,
+  images: 0,
+  decoded: 0,
+  painted: 0,
+  text: 200,
+  fonts: true,
+  complete: true
+}
+// Same text, but a webfont still loading: during `font-display: block` the
+// text renders invisible, so it must not count as painted.
+const FONT_PENDING_READY = { ...TEXT_READY, fonts: false }
+
+// A `goto` stub that just runs the `waitUntilAuto` hook and reports an action
+// timeout. `onWaitUntilAuto` observes the blank-SPA re-wait `prepare` triggers.
+const makeGoto = ({ action = 100000, onWaitUntilAuto } = {}) => {
+  const goto = async (page, opts = {}) => {
+    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
+    return { response: {} }
+  }
+  goto.timeouts = { action: () => action }
+  goto.waitUntilAuto = async () => onWaitUntilAuto && onWaitUntilAuto()
+  return goto
+}
+
 test('waitUntil auto should generate final pdf once', async t => {
   let screenshotCalls = 0
   let pdfCalls = 0
@@ -21,28 +94,14 @@ test('waitUntil auto should generate final pdf once', async t => {
 
   const page = {
     screenshot: async () => (screenshotCalls++ === 0 ? whiteScreenshot : noWhiteScreenshot),
-    evaluate: async (_fn, args) => {
-      domStabilityArgs = args
-      return { status: 'idle' }
-    },
+    evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
     pdf: async () => {
       pdfCalls += 1
       return Buffer.from(`pdf-${pdfCalls}`)
     }
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = {
-    action: () => 100000
-  }
-
-  goto.waitUntilAuto = async () => {
-    waitUntilAutoCalls += 1
-  }
+  const goto = makeGoto({ onWaitUntilAuto: () => (waitUntilAutoCalls += 1) })
 
   const pdf = createPdf({ goto })(page)
   const buffer = await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
@@ -59,23 +118,11 @@ test('waitUntil auto should honor custom waitForDom', async t => {
 
   const page = {
     screenshot: async () => noWhiteScreenshot,
-    evaluate: async (_fn, args) => {
-      domStabilityArgs = args
-      return { status: 'idle' }
-    },
+    evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
     pdf: async () => Buffer.from('pdf')
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = {
-    action: () => 100000
-  }
-
-  goto.waitUntilAuto = async () => {}
+  const goto = makeGoto()
 
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', waitForDom: 2500, timeout: 500 })
@@ -89,7 +136,7 @@ test('retries pdf generation when navigation destroys the execution context', as
 
   const page = {
     screenshot: async () => noWhiteScreenshot,
-    evaluate: async () => ({ status: 'idle' }),
+    evaluate: scriptEvaluate(IMAGELESS_READY, () => {}),
     pdf: async () => {
       if (pdfCalls++ === 0) {
         throw new Error('Execution context was destroyed, most likely because of a navigation.')
@@ -98,15 +145,7 @@ test('retries pdf generation when navigation destroys the execution context', as
     }
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = { action: () => 100000 }
-  goto.waitUntilAuto = async () => {
-    waitUntilAutoCalls += 1
-  }
+  const goto = makeGoto({ onWaitUntilAuto: () => (waitUntilAutoCalls += 1) })
 
   const pdf = createPdf({ goto })(page)
   const buffer = await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
@@ -114,4 +153,185 @@ test('retries pdf generation when navigation destroys the execution context', as
   t.deepEqual(buffer, Buffer.from('pdf-ok'))
   t.is(pdfCalls, 2)
   t.is(waitUntilAutoCalls, 1)
+})
+
+test('waitUntil auto skips the screenshot poll for painted content', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      return whiteScreenshot
+    },
+    evaluate: scriptEvaluate(PAINTED_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto()
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  t.is(screenshotCalls, 0)
+  t.is(pdfCalls, 1)
+})
+
+test('waitUntil auto: a decoded tracking pixel does not trip the painted fast path', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      return noWhiteScreenshot
+    },
+    evaluate: scriptEvaluate(PIXEL_ONLY_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto()
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  // Fast path skipped: the white-screen check still runs even though an image
+  // decoded, because nothing was visibly painted.
+  t.is(screenshotCalls, 1)
+  t.is(pdfCalls, 1)
+})
+
+test('waitUntil auto: a timed-out gate does not take the painted fast path', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+  let height = 1000
+
+  // Never settles (height keeps growing), so the gate times out while still
+  // reporting painted content. The fast path must be skipped and the poll run.
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      return noWhiteScreenshot
+    },
+    evaluate: async fn => {
+      if (fn === waitForDomStability) return { status: 'idle' }
+      return {
+        height: (height += 100),
+        viewport: 720,
+        images: 3,
+        decoded: 3,
+        painted: 3,
+        complete: true
+      }
+    },
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto({ action: 300 })
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 300 })
+
+  t.true(screenshotCalls >= 1)
+  t.is(pdfCalls, 1)
+})
+
+test('the capture retry budget is the remaining action budget, not a fresh one', async t => {
+  let height = 1000
+
+  // Worst case on both stages: the gate never settles (eats its half of the
+  // budget), then every capture races a navigation. The retry loop must give
+  // up when the SHARED budget is spent — handing it a fresh full timeout
+  // would let prepare run ~1.5x the action budget (gate half + full retry).
+  const page = {
+    screenshot: async () => {
+      throw new Error('Execution context was destroyed, most likely because of a navigation.')
+    },
+    evaluate: async fn => {
+      if (fn === waitForDomStability) return { status: 'idle' }
+      return {
+        height: (height += 100),
+        viewport: 720,
+        images: 0,
+        decoded: 0,
+        painted: 0,
+        text: 0,
+        fonts: true,
+        complete: true
+      }
+    },
+    pdf: async () => Buffer.from('pdf')
+  }
+
+  const goto = makeGoto({ action: 2000 })
+
+  const pdf = createPdf({ goto })(page)
+  const start = Date.now()
+  await t.throwsAsync(() => pdf('https://example.com', { waitUntil: 'auto', timeout: 2000 }), {
+    message: /Execution context was destroyed/
+  })
+  // gate ~1000ms + retries bounded by the remaining ~1000ms ≈ 2000ms total;
+  // a fresh per-capture budget would push this to ~3000ms.
+  t.true(Date.now() - start < 2600)
+})
+
+test('waitUntil auto skips the screenshot poll for visible text', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      return whiteScreenshot
+    },
+    evaluate: scriptEvaluate(TEXT_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto()
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  t.is(screenshotCalls, 0)
+  t.is(pdfCalls, 1)
+})
+
+test('waitUntil auto: text behind a loading webfont does not trip the fast path', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      return noWhiteScreenshot
+    },
+    evaluate: scriptEvaluate(FONT_PENDING_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto()
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  // The text is there but invisible while the font blocks: the white-screen
+  // check must still run.
+  t.is(screenshotCalls, 1)
+  t.is(pdfCalls, 1)
 })
