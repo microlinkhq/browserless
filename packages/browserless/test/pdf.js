@@ -33,6 +33,18 @@ const PAINTED_READY = { height: 2000, images: 3, decoded: 3, painted: 3, complet
 const PIXEL_ONLY_READY = { height: 2000, images: 1, decoded: 1, painted: 0, complete: true }
 const viewport = () => ({ width: 1280, height: 720 })
 
+// A `goto` stub that just runs the `waitUntilAuto` hook and reports an action
+// timeout. `onWaitUntilAuto` observes the blank-SPA re-wait `prepare` triggers.
+const makeGoto = ({ action = 100000, onWaitUntilAuto } = {}) => {
+  const goto = async (page, opts = {}) => {
+    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
+    return { response: {} }
+  }
+  goto.timeouts = { action: () => action }
+  goto.waitUntilAuto = async () => onWaitUntilAuto && onWaitUntilAuto()
+  return goto
+}
+
 test('waitUntil auto should generate final pdf once', async t => {
   let screenshotCalls = 0
   let pdfCalls = 0
@@ -49,18 +61,7 @@ test('waitUntil auto should generate final pdf once', async t => {
     }
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = {
-    action: () => 100000
-  }
-
-  goto.waitUntilAuto = async () => {
-    waitUntilAutoCalls += 1
-  }
+  const goto = makeGoto({ onWaitUntilAuto: () => (waitUntilAutoCalls += 1) })
 
   const pdf = createPdf({ goto })(page)
   const buffer = await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
@@ -82,16 +83,7 @@ test('waitUntil auto should honor custom waitForDom', async t => {
     pdf: async () => Buffer.from('pdf')
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = {
-    action: () => 100000
-  }
-
-  goto.waitUntilAuto = async () => {}
+  const goto = makeGoto()
 
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', waitForDom: 2500, timeout: 500 })
@@ -115,15 +107,7 @@ test('retries pdf generation when navigation destroys the execution context', as
     }
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = { action: () => 100000 }
-  goto.waitUntilAuto = async () => {
-    waitUntilAutoCalls += 1
-  }
+  const goto = makeGoto({ onWaitUntilAuto: () => (waitUntilAutoCalls += 1) })
 
   const pdf = createPdf({ goto })(page)
   const buffer = await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
@@ -150,13 +134,7 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
     }
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = { action: () => 100000 }
-  goto.waitUntilAuto = async () => {}
+  const goto = makeGoto()
 
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
@@ -182,13 +160,7 @@ test('waitUntil auto: a decoded tracking pixel does not trip the painted fast pa
     }
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = { action: () => 100000 }
-  goto.waitUntilAuto = async () => {}
+  const goto = makeGoto()
 
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
@@ -222,13 +194,7 @@ test('waitUntil auto: a timed-out gate does not take the painted fast path', asy
     }
   }
 
-  const goto = async (page, opts = {}) => {
-    if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
-    return { response: {} }
-  }
-
-  goto.timeouts = { action: () => 300 }
-  goto.waitUntilAuto = async () => {}
+  const goto = makeGoto({ action: 300 })
 
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 300 })
