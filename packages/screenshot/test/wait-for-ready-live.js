@@ -86,6 +86,76 @@ test('text: 200+ visible characters in the viewport count as painted text', asyn
   t.false(r.timedOut)
   t.true(r.text >= 200)
   t.true(r.fonts)
+  t.false(r.covered)
+})
+
+test('covered: an opaque fixed overlay hides painted text', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    `<p>${'lorem ipsum '.repeat(20)}</p>` +
+      '<div style="position:fixed;inset:0;background:#fff;z-index:9999"></div>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.true(r.covered)
+})
+
+test('covered: an opaque fixed overlay hides a painted image', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    `<img src="${PIXEL}" width="300" height="300">` +
+      '<div style="position:fixed;inset:0;background:#fff;z-index:9999"></div>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.painted >= 1)
+  t.true(r.covered)
+})
+
+test('covered: a pointer-events:none overlay is caught by the root-level scan', async t => {
+  const browserless = await getBrowserContext(t)
+  // `elementFromPoint` skips `pointer-events: none` elements, so only the
+  // root-level layer scan can see this one (how fading loaders are styled).
+  const r = await ready(
+    browserless,
+    `<p>${'lorem ipsum '.repeat(20)}</p>` +
+      '<div style="position:fixed;inset:0;background:#fff;z-index:9999;pointer-events:none"></div>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.true(r.covered)
+})
+
+test('not covered: a transparent full-viewport click-catcher', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    `<p>${'lorem ipsum '.repeat(20)}</p>` +
+      '<div style="position:fixed;inset:0;z-index:9999"></div>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.false(r.covered)
+})
+
+test('not covered: a fixed opaque app shell that contains the content', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    '<div style="position:fixed;inset:0;background:#fff;overflow:auto">' +
+      `<p>${'lorem ipsum '.repeat(20)}</p></div>`
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.false(r.covered)
+})
+
+test('white-on-white text does not count toward the text signal', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(browserless, `<p style="color:#fff">${'lorem ipsum '.repeat(20)}</p>`)(t)
+  t.false(r.timedOut)
+  t.is(r.text, 0)
 })
 
 test('hidden text does not count toward the text signal', async t => {

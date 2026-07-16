@@ -114,34 +114,27 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       const ready = await waitForReady(page, { timeout: Math.round(timeout * READY_BUDGET_RATIO) })
       debug('ready', { ...ready, duration: elapsed() })
 
-      const probeScreenshot = () =>
-        captureWithNavigationRetry(
-          () =>
-            page.screenshot({
-              ...rest,
-              optimizeForSpeed: true,
-              type: 'jpeg',
-              quality: 30
-            }),
-          { page, goto, timeout: Math.max(0, timeout - elapsed()) }
-        )
-
       // Fast path: the page settled with real painted content in a document
       // taller than the viewport — a visibly rendered image (not a tracking
       // pixel), or enough visible text with webfonts loaded (a pending
       // `font-display: block` font renders text invisible, exactly when a
-      // capture would be white). Height and viewport come from the same in-page
+      // capture would be white) — and that content is not `covered` by an
+      // opaque viewport-filling layer (a fixed white loading overlay passes
+      // every other DOM signal while a capture stays white): skip the
+      // screenshot poll. Height and viewport come from the same in-page
       // snapshot (`page.viewport()` is null under `defaultViewport: null`),
       // and an unknown viewport skips the fast path rather than dropping the
       // taller-than-viewport guard. A gate that timed out never settled, so
       // don't trust its partial snapshot: fall through to the blank check.
-      // DOM signals alone can't prove a screenshot would be non-white — a fixed
-      // loading overlay or white-on-white text can pass the gate — so take one
-      // cheap probe capture before skipping the poll loop.
       const painted = ready.painted > 0 || (ready.text >= TEXT_PAINTED_MIN && ready.fonts)
-      if (!ready.timedOut && painted && ready.viewport > 0 && ready.height > ready.viewport) {
-        const probe = await probeScreenshot()
-        if (!(await isWhiteScreenshot(probe))) return
+      if (
+        !ready.timedOut &&
+        painted &&
+        !ready.covered &&
+        ready.viewport > 0 &&
+        ready.height > ready.viewport
+      ) {
+        return
       }
 
       // Otherwise fall back to the screenshot poll — re-wait while the first
@@ -153,7 +146,19 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       do {
         ++retry
         const screenshotTime = timeSpan()
-        const screenshot = await probeScreenshot()
+        const screenshot = await captureWithNavigationRetry(
+          () =>
+            page.screenshot({
+              ...rest,
+              optimizeForSpeed: true,
+              type: 'jpeg',
+              quality: 30
+            }),
+          // The retry loop keeps its own clock, so hand it only what is left
+          // of the shared budget — a fresh full `timeout` here would let one
+          // navigation-racing capture double the worst-case prepare time.
+          { page, goto, timeout: Math.max(0, timeout - elapsed()) }
+        )
         isWhite = await isWhiteScreenshot(screenshot)
         if (isWhite) await goto.waitUntilAuto(page, { timeout: rest.timeout })
         debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
