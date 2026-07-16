@@ -162,7 +162,7 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
   const page = {
     screenshot: async () => {
       screenshotCalls += 1
-      return whiteScreenshot
+      return noWhiteScreenshot
     },
     evaluate: scriptEvaluate(PAINTED_READY, () => {}),
     pdf: async () => {
@@ -176,7 +176,8 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
 
-  t.is(screenshotCalls, 0)
+  // One probe capture confirms the paint signal; the poll loop never runs.
+  t.is(screenshotCalls, 1)
   t.is(pdfCalls, 1)
 })
 
@@ -291,7 +292,7 @@ test('waitUntil auto skips the screenshot poll for visible text', async t => {
   const page = {
     screenshot: async () => {
       screenshotCalls += 1
-      return whiteScreenshot
+      return noWhiteScreenshot
     },
     evaluate: scriptEvaluate(TEXT_READY, () => {}),
     pdf: async () => {
@@ -305,8 +306,34 @@ test('waitUntil auto skips the screenshot poll for visible text', async t => {
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
 
-  t.is(screenshotCalls, 0)
+  t.is(screenshotCalls, 1)
   t.is(pdfCalls, 1)
+})
+
+test('waitUntil auto: DOM text under a white overlay does not skip the blank check', async t => {
+  let screenshotCalls = 0
+  let waitUntilAutoCalls = 0
+
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      // Probe and first poll capture are white (overlay); then content shows.
+      if (screenshotCalls <= 2) return whiteScreenshot
+      return noWhiteScreenshot
+    },
+    evaluate: scriptEvaluate(TEXT_READY, () => {}),
+    pdf: async () => Buffer.from('pdf')
+  }
+
+  const goto = makeGoto({ onWaitUntilAuto: () => (waitUntilAutoCalls += 1) })
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  // The gate sees 200+ chars of text, but the probe is white (overlay): the
+  // fast path must fall through to the poll and re-wait.
+  t.is(screenshotCalls, 3)
+  t.is(waitUntilAutoCalls, 1)
 })
 
 test('waitUntil auto: text behind a loading webfont does not trip the fast path', async t => {
