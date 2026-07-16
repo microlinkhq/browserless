@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.4](https://github.com/microlinkhq/browserless/compare/v13.6.3...v13.6.4) (2026-07-16)
+
+### Bug Fixes
+
+* **pdf:** detect covered content in readiness gate, keep zero-screenshot fast path ([#839](https://github.com/microlinkhq/browserless/issues/839)) ([c377fad](https://github.com/microlinkhq/browserless/commit/c377fade76b3f324002a30a106c5873f6f865145)), closes [#837](https://github.com/microlinkhq/browserless/issues/837)
+
 ## [13.6.3](https://github.com/microlinkhq/browserless/compare/v13.6.2...v13.6.3) (2026-07-15)
 
 ### Bug Fixes
