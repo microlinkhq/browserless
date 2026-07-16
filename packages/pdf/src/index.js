@@ -118,14 +118,24 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       // taller than the viewport — a visibly rendered image (not a tracking
       // pixel), or enough visible text with webfonts loaded (a pending
       // `font-display: block` font renders text invisible, exactly when a
-      // capture would be white) — so it can't be a blank shell: skip the
+      // capture would be white) — and that content is not `covered` by an
+      // opaque viewport-filling layer (a fixed white loading overlay passes
+      // every other DOM signal while a capture stays white): skip the
       // screenshot poll. Height and viewport come from the same in-page
       // snapshot (`page.viewport()` is null under `defaultViewport: null`),
       // and an unknown viewport skips the fast path rather than dropping the
       // taller-than-viewport guard. A gate that timed out never settled, so
       // don't trust its partial snapshot: fall through to the blank check.
       const painted = ready.painted > 0 || (ready.text >= TEXT_PAINTED_MIN && ready.fonts)
-      if (!ready.timedOut && painted && ready.viewport > 0 && ready.height > ready.viewport) return
+      if (
+        !ready.timedOut &&
+        painted &&
+        !ready.covered &&
+        ready.viewport > 0 &&
+        ready.height > ready.viewport
+      ) {
+        return
+      }
 
       // Otherwise fall back to the screenshot poll — re-wait while the first
       // paint is still blank — to keep the blank-SPA protection. The page has

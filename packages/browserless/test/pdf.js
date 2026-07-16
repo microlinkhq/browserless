@@ -33,6 +33,7 @@ const IMAGELESS_READY = {
   decoded: 0,
   painted: 0,
   text: 0,
+  covered: false,
   fonts: true,
   complete: true
 }
@@ -43,6 +44,7 @@ const PAINTED_READY = {
   decoded: 3,
   painted: 3,
   text: 0,
+  covered: false,
   fonts: true,
   complete: true
 }
@@ -55,6 +57,7 @@ const PIXEL_ONLY_READY = {
   decoded: 1,
   painted: 0,
   text: 0,
+  covered: false,
   fonts: true,
   complete: true
 }
@@ -67,12 +70,17 @@ const TEXT_READY = {
   decoded: 0,
   painted: 0,
   text: 200,
+  covered: false,
   fonts: true,
   complete: true
 }
 // Same text, but a webfont still loading: during `font-display: block` the
 // text renders invisible, so it must not count as painted.
 const FONT_PENDING_READY = { ...TEXT_READY, fonts: false }
+// Same painted signals, but the content hides behind an opaque fixed overlay
+// (a loading screen): a capture would be white despite the DOM signals.
+const COVERED_TEXT_READY = { ...TEXT_READY, covered: true }
+const COVERED_PAINTED_READY = { ...PAINTED_READY, covered: true }
 
 // A `goto` stub that just runs the `waitUntilAuto` hook and reports an action
 // timeout. `onWaitUntilAuto` observes the blank-SPA re-wait `prepare` triggers.
@@ -176,6 +184,7 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
 
+  // Painted, uncovered content: the poll never runs, zero captures.
   t.is(screenshotCalls, 0)
   t.is(pdfCalls, 1)
 })
@@ -306,6 +315,59 @@ test('waitUntil auto skips the screenshot poll for visible text', async t => {
   await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
 
   t.is(screenshotCalls, 0)
+  t.is(pdfCalls, 1)
+})
+
+test('waitUntil auto: text under an opaque overlay does not skip the blank check', async t => {
+  let screenshotCalls = 0
+  let waitUntilAutoCalls = 0
+
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      // The overlay keeps the first poll capture white; then content shows.
+      if (screenshotCalls === 1) return whiteScreenshot
+      return noWhiteScreenshot
+    },
+    evaluate: scriptEvaluate(COVERED_TEXT_READY, () => {}),
+    pdf: async () => Buffer.from('pdf')
+  }
+
+  const goto = makeGoto({ onWaitUntilAuto: () => (waitUntilAutoCalls += 1) })
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  // The gate sees 200+ chars of text, but it is covered: the fast path must
+  // fall through to the poll and re-wait until the capture is non-white.
+  t.is(screenshotCalls, 2)
+  t.is(waitUntilAutoCalls, 1)
+})
+
+test('waitUntil auto: painted images under an opaque overlay do not skip the blank check', async t => {
+  let screenshotCalls = 0
+  let pdfCalls = 0
+
+  const page = {
+    screenshot: async () => {
+      screenshotCalls += 1
+      return noWhiteScreenshot
+    },
+    evaluate: scriptEvaluate(COVERED_PAINTED_READY, () => {}),
+    pdf: async () => {
+      pdfCalls += 1
+      return Buffer.from('pdf')
+    }
+  }
+
+  const goto = makeGoto()
+
+  const pdf = createPdf({ goto })(page)
+  await pdf('https://example.com', { waitUntil: 'auto', timeout: 500 })
+
+  // Covered content skips the fast path; the poll runs and exits on the first
+  // non-white capture (the overlay may legitimately be an interstitial).
+  t.is(screenshotCalls, 1)
   t.is(pdfCalls, 1)
 })
 
