@@ -22,10 +22,13 @@ const PDF_DEFAULT_OPTS = {
   waitUntil: 'auto'
 }
 
-// Share of the action budget the readiness gate may consume in `auto` mode. The
-// remainder is reserved for the blank-SPA screenshot poll to re-wait, so the
-// gate can't starve the fallback while total prepare stays within one `timeout`.
-const READY_BUDGET_RATIO = 0.5
+// Share of the phase's load allowance the readiness gate may consume in `auto`
+// mode. Pages observed settling in 0.6-3.3s (a hydrating document is the slow
+// end), so a quarter of the allowance — ~3.9s at the default request budget —
+// covers them with margin while keeping the cap well short of the render's
+// share. The gate returns as soon as the page is quiet, so this bounds only a
+// page that never settles.
+const READY_BUDGET_RATIO = 0.25
 
 // Minimum visible characters for the text fast path. Matches the counting cap
 // in `waitForReady`'s snapshot, which stops walking text nodes once reached —
@@ -97,22 +100,34 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       return
     }
 
+    // Surfaced to the caller: a page whose readiness could not be confirmed
+    // (`timedOut`) is a poor one to keep rendering on, so a caller reusing this
+    // load across page-ranges can choose a fresh context instead.
+    let readiness
+
     await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
-    async function waitUntilAuto (page) {
+    return readiness
+
+    async function waitUntilAuto (page, { timeout: autoTimeout } = {}) {
       await waitForDomStabilityResult(page)
       const timeout = goto.timeouts.action(rest.timeout)
-      // One action budget shared by the readiness gate and the screenshot poll,
-      // so worst-case prepare stays within a single `timeout` instead of one
-      // per stage.
-      const elapsed = timeSpan()
 
-      // Cheap, navigation-tolerant readiness — no screenshots. Resolves once the
-      // page is visually quiet (height stable, images decoded, load complete),
-      // absorbing the client-side re-navigation that makes a screenshot poll
-      // throw `Execution context was destroyed`. Capped at a share of the budget
-      // so a slow gate still leaves the blank-SPA poll room to re-wait.
-      const ready = await waitForReady(page, { timeout: Math.round(timeout * READY_BUDGET_RATIO) })
-      debug('ready', { ...ready, duration: elapsed() })
+      // The readiness gate waits for a page to settle — page-load work, not a
+      // small action. Budgeting it from `timeouts.action` (timeout/11) gave it
+      // ~1.2s while a hydrating document needs 2-3s, so it timed out on every
+      // tall page and the zero-capture fast path never fired. Budget it from
+      // the load allowance goto actually assigned to this phase; the gate
+      // returns as soon as the page is quiet, so this is a cap, not a cost.
+      const readyTime = timeSpan()
+      const ready = await waitForReady(page, {
+        timeout: Math.round((autoTimeout || timeout) * READY_BUDGET_RATIO)
+      })
+      readiness = ready
+      debug('ready', { ...ready, duration: readyTime() })
+
+      // The blank-page poll keeps its own action budget, measured from here so
+      // a slow gate cannot starve it.
+      const elapsed = timeSpan()
 
       // Fast path: the page settled with real painted content in a document
       // taller than the viewport — a visibly rendered image (not a tracking
