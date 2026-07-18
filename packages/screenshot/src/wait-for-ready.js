@@ -168,20 +168,17 @@ const snapshot = () => {
     return false
   }
 
-  // Only pages the fast path could trust get the (layout-forcing) cover check.
-  let covered = false
-  if (painted > 0 || text >= 200) {
-    covered = contentPoints.some(coveredAt)
-    // `elementFromPoint` skips `pointer-events: none` elements, exactly how
-    // fading loading overlays are styled — scan root-level layers for one.
-    // Overlays mount as direct children of <body>; a deeper scan would cost a
-    // full styled DOM walk on every poll for a marginal case.
-    if (!covered && document.body) {
-      const layers = document.body.children
-      for (let i = 0; i < layers.length && !covered; i++) {
-        const layer = layers[i]
+  // `elementFromPoint` skips `pointer-events: none` layers — walk each content
+  // sample up its ancestor chain and check siblings for an unrelated opaque
+  // viewport-filling layer (how fading loaders mount inside #root/#app).
+  const coveredBySiblingLayer = ({ el }) => {
+    for (let anchor = el; anchor && anchor !== document.documentElement; anchor = anchor.parentElement) {
+      const parent = anchor.parentElement
+      if (!parent) break
+      for (let i = 0; i < parent.children.length; i++) {
+        const layer = parent.children[i]
+        if (layer === anchor || layer.contains(anchor) || anchor.contains(layer)) continue
         const style = window.getComputedStyle(layer)
-        if (style.pointerEvents !== 'none') continue
         if (
           style.position !== 'fixed' &&
           style.position !== 'absolute' &&
@@ -189,10 +186,16 @@ const snapshot = () => {
         ) {
           continue
         }
-        if (contentPoints.some(point => layer.contains(point.el))) continue
-        if (coversViewport(layer) && isOpaqueLayer(layer)) covered = true
+        if (coversViewport(layer) && isOpaqueLayer(layer)) return true
       }
     }
+    return false
+  }
+
+  // Only pages the fast path could trust get the (layout-forcing) cover check.
+  let covered = false
+  if (painted > 0 || text >= 200) {
+    covered = contentPoints.some(point => coveredAt(point) || coveredBySiblingLayer(point))
   }
 
   return {
