@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.5](https://github.com/microlinkhq/browserless/compare/v13.6.4...v13.6.5) (2026-07-18)
+
+### Bug Fixes
+
+* **pdf:** budget readiness from the load allowance, return it to the caller ([#841](https://github.com/microlinkhq/browserless/issues/841)) ([c7fcf15](https://github.com/microlinkhq/browserless/commit/c7fcf1534ab9444b7dd107ed59c81bde1e780a79))
+
 ## [13.6.4](https://github.com/microlinkhq/browserless/compare/v13.6.3...v13.6.4) (2026-07-16)
 
 ### Bug Fixes
