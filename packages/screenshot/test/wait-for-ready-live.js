@@ -127,6 +127,20 @@ test('covered: a pointer-events:none overlay is caught by the root-level scan', 
   t.true(r.covered)
 })
 
+test('covered: a pointer-events:none overlay nested in #root is caught', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    '<div id="root">' +
+      '<div style="position:fixed;inset:0;background:#fff;z-index:9999;pointer-events:none"></div>' +
+      `<p>${'lorem ipsum '.repeat(20)}</p>` +
+      '</div>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.true(r.covered)
+})
+
 test('not covered: a transparent full-viewport click-catcher', async t => {
   const browserless = await getBrowserContext(t)
   const r = await ready(
