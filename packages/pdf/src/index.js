@@ -120,7 +120,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       // returns as soon as the page is quiet, so this is a cap, not a cost.
       const readyTime = timeSpan()
       const ready = await waitForReady(page, {
-        timeout: Math.round((autoTimeout || timeout) * READY_BUDGET_RATIO)
+        timeout: Math.round((autoTimeout ?? timeout) * READY_BUDGET_RATIO)
       })
       readiness = ready
       debug('ready', { ...ready, duration: readyTime() })
