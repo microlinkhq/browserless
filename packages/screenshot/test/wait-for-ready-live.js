@@ -113,10 +113,10 @@ test('covered: an opaque fixed overlay hides a painted image', async t => {
   t.true(r.covered)
 })
 
-test('covered: a pointer-events:none overlay is caught by the root-level scan', async t => {
+test('covered: a body-level pointer-events:none overlay is caught by the sibling scan', async t => {
   const browserless = await getBrowserContext(t)
   // `elementFromPoint` skips `pointer-events: none` elements, so only the
-  // root-level layer scan can see this one (how fading loaders are styled).
+  // sibling layer scan can see this one (how fading loaders are styled).
   const r = await ready(
     browserless,
     `<p>${'lorem ipsum '.repeat(20)}</p>` +
@@ -139,6 +139,36 @@ test('covered: a pointer-events:none overlay nested in #root is caught', async t
   t.false(r.timedOut)
   t.true(r.text >= 200)
   t.true(r.covered)
+})
+
+test('not covered: a fixed background layer painted behind nested content', async t => {
+  const browserless = await getBrowserContext(t)
+  // A pointer-eventful positioned layer is hit-testable, so it's `coveredAt`'s
+  // job — the sibling scan must ignore it or every fixed page background
+  // (painted *behind* the content) would flag as covering.
+  const r = await ready(
+    browserless,
+    '<div id="root">' +
+      '<div style="position:fixed;inset:0;background:#fff;z-index:-1"></div>' +
+      `<p style="position:relative">${'lorem ipsum '.repeat(20)}</p>` +
+      '</div>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.false(r.covered)
+})
+
+test('not covered: a pointer-events:none opaque layer that contains the content', async t => {
+  const browserless = await getBrowserContext(t)
+  // A layer that paints the counted content paints with it, not over it.
+  const r = await ready(
+    browserless,
+    '<div style="position:fixed;inset:0;background:#fff;pointer-events:none;overflow:auto">' +
+      `<p>${'lorem ipsum '.repeat(20)}</p></div>`
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.false(r.covered)
 })
 
 test('not covered: a transparent full-viewport click-catcher', async t => {

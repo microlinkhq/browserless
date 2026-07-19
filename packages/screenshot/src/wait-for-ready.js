@@ -28,8 +28,9 @@ const { isContextDestroyed } = require('@browserless/errors')
 // exactly when a capture would be white. `covered` reports whether the counted
 // content hides behind an opaque viewport-covering layer (a fixed white
 // loading overlay passes every DOM signal while a capture stays white):
-// hit-testing catches interactive overlays, and a root-level scan catches
-// `pointer-events: none` layers hit-testing can't see. `viewport` is the
+// hit-testing catches interactive overlays, and a sibling scan up each
+// sample's ancestor chain catches `pointer-events: none` layers hit-testing
+// can't see. `viewport` is the
 // in-page viewport height, so consumers can compare it against `height`
 // without relying on `page.viewport()`, which is null under
 // `defaultViewport: null`.
@@ -168,17 +169,30 @@ const snapshot = () => {
     return false
   }
 
-  // `elementFromPoint` skips `pointer-events: none` layers — walk each content
-  // sample up its ancestor chain and check siblings for an unrelated opaque
-  // viewport-filling layer (how fading loaders mount inside #root/#app).
+  // `elementFromPoint` skips `pointer-events: none` elements, exactly how
+  // fading loading overlays are styled — hit-testing can't see them. Walk each
+  // content sample up its ancestor chain and scan siblings at every level for
+  // one (loaders mount as siblings of content inside `#root`/`#app` as often
+  // as directly under `<body>`). The scan stays narrow so ordinary layout
+  // can't trip it: only `pointer-events: none` layers count (anything
+  // hit-testable is already handled by `coveredAt`), and a layer that paints
+  // any counted content paints with it, not over it — a fixed page background
+  // or an opaque app shell must not flag as covering. Levels are shared across
+  // samples so each parent is scanned once per poll.
+  const scannedParents = new Set()
   const coveredBySiblingLayer = ({ el }) => {
-    for (let anchor = el; anchor && anchor !== document.documentElement; anchor = anchor.parentElement) {
+    for (let anchor = el; anchor.parentElement; anchor = anchor.parentElement) {
       const parent = anchor.parentElement
-      if (!parent) break
+      if (scannedParents.has(parent)) continue
+      scannedParents.add(parent)
       for (let i = 0; i < parent.children.length; i++) {
         const layer = parent.children[i]
-        if (layer === anchor || layer.contains(anchor) || anchor.contains(layer)) continue
+        // Rect first: layout is already flushed, so the rect read is cheap,
+        // while `getComputedStyle` resolves per element — and almost every
+        // sibling fails the viewport-cover test.
+        if (!coversViewport(layer)) continue
         const style = window.getComputedStyle(layer)
+        if (style.pointerEvents !== 'none') continue
         if (
           style.position !== 'fixed' &&
           style.position !== 'absolute' &&
@@ -186,7 +200,8 @@ const snapshot = () => {
         ) {
           continue
         }
-        if (coversViewport(layer) && isOpaqueLayer(layer)) return true
+        if (contentPoints.some(point => layer.contains(point.el))) continue
+        if (isOpaqueLayer(layer)) return true
       }
     }
     return false
