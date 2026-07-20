@@ -34,8 +34,12 @@ const { isContextDestroyed } = require('@browserless/errors')
 // without relying on `page.viewport()`, which is null under
 // `defaultViewport: null`.
 const snapshot = () => {
-  const vw = window.innerWidth || document.documentElement.clientWidth
-  const vh = window.innerHeight || document.documentElement.clientHeight
+  // A document that is mid-parse or detached can have a null `documentElement`
+  // (the same state the text walk below guards against), so every dereference
+  // of it in this snapshot goes through `root`.
+  const root = document.documentElement
+  const vw = window.innerWidth || (root ? root.clientWidth : 0)
+  const vh = window.innerHeight || (root ? root.clientHeight : 0)
 
   // Computed colors resolve to `rgb()`/`rgba()`; anything else is unknown.
   const parseColor = value => {
@@ -127,7 +131,7 @@ const snapshot = () => {
   // gate stays conservative and re-polls, rather than failing a render that would
   // otherwise succeed. The same holds mid-walk — a DOM mutating under the walker
   // must not take the capture down with it.
-  const textRoot = document.body || document.documentElement
+  const textRoot = document.body || root
   const walker = textRoot
     ? document.createTreeWalker(textRoot, window.NodeFilter.SHOW_TEXT)
     : { nextNode: () => null }
@@ -206,7 +210,7 @@ const snapshot = () => {
   }
 
   return {
-    height: document.documentElement.scrollHeight,
+    height: root ? root.scrollHeight : 0,
     viewport: vh,
     images,
     decoded,
