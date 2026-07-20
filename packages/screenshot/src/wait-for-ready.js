@@ -34,8 +34,12 @@ const { isContextDestroyed } = require('@browserless/errors')
 // without relying on `page.viewport()`, which is null under
 // `defaultViewport: null`.
 const snapshot = () => {
-  const vw = window.innerWidth || document.documentElement.clientWidth
-  const vh = window.innerHeight || document.documentElement.clientHeight
+  // A document that is mid-parse or detached can have a null `documentElement`
+  // (the same state the text walk below guards against), so every dereference
+  // of it in this snapshot goes through `root`.
+  const root = document.documentElement
+  const vw = window.innerWidth || (root ? root.clientWidth : 0)
+  const vh = window.innerHeight || (root ? root.clientHeight : 0)
 
   // Computed colors resolve to `rgb()`/`rgba()`; anything else is unknown.
   const parseColor = value => {
@@ -121,36 +125,46 @@ const snapshot = () => {
   // Counting stops at 200 chars, so a text-heavy page costs a handful of nodes,
   // not a full DOM walk; only a near-blank shell walks every text node.
   let text = 0
-  const walker = document.createTreeWalker(
-    document.body || document.documentElement,
-    window.NodeFilter.SHOW_TEXT
-  )
-  while (text < 200) {
-    const node = walker.nextNode()
-    if (!node) break
-    const value = node.nodeValue.trim()
-    if (!value) continue
-    const el = node.parentElement
-    if (!el) continue
-    const tag = el.tagName
-    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEMPLATE') continue
-    if (
-      typeof el.checkVisibility === 'function' &&
-      !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })
-    ) {
-      continue
+  // A document that is mid-parse or detached can have neither `body` nor
+  // `documentElement`, and `createTreeWalker` throws on a null root. Text is only
+  // a paint signal, so a count that cannot be taken means "no text seen yet": the
+  // gate stays conservative and re-polls, rather than failing a render that would
+  // otherwise succeed. The same holds mid-walk — a DOM mutating under the walker
+  // must not take the capture down with it.
+  const textRoot = document.body || root
+  const walker = textRoot
+    ? document.createTreeWalker(textRoot, window.NodeFilter.SHOW_TEXT)
+    : { nextNode: () => null }
+  try {
+    while (text < 200) {
+      const node = walker.nextNode()
+      if (!node) break
+      const value = node.nodeValue.trim()
+      if (!value) continue
+      const el = node.parentElement
+      if (!el) continue
+      const tag = el.tagName
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEMPLATE') continue
+      if (
+        typeof el.checkVisibility === 'function' &&
+        !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })
+      ) {
+        continue
+      }
+      const range = document.createRange()
+      range.selectNodeContents(node)
+      const rect = range.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) continue
+      if (rect.bottom <= 0 || rect.right <= 0 || rect.top >= vh || rect.left >= vw) continue
+      // White-on-white (or any color-on-same-color) text passes every geometry
+      // check while a capture shows nothing: don't count it as painted text.
+      const color = parseColor(window.getComputedStyle(el).color)
+      if (color && (color.a < 0.05 || sameColor(color, effectiveBackground(el)))) continue
+      text += value.length
+      samplePoint(el, rect)
     }
-    const range = document.createRange()
-    range.selectNodeContents(node)
-    const rect = range.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) continue
-    if (rect.bottom <= 0 || rect.right <= 0 || rect.top >= vh || rect.left >= vw) continue
-    // White-on-white (or any color-on-same-color) text passes every geometry
-    // check while a capture shows nothing: don't count it as painted text.
-    const color = parseColor(window.getComputedStyle(el).color)
-    if (color && (color.a < 0.05 || sameColor(color, effectiveBackground(el)))) continue
-    text += value.length
-    samplePoint(el, rect)
+  } catch {
+    // Keep whatever was counted before the DOM shifted underneath the walk.
   }
 
   // Is this content sample's paint hidden behind an unrelated opaque,
@@ -196,7 +210,7 @@ const snapshot = () => {
   }
 
   return {
-    height: document.documentElement.scrollHeight,
+    height: root ? root.scrollHeight : 0,
     viewport: vh,
     images,
     decoded,

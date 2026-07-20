@@ -178,6 +178,30 @@ test('below-viewport text does not count toward the text signal', async t => {
   t.is(r.text, 0)
 })
 
+test('no document root: the snapshot degrades to zeros instead of failing the capture', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(html('<h1>ok</h1>'))
+  })
+  const r = await browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false, timeout: 5000 })
+    // The production failure state behind #845: a mid-parse or detached
+    // document exposes neither `body` nor `documentElement`. Every snapshot
+    // dereference of the root must survive it — `createTreeWalker` threw on
+    // the null walker root, and `scrollHeight`/`clientWidth` sit one null
+    // dereference away from the same capture-killing rethrow.
+    await page.evaluate(() => document.removeChild(document.documentElement))
+    const result = await waitForReady(page, { timeout: 5000, quietMs: 100, poll: 50 })
+    await page.close()
+    return result
+  })()
+  t.false(r.timedOut)
+  t.is(r.height, 0)
+  t.is(r.text, 0)
+  t.is(r.painted, 0)
+})
+
 test('below-fold lazy image: excluded from the settle gate so it cannot stall it', async t => {
   const browserless = await getBrowserContext(t)
   // 20000px down is beyond every lazy-load fetch threshold Chromium uses, so
