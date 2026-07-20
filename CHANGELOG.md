@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.7](https://github.com/microlinkhq/browserless/compare/v13.6.6...v13.6.7) (2026-07-20)
+
+### Bug Fixes
+
+* **errors:** treat detached-frame and early-main-frame as retryable ([#846](https://github.com/microlinkhq/browserless/issues/846)) ([3d529b1](https://github.com/microlinkhq/browserless/commit/3d529b189e72e922e5258f5ba8b60189b6710826))
+
 ## [13.6.6](https://github.com/microlinkhq/browserless/compare/v13.6.5...v13.6.6) (2026-07-20)
 
 ### Bug Fixes
