@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.6](https://github.com/microlinkhq/browserless/compare/v13.6.5...v13.6.6) (2026-07-20)
+
+### Bug Fixes
+
+* **screenshot:** never let the text walk fail a capture ([#845](https://github.com/microlinkhq/browserless/issues/845)) ([a6f8db5](https://github.com/microlinkhq/browserless/commit/a6f8db5376b56be0e0aa9835cda35acaa5f4a070))
+
 ## [13.6.5](https://github.com/microlinkhq/browserless/compare/v13.6.4...v13.6.5) (2026-07-18)
 
 ### Bug Fixes
