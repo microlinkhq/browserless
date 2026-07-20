@@ -51,10 +51,10 @@ const getErrorMessage = rawError => {
   return isObject(error) && typeof error.message === 'string' ? error.message : ''
 }
 
-// Whether the error means the page navigated away (the execution context /
-// browser context was torn down mid-operation). These are transient on SPAs
-// that navigate client-side: waiting for navigation to settle and retrying the
-// operation in-place typically succeeds.
+// Whether the error means the page's frame was not in a usable state for the
+// operation — torn down mid-flight (a client-side navigation), or not yet
+// attached. Both are transient on SPAs that navigate after load: waiting for
+// navigation to settle and retrying the operation in-place typically succeeds.
 const isContextDestroyed = rawError => {
   const errorMessage = getErrorMessage(rawError)
   return (
@@ -65,7 +65,14 @@ const isContextDestroyed = rawError => {
     ].some(message => errorMessage.startsWith(message)) ||
     errorMessage.includes('Session closed') ||
     errorMessage.includes('Attempted to use detached Frame') ||
-    errorMessage.includes('Execution context was destroyed')
+    // Chrome's other phrasing of a frame detaching mid-operation (a navigation
+    // committed while an evaluate/print targeting the old frame was in flight).
+    errorMessage.includes('Execution context is not available in detached frame') ||
+    errorMessage.includes('Execution context was destroyed') ||
+    // The inverse race: an operation ran before the page's main frame attached.
+    // The frame arrives once navigation commits, so a settle-and-retry resolves
+    // it; a page that never navigates falls through when the retry budget ends.
+    errorMessage.includes('Requesting main frame too early')
   )
 }
 

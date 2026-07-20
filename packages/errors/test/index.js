@@ -143,6 +143,16 @@ test('isContextDestroyed', t => {
     )
   )
   t.true(errors.isContextDestroyed({ error: { message: 'Execution context was destroyed' } }))
+  // Chrome's other phrasing of a detached frame, carrying the frame URL — seen
+  // in production on SPAs (app.oviond.com) that navigate to a sub-route mid-print.
+  t.true(
+    errors.isContextDestroyed({
+      message:
+        'Execution context is not available in detached frame or worker "https://app.oviond.com/pdf/x"'
+    })
+  )
+  // The inverse race: an operation ran before the main frame attached.
+  t.true(errors.isContextDestroyed({ message: 'Requesting main frame too early!' }))
 
   t.false(errors.isContextDestroyed({ message: 'Evaluation failed: boom' }))
   t.false(errors.isContextDestroyed({ message: 'Navigation timeout of 30000 ms exceeded' }))
