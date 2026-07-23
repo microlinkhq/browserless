@@ -11,6 +11,12 @@ const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
 const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require('./wait-for-dom')
 const { waitForReady, paintSignals } = require('./wait-for-ready')
+const {
+  waitForOverflowHeight,
+  expandOverflow,
+  scrollFullPageToLoadContent,
+  prepareFullDocument
+} = require('./prepare-full-document')
 
 const timeSpan = require('@kikobeats/time-span')()
 
@@ -64,86 +70,6 @@ const waitForImagesOnViewport = page =>
     )
   )
 
-// Walk the page (window, or the tallest overflow scroller when the document
-// itself isn't tall — report viewers / app shells) so lazy sections and
-// intersection-observer fetches actually run before capture/print.
-const scrollFullPageToLoadContent = async (page, timeout) => {
-  const debug = require('debug-logfmt')('browserless:goto')
-  const duration = debug.duration()
-
-  // Most of the budget goes to scrolling: each step needs dwell time for
-  // intersection-observer fetches. A short pre-scroll quiet is enough to avoid
-  // racing a still-mounting shell; the post-scroll quiet waits for skeletons
-  // to be swapped out.
-  const preQuiet = Math.min(500, Math.floor(timeout / 8))
-  const postQuiet = Math.min(Math.floor(timeout / 4), Math.floor((timeout - preQuiet) / 2))
-  const scrollBudget = Math.max(0, timeout - preQuiet - postQuiet)
-
-  if (preQuiet > 0) {
-    const result = await page.evaluate(waitForDomStability, {
-      idle: preQuiet / 2,
-      timeout: preQuiet
-    })
-    duration('waitForDomStability:pre', result)
-  }
-
-  await page.evaluate(
-    scrollBudget =>
-      new Promise(resolve => {
-        const doc = document.scrollingElement || document.documentElement
-        let root = null
-        let pageHeight = doc ? doc.scrollHeight : 0
-        let viewport = window.innerHeight
-
-        // Document isn't scrollable: prefer the tallest overflow scroller
-        // so below-fold lazy sections still hydrate.
-        if (pageHeight <= viewport + 1 && document.body) {
-          let best = null
-          for (const el of document.body.querySelectorAll('*')) {
-            if (el.scrollHeight <= el.clientHeight + 20) continue
-            const { overflowY } = window.getComputedStyle(el)
-            if (overflowY !== 'auto' && overflowY !== 'scroll') continue
-            if (!best || el.scrollHeight > best.scrollHeight) best = el
-          }
-          if (best) {
-            root = best
-            pageHeight = best.scrollHeight
-            viewport = best.clientHeight
-          }
-        }
-
-        let currentScrollPosition = 0
-        const scrollStep = Math.max(1, Math.floor(viewport * 0.8))
-        const totalSteps = Math.max(1, Math.ceil(pageHeight / scrollStep))
-        // Floor dwell so lazy sections actually fetch; if the budget can't
-        // cover every step at that pace, steps stretch to fit the budget.
-        const stepDelay = Math.max(400, Math.floor(scrollBudget / totalSteps))
-        const reset = () => {
-          window.scrollTo(0, 0)
-          if (root) root.scrollTop = 0
-          resolve()
-        }
-        const scrollNext = () => {
-          if (currentScrollPosition >= pageHeight) return reset()
-          if (root) root.scrollBy(0, scrollStep)
-          else window.scrollBy(0, scrollStep)
-          currentScrollPosition += scrollStep
-          setTimeout(scrollNext, stepDelay)
-        }
-        scrollNext()
-      }),
-    scrollBudget
-  )
-
-  if (postQuiet > 0) {
-    const result = await page.evaluate(waitForDomStability, {
-      idle: Math.min(300, postQuiet / 2),
-      timeout: postQuiet
-    })
-    duration('waitForDomStability:post', result)
-  }
-}
-
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
   if (element) {
@@ -153,6 +79,36 @@ const waitForElement = async (page, element) => {
     return screenshotOpts
   }
   return screenshotOpts
+}
+
+// Puppeteer screenshot options only — goto/readiness fields must not be
+// forwarded (and readiness probes must not write `--path`).
+const toScreenshotOpts = (opts, overrides = {}) => {
+  const {
+    path,
+    type,
+    quality,
+    omitBackground,
+    encoding,
+    captureBeyondViewport,
+    fromSurface,
+    optimizeForSpeed,
+    clip,
+    fullPage
+  } = opts
+  return {
+    path,
+    type,
+    quality,
+    omitBackground,
+    encoding,
+    captureBeyondViewport,
+    fromSurface,
+    optimizeForSpeed,
+    clip,
+    fullPage,
+    ...overrides
+  }
 }
 
 const SCREENSHOT_DEFAULT_OPTS = {
@@ -211,12 +167,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           })
         }
 
-        if (fullPage) {
-          tasks.push({
-            fn: () => scrollFullPageToLoadContent(page, timeout, goto),
-            debug: 'beforeScreenshot:scrollFullPageToLoadContent'
-          })
-        } else if (element) {
+        if (element && !fullPage) {
           tasks.push({
             fn: async () => {
               screenshotOpts = await waitForElement(page, element)
@@ -230,7 +181,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
             goto.run({
               fn: fn(),
               ...opts,
-              timeout: fullPage ? timeout * 2 : timeout
+              timeout
             })
           )
         )
@@ -246,11 +197,13 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let isReady = false
 
         do {
-          screenshot = await captureWithNavigationRetry(() => page.screenshot(opts), {
-            page,
-            goto,
-            timeout
-          })
+          screenshot = await captureWithNavigationRetry(
+            () =>
+              page.screenshot(
+                toScreenshotOpts(opts, opts.fullPage ? { fullPage: false, path: undefined } : {})
+              ),
+            { page, goto, timeout }
+          )
           isWhite = await isWhiteScreenshot(screenshot)
           const snapshotResult = await pReflect(getPageSnapshot(page))
           const pageSnapshot = snapshotResult.isRejected ? {} : snapshotResult.value
@@ -272,6 +225,21 @@ module.exports = ({ goto, ...gotoOpts }) => {
           await goto.waitUntilAuto(page, { timeout })
         } while (!isReady)
 
+        if (isReady && opts.fullPage) {
+          await prepareFullDocument(page, {
+            goto,
+            timeout: goto.timeouts.goto(opts.timeout)
+          })
+          screenshot = await captureWithNavigationRetry(
+            async () => {
+              await pReflect(page.evaluate(expandOverflow))
+              return page.screenshot(toScreenshotOpts(opts, { fullPage: true }))
+            },
+            { page, goto, timeout: goto.timeouts.goto(opts.timeout) }
+          )
+          isWhite = await isWhiteScreenshot(screenshot)
+        }
+
         return { isWhite, isReady, retry }
       }
 
@@ -284,8 +252,17 @@ module.exports = ({ goto, ...gotoOpts }) => {
         if (waitUntil !== 'auto') {
           ;({ response } = await goto(page, { ...opts, url, waitUntil }))
           const screenshotOpts = await beforeScreenshot(page, response, opts)
+          if (opts.fullPage) {
+            await prepareFullDocument(page, {
+              goto,
+              timeout: goto.timeouts.goto(opts.timeout)
+            })
+          }
           screenshot = await captureWithNavigationRetry(
-            () => page.screenshot({ ...opts, ...screenshotOpts }),
+            async () => {
+              if (opts.fullPage) await pReflect(page.evaluate(expandOverflow))
+              return page.screenshot(toScreenshotOpts({ ...opts, ...screenshotOpts }))
+            },
             { page, goto, timeout: goto.timeouts.action(opts.timeout) }
           )
           debug('screenshot', { waitUntil, duration: timeScreenshot() })
@@ -326,4 +303,7 @@ module.exports.resolveWaitForDom = resolveWaitForDom
 module.exports.waitForReady = waitForReady
 module.exports.paintSignals = paintSignals
 module.exports.scrollFullPageToLoadContent = scrollFullPageToLoadContent
+module.exports.waitForOverflowHeight = waitForOverflowHeight
+module.exports.expandOverflow = expandOverflow
+module.exports.prepareFullDocument = prepareFullDocument
 module.exports.SCREENSHOT_DEFAULT_OPTS = SCREENSHOT_DEFAULT_OPTS
