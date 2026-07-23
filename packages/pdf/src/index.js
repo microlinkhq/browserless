@@ -10,6 +10,8 @@ const {
   isWhiteScreenshot,
   waitForDomStability,
   waitForReady,
+  snapshot,
+  scrollFullPageToLoadContent,
   resolveWaitForDom,
   SCREENSHOT_DEFAULT_OPTS
 } = require('@browserless/screenshot')
@@ -19,7 +21,8 @@ const PDF_DEFAULT_OPTS = {
   margin: '0.35cm',
   scale: 0.65,
   printBackground: true,
-  waitUntil: 'auto'
+  waitUntil: 'auto',
+  isPageReady: SCREENSHOT_DEFAULT_OPTS.isPageReady
 }
 
 // Share of the phase's load allowance the readiness gate may consume in `auto`
@@ -46,25 +49,149 @@ const getMargin = unit => {
   }
 }
 
+const getPageSnapshot = page =>
+  page.evaluate(() => ({
+    title: document.title || '',
+    bodyText: document.body ? document.body.innerText || '' : '',
+    url: window.location.href || ''
+  }))
+
+const isPaintedContent = ({ painted = 0, text = 0, fonts = true } = {}) =>
+  painted > 0 || (text >= TEXT_PAINTED_MIN && fonts)
+
+// A quiet document with nothing visible yet — black SPA shell after a bot
+// checkpoint, empty root before hydrate. `isWhiteScreenshot` only catches
+// near-white frames, so these must be rejected on paint signals.
+const isBlankShell = ({ painted = 0, text = 0, covered = false } = {}) =>
+  covered || (painted === 0 && text === 0)
+
+// App shells keep slides in an overflow scroller (`doc` ≈ viewport). `page.pdf()`
+// only paginates the document flow, so unwrap that scroller (and hide reader
+// chrome) when content is taller than the viewport.
+const expandOverflowForPdf = () => {
+  for (const sel of [
+    '.theme-report-nav',
+    '.theme-project-header',
+    '.theme-report-mobile-nav',
+    '.report-page-label'
+  ]) {
+    for (const el of document.querySelectorAll(sel)) {
+      el.style.setProperty('display', 'none', 'important')
+    }
+  }
+
+  const scroll =
+    document.querySelector('.report-canvas-scroll') ||
+    [...document.querySelectorAll('*')]
+      .filter(el => {
+        const s = window.getComputedStyle(el)
+        return (
+          (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
+          el.scrollHeight > el.clientHeight + 200
+        )
+      })
+      .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
+
+  if (!scroll) return false
+
+  let el = scroll
+  while (el) {
+    const pos = window.getComputedStyle(el).position
+    el.style.setProperty('overflow', 'visible', 'important')
+    el.style.setProperty('height', 'auto', 'important')
+    el.style.setProperty('max-height', 'none', 'important')
+    if (pos === 'absolute' || pos === 'fixed') {
+      el.style.setProperty('position', 'relative', 'important')
+      el.style.setProperty('inset', 'auto', 'important')
+    }
+    if (el === document.documentElement) break
+    el = el.parentElement
+  }
+  return true
+}
+
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
   // Render an already-prepared page to a PDF buffer. Split out from the load so
   // a single load can be reused across page-range chunks (microlink-api's
   // parallel renderer) without re-navigating.
-  const render = (page, opts = {}) => {
+  const render = async (page, opts = {}) => {
     const {
       margin = PDF_DEFAULT_OPTS.margin,
       scale = PDF_DEFAULT_OPTS.scale,
       printBackground = PDF_DEFAULT_OPTS.printBackground,
+      mediaType = PDF_DEFAULT_OPTS.mediaType,
       waitUntil,
       waitForDom,
+      isPageReady,
       ...rest
     } = opts
-    return captureWithNavigationRetry(
-      () => page.pdf({ ...rest, margin: getMargin(margin), printBackground, scale }),
-      { page, goto, timeout: goto.timeouts.action(rest.timeout) }
-    )
+
+    if (mediaType) await pReflect(page.emulateMediaType(mediaType))
+    const expanded = await pReflect(page.evaluate(expandOverflowForPdf))
+    debug('expandOverflowForPdf', {
+      mediaType,
+      expanded: !expanded.isRejected && expanded.value
+    })
+
+    const pdfOpts = {
+      ...rest,
+      margin: getMargin(margin),
+      printBackground,
+      scale
+    }
+
+    // Report builders (e.g. oviond) lay out fixed-size `.report-page-sheet`
+    // slides. Letter + scale 0.65 letterboxes them; when the user hasn't picked
+    // a paper size, size each PDF page to the slide and break between anchors.
+    if (!rest.format && rest.width == null && rest.height == null) {
+      const sheet = await pReflect(
+        page.evaluate(() => {
+          let best = null
+          for (const el of document.querySelectorAll('.report-page-sheet')) {
+            const { width, height } = el.getBoundingClientRect()
+            if (width < 100 || height < 100) continue
+            if (!best || width * height > best.width * best.height) {
+              best = { width: Math.round(width), height: Math.round(height) }
+            }
+          }
+          return best
+        })
+      )
+      if (!sheet.isRejected && sheet.value) {
+        pdfOpts.width = sheet.value.width
+        pdfOpts.height = sheet.value.height
+        pdfOpts.scale = 1
+        pdfOpts.margin = getMargin(0)
+        await pReflect(
+          page.addStyleTag({
+            content: `
+              .report-page-anchor {
+                break-after: page;
+                page-break-after: always;
+              }
+              .report-page-anchor:last-child {
+                break-after: auto;
+                page-break-after: auto;
+              }
+            `
+          })
+        )
+        debug('pdfPageSize', sheet.value)
+      } else {
+        debug('pdfPageSize', {
+          skipped: true,
+          error: sheet.isRejected ? sheet.reason.message : 'no sheet'
+        })
+      }
+    }
+
+    return captureWithNavigationRetry(() => page.pdf(pdfOpts), {
+      page,
+      goto,
+      timeout: goto.timeouts.action(rest.timeout)
+    })
   }
 
   // Navigate `page` to `url` and wait until it is ready to print: DOM stability
@@ -76,11 +203,14 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       margin,
       scale,
       printBackground,
+      mediaType = PDF_DEFAULT_OPTS.mediaType,
       waitUntil = PDF_DEFAULT_OPTS.waitUntil,
       waitForDom = PDF_DEFAULT_OPTS.waitForDom,
+      isPageReady = PDF_DEFAULT_OPTS.isPageReady,
       ...rest
     } = opts
     const waitForDomOpts = resolveWaitForDom(waitForDom)
+    const gotoOpts = { ...rest, mediaType }
 
     const waitForDomStabilityResult = async page => {
       if (!waitForDomOpts) return
@@ -95,7 +225,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     }
 
     if (waitUntil !== 'auto') {
-      await goto(page, { ...rest, url, waitUntil })
+      await goto(page, { ...gotoOpts, url, waitUntil })
       await waitForDomStabilityResult(page)
       return
     }
@@ -105,12 +235,14 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     // load across page-ranges can choose a fresh context instead.
     let readiness
 
-    await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
+    await goto(page, { ...gotoOpts, url, waitUntil, waitUntilAuto })
     return readiness
 
     async function waitUntilAuto (page, { timeout: autoTimeout } = {}) {
       await waitForDomStabilityResult(page)
-      const timeout = goto.timeouts.action(rest.timeout)
+      // Checkpoint + SPA hydrate needs more than `timeouts.action` (~2.7s): budget
+      // the blank poll from the same load allowance as the readiness gate.
+      const timeout = autoTimeout ?? goto.timeouts.action(rest.timeout)
 
       // The readiness gate waits for a page to settle — page-load work, not a
       // small action. Budgeting it from `timeouts.action` (timeout/11) gave it
@@ -120,14 +252,15 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       // returns as soon as the page is quiet, so this is a cap, not a cost.
       const readyTime = timeSpan()
       const ready = await waitForReady(page, {
-        timeout: Math.round((autoTimeout ?? timeout) * READY_BUDGET_RATIO)
+        timeout: Math.round(timeout * READY_BUDGET_RATIO)
       })
       readiness = ready
       debug('ready', { ...ready, duration: readyTime() })
 
-      // The blank-page poll keeps its own action budget, measured from here so
-      // a slow gate cannot starve it.
+      // The blank-page poll keeps its own clock, measured from here so a slow
+      // gate cannot starve it. Remaining load allowance is the cap.
       const elapsed = timeSpan()
+      const pollTimeout = Math.max(0, timeout - readyTime())
 
       // Fast path: the page settled with real painted content in a document
       // taller than the viewport — a visibly rendered image (not a tracking
@@ -141,45 +274,87 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       // and an unknown viewport skips the fast path rather than dropping the
       // taller-than-viewport guard. A gate that timed out never settled, so
       // don't trust its partial snapshot: fall through to the blank check.
-      const painted = ready.painted > 0 || (ready.text >= TEXT_PAINTED_MIN && ready.fonts)
-      if (
+      let isReady =
         !ready.timedOut &&
-        painted &&
+        isPaintedContent(ready) &&
         !ready.covered &&
         ready.viewport > 0 &&
         ready.height > ready.viewport
-      ) {
-        return
-      }
 
       // Otherwise fall back to the screenshot poll — re-wait while the first
-      // paint is still blank — to keep the blank-SPA protection. The page has
-      // already settled, so the first capture won't race a navigation, and a
-      // non-blank page exits after that single shot without an extra re-wait.
-      let isWhite = false
-      let retry = -1
-      do {
-        ++retry
-        const screenshotTime = timeSpan()
-        const screenshot = await captureWithNavigationRetry(
-          () =>
-            page.screenshot({
-              ...rest,
-              optimizeForSpeed: true,
-              type: 'jpeg',
-              quality: 30
-            }),
-          // The retry loop keeps its own clock, so hand it only what is left
-          // of the shared budget — a fresh full `timeout` here would let one
-          // navigation-racing capture double the worst-case prepare time.
-          { page, goto, timeout: Math.max(0, timeout - elapsed()) }
-        )
-        isWhite = await isWhiteScreenshot(screenshot)
-        if (isWhite) await goto.waitUntilAuto(page, { timeout: rest.timeout })
-        debug('retry', { waitUntil, isWhite, retry, duration: screenshotTime() })
-      } while (isWhite && elapsed() < timeout)
+      // paint is still blank — to keep the blank-SPA protection. Also reject
+      // black/empty shells and (via `isPageReady`) bot-check interstitial
+      // pages: those fail the white-pixel check while still being unprintable.
+      if (!isReady) {
+        let retry = -1
+        do {
+          ++retry
+          const screenshotTime = timeSpan()
+          const screenshot = await captureWithNavigationRetry(
+            () =>
+              page.screenshot({
+                ...rest,
+                optimizeForSpeed: true,
+                type: 'jpeg',
+                quality: 30
+              }),
+            // The retry loop keeps its own clock, so hand it only what is left
+            // of the shared budget — a fresh full `timeout` here would let one
+            // navigation-racing capture double the worst-case prepare time.
+            { page, goto, timeout: Math.max(0, pollTimeout - elapsed()) }
+          )
+          const isWhite = await isWhiteScreenshot(screenshot)
+          const [pageSnapshot, paintSnapshot] = await Promise.all([
+            pReflect(getPageSnapshot(page)),
+            pReflect(page.evaluate(snapshot))
+          ])
+          const pageMeta = pageSnapshot.isRejected ? {} : pageSnapshot.value
+          const paint = paintSnapshot.isRejected ? {} : paintSnapshot.value
+          const pageReadyResult = await pReflect(
+            isPageReady({
+              page,
+              screenshot,
+              isWhite,
+              isWhiteScreenshot,
+              ...pageMeta,
+              ...paint
+            })
+          )
+          isReady = !pageReadyResult.isRejected && !!pageReadyResult.value && !isBlankShell(paint)
 
-      debug({ waitUntil, isWhite, timeout, duration: require('pretty-ms')(elapsed()) })
+          if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout })
+          debug('retry', {
+            waitUntil,
+            isReady,
+            isWhite,
+            blank: isBlankShell(paint),
+            retry,
+            duration: screenshotTime()
+          })
+        } while (!isReady && elapsed() < pollTimeout)
+      }
+
+      // PDF is inherently full-page: scroll the document (or its tallest
+      // overflow scroller) so lazy sections hydrate before print, then wait
+      // for the fetches that scroll triggered to go idle and the DOM to settle.
+      if (isReady && elapsed() < pollTimeout) {
+        const scrollTimeout = Math.max(0, pollTimeout - elapsed())
+        await goto.run({
+          fn: scrollFullPageToLoadContent(page, scrollTimeout),
+          timeout: Math.max(scrollTimeout * 2, scrollTimeout + 1000),
+          debug: 'scrollFullPageToLoadContent'
+        })
+        await goto.waitUntilAuto(page, {
+          timeout: Math.max(0, pollTimeout - elapsed())
+        })
+        const settle = await waitForReady(page, {
+          timeout: Math.max(0, pollTimeout - elapsed())
+        })
+        readiness = settle
+        debug('settle', { ...settle, duration: elapsed() })
+      }
+
+      debug({ waitUntil, isReady, timeout: pollTimeout, duration: require('pretty-ms')(elapsed()) })
     }
   }
 

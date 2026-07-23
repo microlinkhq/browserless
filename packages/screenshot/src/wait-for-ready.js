@@ -287,4 +287,4 @@ const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) =
   return { ...last, resets, timedOut: true }
 }
 
-module.exports = { waitForReady }
+module.exports = { waitForReady, snapshot }
