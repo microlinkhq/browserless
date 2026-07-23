@@ -11,6 +11,7 @@ const {
   waitForDomStability,
   waitForReady,
   resolveWaitForDom,
+  scrollToLoadContent,
   SCREENSHOT_DEFAULT_OPTS
 } = require('@browserless/screenshot')
 
@@ -29,6 +30,12 @@ const PDF_DEFAULT_OPTS = {
 // share. The gate returns as soon as the page is quiet, so this bounds only a
 // page that never settles.
 const READY_BUDGET_RATIO = 0.25
+
+// Share of the request budget the lazy-content walk may consume. It is a
+// backstop, not a cost: the walk returns as soon as every scroller is exhausted,
+// which is a few hundred milliseconds on an ordinary page. Only a document that
+// keeps growing as it is walked spends the whole allowance.
+const SCROLL_BUDGET_RATIO = 0.25
 
 // Minimum visible characters for the text fast path. Matches the counting cap
 // in `waitForReady`'s snapshot, which stops walking text nodes once reached —
@@ -94,9 +101,23 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       )
     }
 
+    // A PDF is always a full-page capture, so anything the page defers until it
+    // scrolls into view prints as an empty placeholder — a report of skeleton
+    // boxes. Screenshots already walk the page for this reason, but only when
+    // `fullPage`; printing has no such switch, so it always applies.
+    const loadLazyContent = async page => {
+      const scrollTime = timeSpan()
+      await scrollToLoadContent(
+        page,
+        Math.round((rest.timeout ?? goto.timeouts.action()) * SCROLL_BUDGET_RATIO)
+      )
+      debug('scroll', { duration: scrollTime() })
+    }
+
     if (waitUntil !== 'auto') {
       await goto(page, { ...rest, url, waitUntil })
       await waitForDomStabilityResult(page)
+      await loadLazyContent(page)
       return
     }
 
@@ -106,6 +127,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     let readiness
 
     await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
+    await loadLazyContent(page)
     return readiness
 
     async function waitUntilAuto (page, { timeout: autoTimeout } = {}) {
