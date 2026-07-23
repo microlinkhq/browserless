@@ -3,6 +3,7 @@
 const timeSpan = require('@kikobeats/time-span')({ format: n => Math.round(n) })
 const debug = require('debug-logfmt')('browserless:pdf')
 const createGoto = require('@browserless/goto')
+const { setTimeout: sleep } = require('node:timers/promises')
 const pReflect = require('p-reflect')
 
 const {
@@ -30,10 +31,40 @@ const PDF_DEFAULT_OPTS = {
 // page that never settles.
 const READY_BUDGET_RATIO = 0.25
 
+// Share of the same allowance spent confirming the document carries anything at
+// all before the readiness gate is asked whether it has settled.
+const CONTENT_BUDGET_RATIO = 0.25
+
+// How often to re-ask while the document is still empty.
+const CONTENT_POLL = 150
+
 // Minimum visible characters for the text fast path. Matches the counting cap
 // in `waitForReady`'s snapshot, which stops walking text nodes once reached —
 // raising this above the cap would make the text fast path unreachable.
 const TEXT_PAINTED_MIN = 200
+
+// Does the document carry anything at all, anywhere in it?
+//
+// The readiness gate is viewport-scoped by design: content below the fold is
+// legitimately invisible, so `painted` and `text` reading zero is normal for a
+// page whose content simply starts lower. That makes the gate unable to tell
+// such a page apart from a shell that has rendered nothing yet — and a shell
+// passes every other settle signal it has. Its HTML arrived, so `readyState` is
+// `complete`; it has no images, so there is nothing to decode; and its height
+// cannot move when the app scrolls an inner pane rather than the document, so
+// height stability holds from the first poll. Observed on a report that rendered
+// nothing for ~1.5s: the gate called it ready at 458ms with `painted=0 text=0`,
+// and the PDF printed its skeleton placeholders.
+//
+// So ask a different question, document-wide rather than viewport-scoped, and
+// ask it first. The element probe runs before `innerText` because it is the
+// cheaper of the two and the one a rendered app trips immediately.
+const hasDocumentContent = () => {
+  const body = document.body
+  if (!body) return false
+  if (body.querySelector('img,svg,canvas,video,table,input,button,picture')) return true
+  return (body.innerText || '').trim().length > 0
+}
 
 const getMargin = unit => {
   if (!unit) return unit
@@ -65,6 +96,22 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       () => page.pdf({ ...rest, margin: getMargin(margin), printBackground, scale }),
       { page, goto, timeout: goto.timeouts.action(rest.timeout) }
     )
+  }
+
+  // Poll until the document carries something, or the budget runs out. A page
+  // that already has content answers on the first evaluate, so an ordinary
+  // render pays one round trip for this.
+  const waitForDocumentContent = async (page, timeout) => {
+    const deadline = Date.now() + timeout
+    while (true) {
+      const result = await pReflect(page.evaluate(hasDocumentContent))
+      // A navigation tearing down the context is not evidence either way; treat
+      // it like an empty poll and try again while the budget lasts.
+      if (!result.isRejected && result.value) return true
+      const remaining = deadline - Date.now()
+      if (remaining <= 0) return false
+      await sleep(Math.min(CONTENT_POLL, remaining))
+    }
   }
 
   // Navigate `page` to `url` and wait until it is ready to print: DOM stability
@@ -111,6 +158,13 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     async function waitUntilAuto (page, { timeout: autoTimeout } = {}) {
       await waitForDomStabilityResult(page)
       const timeout = goto.timeouts.action(rest.timeout)
+
+      const contentTime = timeSpan()
+      const hasContent = await waitForDocumentContent(
+        page,
+        Math.round((autoTimeout ?? timeout) * CONTENT_BUDGET_RATIO)
+      )
+      debug('content', { hasContent, duration: contentTime() })
 
       // The readiness gate waits for a page to settle — page-load work, not a
       // small action. Budgeting it from `timeouts.action` (timeout/11) gave it
