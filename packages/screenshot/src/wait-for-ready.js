@@ -11,7 +11,7 @@
 const { setTimeout: sleep } = require('node:timers/promises')
 const { isContextDestroyed } = require('@browserless/errors')
 
-// Evaluated in-page: a cheap snapshot of the paint/settle signals. `images`
+// Evaluated in-page: cheap paint/settle signals (not a screenshot). `images`
 // counts only images expected to settle: a lazy image well below the viewport
 // sits outside Chromium's lazy-load fetch threshold and never starts loading
 // without a scroll, so counting it could only stall the gate into its timeout.
@@ -33,10 +33,10 @@ const { isContextDestroyed } = require('@browserless/errors')
 // in-page viewport height, so consumers can compare it against `height`
 // without relying on `page.viewport()`, which is null under
 // `defaultViewport: null`.
-const snapshot = () => {
+const paintSignals = () => {
   // A document that is mid-parse or detached can have a null `documentElement`
   // (the same state the text walk below guards against), so every dereference
-  // of it in this snapshot goes through `root`.
+  // of it goes through `root`.
   const root = document.documentElement
   const vw = window.innerWidth || (root ? root.clientWidth : 0)
   const vh = window.innerHeight || (root ? root.clientHeight : 0)
@@ -79,7 +79,7 @@ const snapshot = () => {
   }
 
   // Up to a handful of counted content samples — enough to hit-test without
-  // turning the snapshot into a layout storm. The clamp keeps each probe point
+  // turning the probe into a layout storm. The clamp keeps each probe point
   // inside the viewport; the rect checks below guarantee it stays inside the
   // sampled content's own box.
   const contentPoints = []
@@ -253,9 +253,9 @@ const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) =
   }
 
   while (Date.now() < deadline) {
-    let snap
+    let signals
     try {
-      snap = await page.evaluate(snapshot)
+      signals = await page.evaluate(paintSignals)
     } catch (error) {
       // Only a client-side navigation tearing down the execution context is
       // absorbed: reset the quiet window and keep polling. Any other evaluate
@@ -269,16 +269,16 @@ const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) =
       continue
     }
 
-    last = snap
-    const imagesDecoded = snap.images === 0 || snap.decoded >= snap.images
-    const quiet = snap.complete && imagesDecoded && snap.height === lastHeight
+    last = signals
+    const imagesDecoded = signals.images === 0 || signals.decoded >= signals.images
+    const quiet = signals.complete && imagesDecoded && signals.height === lastHeight
 
     if (quiet) {
       if (quietSince === 0) quietSince = Date.now()
-      if (Date.now() - quietSince >= quietMs) return { ...snap, resets, timedOut: false }
+      if (Date.now() - quietSince >= quietMs) return { ...signals, resets, timedOut: false }
     } else {
       quietSince = 0
-      lastHeight = snap.height
+      lastHeight = signals.height
     }
 
     await nextPoll()
@@ -287,4 +287,4 @@ const waitForReady = async (page, { timeout, quietMs = 300, poll = 150 } = {}) =
   return { ...last, resets, timedOut: true }
 }
 
-module.exports = { waitForReady, snapshot }
+module.exports = { waitForReady, paintSignals }

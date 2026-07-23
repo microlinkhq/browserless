@@ -10,7 +10,7 @@ const {
   isWhiteScreenshot,
   waitForDomStability,
   waitForReady,
-  snapshot,
+  paintSignals,
   scrollFullPageToLoadContent,
   resolveWaitForDom,
   SCREENSHOT_DEFAULT_OPTS
@@ -34,7 +34,7 @@ const PDF_DEFAULT_OPTS = {
 const READY_BUDGET_RATIO = 0.25
 
 // Minimum visible characters for the text fast path. Matches the counting cap
-// in `waitForReady`'s snapshot, which stops walking text nodes once reached —
+// in `waitForReady`'s paintSignals, which stops walking text nodes once reached —
 // raising this above the cap would make the text fast path unreachable.
 const TEXT_PAINTED_MIN = 200
 
@@ -173,10 +173,10 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       // opaque viewport-filling layer (a fixed white loading overlay passes
       // every other DOM signal while a capture stays white): skip the
       // screenshot poll. Height and viewport come from the same in-page
-      // snapshot (`page.viewport()` is null under `defaultViewport: null`),
+      // paintSignals (`page.viewport()` is null under `defaultViewport: null`),
       // and an unknown viewport skips the fast path rather than dropping the
       // taller-than-viewport guard. A gate that timed out never settled, so
-      // don't trust its partial snapshot: fall through to the blank check.
+      // don't trust its partial signals: fall through to the blank check.
       let isReady =
         !ready.timedOut &&
         isPaintedContent(ready) &&
@@ -207,12 +207,12 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             { page, goto, timeout: Math.max(0, pollTimeout - elapsed()) }
           )
           const isWhite = await isWhiteScreenshot(screenshot)
-          const [pageSnapshot, paintSnapshot] = await Promise.all([
+          const [pageSnapshot, paintResult] = await Promise.all([
             pReflect(getPageSnapshot(page)),
-            pReflect(page.evaluate(snapshot))
+            pReflect(page.evaluate(paintSignals))
           ])
           const pageMeta = pageSnapshot.isRejected ? {} : pageSnapshot.value
-          const paint = paintSnapshot.isRejected ? {} : paintSnapshot.value
+          const signals = paintResult.isRejected ? {} : paintResult.value
           const pageReadyResult = await pReflect(
             isPageReady({
               page,
@@ -220,17 +220,17 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
               isWhite,
               isWhiteScreenshot,
               ...pageMeta,
-              ...paint
+              ...signals
             })
           )
-          isReady = !pageReadyResult.isRejected && !!pageReadyResult.value && !isBlankShell(paint)
+          isReady = !pageReadyResult.isRejected && !!pageReadyResult.value && !isBlankShell(signals)
 
           if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout })
           debug('retry', {
             waitUntil,
             isReady,
             isWhite,
-            blank: isBlankShell(paint),
+            blank: isBlankShell(signals),
             retry,
             duration: screenshotTime()
           })

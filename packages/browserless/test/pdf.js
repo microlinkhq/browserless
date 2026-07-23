@@ -14,16 +14,16 @@ const noWhiteScreenshot = fs.readFileSync(
   path.resolve(__dirname, '../../screenshot/test/fixtures/no-white-5k.png')
 )
 
-// `waitUntilAuto` runs two in-page evaluates: `waitForDomStability` and the
-// readiness `snapshot`. Dispatch on function identity — the workspace resolves
-// both packages to the same module instance — so the stub keeps routing
-// correctly even if either evaluate's signature changes.
-const scriptEvaluate = (snapshot, onDomStability) => async (fn, args) => {
+// `waitUntilAuto` runs two in-page evaluates: `waitForDomStability` and
+// `paintSignals`. Dispatch on function identity — the workspace resolves both
+// packages to the same module instance — so the stub keeps routing correctly
+// even if either evaluate's signature changes.
+const scriptEvaluate = (signals, onDomStability) => async (fn, args) => {
   if (fn === waitForDomStability) {
     onDomStability(args)
     return { status: 'idle' }
   }
-  return snapshot
+  return signals
 }
 
 const IMAGELESS_READY = {
