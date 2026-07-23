@@ -65,38 +65,6 @@ const isPaintedContent = ({ painted = 0, text = 0, fonts = true } = {}) =>
 const isBlankShell = ({ painted = 0, text = 0, covered = false } = {}) =>
   covered || (painted === 0 && text === 0)
 
-// App shells often keep content in an overflow scroller (`doc` ≈ viewport).
-// `page.pdf()` only paginates the document flow, so unwrap the tallest
-// overflow root when it is taller than the viewport.
-const expandOverflowForPdf = () => {
-  const scroll = [...document.querySelectorAll('*')]
-    .filter(el => {
-      const s = window.getComputedStyle(el)
-      return (
-        (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
-        el.scrollHeight > el.clientHeight + 200
-      )
-    })
-    .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
-
-  if (!scroll) return false
-
-  let el = scroll
-  while (el) {
-    const pos = window.getComputedStyle(el).position
-    el.style.setProperty('overflow', 'visible', 'important')
-    el.style.setProperty('height', 'auto', 'important')
-    el.style.setProperty('max-height', 'none', 'important')
-    if (pos === 'absolute' || pos === 'fixed') {
-      el.style.setProperty('position', 'relative', 'important')
-      el.style.setProperty('inset', 'auto', 'important')
-    }
-    if (el === document.documentElement) break
-    el = el.parentElement
-  }
-  return true
-}
-
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
@@ -116,24 +84,17 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     } = opts
 
     if (mediaType) await pReflect(page.emulateMediaType(mediaType))
-    const expanded = await pReflect(page.evaluate(expandOverflowForPdf))
-    debug('expandOverflowForPdf', {
-      mediaType,
-      expanded: !expanded.isRejected && expanded.value
-    })
 
-    const pdfOpts = {
-      ...rest,
-      margin: getMargin(margin),
-      printBackground,
-      scale
-    }
-
-    return captureWithNavigationRetry(() => page.pdf(pdfOpts), {
-      page,
-      goto,
-      timeout: goto.timeouts.action(rest.timeout)
-    })
+    return captureWithNavigationRetry(
+      () =>
+        page.pdf({
+          ...rest,
+          margin: getMargin(margin),
+          printBackground,
+          scale
+        }),
+      { page, goto, timeout: goto.timeouts.action(rest.timeout) }
+    )
   }
 
   // Navigate `page` to `url` and wait until it is ready to print: DOM stability
