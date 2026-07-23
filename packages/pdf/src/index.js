@@ -69,14 +69,12 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       margin = PDF_DEFAULT_OPTS.margin,
       scale = PDF_DEFAULT_OPTS.scale,
       printBackground = PDF_DEFAULT_OPTS.printBackground,
-      mediaType = PDF_DEFAULT_OPTS.mediaType,
+      mediaType,
       waitUntil,
       waitForDom,
       isPageReady,
       ...rest
     } = opts
-
-    if (mediaType) await pReflect(page.emulateMediaType(mediaType))
 
     return captureWithNavigationRetry(
       () =>
