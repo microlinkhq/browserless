@@ -10,7 +10,6 @@ const {
   isWhiteScreenshot,
   waitForDomStability,
   waitForReady,
-  paintSignals,
   scrollFullPageToLoadContent,
   resolveWaitForDom,
   SCREENSHOT_DEFAULT_OPTS
@@ -58,12 +57,6 @@ const getPageSnapshot = page =>
 
 const isPaintedContent = ({ painted = 0, text = 0, fonts = true } = {}) =>
   painted > 0 || (text >= TEXT_PAINTED_MIN && fonts)
-
-// A quiet document with nothing visible yet — black SPA shell after a bot
-// checkpoint, empty root before hydrate. `isWhiteScreenshot` only catches
-// near-white frames, so these must be rejected on paint signals.
-const isBlankShell = ({ painted = 0, text = 0, covered = false } = {}) =>
-  covered || (painted === 0 && text === 0)
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
@@ -184,10 +177,8 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
         ready.viewport > 0 &&
         ready.height > ready.viewport
 
-      // Otherwise fall back to the screenshot poll — re-wait while the first
-      // paint is still blank — to keep the blank-SPA protection. Also reject
-      // black/empty shells and (via `isPageReady`) bot-check interstitial
-      // pages: those fail the white-pixel check while still being unprintable.
+      // Otherwise fall back to the screenshot poll — same ready check as
+      // fullPage screenshot: white frame + `isPageReady` (bot-check / title).
       if (!isReady) {
         let retry = -1
         do {
@@ -207,30 +198,24 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             { page, goto, timeout: Math.max(0, pollTimeout - elapsed()) }
           )
           const isWhite = await isWhiteScreenshot(screenshot)
-          const [pageSnapshot, paintResult] = await Promise.all([
-            pReflect(getPageSnapshot(page)),
-            pReflect(page.evaluate(paintSignals))
-          ])
+          const pageSnapshot = await pReflect(getPageSnapshot(page))
           const pageMeta = pageSnapshot.isRejected ? {} : pageSnapshot.value
-          const signals = paintResult.isRejected ? {} : paintResult.value
           const pageReadyResult = await pReflect(
             isPageReady({
               page,
               screenshot,
               isWhite,
               isWhiteScreenshot,
-              ...pageMeta,
-              ...signals
+              ...pageMeta
             })
           )
-          isReady = !pageReadyResult.isRejected && !!pageReadyResult.value && !isBlankShell(signals)
+          isReady = !pageReadyResult.isRejected && !!pageReadyResult.value
 
           if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout })
           debug('retry', {
             waitUntil,
             isReady,
             isWhite,
-            blank: isBlankShell(signals),
             retry,
             duration: screenshotTime()
           })
