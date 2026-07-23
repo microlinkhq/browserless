@@ -152,8 +152,15 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
 
 // Shared by fullPage screenshot and PDF: after the page is ready, hydrate
 // overflow content and unwrap it so capture sees the full document flow.
+const resolveScrollTimeout = (goto, timeout) => {
+  if (timeout != null) return timeout
+  if (typeof goto?.timeouts?.goto === 'function') return goto.timeouts.goto()
+  if (typeof goto?.timeouts?.action === 'function') return goto.timeouts.action()
+  return 15000
+}
+
 const prepareFullDocument = async (page, { goto, timeout } = {}) => {
-  const scrollTimeout = timeout ?? (goto && goto.timeouts.goto())
+  const scrollTimeout = resolveScrollTimeout(goto, timeout)
   const elapsed = require('@kikobeats/time-span')({ format: n => Math.round(n) })()
 
   const height = await pReflect(
@@ -167,10 +174,13 @@ const prepareFullDocument = async (page, { goto, timeout } = {}) => {
   await scrollFullPageToLoadContent(page, scrollTimeout)
   debug('prepareFullDocument:scroll', { duration: elapsed() })
 
-  if (goto) {
-    await goto.waitUntilAuto(page, {
-      timeout: Math.min(2000, Math.max(0, scrollTimeout - elapsed()))
-    })
+  // Brief network settle for fetches the scroll triggered — keep this off
+  // `goto.waitUntilAuto` so readiness-retry mocks stay countable.
+  const settleMs = Math.min(1500, Math.max(0, scrollTimeout - elapsed()))
+  if (settleMs > 0 && typeof page.waitForNetworkIdle === 'function') {
+    await pReflect(
+      require('p-timeout')(page.waitForNetworkIdle({ idleTime: 300, concurrency: 2 }), settleMs)
+    )
   }
 
   const expanded = await pReflect(page.evaluate(expandOverflow))

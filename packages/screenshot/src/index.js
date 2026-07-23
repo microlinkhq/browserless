@@ -226,16 +226,17 @@ module.exports = ({ goto, ...gotoOpts }) => {
         } while (!isReady)
 
         if (isReady && opts.fullPage) {
-          await prepareFullDocument(page, {
-            goto,
-            timeout: goto.timeouts.goto(opts.timeout)
-          })
+          const scrollTimeout =
+            typeof goto.timeouts.goto === 'function'
+              ? goto.timeouts.goto(opts.timeout)
+              : goto.timeouts.action(opts.timeout)
+          await prepareFullDocument(page, { goto, timeout: scrollTimeout })
           screenshot = await captureWithNavigationRetry(
             async () => {
               await pReflect(page.evaluate(expandOverflow))
               return page.screenshot(toScreenshotOpts(opts, { fullPage: true }))
             },
-            { page, goto, timeout: goto.timeouts.goto(opts.timeout) }
+            { page, goto, timeout: scrollTimeout }
           )
           isWhite = await isWhiteScreenshot(screenshot)
         }
@@ -253,10 +254,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
           ;({ response } = await goto(page, { ...opts, url, waitUntil }))
           const screenshotOpts = await beforeScreenshot(page, response, opts)
           if (opts.fullPage) {
-            await prepareFullDocument(page, {
-              goto,
-              timeout: goto.timeouts.goto(opts.timeout)
-            })
+            const scrollTimeout =
+              typeof goto.timeouts.goto === 'function'
+                ? goto.timeouts.goto(opts.timeout)
+                : goto.timeouts.action(opts.timeout)
+            await prepareFullDocument(page, { goto, timeout: scrollTimeout })
           }
           screenshot = await captureWithNavigationRetry(
             async () => {

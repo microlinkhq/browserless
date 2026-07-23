@@ -133,10 +133,11 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
     // Same full-document prep as fullPage screenshot (scroll + unwrap overflow).
     if (isReady) {
-      readiness = await prepareFullDocument(page, {
-        goto,
-        timeout: goto.timeouts.goto(rest.timeout)
-      })
+      const scrollTimeout =
+        typeof goto.timeouts.goto === 'function'
+          ? goto.timeouts.goto(rest.timeout)
+          : goto.timeouts.action(rest.timeout)
+      readiness = await prepareFullDocument(page, { goto, timeout: scrollTimeout })
     }
 
     return readiness

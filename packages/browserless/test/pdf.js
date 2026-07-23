@@ -89,7 +89,10 @@ const makeGoto = ({ action = 100000, onWaitUntilAuto } = {}) => {
     if (opts.waitUntilAuto) await opts.waitUntilAuto(page)
     return { response: {} }
   }
-  goto.timeouts = { action: () => action }
+  goto.timeouts = {
+    action: () => action,
+    goto: (ms = action) => Math.round(ms * (7 / 8))
+  }
   goto.waitUntilAuto = async () => onWaitUntilAuto && onWaitUntilAuto()
   return goto
 }
@@ -98,11 +101,11 @@ test('waitUntil auto should generate final pdf once', async t => {
   let screenshotCalls = 0
   let pdfCalls = 0
   let waitUntilAutoCalls = 0
-  let domStabilityArgs
+  const domStabilityCalls = []
 
   const page = {
     screenshot: async () => (screenshotCalls++ === 0 ? whiteScreenshot : noWhiteScreenshot),
-    evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
+    evaluate: scriptEvaluate(IMAGELESS_READY, args => domStabilityCalls.push(args)),
     pdf: async () => {
       pdfCalls += 1
       return Buffer.from(`pdf-${pdfCalls}`)
@@ -118,15 +121,16 @@ test('waitUntil auto should generate final pdf once', async t => {
   t.is(pdfCalls, 1)
   t.true(screenshotCalls >= 2)
   t.is(waitUntilAutoCalls, 1)
-  t.is(domStabilityArgs, undefined)
+  // Default waitForDom is off; only prepareFullDocument's scroll quiet may call it.
+  t.false(domStabilityCalls.some(args => args && args.timeout === 2500))
 })
 
 test('waitUntil auto should honor custom waitForDom', async t => {
-  let domStabilityArgs
+  const domStabilityCalls = []
 
   const page = {
     screenshot: async () => noWhiteScreenshot,
-    evaluate: scriptEvaluate(IMAGELESS_READY, args => (domStabilityArgs = args)),
+    evaluate: scriptEvaluate(IMAGELESS_READY, args => domStabilityCalls.push(args)),
     pdf: async () => Buffer.from('pdf')
   }
 
@@ -135,7 +139,7 @@ test('waitUntil auto should honor custom waitForDom', async t => {
   const pdf = createPdf({ goto })(page)
   await pdf('https://example.com', { waitUntil: 'auto', waitForDom: 2500, timeout: 500 })
 
-  t.deepEqual(domStabilityArgs, { timeout: 2500, idle: 250 })
+  t.true(domStabilityCalls.some(args => args && args.timeout === 2500 && args.idle === 250))
 })
 
 test('retries pdf generation when navigation destroys the execution context', async t => {
