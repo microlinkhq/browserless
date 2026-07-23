@@ -44,7 +44,11 @@
     "src"
   ],
   "scripts": {
-    "test": "exit 0"
+    "test": "ava"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@browserless/test": "workspace:*",
+    "ava": "5"
+  }
 }
