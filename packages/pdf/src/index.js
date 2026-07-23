@@ -65,32 +65,19 @@ const isPaintedContent = ({ painted = 0, text = 0, fonts = true } = {}) =>
 const isBlankShell = ({ painted = 0, text = 0, covered = false } = {}) =>
   covered || (painted === 0 && text === 0)
 
-// App shells keep slides in an overflow scroller (`doc` ≈ viewport). `page.pdf()`
-// only paginates the document flow, so unwrap that scroller (and hide reader
-// chrome) when content is taller than the viewport.
+// App shells often keep content in an overflow scroller (`doc` ≈ viewport).
+// `page.pdf()` only paginates the document flow, so unwrap the tallest
+// overflow root when it is taller than the viewport.
 const expandOverflowForPdf = () => {
-  for (const sel of [
-    '.theme-report-nav',
-    '.theme-project-header',
-    '.theme-report-mobile-nav',
-    '.report-page-label'
-  ]) {
-    for (const el of document.querySelectorAll(sel)) {
-      el.style.setProperty('display', 'none', 'important')
-    }
-  }
-
-  const scroll =
-    document.querySelector('.report-canvas-scroll') ||
-    [...document.querySelectorAll('*')]
-      .filter(el => {
-        const s = window.getComputedStyle(el)
-        return (
-          (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
-          el.scrollHeight > el.clientHeight + 200
-        )
-      })
-      .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
+  const scroll = [...document.querySelectorAll('*')]
+    .filter(el => {
+      const s = window.getComputedStyle(el)
+      return (
+        (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
+        el.scrollHeight > el.clientHeight + 200
+      )
+    })
+    .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
 
   if (!scroll) return false
 
@@ -140,51 +127,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       margin: getMargin(margin),
       printBackground,
       scale
-    }
-
-    // Report builders (e.g. oviond) lay out fixed-size `.report-page-sheet`
-    // slides. Letter + scale 0.65 letterboxes them; when the user hasn't picked
-    // a paper size, size each PDF page to the slide and break between anchors.
-    if (!rest.format && rest.width == null && rest.height == null) {
-      const sheet = await pReflect(
-        page.evaluate(() => {
-          let best = null
-          for (const el of document.querySelectorAll('.report-page-sheet')) {
-            const { width, height } = el.getBoundingClientRect()
-            if (width < 100 || height < 100) continue
-            if (!best || width * height > best.width * best.height) {
-              best = { width: Math.round(width), height: Math.round(height) }
-            }
-          }
-          return best
-        })
-      )
-      if (!sheet.isRejected && sheet.value) {
-        pdfOpts.width = sheet.value.width
-        pdfOpts.height = sheet.value.height
-        pdfOpts.scale = 1
-        pdfOpts.margin = getMargin(0)
-        await pReflect(
-          page.addStyleTag({
-            content: `
-              .report-page-anchor {
-                break-after: page;
-                page-break-after: always;
-              }
-              .report-page-anchor:last-child {
-                break-after: auto;
-                page-break-after: auto;
-              }
-            `
-          })
-        )
-        debug('pdfPageSize', sheet.value)
-      } else {
-        debug('pdfPageSize', {
-          skipped: true,
-          error: sheet.isRejected ? sheet.reason.message : 'no sheet'
-        })
-      }
     }
 
     return captureWithNavigationRetry(() => page.pdf(pdfOpts), {

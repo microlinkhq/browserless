@@ -96,7 +96,7 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
         let viewport = window.innerHeight
 
         // Document isn't scrollable: prefer the tallest overflow scroller
-        // (e.g. `.report-canvas-scroll`) so below-fold slides still hydrate.
+        // so below-fold lazy sections still hydrate.
         if (pageHeight <= viewport + 1 && document.body) {
           let best = null
           for (const el of document.body.querySelectorAll('*')) {
