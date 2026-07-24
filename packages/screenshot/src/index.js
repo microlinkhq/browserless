@@ -195,6 +195,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let retry = 0
         let isWhite = false
         let isReady = false
+        let hydrated = false
 
         do {
           screenshot = await captureWithNavigationRetry(
@@ -220,6 +221,15 @@ module.exports = ({ goto, ...gotoOpts }) => {
           isReady = !pageReadyResult.isRejected && !!pageReadyResult.value
 
           if (isReady || elapsed() >= timeout) break
+
+          // Full-page captures: one mid-poll scroll so lazy/overflow content can
+          // paint before readiness gives up (bot/white pages stay unscrolled).
+          const remaining = timeout - elapsed()
+          if (opts.fullPage && !hydrated && !isWhite && remaining > 1000) {
+            hydrated = true
+            await pReflect(scrollFullPageToLoadContent(page, Math.min(remaining / 2, 8000)))
+            debug('screenshot:hydrateScroll', { remaining })
+          }
 
           retry += 1
           await goto.waitUntilAuto(page, { timeout })
