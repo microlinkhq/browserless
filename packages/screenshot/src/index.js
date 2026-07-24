@@ -235,15 +235,20 @@ module.exports = ({ goto, ...gotoOpts }) => {
           await goto.waitUntilAuto(page, { timeout })
         } while (!isReady)
 
-        if (isReady && opts.fullPage) {
+        // Always return a fullPage buffer when requested — readiness probes stay
+        // viewport-only. Overflow unwrap stays gated on isReady so bot shells
+        // are not expanded; timed-out pages still get a document-height shot.
+        if (opts.fullPage) {
           const scrollTimeout =
             typeof goto.timeouts.goto === 'function'
               ? goto.timeouts.goto(opts.timeout)
               : goto.timeouts.action(opts.timeout)
-          await prepareFullDocument(page, { goto, timeout: scrollTimeout })
+          if (isReady) {
+            await prepareFullDocument(page, { goto, timeout: scrollTimeout })
+          }
           screenshot = await captureWithNavigationRetry(
             async () => {
-              await pReflect(page.evaluate(expandOverflow))
+              if (isReady) await pReflect(page.evaluate(expandOverflow))
               return page.screenshot(toScreenshotOpts(opts, { fullPage: true }))
             },
             { page, goto, timeout: scrollTimeout }

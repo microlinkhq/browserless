@@ -115,6 +115,11 @@ const resolveScrollTimeout = (goto, timeout) =>
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
+  // Set by `prepare` when the page cleared readiness (or used a non-auto wait).
+  // `render` only unwraps overflow for prepared pages so bot-check shells that
+  // never pass `isPageReady` are not expanded at print time.
+  let documentPrepared = false
+
   // Render an already-prepared page to a PDF buffer. Split out from the load so
   // a single load can be reused across page-range chunks (microlink-api's
   // parallel renderer) without re-navigating.
@@ -126,7 +131,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       printBackground: opts.printBackground ?? PDF_DEFAULT_OPTS.printBackground
     })
 
-    await pReflect(page.evaluate(expandOverflow))
+    if (documentPrepared) {
+      await pReflect(page.evaluate(expandOverflow))
+    }
 
     return captureWithNavigationRetry(() => page.pdf(pdfOpts), {
       page,
@@ -154,6 +161,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     } = opts
     const waitForDomOpts = resolveWaitForDom(waitForDom)
     const gotoOpts = { ...rest, mediaType }
+    documentPrepared = false
 
     const waitForDomStabilityResult = async page => {
       if (!waitForDomOpts) return
@@ -186,6 +194,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     if (waitUntil !== 'auto') {
       await goto(page, { ...gotoOpts, url, waitUntil })
       await waitForDomStabilityResult(page)
+      documentPrepared = true
       return
     }
 
@@ -204,6 +213,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
         timeout: resolveScrollTimeout(goto, rest.timeout)
       })
       readiness = { ...readiness, ...prep }
+      documentPrepared = true
     }
 
     return readiness
