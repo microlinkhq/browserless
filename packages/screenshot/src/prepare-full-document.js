@@ -186,11 +186,17 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
   return { ...scroll, hydrated, duration: Date.now() - started }
 }
 
-const resolveScrollTimeout = (goto, timeout) => {
-  if (timeout != null) return timeout
-  if (typeof goto?.timeouts?.goto === 'function') return goto.timeouts.goto()
-  if (typeof goto?.timeouts?.action === 'function') return goto.timeouts.action()
-  return 15000
+const resolveScrollTimeout = (goto, timeout) =>
+  typeof goto.timeouts.goto === 'function'
+    ? goto.timeouts.goto(timeout)
+    : goto.timeouts.action(timeout)
+
+const tryHydrateScroll = async (page, remaining) => {
+  const hydrate = await pReflect(scrollFullPageToLoadContent(page, Math.min(remaining / 2, 5000)))
+  return {
+    hydrated: !hydrate.isRejected && !!hydrate.value?.hydrated,
+    info: hydrate.isRejected ? {} : hydrate.value
+  }
 }
 
 const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {}) => {
@@ -231,6 +237,8 @@ module.exports = {
   expandOverflow,
   scrollFullPageToLoadContent,
   prepareFullDocument,
+  resolveScrollTimeout,
+  tryHydrateScroll,
   SCROLL_STEP_MS,
   OVERFLOW_MIN_PX
 }

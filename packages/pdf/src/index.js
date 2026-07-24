@@ -11,7 +11,8 @@ const {
   waitForReady,
   prepareFullDocument,
   expandOverflow,
-  scrollFullPageToLoadContent,
+  checkPageReady,
+  tryHydrateScroll,
   SCREENSHOT_DEFAULT_OPTS
 } = require('@browserless/screenshot')
 
@@ -37,20 +38,8 @@ const getMargin = unit => {
   }
 }
 
-const getPageMeta = page =>
-  page.evaluate(() => ({
-    title: document.title || '',
-    bodyText: document.body ? document.body.innerText || '' : '',
-    url: window.location.href || ''
-  }))
-
 const isPaintedContent = ({ painted = 0, text = 0, fonts = true } = {}) =>
   painted > 0 || (text >= TEXT_PAINTED_MIN && fonts)
-
-const resolveScrollTimeout = (goto, timeout) =>
-  typeof goto.timeouts.goto === 'function'
-    ? goto.timeouts.goto(timeout)
-    : goto.timeouts.action(timeout)
 
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
@@ -84,28 +73,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       ...rest
     } = opts
 
-    const checkPageReady = async (page, { response, screenshot, isWhite } = {}) => {
-      const pageMetaResult = await pReflect(getPageMeta(page))
-      const pageMeta = pageMetaResult.isRejected ? {} : pageMetaResult.value
-      const pageReadyResult = await pReflect(
-        isPageReady({
-          page,
-          response,
-          screenshot,
-          isWhite,
-          isWhiteScreenshot,
-          ...pageMeta
-        })
-      )
-      return !pageReadyResult.isRejected && !!pageReadyResult.value
-    }
-
     if (waitUntil !== 'auto') {
       await goto(page, { ...rest, url, waitUntil })
-      await prepareFullDocument(page, {
-        goto,
-        timeout: resolveScrollTimeout(goto, rest.timeout)
-      })
+      await prepareFullDocument(page, { goto, timeout: rest.timeout })
       return
     }
 
@@ -119,7 +89,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     if (isReady) {
       const prep = await prepareFullDocument(page, {
         goto,
-        timeout: resolveScrollTimeout(goto, rest.timeout),
+        timeout: rest.timeout,
         scrolled: didHydrateScroll
       })
       readiness = { ...readiness, ...prep }
@@ -148,7 +118,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
         ready.height > ready.viewport
 
       if (isReady) {
-        isReady = await checkPageReady(page, { response, isWhite: false })
+        isReady = await checkPageReady(page, { isPageReady, response, isWhite: false })
         if (!isReady) debug('ready:isPageReady', { rejected: true })
       }
 
@@ -167,20 +137,14 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             { page, goto, timeout: Math.max(0, pollTimeout - elapsed()) }
           )
           const isWhite = await isWhiteScreenshot(screenshot)
-          isReady = await checkPageReady(page, { response, screenshot, isWhite })
+          isReady = await checkPageReady(page, { isPageReady, response, screenshot, isWhite })
 
           const remaining = pollTimeout - elapsed()
           if (!isReady && !didHydrateAttempt && !isWhite && remaining > 1000) {
             didHydrateAttempt = true
-            const hydrate = await pReflect(
-              scrollFullPageToLoadContent(page, Math.min(remaining / 2, 5000))
-            )
-            didHydrateScroll = !hydrate.isRejected && !!hydrate.value?.hydrated
-            debug('ready:hydrateScroll', {
-              remaining,
-              hydrated: didHydrateScroll,
-              ...(hydrate.isRejected ? {} : hydrate.value)
-            })
+            const { hydrated, info } = await tryHydrateScroll(page, remaining)
+            didHydrateScroll = hydrated
+            debug('ready:hydrateScroll', { remaining, hydrated, ...info })
           }
 
           if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout })
