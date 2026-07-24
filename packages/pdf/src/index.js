@@ -8,17 +8,14 @@ const pReflect = require('p-reflect')
 const {
   captureWithNavigationRetry,
   isWhiteScreenshot,
-  waitForDomStability,
   waitForReady,
   prepareFullDocument,
   expandOverflow,
   scrollFullPageToLoadContent,
-  resolveWaitForDom,
   SCREENSHOT_DEFAULT_OPTS
 } = require('@browserless/screenshot')
 
 const PDF_DEFAULT_OPTS = {
-  waitForDom: SCREENSHOT_DEFAULT_OPTS.waitForDom,
   margin: '0.35cm',
   scale: 0.65,
   printBackground: true,
@@ -83,23 +80,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   const prepare = async (page, url, opts = {}) => {
     const {
       waitUntil = PDF_DEFAULT_OPTS.waitUntil,
-      waitForDom = PDF_DEFAULT_OPTS.waitForDom,
       isPageReady = PDF_DEFAULT_OPTS.isPageReady,
       ...rest
     } = opts
-    const waitForDomOpts = resolveWaitForDom(waitForDom)
-
-    const waitForDomStabilityResult = async page => {
-      if (!waitForDomOpts) return
-
-      const result = await pReflect(page.evaluate(waitForDomStability, waitForDomOpts))
-      debug(
-        'waitForDomStability',
-        result.isRejected
-          ? { ...waitForDomOpts, error: result.reason.message || result.reason }
-          : { ...waitForDomOpts, ...result.value }
-      )
-    }
 
     const checkPageReady = async (page, { response, screenshot, isWhite } = {}) => {
       const pageMetaResult = await pReflect(getPageMeta(page))
@@ -119,7 +102,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
     if (waitUntil !== 'auto') {
       await goto(page, { ...rest, url, waitUntil })
-      await waitForDomStabilityResult(page)
       await prepareFullDocument(page, {
         goto,
         timeout: resolveScrollTimeout(goto, rest.timeout)
@@ -143,7 +125,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     return readiness
 
     async function waitUntilAuto (page, { response, timeout: autoTimeout } = {}) {
-      await waitForDomStabilityResult(page)
       const timeout = autoTimeout ?? goto.timeouts.action(rest.timeout)
 
       const readyTime = timeSpan()

@@ -14,17 +14,17 @@ const noWhiteScreenshot = fs.readFileSync(
   path.resolve(__dirname, '../../screenshot/test/fixtures/no-white-5k.png')
 )
 
-// `waitUntilAuto` runs two in-page evaluates: `waitForDomStability` and
-// `paintSignals`. Dispatch on function identity — the workspace resolves both
-// packages to the same module instance — so the stub keeps routing correctly
-// even if either evaluate's signature changes.
-const scriptEvaluate = (signals, onDomStability) => async (fn, args) => {
-  if (fn === waitForDomStability) {
-    onDomStability(args)
-    return { status: 'idle' }
-  }
-  return signals
-}
+// Dispatch on function identity so prepareFullDocument's scroll quiet
+// (`waitForDomStability`) and readiness (`paintSignals`) stay stubbed correctly.
+const scriptEvaluate =
+  (signals, onDomStability = () => {}) =>
+    async (fn, args) => {
+      if (fn === waitForDomStability) {
+        onDomStability(args)
+        return { status: 'idle' }
+      }
+      return signals
+    }
 
 const IMAGELESS_READY = {
   height: 800,
@@ -101,11 +101,10 @@ test('waitUntil auto should generate final pdf once', async t => {
   let screenshotCalls = 0
   let pdfCalls = 0
   let waitUntilAutoCalls = 0
-  const domStabilityCalls = []
 
   const page = {
     screenshot: async () => (screenshotCalls++ === 0 ? whiteScreenshot : noWhiteScreenshot),
-    evaluate: scriptEvaluate(IMAGELESS_READY, args => domStabilityCalls.push(args)),
+    evaluate: scriptEvaluate(IMAGELESS_READY),
     pdf: async () => {
       pdfCalls += 1
       return Buffer.from(`pdf-${pdfCalls}`)
@@ -121,25 +120,6 @@ test('waitUntil auto should generate final pdf once', async t => {
   t.is(pdfCalls, 1)
   t.true(screenshotCalls >= 2)
   t.is(waitUntilAutoCalls, 1)
-  // Default waitForDom is off; only prepareFullDocument's scroll quiet may call it.
-  t.false(domStabilityCalls.some(args => args && args.timeout === 2500))
-})
-
-test('waitUntil auto should honor custom waitForDom', async t => {
-  const domStabilityCalls = []
-
-  const page = {
-    screenshot: async () => noWhiteScreenshot,
-    evaluate: scriptEvaluate(IMAGELESS_READY, args => domStabilityCalls.push(args)),
-    pdf: async () => Buffer.from('pdf')
-  }
-
-  const goto = makeGoto()
-
-  const pdf = createPdf({ goto })(page)
-  await pdf('https://example.com', { waitUntil: 'auto', waitForDom: 2500, timeout: 500 })
-
-  t.true(domStabilityCalls.some(args => args && args.timeout === 2500 && args.idle === 250))
 })
 
 test('retries pdf generation when navigation destroys the execution context', async t => {

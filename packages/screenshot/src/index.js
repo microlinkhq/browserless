@@ -9,7 +9,7 @@ const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
-const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require('./wait-for-dom')
+const { waitForDomStability } = require('./wait-for-dom')
 const { waitForReady, paintSignals } = require('./wait-for-ready')
 const {
   waitForOverflowHeight,
@@ -110,7 +110,6 @@ const SCREENSHOT_DEFAULT_OPTS = {
   codeScheme: 'atom-dark',
   overlay: {},
   waitUntil: 'auto',
-  waitForDom: DEFAULT_WAIT_FOR_DOM,
   isPageReady: defaultIsPageReady
 }
 
@@ -124,7 +123,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
         codeScheme = SCREENSHOT_DEFAULT_OPTS.codeScheme,
         overlay: overlayOpts = SCREENSHOT_DEFAULT_OPTS.overlay,
         waitUntil = SCREENSHOT_DEFAULT_OPTS.waitUntil,
-        waitForDom = SCREENSHOT_DEFAULT_OPTS.waitForDom,
         isPageReady = SCREENSHOT_DEFAULT_OPTS.isPageReady,
         ...opts
       } = {}
@@ -134,7 +132,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
-        const waitForDomOpts = resolveWaitForDom(waitForDom)
 
         let screenshotOpts = {}
         const tasks = [
@@ -147,13 +144,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
             debug: 'beforeScreenshot:waitForImagesOnViewport'
           }
         ]
-
-        if (waitForDomOpts) {
-          tasks.push({
-            fn: () => page.evaluate(waitForDomStability, waitForDomOpts),
-            debug: 'beforeScreenshot:waitForDomStability'
-          })
-        }
 
         if (codeScheme && response) {
           tasks.push({
@@ -306,7 +296,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
 module.exports.captureWithNavigationRetry = captureWithNavigationRetry
 module.exports.isWhiteScreenshot = isWhiteScreenshot
 module.exports.waitForDomStability = waitForDomStability
-module.exports.resolveWaitForDom = resolveWaitForDom
 module.exports.waitForReady = waitForReady
 module.exports.paintSignals = paintSignals
 module.exports.scrollFullPageToLoadContent = scrollFullPageToLoadContent
