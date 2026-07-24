@@ -76,36 +76,6 @@ const waitForElement = async (page, element) => {
   return screenshotOpts
 }
 
-// Puppeteer screenshot options only — goto/readiness fields must not be
-// forwarded (and readiness probes must not write `--path`).
-const toScreenshotOpts = (opts, overrides = {}) => {
-  const {
-    path,
-    type,
-    quality,
-    omitBackground,
-    encoding,
-    captureBeyondViewport,
-    fromSurface,
-    optimizeForSpeed,
-    clip,
-    fullPage
-  } = opts
-  return {
-    path,
-    type,
-    quality,
-    omitBackground,
-    encoding,
-    captureBeyondViewport,
-    fromSurface,
-    optimizeForSpeed,
-    clip,
-    fullPage,
-    ...overrides
-  }
-}
-
 const SCREENSHOT_DEFAULT_OPTS = {
   codeScheme: 'atom-dark',
   overlay: {},
@@ -186,9 +156,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
         do {
           screenshot = await captureWithNavigationRetry(
             () =>
-              page.screenshot(
-                toScreenshotOpts(opts, opts.fullPage ? { fullPage: false, path: undefined } : {})
-              ),
+              page.screenshot({
+                ...opts,
+                ...(opts.fullPage ? { fullPage: false, path: undefined } : {})
+              }),
             { page, goto, timeout }
           )
           isWhite = await isWhiteScreenshot(screenshot)
@@ -241,7 +212,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           screenshot = await captureWithNavigationRetry(
             async () => {
               if (isReady) await pReflect(page.evaluate(expandOverflow))
-              return page.screenshot(toScreenshotOpts(opts, { fullPage: true }))
+              return page.screenshot({ ...opts, fullPage: true })
             },
             { page, goto, timeout: scrollTimeout }
           )
@@ -270,7 +241,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           screenshot = await captureWithNavigationRetry(
             async () => {
               if (opts.fullPage) await pReflect(page.evaluate(expandOverflow))
-              return page.screenshot(toScreenshotOpts({ ...opts, ...screenshotOpts }))
+              return page.screenshot({ ...opts, ...screenshotOpts })
             },
             { page, goto, timeout: goto.timeouts.action(opts.timeout) }
           )
