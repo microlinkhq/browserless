@@ -178,9 +178,7 @@ const prepareFullDocument = async (page, { goto, timeout } = {}) => {
   // `goto.waitUntilAuto` so readiness-retry mocks stay countable.
   const settleMs = Math.min(1500, Math.max(0, scrollTimeout - elapsed()))
   if (settleMs > 0 && typeof page.waitForNetworkIdle === 'function') {
-    await pReflect(
-      require('p-timeout')(page.waitForNetworkIdle({ idleTime: 300, concurrency: 2 }), settleMs)
-    )
+    await pReflect(page.waitForNetworkIdle({ idleTime: 300, concurrency: 2, timeout: settleMs }))
   }
 
   const expanded = await pReflect(page.evaluate(expandOverflow))
