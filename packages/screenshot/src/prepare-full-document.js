@@ -5,18 +5,9 @@ const pReflect = require('p-reflect')
 
 const { waitForDomStability } = require('./wait-for-dom')
 
-// Per-step dwell for intersection-observer / lazy fetches. Kept as a fixed
-// cap — scaling delay with the request budget made tall pages crawl (e.g.
-// 20 steps × multi-second delays) without improving hydrate rate.
 const SCROLL_STEP_MS = 250
-
-// Same floor for “is this an app-shell scroller?” across wait / scroll / expand
-// so hydration and unwrap target the same overflow root.
 const OVERFLOW_MIN_PX = 200
 
-// Wait until the tallest overflow scroller's height stops growing. App shells
-// often mount lazy sections after chrome paints; scrolling before that walks a
-// short scroller and never triggers below-fold fetches.
 const waitForOverflowHeight = (page, timeout = 3000) =>
   page.evaluate(
     (timeout, minPx) =>
@@ -52,10 +43,6 @@ const waitForOverflowHeight = (page, timeout = 3000) =>
     OVERFLOW_MIN_PX
   )
 
-// App shells often keep content in an overflow scroller (`doc` ≈ viewport).
-// `fullPage` screenshots and `page.pdf()` only see the document flow, so unwrap
-// the tallest overflow root when it is taller than the viewport.
-// `minPx` default is a literal so `page.evaluate(expandOverflow)` serializes cleanly.
 const expandOverflow = (minPx = 200) => {
   const scroll = [...document.querySelectorAll('*')]
     .filter(el => {
@@ -85,8 +72,6 @@ const expandOverflow = (minPx = 200) => {
   return true
 }
 
-// Walk the page (window, or the tallest overflow scroller when the document
-// itself isn't tall) so lazy sections and intersection-observer fetches run.
 const scrollFullPageToLoadContent = async (page, timeout) => {
   const duration = debug.duration()
   const preQuiet = Math.min(300, Math.floor(timeout / 10))
@@ -157,8 +142,6 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
   }
 }
 
-// Shared by fullPage screenshot and PDF: after the page is ready, hydrate
-// overflow content and unwrap it so capture sees the full document flow.
 const resolveScrollTimeout = (goto, timeout) => {
   if (timeout != null) return timeout
   if (typeof goto?.timeouts?.goto === 'function') return goto.timeouts.goto()
@@ -181,8 +164,6 @@ const prepareFullDocument = async (page, { goto, timeout } = {}) => {
   await scrollFullPageToLoadContent(page, scrollTimeout)
   debug('prepareFullDocument:scroll', { duration: elapsed() })
 
-  // Brief network settle for fetches the scroll triggered — keep this off
-  // `goto.waitUntilAuto` so readiness-retry mocks stay countable.
   const settleMs = Math.min(1500, Math.max(0, scrollTimeout - elapsed()))
   if (settleMs > 0 && typeof page.waitForNetworkIdle === 'function') {
     await pReflect(page.waitForNetworkIdle({ idleTime: 300, concurrency: 2, timeout: settleMs }))

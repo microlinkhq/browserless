@@ -20,11 +20,6 @@ const {
 
 const timeSpan = require('@kikobeats/time-span')()
 
-// Retry a page capture (screenshot/pdf) that races with a client-side
-// navigation. When the execution context is destroyed mid-capture, the page is
-// navigating: wait for it to settle via `waitUntilAuto` and retry in-place,
-// bounded by `timeout`, rather than failing the whole request. SPAs (e.g.
-// scribd) navigate client-side after load, so the initial capture often races.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
   while (true) {
@@ -195,7 +190,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let retry = 0
         let isWhite = false
         let isReady = false
-        let hydrated = false
+        let didHydrateScroll = false
 
         do {
           screenshot = await captureWithNavigationRetry(
@@ -222,11 +217,9 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
           if (isReady || elapsed() >= timeout) break
 
-          // Full-page captures: one mid-poll scroll so lazy/overflow content can
-          // paint before readiness gives up (bot/white pages stay unscrolled).
           const remaining = timeout - elapsed()
-          if (opts.fullPage && !hydrated && !isWhite && remaining > 1000) {
-            hydrated = true
+          if (opts.fullPage && !didHydrateScroll && !isWhite && remaining > 1000) {
+            didHydrateScroll = true
             await pReflect(scrollFullPageToLoadContent(page, Math.min(remaining / 2, 8000)))
             debug('screenshot:hydrateScroll', { remaining })
           }
@@ -235,9 +228,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
           await goto.waitUntilAuto(page, { timeout })
         } while (!isReady)
 
-        // Always return a fullPage buffer when requested — readiness probes stay
-        // viewport-only. Overflow unwrap stays gated on isReady so bot shells
-        // are not expanded; timed-out pages still get a document-height shot.
         if (opts.fullPage) {
           const scrollTimeout =
             typeof goto.timeouts.goto === 'function'

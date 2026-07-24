@@ -24,21 +24,9 @@ const PDF_DEFAULT_OPTS = {
   printBackground: true,
   waitUntil: 'auto',
   isPageReady: SCREENSHOT_DEFAULT_OPTS.isPageReady
-  // mediaType intentionally unset: `page.pdf()` already uses Chromium print
-  // CSS. Pass `mediaType: 'screen' | 'print'` to call emulateMediaType.
 }
 
-// Share of the phase's load allowance the readiness gate may consume in `auto`
-// mode. Pages observed settling in 0.6-3.3s (a hydrating document is the slow
-// end), so a quarter of the allowance — ~3.9s at the default request budget —
-// covers them with margin while keeping the cap well short of the render's
-// share. The gate returns as soon as the page is quiet, so this bounds only a
-// page that never settles.
 const READY_BUDGET_RATIO = 0.25
-
-// Minimum visible characters for the text fast path. Matches the counting cap
-// in `waitForReady`'s paintSignals, which stops walking text nodes once reached —
-// raising this above the cap would make the text fast path unreachable.
 const TEXT_PAINTED_MIN = 200
 
 const getMargin = unit => {
@@ -70,15 +58,6 @@ const resolveScrollTimeout = (goto, timeout) =>
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
-  // Per-page: set by `prepare` when that page cleared readiness (or used a
-  // non-auto wait). `render` only unwraps overflow for prepared pages so
-  // bot-check shells that never pass `isPageReady` are not expanded at print
-  // time. WeakMap keeps concurrent prepare/render jobs from racing a shared flag.
-  const documentPrepared = new WeakMap()
-
-  // Render an already-prepared page to a PDF buffer. Split out from the load so
-  // a single load can be reused across page-range chunks (microlink-api's
-  // parallel renderer) without re-navigating.
   const render = async (page, opts = {}) => {
     const {
       margin = PDF_DEFAULT_OPTS.margin,
@@ -87,9 +66,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       ...rest
     } = opts
 
-    if (documentPrepared.get(page)) {
-      await pReflect(page.evaluate(expandOverflow))
-    }
+    await pReflect(page.evaluate(expandOverflow))
 
     return captureWithNavigationRetry(
       () =>
@@ -103,26 +80,14 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     )
   }
 
-  // Navigate `page` to `url` and wait until it is ready to print: DOM stability
-  // plus, in `auto` mode, a navigation-tolerant readiness gate. Only a page that
-  // settles still-blank falls back to the (expensive, navigation-fragile)
-  // screenshot poll.
   const prepare = async (page, url, opts = {}) => {
     const {
-      margin,
-      scale,
-      printBackground,
-      // Unset → Chromium's native print CSS for `page.pdf()`. Pass `screen` (or
-      // another type) via opts when the caller needs emulateMediaType.
-      mediaType,
       waitUntil = PDF_DEFAULT_OPTS.waitUntil,
       waitForDom = PDF_DEFAULT_OPTS.waitForDom,
       isPageReady = PDF_DEFAULT_OPTS.isPageReady,
       ...rest
     } = opts
     const waitForDomOpts = resolveWaitForDom(waitForDom)
-    const gotoOpts = { ...rest, mediaType }
-    documentPrepared.set(page, false)
 
     const waitForDomStabilityResult = async page => {
       if (!waitForDomOpts) return
@@ -153,34 +118,26 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     }
 
     if (waitUntil !== 'auto') {
-      await goto(page, { ...gotoOpts, url, waitUntil })
+      await goto(page, { ...rest, url, waitUntil })
       await waitForDomStabilityResult(page)
-      // Match fullPage screenshot: explicit waitUntil still needs overflow
-      // hydrate + unwrap so lazy SPA shells print the full document.
       await prepareFullDocument(page, {
         goto,
         timeout: resolveScrollTimeout(goto, rest.timeout)
       })
-      documentPrepared.set(page, true)
       return
     }
 
-    // Surfaced to the caller: a page whose readiness could not be confirmed
-    // (`timedOut`) is a poor one to keep rendering on, so a caller reusing this
-    // load across page-ranges can choose a fresh context instead.
     let readiness
     let isReady = false
 
-    await goto(page, { ...gotoOpts, url, waitUntil, waitUntilAuto })
+    await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
 
-    // Same full-document prep as fullPage screenshot (scroll + unwrap overflow).
     if (isReady) {
       const prep = await prepareFullDocument(page, {
         goto,
         timeout: resolveScrollTimeout(goto, rest.timeout)
       })
       readiness = { ...readiness, ...prep }
-      documentPrepared.set(page, true)
     }
 
     return readiness
@@ -198,10 +155,8 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
       const elapsed = timeSpan()
       const pollTimeout = Math.max(0, timeout - readyTime())
-      let hydrated = false
+      let didHydrateScroll = false
 
-      // Painted-content fast path still must clear `isPageReady` (bot-check /
-      // verification). Prefer a page-meta check without a probe shot.
       isReady =
         !ready.timedOut &&
         isPaintedContent(ready) &&
@@ -231,11 +186,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           const isWhite = await isWhiteScreenshot(screenshot)
           isReady = await checkPageReady(page, { response, screenshot, isWhite })
 
-          // One bounded scroll so overflow/lazy shells can paint before the
-          // next readiness check — without waiting for a final prepare gate.
           const remaining = pollTimeout - elapsed()
-          if (!isReady && !hydrated && !isWhite && remaining > 1000) {
-            hydrated = true
+          if (!isReady && !didHydrateScroll && !isWhite && remaining > 1000) {
+            didHydrateScroll = true
             await pReflect(scrollFullPageToLoadContent(page, Math.min(remaining / 2, 8000)))
             debug('ready:hydrateScroll', { remaining })
           }
