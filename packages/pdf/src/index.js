@@ -115,10 +115,11 @@ const resolveScrollTimeout = (goto, timeout) =>
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
-  // Set by `prepare` when the page cleared readiness (or used a non-auto wait).
-  // `render` only unwraps overflow for prepared pages so bot-check shells that
-  // never pass `isPageReady` are not expanded at print time.
-  let documentPrepared = false
+  // Per-page: set by `prepare` when that page cleared readiness (or used a
+  // non-auto wait). `render` only unwraps overflow for prepared pages so
+  // bot-check shells that never pass `isPageReady` are not expanded at print
+  // time. WeakMap keeps concurrent prepare/render jobs from racing a shared flag.
+  const documentPrepared = new WeakMap()
 
   // Render an already-prepared page to a PDF buffer. Split out from the load so
   // a single load can be reused across page-range chunks (microlink-api's
@@ -131,7 +132,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       printBackground: opts.printBackground ?? PDF_DEFAULT_OPTS.printBackground
     })
 
-    if (documentPrepared) {
+    if (documentPrepared.get(page)) {
       await pReflect(page.evaluate(expandOverflow))
     }
 
@@ -161,7 +162,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     } = opts
     const waitForDomOpts = resolveWaitForDom(waitForDom)
     const gotoOpts = { ...rest, mediaType }
-    documentPrepared = false
+    documentPrepared.set(page, false)
 
     const waitForDomStabilityResult = async page => {
       if (!waitForDomOpts) return
@@ -194,7 +195,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     if (waitUntil !== 'auto') {
       await goto(page, { ...gotoOpts, url, waitUntil })
       await waitForDomStabilityResult(page)
-      documentPrepared = true
+      documentPrepared.set(page, true)
       return
     }
 
@@ -213,7 +214,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
         timeout: resolveScrollTimeout(goto, rest.timeout)
       })
       readiness = { ...readiness, ...prep }
-      documentPrepared = true
+      documentPrepared.set(page, true)
     }
 
     return readiness
