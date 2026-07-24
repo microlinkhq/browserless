@@ -78,10 +78,16 @@ const run = async () => {
     launchOpts.ignoreDefaultArgs = ['--disable-extensions']
   }
 
+  const parsedOpts = nestie(opts)
+  if (parsedOpts.timeout != null) {
+    launchOpts.timeout = Number(parsedOpts.timeout)
+  }
   const browser = createBrowser(launchOpts)
   onExit(browser.close)
-  const browserless = await browser.createContext()
-  return fn({ url, browserless, opts: nestie(opts), isPageReady })
+  const browserless = await browser.createContext(
+    launchOpts.timeout != null ? { timeout: launchOpts.timeout } : undefined
+  )
+  return fn({ url, browserless, opts: parsedOpts, isPageReady })
 }
 
 run()

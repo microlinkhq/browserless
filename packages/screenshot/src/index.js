@@ -9,16 +9,17 @@ const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
-const { waitForDomStability, resolveWaitForDom, DEFAULT_WAIT_FOR_DOM } = require('./wait-for-dom')
-const { waitForReady } = require('./wait-for-ready')
+const { waitForDomStability } = require('./wait-for-dom')
+const { waitForReady, paintSignals } = require('./wait-for-ready')
+const {
+  waitForOverflowHeight,
+  expandOverflow,
+  scrollFullPageToLoadContent,
+  prepareFullDocument
+} = require('./prepare-full-document')
 
 const timeSpan = require('@kikobeats/time-span')()
 
-// Retry a page capture (screenshot/pdf) that races with a client-side
-// navigation. When the execution context is destroyed mid-capture, the page is
-// navigating: wait for it to settle via `waitUntilAuto` and retry in-place,
-// bounded by `timeout`, rather than failing the whole request. SPAs (e.g.
-// scribd) navigate client-side after load, so the initial capture often races.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
   while (true) {
@@ -32,7 +33,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   }
 }
 
-const getPageSnapshot = page =>
+const getPageMeta = page =>
   page.evaluate(() => ({
     title: document.title || '',
     bodyText: document.body ? document.body.innerText || '' : '',
@@ -64,41 +65,6 @@ const waitForImagesOnViewport = page =>
     )
   )
 
-const scrollFullPageToLoadContent = async (page, timeout) => {
-  const debug = require('debug-logfmt')('browserless:goto')
-
-  const duration = debug.duration()
-  const result = await page.evaluate(waitForDomStability, {
-    idle: timeout / 2 / 2,
-    timeout: timeout / 2
-  })
-
-  duration('waitForDomStability', result)
-
-  await page.evaluate(
-    timeout =>
-      new Promise(resolve => {
-        let currentScrollPosition = 0
-        const scrollStep = Math.floor(window.innerHeight)
-        const pageHeight = document.body.scrollHeight
-        const totalSteps = Math.ceil(pageHeight / scrollStep)
-        const stepDelay = timeout / 2 / totalSteps
-        const scrollNext = async () => {
-          if (currentScrollPosition >= pageHeight) {
-            resolve()
-            return
-          }
-          window.scrollBy(0, scrollStep)
-          currentScrollPosition += scrollStep
-          setTimeout(scrollNext, stepDelay)
-        }
-        scrollNext()
-      }),
-    timeout
-  )
-  await page.evaluate(() => window.scrollTo(0, 0))
-}
-
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
   if (element) {
@@ -114,7 +80,6 @@ const SCREENSHOT_DEFAULT_OPTS = {
   codeScheme: 'atom-dark',
   overlay: {},
   waitUntil: 'auto',
-  waitForDom: DEFAULT_WAIT_FOR_DOM,
   isPageReady: defaultIsPageReady
 }
 
@@ -128,7 +93,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
         codeScheme = SCREENSHOT_DEFAULT_OPTS.codeScheme,
         overlay: overlayOpts = SCREENSHOT_DEFAULT_OPTS.overlay,
         waitUntil = SCREENSHOT_DEFAULT_OPTS.waitUntil,
-        waitForDom = SCREENSHOT_DEFAULT_OPTS.waitForDom,
         isPageReady = SCREENSHOT_DEFAULT_OPTS.isPageReady,
         ...opts
       } = {}
@@ -138,7 +102,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
-        const waitForDomOpts = resolveWaitForDom(waitForDom)
 
         let screenshotOpts = {}
         const tasks = [
@@ -152,13 +115,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
           }
         ]
 
-        if (waitForDomOpts) {
-          tasks.push({
-            fn: () => page.evaluate(waitForDomStability, waitForDomOpts),
-            debug: 'beforeScreenshot:waitForDomStability'
-          })
-        }
-
         if (codeScheme && response) {
           tasks.push({
             fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
@@ -166,12 +122,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           })
         }
 
-        if (fullPage) {
-          tasks.push({
-            fn: () => scrollFullPageToLoadContent(page, timeout, goto),
-            debug: 'beforeScreenshot:scrollFullPageToLoadContent'
-          })
-        } else if (element) {
+        if (element && !fullPage) {
           tasks.push({
             fn: async () => {
               screenshotOpts = await waitForElement(page, element)
@@ -185,7 +136,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
             goto.run({
               fn: fn(),
               ...opts,
-              timeout: fullPage ? timeout * 2 : timeout
+              timeout
             })
           )
         )
@@ -199,16 +150,21 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let retry = 0
         let isWhite = false
         let isReady = false
+        let didHydrateScroll = false
+        let didHydrateAttempt = false
 
         do {
-          screenshot = await captureWithNavigationRetry(() => page.screenshot(opts), {
-            page,
-            goto,
-            timeout
-          })
+          screenshot = await captureWithNavigationRetry(
+            () =>
+              page.screenshot({
+                ...opts,
+                ...(opts.fullPage ? { fullPage: false, path: undefined } : {})
+              }),
+            { page, goto, timeout }
+          )
           isWhite = await isWhiteScreenshot(screenshot)
-          const snapshotResult = await pReflect(getPageSnapshot(page))
-          const pageSnapshot = snapshotResult.isRejected ? {} : snapshotResult.value
+          const pageMetaResult = await pReflect(getPageMeta(page))
+          const pageMeta = pageMetaResult.isRejected ? {} : pageMetaResult.value
           const pageReadyResult = await pReflect(
             opts.isPageReady({
               page,
@@ -216,16 +172,52 @@ module.exports = ({ goto, ...gotoOpts }) => {
               screenshot,
               isWhite,
               isWhiteScreenshot,
-              ...pageSnapshot
+              ...pageMeta
             })
           )
           isReady = !pageReadyResult.isRejected && !!pageReadyResult.value
 
           if (isReady || elapsed() >= timeout) break
 
+          const remaining = timeout - elapsed()
+          if (opts.fullPage && !didHydrateAttempt && !isWhite && remaining > 1000) {
+            didHydrateAttempt = true
+            const hydrate = await pReflect(
+              scrollFullPageToLoadContent(page, Math.min(remaining / 2, 5000))
+            )
+            didHydrateScroll = !hydrate.isRejected && !!hydrate.value?.hydrated
+            debug('screenshot:hydrateScroll', {
+              remaining,
+              hydrated: didHydrateScroll,
+              ...(hydrate.isRejected ? {} : hydrate.value)
+            })
+          }
+
           retry += 1
           await goto.waitUntilAuto(page, { timeout })
         } while (!isReady)
+
+        if (opts.fullPage) {
+          const scrollTimeout =
+            typeof goto.timeouts.goto === 'function'
+              ? goto.timeouts.goto(opts.timeout)
+              : goto.timeouts.action(opts.timeout)
+          if (isReady) {
+            await prepareFullDocument(page, {
+              goto,
+              timeout: scrollTimeout,
+              scrolled: didHydrateScroll
+            })
+          }
+          screenshot = await captureWithNavigationRetry(
+            async () => {
+              if (isReady) await pReflect(page.evaluate(expandOverflow))
+              return page.screenshot({ ...opts, fullPage: true })
+            },
+            { page, goto, timeout: scrollTimeout }
+          )
+          isWhite = await isWhiteScreenshot(screenshot)
+        }
 
         return { isWhite, isReady, retry }
       }
@@ -239,8 +231,18 @@ module.exports = ({ goto, ...gotoOpts }) => {
         if (waitUntil !== 'auto') {
           ;({ response } = await goto(page, { ...opts, url, waitUntil }))
           const screenshotOpts = await beforeScreenshot(page, response, opts)
+          if (opts.fullPage) {
+            const scrollTimeout =
+              typeof goto.timeouts.goto === 'function'
+                ? goto.timeouts.goto(opts.timeout)
+                : goto.timeouts.action(opts.timeout)
+            await prepareFullDocument(page, { goto, timeout: scrollTimeout })
+          }
           screenshot = await captureWithNavigationRetry(
-            () => page.screenshot({ ...opts, ...screenshotOpts }),
+            async () => {
+              if (opts.fullPage) await pReflect(page.evaluate(expandOverflow))
+              return page.screenshot({ ...opts, ...screenshotOpts })
+            },
             { page, goto, timeout: goto.timeouts.action(opts.timeout) }
           )
           debug('screenshot', { waitUntil, duration: timeScreenshot() })
@@ -277,6 +279,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
 module.exports.captureWithNavigationRetry = captureWithNavigationRetry
 module.exports.isWhiteScreenshot = isWhiteScreenshot
 module.exports.waitForDomStability = waitForDomStability
-module.exports.resolveWaitForDom = resolveWaitForDom
 module.exports.waitForReady = waitForReady
+module.exports.paintSignals = paintSignals
+module.exports.scrollFullPageToLoadContent = scrollFullPageToLoadContent
+module.exports.waitForOverflowHeight = waitForOverflowHeight
+module.exports.expandOverflow = expandOverflow
+module.exports.prepareFullDocument = prepareFullDocument
 module.exports.SCREENSHOT_DEFAULT_OPTS = SCREENSHOT_DEFAULT_OPTS

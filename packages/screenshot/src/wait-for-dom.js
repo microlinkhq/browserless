@@ -1,19 +1,5 @@
 'use strict'
 
-const DEFAULT_WAIT_FOR_DOM = 0
-const WAIT_FOR_DOM_IDLE_RATIO = 10
-
-const resolveWaitForDom = waitForDom => {
-  const timeout = Number.isFinite(waitForDom) && waitForDom >= 0 ? waitForDom : DEFAULT_WAIT_FOR_DOM
-
-  if (timeout === 0) return undefined
-
-  return {
-    timeout,
-    idle: timeout / WAIT_FOR_DOM_IDLE_RATIO
-  }
-}
-
 const waitForDomStability = ({ idle, timeout } = {}) =>
   new Promise(resolve => {
     if (!document.body) return resolve({ status: 'no-body' })
@@ -45,9 +31,4 @@ const waitForDomStability = ({ idle, timeout } = {}) =>
     })()
   })
 
-module.exports = {
-  DEFAULT_WAIT_FOR_DOM,
-  WAIT_FOR_DOM_IDLE_RATIO,
-  resolveWaitForDom,
-  waitForDomStability
-}
+module.exports = { waitForDomStability }

@@ -1,3 +1,6 @@
 'use strict'
 
-module.exports = async ({ url, browserless, opts }) => [await browserless.pdf(url, opts)]
+module.exports = async ({ url, browserless, opts, isPageReady }) => {
+  if (typeof isPageReady === 'function') opts.isPageReady = isPageReady
+  return [await browserless.pdf(url, opts)]
+}
