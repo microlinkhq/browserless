@@ -1,6 +1,6 @@
 'use strict'
 
-const debug = require('debug-logfmt')('browserless:screenshot')
+const debug = require('debug-logfmt')('browserless:prepare')
 const pReflect = require('p-reflect')
 
 const { waitForDomStability } = require('./wait-for-dom')
