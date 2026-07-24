@@ -155,6 +155,12 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     if (waitUntil !== 'auto') {
       await goto(page, { ...gotoOpts, url, waitUntil })
       await waitForDomStabilityResult(page)
+      // Match fullPage screenshot: explicit waitUntil still needs overflow
+      // hydrate + unwrap so lazy SPA shells print the full document.
+      await prepareFullDocument(page, {
+        goto,
+        timeout: resolveScrollTimeout(goto, rest.timeout)
+      })
       documentPrepared.set(page, true)
       return
     }
