@@ -41,51 +41,6 @@ const READY_BUDGET_RATIO = 0.25
 // raising this above the cap would make the text fast path unreachable.
 const TEXT_PAINTED_MIN = 200
 
-// Puppeteer `page.pdf()` options only — keep navigation/readiness keys out of
-// the CDP payload even though unknown keys are usually ignored.
-const toPdfOpts = ({
-  path,
-  scale,
-  displayHeaderFooter,
-  headerTemplate,
-  footerTemplate,
-  printBackground,
-  landscape,
-  pageRanges,
-  format,
-  width,
-  height,
-  preferCSSPageSize,
-  margin,
-  omitBackground,
-  tagged,
-  outline,
-  waitForFonts,
-  timeout
-}) =>
-  Object.fromEntries(
-    Object.entries({
-      path,
-      scale,
-      displayHeaderFooter,
-      headerTemplate,
-      footerTemplate,
-      printBackground,
-      landscape,
-      pageRanges,
-      format,
-      width,
-      height,
-      preferCSSPageSize,
-      margin: getMargin(margin),
-      omitBackground,
-      tagged,
-      outline,
-      waitForFonts,
-      timeout
-    }).filter(([, value]) => value !== undefined)
-  )
-
 const getMargin = unit => {
   if (!unit) return unit
   if (typeof unit === 'object') return unit
@@ -97,7 +52,7 @@ const getMargin = unit => {
   }
 }
 
-const getPageSnapshot = page =>
+const getPageMeta = page =>
   page.evaluate(() => ({
     title: document.title || '',
     bodyText: document.body ? document.body.innerText || '' : '',
@@ -125,22 +80,27 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   // a single load can be reused across page-range chunks (microlink-api's
   // parallel renderer) without re-navigating.
   const render = async (page, opts = {}) => {
-    const pdfOpts = toPdfOpts({
-      ...opts,
-      margin: opts.margin ?? PDF_DEFAULT_OPTS.margin,
-      scale: opts.scale ?? PDF_DEFAULT_OPTS.scale,
-      printBackground: opts.printBackground ?? PDF_DEFAULT_OPTS.printBackground
-    })
+    const {
+      margin = PDF_DEFAULT_OPTS.margin,
+      scale = PDF_DEFAULT_OPTS.scale,
+      printBackground = PDF_DEFAULT_OPTS.printBackground,
+      ...rest
+    } = opts
 
     if (documentPrepared.get(page)) {
       await pReflect(page.evaluate(expandOverflow))
     }
 
-    return captureWithNavigationRetry(() => page.pdf(pdfOpts), {
-      page,
-      goto,
-      timeout: goto.timeouts.action(opts.timeout)
-    })
+    return captureWithNavigationRetry(
+      () =>
+        page.pdf({
+          ...rest,
+          margin: getMargin(margin),
+          printBackground,
+          scale
+        }),
+      { page, goto, timeout: goto.timeouts.action(rest.timeout) }
+    )
   }
 
   // Navigate `page` to `url` and wait until it is ready to print: DOM stability
@@ -177,8 +137,8 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     }
 
     const checkPageReady = async (page, { response, screenshot, isWhite } = {}) => {
-      const pageSnapshot = await pReflect(getPageSnapshot(page))
-      const pageMeta = pageSnapshot.isRejected ? {} : pageSnapshot.value
+      const pageMetaResult = await pReflect(getPageMeta(page))
+      const pageMeta = pageMetaResult.isRejected ? {} : pageMetaResult.value
       const pageReadyResult = await pReflect(
         isPageReady({
           page,

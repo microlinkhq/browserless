@@ -38,7 +38,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   }
 }
 
-const getPageSnapshot = page =>
+const getPageMeta = page =>
   page.evaluate(() => ({
     title: document.title || '',
     bodyText: document.body ? document.body.innerText || '' : '',
@@ -206,8 +206,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
             { page, goto, timeout }
           )
           isWhite = await isWhiteScreenshot(screenshot)
-          const snapshotResult = await pReflect(getPageSnapshot(page))
-          const pageSnapshot = snapshotResult.isRejected ? {} : snapshotResult.value
+          const pageMetaResult = await pReflect(getPageMeta(page))
+          const pageMeta = pageMetaResult.isRejected ? {} : pageMetaResult.value
           const pageReadyResult = await pReflect(
             opts.isPageReady({
               page,
@@ -215,7 +215,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
               screenshot,
               isWhite,
               isWhiteScreenshot,
-              ...pageSnapshot
+              ...pageMeta
             })
           )
           isReady = !pageReadyResult.isRejected && !!pageReadyResult.value

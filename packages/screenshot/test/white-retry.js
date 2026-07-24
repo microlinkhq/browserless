@@ -55,9 +55,9 @@ const createGoto = ({ timeout = 1000, waitUntilAutoDelay = 0 } = {}) => {
   return goto
 }
 
-const createPage = (screenshots, { pageSnapshots = [] } = {}) => {
+const createPage = (screenshots, { pageMetas = [] } = {}) => {
   let screenshotCalls = 0
-  let pageSnapshotCall = 0
+  let pageMetaCall = 0
 
   return {
     on: () => {},
@@ -66,15 +66,15 @@ const createPage = (screenshots, { pageSnapshots = [] } = {}) => {
       if (expression === 'document.fonts.ready') return undefined
       if (typeof expression === 'function') {
         const source = expression.toString()
-        const isSnapshotEval =
+        const isPageMetaEval =
           source.includes('document.title') &&
           source.includes('document.body') &&
           source.includes('window.location.href')
 
-        if (!isSnapshotEval) return undefined
+        if (!isPageMetaEval) return undefined
 
         return (
-          pageSnapshots[pageSnapshotCall++] || {
+          pageMetas[pageMetaCall++] || {
             title: '',
             bodyText: '',
             url: 'https://example.com'
@@ -174,7 +174,7 @@ test('waits for verification interstitial to resolve before screenshot', async t
   const goto = createGoto({ timeout: 10000 })
   const screenshots = [Buffer.from('shot1'), Buffer.from('shot2'), Buffer.from('shot3')]
   const page = createPage(screenshots, {
-    pageSnapshots: [
+    pageMetas: [
       {
         title: 'Verifying you are human',
         bodyText: 'Please wait while we verify that you are not a robot.',

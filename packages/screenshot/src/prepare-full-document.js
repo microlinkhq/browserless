@@ -10,12 +10,16 @@ const { waitForDomStability } = require('./wait-for-dom')
 // 20 steps × multi-second delays) without improving hydrate rate.
 const SCROLL_STEP_MS = 250
 
+// Same floor for “is this an app-shell scroller?” across wait / scroll / expand
+// so hydration and unwrap target the same overflow root.
+const OVERFLOW_MIN_PX = 200
+
 // Wait until the tallest overflow scroller's height stops growing. App shells
 // often mount lazy sections after chrome paints; scrolling before that walks a
 // short scroller and never triggers below-fold fetches.
 const waitForOverflowHeight = (page, timeout = 3000) =>
   page.evaluate(
-    timeout =>
+    (timeout, minPx) =>
       new Promise(resolve => {
         const started = Date.now()
         let last = 0
@@ -26,14 +30,14 @@ const waitForOverflowHeight = (page, timeout = 3000) =>
               const s = window.getComputedStyle(el)
               return (
                 (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
-                el.scrollHeight > el.clientHeight + 200
+                el.scrollHeight > el.clientHeight + minPx
               )
             })
             .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
           const height = scroll
             ? scroll.scrollHeight
             : (document.scrollingElement || document.documentElement).scrollHeight
-          if (height === last && height > window.innerHeight + 200) {
+          if (height === last && height > window.innerHeight + minPx) {
             if (++stable >= 2) return resolve(height)
           } else {
             stable = 0
@@ -44,19 +48,21 @@ const waitForOverflowHeight = (page, timeout = 3000) =>
         }
         tick()
       }),
-    timeout
+    timeout,
+    OVERFLOW_MIN_PX
   )
 
 // App shells often keep content in an overflow scroller (`doc` ≈ viewport).
 // `fullPage` screenshots and `page.pdf()` only see the document flow, so unwrap
 // the tallest overflow root when it is taller than the viewport.
-const expandOverflow = () => {
+// `minPx` default is a literal so `page.evaluate(expandOverflow)` serializes cleanly.
+const expandOverflow = (minPx = 200) => {
   const scroll = [...document.querySelectorAll('*')]
     .filter(el => {
       const s = window.getComputedStyle(el)
       return (
         (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
-        el.scrollHeight > el.clientHeight + 200
+        el.scrollHeight > el.clientHeight + minPx
       )
     })
     .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
@@ -96,7 +102,7 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
   }
 
   await page.evaluate(
-    (scrollBudget, stepMs) =>
+    (scrollBudget, stepMs, minPx) =>
       new Promise(resolve => {
         const doc = document.scrollingElement || document.documentElement
         let root = null
@@ -106,7 +112,7 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
         if (pageHeight <= viewport + 1 && document.body) {
           let best = null
           for (const el of document.body.querySelectorAll('*')) {
-            if (el.scrollHeight <= el.clientHeight + 20) continue
+            if (el.scrollHeight <= el.clientHeight + minPx) continue
             const { overflowY } = window.getComputedStyle(el)
             if (overflowY !== 'auto' && overflowY !== 'scroll') continue
             if (!best || el.scrollHeight > best.scrollHeight) best = el
@@ -138,7 +144,8 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
         scrollNext()
       }),
     scrollBudget,
-    SCROLL_STEP_MS
+    SCROLL_STEP_MS,
+    OVERFLOW_MIN_PX
   )
 
   if (postQuiet > 0) {
@@ -181,7 +188,7 @@ const prepareFullDocument = async (page, { goto, timeout } = {}) => {
     await pReflect(page.waitForNetworkIdle({ idleTime: 300, concurrency: 2, timeout: settleMs }))
   }
 
-  const expanded = await pReflect(page.evaluate(expandOverflow))
+  const expanded = await pReflect(page.evaluate(expandOverflow, OVERFLOW_MIN_PX))
   debug('prepareFullDocument:expandOverflow', {
     expanded: !expanded.isRejected && expanded.value,
     duration: elapsed()
@@ -195,5 +202,6 @@ module.exports = {
   expandOverflow,
   scrollFullPageToLoadContent,
   prepareFullDocument,
-  SCROLL_STEP_MS
+  SCROLL_STEP_MS,
+  OVERFLOW_MIN_PX
 }
