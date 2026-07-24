@@ -5,10 +5,14 @@ const pReflect = require('p-reflect')
 
 const { waitForDomStability } = require('./wait-for-dom')
 
-const SCROLL_STEP_MS = 250
+const SCROLL_STEP_MS = 50
 const OVERFLOW_MIN_PX = 200
+const OVERFLOW_WAIT_MS = 1500
+const PRE_QUIET_MS = 50
+const POST_QUIET_MS = 200
+const SETTLE_MS = 400
 
-const waitForOverflowHeight = (page, timeout = 3000) =>
+const waitForOverflowHeight = (page, timeout = OVERFLOW_WAIT_MS) =>
   page.evaluate(
     (timeout, minPx) =>
       new Promise(resolve => {
@@ -28,14 +32,16 @@ const waitForOverflowHeight = (page, timeout = 3000) =>
           const height = scroll
             ? scroll.scrollHeight
             : (document.scrollingElement || document.documentElement).scrollHeight
-          if (height === last && height > window.innerHeight + minPx) {
+          const tall = height > window.innerHeight + minPx
+          if (height === last && tall) {
             if (++stable >= 2) return resolve(height)
           } else {
             stable = 0
             last = height
           }
           if (Date.now() - started >= timeout) return resolve(height)
-          setTimeout(tick, 200)
+          // Shell pages grow late — poll a bit slower until content appears.
+          setTimeout(tick, tall ? 100 : 150)
         }
         tick()
       }),
@@ -73,28 +79,24 @@ const expandOverflow = (minPx = 200) => {
 }
 
 const scrollFullPageToLoadContent = async (page, timeout) => {
-  const duration = debug.duration()
-  const preQuiet = Math.min(300, Math.floor(timeout / 10))
-  const postQuiet = Math.min(800, Math.floor(timeout / 6))
+  const preQuiet = Math.min(PRE_QUIET_MS, Math.floor(timeout / 20))
+  const postQuiet = Math.min(POST_QUIET_MS, Math.floor(timeout / 20))
   const scrollBudget = Math.max(0, timeout - preQuiet - postQuiet)
+  const started = Date.now()
 
   if (preQuiet > 0) {
     const result = await page.evaluate(waitForDomStability, {
       idle: preQuiet / 2,
       timeout: preQuiet
     })
-    duration('waitForDomStability:pre', result)
+    debug('waitForDomStability:pre', { ...result, duration: Date.now() - started })
   }
 
-  await page.evaluate(
+  const scroll = await page.evaluate(
     (scrollBudget, stepMs, minPx) =>
       new Promise(resolve => {
-        const doc = document.scrollingElement || document.documentElement
-        let root = null
-        let pageHeight = doc ? doc.scrollHeight : 0
-        let viewport = window.innerHeight
-
-        if (pageHeight <= viewport + 1 && document.body) {
+        const findOverflow = () => {
+          if (!document.body) return null
           let best = null
           for (const el of document.body.querySelectorAll('*')) {
             if (el.scrollHeight <= el.clientHeight + minPx) continue
@@ -102,29 +104,66 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
             if (overflowY !== 'auto' && overflowY !== 'scroll') continue
             if (!best || el.scrollHeight > best.scrollHeight) best = el
           }
-          if (best) {
-            root = best
-            pageHeight = best.scrollHeight
-            viewport = best.clientHeight
+          return best
+        }
+
+        const doc = () => document.scrollingElement || document.documentElement
+        let root = null
+        let pageHeight = doc() ? doc().scrollHeight : 0
+        let viewport = window.innerHeight
+        let currentScrollPosition = 0
+        const scrollStarted = Date.now()
+
+        const measure = () => {
+          if (!root) {
+            const overflow = findOverflow()
+            if (overflow) root = overflow
+          }
+          if (root) {
+            pageHeight = root.scrollHeight
+            viewport = root.clientHeight || window.innerHeight
+          } else {
+            const el = doc()
+            pageHeight = el ? el.scrollHeight : 0
+            viewport = window.innerHeight
           }
         }
 
-        const started = Date.now()
-        let currentScrollPosition = 0
-        const scrollStep = Math.max(1, Math.floor(viewport * 0.85))
-        const reset = () => {
+        const finish = () => {
           window.scrollTo(0, 0)
           if (root) root.scrollTop = 0
-          resolve()
+          resolve({
+            hasOverflow: !!root,
+            pageHeight,
+            viewport,
+            scrolledPx: currentScrollPosition,
+            duration: Date.now() - scrollStarted
+          })
         }
+
         const scrollNext = () => {
-          if (currentScrollPosition >= pageHeight || Date.now() - started >= scrollBudget) {
-            return reset()
+          measure()
+          const step = Math.max(1, Math.floor(viewport * 0.95))
+          if (currentScrollPosition >= pageHeight || Date.now() - scrollStarted >= scrollBudget) {
+            return finish()
           }
-          if (root) root.scrollBy(0, scrollStep)
-          else window.scrollBy(0, scrollStep)
-          currentScrollPosition += scrollStep
+          if (root) root.scrollBy(0, step)
+          else window.scrollBy(0, step)
+          currentScrollPosition += step
           setTimeout(scrollNext, stepMs)
+        }
+
+        measure()
+        // Viewport-sized shell with no overflow yet: brief wait for the SPA
+        // scroller before falling through to window scroll / budget exit.
+        if (pageHeight <= viewport + 1 && !root) {
+          const waitUntil = scrollStarted + Math.min(1000, Math.floor(scrollBudget / 4))
+          const waitForRoot = () => {
+            measure()
+            if (root || Date.now() >= waitUntil) return scrollNext()
+            setTimeout(waitForRoot, stepMs)
+          }
+          return waitForRoot()
         }
         scrollNext()
       }),
@@ -132,14 +171,19 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
     SCROLL_STEP_MS,
     OVERFLOW_MIN_PX
   )
+  debug('scrollFullPage', { ...scroll, duration: Date.now() - started })
 
   if (postQuiet > 0) {
+    const postStarted = Date.now()
     const result = await page.evaluate(waitForDomStability, {
-      idle: Math.min(200, postQuiet / 2),
+      idle: Math.min(100, postQuiet / 2),
       timeout: postQuiet
     })
-    duration('waitForDomStability:post', result)
+    debug('waitForDomStability:post', { ...result, duration: Date.now() - postStarted })
   }
+
+  const hydrated = !!(scroll?.hasOverflow && scroll.scrolledPx >= (scroll.viewport || 0))
+  return { ...scroll, hydrated, duration: Date.now() - started }
 }
 
 const resolveScrollTimeout = (goto, timeout) => {
@@ -149,24 +193,28 @@ const resolveScrollTimeout = (goto, timeout) => {
   return 15000
 }
 
-const prepareFullDocument = async (page, { goto, timeout } = {}) => {
+const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {}) => {
   const scrollTimeout = resolveScrollTimeout(goto, timeout)
   const elapsed = require('@kikobeats/time-span')({ format: n => Math.round(n) })()
 
-  const height = await pReflect(
-    waitForOverflowHeight(page, Math.min(3000, Math.round(scrollTimeout / 5)))
-  )
-  debug('prepareFullDocument:overflowHeight', {
-    height: height.isRejected ? null : height.value,
-    duration: elapsed()
-  })
+  if (!scrolled) {
+    const height = await pReflect(
+      waitForOverflowHeight(page, Math.min(OVERFLOW_WAIT_MS, Math.round(scrollTimeout / 8)))
+    )
+    debug('prepareFullDocument:overflowHeight', {
+      height: height.isRejected ? null : height.value,
+      duration: elapsed()
+    })
 
-  await scrollFullPageToLoadContent(page, scrollTimeout)
-  debug('prepareFullDocument:scroll', { duration: elapsed() })
+    await scrollFullPageToLoadContent(page, scrollTimeout)
+    debug('prepareFullDocument:scroll', { duration: elapsed() })
+  } else {
+    debug('prepareFullDocument:skipScroll', { duration: elapsed() })
+  }
 
-  const settleMs = Math.min(1500, Math.max(0, scrollTimeout - elapsed()))
+  const settleMs = Math.min(SETTLE_MS, Math.max(0, scrollTimeout - elapsed()))
   if (settleMs > 0 && typeof page.waitForNetworkIdle === 'function') {
-    await pReflect(page.waitForNetworkIdle({ idleTime: 300, concurrency: 2, timeout: settleMs }))
+    await pReflect(page.waitForNetworkIdle({ idleTime: 200, concurrency: 2, timeout: settleMs }))
   }
 
   const expanded = await pReflect(page.evaluate(expandOverflow, OVERFLOW_MIN_PX))
@@ -175,7 +223,7 @@ const prepareFullDocument = async (page, { goto, timeout } = {}) => {
     duration: elapsed()
   })
 
-  return { expanded: !expanded.isRejected && expanded.value, duration: elapsed() }
+  return { expanded: !expanded.isRejected && expanded.value, duration: elapsed(), scrolled }
 }
 
 module.exports = {

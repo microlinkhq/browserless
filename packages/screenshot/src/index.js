@@ -181,6 +181,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let isWhite = false
         let isReady = false
         let didHydrateScroll = false
+        let didHydrateAttempt = false
 
         do {
           screenshot = await captureWithNavigationRetry(
@@ -208,10 +209,17 @@ module.exports = ({ goto, ...gotoOpts }) => {
           if (isReady || elapsed() >= timeout) break
 
           const remaining = timeout - elapsed()
-          if (opts.fullPage && !didHydrateScroll && !isWhite && remaining > 1000) {
-            didHydrateScroll = true
-            await pReflect(scrollFullPageToLoadContent(page, Math.min(remaining / 2, 8000)))
-            debug('screenshot:hydrateScroll', { remaining })
+          if (opts.fullPage && !didHydrateAttempt && !isWhite && remaining > 1000) {
+            didHydrateAttempt = true
+            const hydrate = await pReflect(
+              scrollFullPageToLoadContent(page, Math.min(remaining / 2, 5000))
+            )
+            didHydrateScroll = !hydrate.isRejected && !!hydrate.value?.hydrated
+            debug('screenshot:hydrateScroll', {
+              remaining,
+              hydrated: didHydrateScroll,
+              ...(hydrate.isRejected ? {} : hydrate.value)
+            })
           }
 
           retry += 1
@@ -224,7 +232,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
               ? goto.timeouts.goto(opts.timeout)
               : goto.timeouts.action(opts.timeout)
           if (isReady) {
-            await prepareFullDocument(page, { goto, timeout: scrollTimeout })
+            await prepareFullDocument(page, {
+              goto,
+              timeout: scrollTimeout,
+              scrolled: didHydrateScroll
+            })
           }
           screenshot = await captureWithNavigationRetry(
             async () => {

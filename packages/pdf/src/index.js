@@ -111,13 +111,16 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
     let readiness
     let isReady = false
+    let didHydrateScroll = false
+    let didHydrateAttempt = false
 
     await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
 
     if (isReady) {
       const prep = await prepareFullDocument(page, {
         goto,
-        timeout: resolveScrollTimeout(goto, rest.timeout)
+        timeout: resolveScrollTimeout(goto, rest.timeout),
+        scrolled: didHydrateScroll
       })
       readiness = { ...readiness, ...prep }
     }
@@ -136,7 +139,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
       const elapsed = timeSpan()
       const pollTimeout = Math.max(0, timeout - readyTime())
-      let didHydrateScroll = false
 
       isReady =
         !ready.timedOut &&
@@ -168,10 +170,17 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           isReady = await checkPageReady(page, { response, screenshot, isWhite })
 
           const remaining = pollTimeout - elapsed()
-          if (!isReady && !didHydrateScroll && !isWhite && remaining > 1000) {
-            didHydrateScroll = true
-            await pReflect(scrollFullPageToLoadContent(page, Math.min(remaining / 2, 8000)))
-            debug('ready:hydrateScroll', { remaining })
+          if (!isReady && !didHydrateAttempt && !isWhite && remaining > 1000) {
+            didHydrateAttempt = true
+            const hydrate = await pReflect(
+              scrollFullPageToLoadContent(page, Math.min(remaining / 2, 5000))
+            )
+            didHydrateScroll = !hydrate.isRejected && !!hydrate.value?.hydrated
+            debug('ready:hydrateScroll', {
+              remaining,
+              hydrated: didHydrateScroll,
+              ...(hydrate.isRejected ? {} : hydrate.value)
+            })
           }
 
           if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout })
