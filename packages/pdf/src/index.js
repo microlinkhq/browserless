@@ -52,7 +52,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       ...rest
     } = opts
 
-    await pReflect(page.evaluate(expandOverflow))
+    await pReflect(expandOverflow(page))
 
     return captureWithNavigationRetry(
       () =>

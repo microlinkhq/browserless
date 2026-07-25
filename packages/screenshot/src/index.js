@@ -207,7 +207,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           }
           screenshot = await captureWithNavigationRetry(
             async () => {
-              if (isReady) await pReflect(page.evaluate(expandOverflow))
+              if (isReady) await pReflect(expandOverflow(page))
               return page.screenshot({ ...opts, fullPage: true })
             },
             { page, goto, timeout: resolveScrollTimeout(goto, opts.timeout) }
@@ -232,7 +232,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           }
           screenshot = await captureWithNavigationRetry(
             async () => {
-              if (opts.fullPage) await pReflect(page.evaluate(expandOverflow))
+              if (opts.fullPage) await pReflect(expandOverflow(page))
               return page.screenshot({ ...opts, ...screenshotOpts })
             },
             { page, goto, timeout: goto.timeouts.action(opts.timeout) }

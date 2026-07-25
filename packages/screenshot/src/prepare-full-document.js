@@ -12,23 +12,39 @@ const PRE_QUIET_MS = 50
 const POST_QUIET_MS = 200
 const SETTLE_MS = 400
 
+// The single overflow scanner: the tallest whole-document element that scrolls
+// its own overflow past minPx. Runs in the page.
+function findTallestOverflowScroller (minPx) {
+  let best = null
+  for (const el of document.querySelectorAll('*')) {
+    const style = window.getComputedStyle(el)
+    if (style.overflowY !== 'auto' && style.overflowY !== 'scroll') continue
+    if (el.scrollHeight <= el.clientHeight + minPx) continue
+    if (!best || el.scrollHeight > best.scrollHeight) best = el
+  }
+  return best
+}
+
+// page.evaluate only serializes the function it is given, so an in-page helper
+// can't be shared across evaluates by reference. Compose the scanner source in
+// front of `fn` on the Node side (no in-page eval, so page CSP is untouched) to
+// give every caller the same scanner.
+const evaluateInPage = (page, fn, ...args) => {
+  const source = `${findTallestOverflowScroller}\nreturn (${fn}).apply(null, arguments)`
+  // eslint-disable-next-line no-new-func
+  return page.evaluate(new Function(source), ...args)
+}
+
 const waitForOverflowHeight = (page, timeout = OVERFLOW_WAIT_MS) =>
-  page.evaluate(
+  evaluateInPage(
+    page,
     (timeout, minPx) =>
       new Promise(resolve => {
         const started = Date.now()
         let last = 0
         let stable = 0
         const tick = () => {
-          const scroll = [...document.querySelectorAll('*')]
-            .filter(el => {
-              const s = window.getComputedStyle(el)
-              return (
-                (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
-                el.scrollHeight > el.clientHeight + minPx
-              )
-            })
-            .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
+          const scroll = findTallestOverflowScroller(minPx)
           const height = scroll
             ? scroll.scrollHeight
             : (document.scrollingElement || document.documentElement).scrollHeight
@@ -49,34 +65,29 @@ const waitForOverflowHeight = (page, timeout = OVERFLOW_WAIT_MS) =>
     OVERFLOW_MIN_PX
   )
 
-const expandOverflow = (minPx = 200) => {
-  const scroll = [...document.querySelectorAll('*')]
-    .filter(el => {
-      const s = window.getComputedStyle(el)
-      return (
-        (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
-        el.scrollHeight > el.clientHeight + minPx
-      )
-    })
-    .sort((a, b) => b.scrollHeight - a.scrollHeight)[0]
-
-  if (!scroll) return false
-
-  let el = scroll
-  while (el) {
-    const pos = window.getComputedStyle(el).position
-    el.style.setProperty('overflow', 'visible', 'important')
-    el.style.setProperty('height', 'auto', 'important')
-    el.style.setProperty('max-height', 'none', 'important')
-    if (pos === 'absolute' || pos === 'fixed') {
-      el.style.setProperty('position', 'relative', 'important')
-      el.style.setProperty('inset', 'auto', 'important')
-    }
-    if (el === document.documentElement) break
-    el = el.parentElement
-  }
-  return true
-}
+const expandOverflow = (page, minPx = OVERFLOW_MIN_PX) =>
+  evaluateInPage(
+    page,
+    minPx => {
+      const scroll = findTallestOverflowScroller(minPx)
+      if (!scroll) return false
+      let el = scroll
+      while (el) {
+        const pos = window.getComputedStyle(el).position
+        el.style.setProperty('overflow', 'visible', 'important')
+        el.style.setProperty('height', 'auto', 'important')
+        el.style.setProperty('max-height', 'none', 'important')
+        if (pos === 'absolute' || pos === 'fixed') {
+          el.style.setProperty('position', 'relative', 'important')
+          el.style.setProperty('inset', 'auto', 'important')
+        }
+        if (el === document.documentElement) break
+        el = el.parentElement
+      }
+      return true
+    },
+    minPx
+  )
 
 const scrollFullPageToLoadContent = async (page, timeout) => {
   const preQuiet = Math.min(PRE_QUIET_MS, Math.floor(timeout / 20))
@@ -92,21 +103,10 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
     debug('waitForDomStability:pre', { ...result, duration: Date.now() - started })
   }
 
-  const scroll = await page.evaluate(
+  const scroll = await evaluateInPage(
+    page,
     (scrollBudget, stepMs, minPx) =>
       new Promise(resolve => {
-        const findOverflow = () => {
-          if (!document.body) return null
-          let best = null
-          for (const el of document.body.querySelectorAll('*')) {
-            if (el.scrollHeight <= el.clientHeight + minPx) continue
-            const { overflowY } = window.getComputedStyle(el)
-            if (overflowY !== 'auto' && overflowY !== 'scroll') continue
-            if (!best || el.scrollHeight > best.scrollHeight) best = el
-          }
-          return best
-        }
-
         const doc = () => document.scrollingElement || document.documentElement
         let root = null
         let pageHeight = doc() ? doc().scrollHeight : 0
@@ -116,7 +116,7 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
 
         const measure = () => {
           if (!root) {
-            const overflow = findOverflow()
+            const overflow = findTallestOverflowScroller(minPx)
             if (overflow) root = overflow
           }
           if (root) {
@@ -223,7 +223,7 @@ const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {
     await pReflect(page.waitForNetworkIdle({ idleTime: 200, concurrency: 2, timeout: settleMs }))
   }
 
-  const expanded = await pReflect(page.evaluate(expandOverflow, OVERFLOW_MIN_PX))
+  const expanded = await pReflect(expandOverflow(page))
   debug('prepareFullDocument:expandOverflow', {
     expanded: !expanded.isRejected && expanded.value,
     duration: elapsed()
