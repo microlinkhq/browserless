@@ -5,7 +5,7 @@ const test = require('ava')
 
 const { waitForReady } = require('..')
 
-// Exercises the real in-page `snapshot()` against a live DOM — the part the
+// Exercises the real in-page `paintSignals()` against a live DOM — the part the
 // unit tests can't reach, since `getBoundingClientRect`/`checkVisibility` only
 // mean anything in a browser. A 1×1 transparent PNG stands in for real imagery;
 // what distinguishes "painted" is the rendered box, viewport, and visibility.
@@ -178,7 +178,7 @@ test('below-viewport text does not count toward the text signal', async t => {
   t.is(r.text, 0)
 })
 
-test('no document root: the snapshot degrades to zeros instead of failing the capture', async t => {
+test('no document root: paintSignals degrades to zeros instead of failing the capture', async t => {
   const browserless = await getBrowserContext(t)
   const url = await runServer(t, ({ res }) => {
     res.setHeader('content-type', 'text/html')
@@ -187,7 +187,7 @@ test('no document root: the snapshot degrades to zeros instead of failing the ca
   const r = await browserless.withPage((page, goto) => async () => {
     await goto(page, { url, waitUntil: 'load', adblock: false, timeout: 5000 })
     // The production failure state behind #845: a mid-parse or detached
-    // document exposes neither `body` nor `documentElement`. Every snapshot
+    // document exposes neither `body` nor `documentElement`. Every paintSignals
     // dereference of the root must survive it — `createTreeWalker` threw on
     // the null walker root, and `scrollHeight`/`clientWidth` sit one null
     // dereference away from the same capture-killing rethrow.

@@ -73,7 +73,6 @@ The package applies these optimized defaults:
 | `scale` | `number` | `0.65` | Scale of the webpage rendering (0.1 - 2) |
 | `printBackground` | `boolean` | `true` | Print background graphics |
 | `waitUntil` | `string` | `'auto'` | When to consider navigation done |
-| `waitForDom` | `number` | `0` | DOM stability window in ms (idle is `waitForDom / 10`, `0` disables DOM wait) |
 | `format` | `string` | `'Letter'` | Paper format (A4, Letter, etc.) |
 | `landscape` | `boolean` | `false` | Paper orientation |
 | `width` | `string \| number` | — | Paper width (overrides format) |
@@ -112,10 +111,9 @@ Supported units: `px`, `in`, `cm`, `mm`
 When `waitUntil: 'auto'` (the default), the package:
 
 1. Navigates to the page
-2. Optionally waits for DOM stability (`waitForDom`, default `0` = disabled)
-3. Takes a low-quality screenshot to check for white/blank content
-4. If the page appears blank, retries until content is detected
-5. Generates the PDF once content is confirmed
+2. Waits for paint/readiness signals (`waitForReady` + `isPageReady`)
+3. Hydrates overflow content when ready (`prepareFullDocument`)
+4. Generates the PDF
 
 This ensures dynamic content (JavaScript-rendered pages) is fully loaded before PDF generation.
 

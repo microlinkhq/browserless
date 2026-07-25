@@ -55,7 +55,7 @@ test('clamps the quiet window to the budget so a tiny timeout still resolves', a
 })
 
 test('a non-navigation evaluate error surfaces instead of spinning to a timeout', async t => {
-  const boom = new Error('Evaluation failed: ReferenceError: snapshot is not defined')
+  const boom = new Error('Evaluation failed: ReferenceError: paintSignals is not defined')
   const page = scriptedPage([READY, boom])
   await t.throwsAsync(() => waitForReady(page, { timeout: 2000, quietMs: 40, poll: 10 }), {
     message: /Evaluation failed/
