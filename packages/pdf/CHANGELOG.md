@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.9](https://github.com/microlinkhq/browserless/compare/v13.6.8...v13.6.9) (2026-07-25)
+
+### Bug Fixes
+
+* **pdf:** wait for SPA content before printing ([#852](https://github.com/microlinkhq/browserless/issues/852)) ([54a2a2b](https://github.com/microlinkhq/browserless/commit/54a2a2b3c31fd1a249b6cd99b332f227bfe60127))
+
 ## [13.6.8](https://github.com/microlinkhq/browserless/compare/v13.6.7...v13.6.8) (2026-07-22)
 
 **Note:** Version bump only for package @browserless/pdf
