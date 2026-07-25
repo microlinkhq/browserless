@@ -113,6 +113,15 @@ module.exports = ({ goto, ...gotoOpts }) => {
       let screenshot
       let response
 
+      const captureExpanded = (expand, screenshotOpts, timeout) =>
+        captureWithNavigationRetry(
+          async () => {
+            if (expand) await pReflect(expandOverflow(page))
+            return page.screenshot(screenshotOpts)
+          },
+          { page, goto, timeout }
+        )
+
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
 
@@ -186,7 +195,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           if (isReady || elapsed() >= timeout) break
 
           const remaining = timeout - elapsed()
-          if (opts.fullPage && !didHydrateAttempt && !isWhite && remaining > 1000) {
+          if (opts.fullPage && !didHydrateAttempt && !isWhite) {
             didHydrateAttempt = true
             const { hydrated, info } = await tryHydrateScroll(page, remaining)
             didHydrateScroll = hydrated
@@ -205,12 +214,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
               scrolled: didHydrateScroll
             })
           }
-          screenshot = await captureWithNavigationRetry(
-            async () => {
-              if (isReady) await pReflect(expandOverflow(page))
-              return page.screenshot({ ...opts, fullPage: true })
-            },
-            { page, goto, timeout: resolveScrollTimeout(goto, opts.timeout) }
+          screenshot = await captureExpanded(
+            isReady,
+            { ...opts, fullPage: true },
+            resolveScrollTimeout(goto, opts.timeout)
           )
           isWhite = await isWhiteScreenshot(screenshot)
         }
@@ -230,12 +237,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
           if (opts.fullPage) {
             await prepareFullDocument(page, { goto, timeout: opts.timeout })
           }
-          screenshot = await captureWithNavigationRetry(
-            async () => {
-              if (opts.fullPage) await pReflect(expandOverflow(page))
-              return page.screenshot({ ...opts, ...screenshotOpts })
-            },
-            { page, goto, timeout: goto.timeouts.action(opts.timeout) }
+          screenshot = await captureExpanded(
+            opts.fullPage,
+            { ...opts, ...screenshotOpts },
+            goto.timeouts.action(opts.timeout)
           )
           debug('screenshot', { waitUntil, duration: timeScreenshot() })
         } else {

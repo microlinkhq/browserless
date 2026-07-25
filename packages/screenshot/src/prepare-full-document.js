@@ -192,8 +192,17 @@ const resolveScrollTimeout = (goto, timeout) =>
     ? goto.timeouts.goto(timeout)
     : goto.timeouts.action(timeout)
 
+// A hydrate scroll spends up to half the remaining budget (capped) scrolling,
+// and the capture that follows still needs time. Below HYDRATE_MIN_BUDGET_MS
+// there isn't enough left for both, so skip it.
+const HYDRATE_MIN_BUDGET_MS = 1000
+const HYDRATE_MAX_SCROLL_MS = 5000
+
 const tryHydrateScroll = async (page, remaining) => {
-  const hydrate = await pReflect(scrollFullPageToLoadContent(page, Math.min(remaining / 2, 5000)))
+  if (remaining <= HYDRATE_MIN_BUDGET_MS) return { hydrated: false, info: {} }
+  const hydrate = await pReflect(
+    scrollFullPageToLoadContent(page, Math.min(remaining / 2, HYDRATE_MAX_SCROLL_MS))
+  )
   return {
     hydrated: !hydrate.isRejected && !!hydrate.value?.hydrated,
     info: hydrate.isRejected ? {} : hydrate.value
