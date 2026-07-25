@@ -233,12 +233,9 @@ const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {
 }
 
 module.exports = {
-  waitForOverflowHeight,
   expandOverflow,
   scrollFullPageToLoadContent,
   prepareFullDocument,
   resolveScrollTimeout,
-  tryHydrateScroll,
-  SCROLL_STEP_MS,
-  OVERFLOW_MIN_PX
+  tryHydrateScroll
 }
