@@ -82,7 +82,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
     let readiness
     let isReady = false
     let didHydrateScroll = false
-    let didHydrateAttempt = false
 
     await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
 
@@ -99,6 +98,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
 
     async function waitUntilAuto (page, { response, timeout: autoTimeout } = {}) {
       const timeout = autoTimeout ?? goto.timeouts.action(rest.timeout)
+      let didHydrateAttempt = false
 
       const readyTime = timeSpan()
       const ready = await waitForReady(page, {

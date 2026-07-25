@@ -89,6 +89,12 @@ const expandOverflow = (page, minPx = OVERFLOW_MIN_PX) =>
     minPx
   )
 
+const settleDom = async (page, { idle, timeout }, label) => {
+  const started = Date.now()
+  const result = await page.evaluate(waitForDomStability, { idle, timeout })
+  debug(label, { ...result, duration: Date.now() - started })
+}
+
 const scrollFullPageToLoadContent = async (page, timeout) => {
   const preQuiet = Math.min(PRE_QUIET_MS, Math.floor(timeout / 20))
   const postQuiet = Math.min(POST_QUIET_MS, Math.floor(timeout / 20))
@@ -96,11 +102,7 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
   const started = Date.now()
 
   if (preQuiet > 0) {
-    const result = await page.evaluate(waitForDomStability, {
-      idle: preQuiet / 2,
-      timeout: preQuiet
-    })
-    debug('waitForDomStability:pre', { ...result, duration: Date.now() - started })
+    await settleDom(page, { idle: preQuiet / 2, timeout: preQuiet }, 'waitForDomStability:pre')
   }
 
   const scroll = await evaluateInPage(
@@ -174,12 +176,11 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
   debug('scrollFullPage', { ...scroll, duration: Date.now() - started })
 
   if (postQuiet > 0) {
-    const postStarted = Date.now()
-    const result = await page.evaluate(waitForDomStability, {
-      idle: Math.min(100, postQuiet / 2),
-      timeout: postQuiet
-    })
-    debug('waitForDomStability:post', { ...result, duration: Date.now() - postStarted })
+    await settleDom(
+      page,
+      { idle: Math.min(100, postQuiet / 2), timeout: postQuiet },
+      'waitForDomStability:post'
+    )
   }
 
   const hydrated = !!(scroll?.hasOverflow && scroll.scrolledPx >= (scroll.viewport || 0))
@@ -223,13 +224,11 @@ const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {
     await pReflect(page.waitForNetworkIdle({ idleTime: 200, concurrency: 2, timeout: settleMs }))
   }
 
-  const expanded = await pReflect(expandOverflow(page))
-  debug('prepareFullDocument:expandOverflow', {
-    expanded: !expanded.isRejected && expanded.value,
-    duration: elapsed()
-  })
+  const expandResult = await pReflect(expandOverflow(page))
+  const expanded = !expandResult.isRejected && expandResult.value
+  debug('prepareFullDocument:expandOverflow', { expanded, duration: elapsed() })
 
-  return { expanded: !expanded.isRejected && expanded.value, duration: elapsed(), scrolled }
+  return { expanded, duration: elapsed(), scrolled }
 }
 
 module.exports = {
