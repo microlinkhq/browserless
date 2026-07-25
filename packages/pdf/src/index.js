@@ -41,6 +41,18 @@ const getMargin = unit => {
 const isPaintedContent = ({ painted = 0, text = 0, fonts = true } = {}) =>
   painted > 0 || (text >= TEXT_PAINTED_MIN && fonts)
 
+// page.pdf() has no clip API; hide everything outside the selector for print.
+const isolateElement = async (page, element) => {
+  await page.waitForSelector(element, { visible: true })
+  await page.addStyleTag({
+    content: [
+      'body * { visibility: hidden !important; }',
+      `${element}, ${element} * { visibility: visible !important; }`,
+      `${element} { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; }`
+    ].join('\n')
+  })
+}
+
 module.exports = ({ goto, ...gotoOpts } = {}) => {
   goto = goto || createGoto(gotoOpts)
 
@@ -49,10 +61,12 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       margin = PDF_DEFAULT_OPTS.margin,
       scale = PDF_DEFAULT_OPTS.scale,
       printBackground = PDF_DEFAULT_OPTS.printBackground,
+      element,
       ...rest
     } = opts
 
     await pReflect(expandOverflow(page))
+    if (element) await isolateElement(page, element)
 
     return captureWithNavigationRetry(
       () =>

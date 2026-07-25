@@ -382,6 +382,39 @@ test('waitUntil auto: text behind a loading webfont does not trip the fast path'
   t.is(pdfCalls, 1)
 })
 
+test('element waits for the selector and isolates it before pdf', async t => {
+  const calls = []
+
+  const page = {
+    screenshot: async () => noWhiteScreenshot,
+    evaluate: scriptEvaluate(PAINTED_READY, () => {}),
+    waitForSelector: async (selector, opts) => {
+      calls.push(['waitForSelector', selector, opts])
+    },
+    addStyleTag: async ({ content }) => {
+      calls.push(['addStyleTag', content])
+    },
+    pdf: async opts => {
+      calls.push(['pdf', opts])
+      return Buffer.from('pdf')
+    }
+  }
+
+  const pdf = createPdf({ goto: makeGoto() })(page)
+  await pdf('https://example.com', {
+    waitUntil: 'auto',
+    timeout: 500,
+    element: '.report-pages-stack'
+  })
+
+  t.deepEqual(calls[0], ['waitForSelector', '.report-pages-stack', { visible: true }])
+  t.is(calls[1][0], 'addStyleTag')
+  t.true(calls[1][1].includes('visibility: hidden'))
+  t.true(calls[1][1].includes('.report-pages-stack, .report-pages-stack *'))
+  t.is(calls[2][0], 'pdf')
+  t.is(calls[2][1].element, undefined)
+})
+
 // Regression: @browserless/pdf destructures helpers from @browserless/screenshot,
 // so every one of those names must be re-exported by the screenshot entry point.
 // A missing re-export (e.g. tryHydrateScroll) only throws once the matching code

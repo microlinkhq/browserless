@@ -382,6 +382,20 @@ const buffer = await browserless.pdf(url.toString(), {
 })
 ```
 
+##### element
+
+type: `string` <br/>
+
+Prints only the first matching DOM element for the given [CSS selector](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors). The operation waits until the element is visible or the maximum [timeout](#timeout) is reached.
+
+Unlike [screenshot `element`](#element), PDF has no native clip API, so this isolates the subtree for print (hides everything outside the match) before calling `page.pdf()`.
+
+```js
+const buffer = await browserless.pdf(url.toString(), {
+  element: '.report-pages-stack'
+})
+```
+
 ### .screenshot(url, options)
 
 Generates screenshots based on a specified `url`.

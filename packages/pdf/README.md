@@ -73,6 +73,7 @@ The package applies these optimized defaults:
 | `scale` | `number` | `0.65` | Scale of the webpage rendering (0.1 - 2) |
 | `printBackground` | `boolean` | `true` | Print background graphics |
 | `waitUntil` | `string` | `'auto'` | When to consider navigation done |
+| `element` | `string` | — | CSS selector; wait for it, then print only that subtree |
 | `format` | `string` | `'Letter'` | Paper format (A4, Letter, etc.) |
 | `landscape` | `boolean` | `false` | Paper orientation |
 | `width` | `string \| number` | — | Paper width (overrides format) |
@@ -161,6 +162,16 @@ const pdfBuffer = await browserless.pdf('https://example.com', {
 ```js
 const pdfBuffer = await browserless.pdf('https://example.com', {
   pageRanges: '1-3, 5'
+})
+```
+
+#### Print a specific element
+
+`page.pdf()` cannot clip like screenshots. When `element` is set, the package waits for the selector and isolates that subtree for print (everything else is hidden):
+
+```js
+const pdfBuffer = await browserless.pdf('https://example.com', {
+  element: '.report-pages-stack'
 })
 ```
 
