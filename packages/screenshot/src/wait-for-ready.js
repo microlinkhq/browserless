@@ -63,10 +63,26 @@ const snapshot = () => {
     Math.abs(a.r - b.r) < 10 && Math.abs(a.g - b.g) < 10 && Math.abs(a.b - b.b) < 10
 
   // A layer only blanks a capture when it is itself painted solid: visible,
-  // full opacity, and an opaque background color or a background image.
+  // full opacity, and either an opaque CSS background or a replaced element
+  // that paints its own pixels (canvas/video/img/…). Without the replaced-
+  // element branch, a full-viewport white <canvas> splash over SSR text
+  // reports covered:false, the PDF fast path skips the blank poll, and the
+  // capture ships the splash.
   const isOpaqueLayer = el => {
     const style = window.getComputedStyle(el)
     if (style.visibility === 'hidden' || parseFloat(style.opacity) < 0.99) return false
+    const tag = el.tagName
+    if (
+      tag === 'CANVAS' ||
+      tag === 'VIDEO' ||
+      tag === 'IFRAME' ||
+      tag === 'EMBED' ||
+      tag === 'OBJECT' ||
+      tag === 'SVG'
+    ) {
+      return true
+    }
+    if (tag === 'IMG') return el.naturalWidth > 0
     const background = parseColor(style.backgroundColor)
     return (background && background.a >= 0.99) || style.backgroundImage !== 'none'
   }

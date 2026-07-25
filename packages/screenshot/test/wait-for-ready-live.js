@@ -127,6 +127,47 @@ test('covered: a pointer-events:none overlay is caught by the root-level scan', 
   t.true(r.covered)
 })
 
+test('covered: a full-viewport canvas splash over SSR text is caught', async t => {
+  const browserless = await getBrowserContext(t)
+  // Replaced elements paint via their own buffer, not CSS background — the
+  // opaque-layer check must count them or the PDF fast path ships the splash.
+  const r = await ready(
+    browserless,
+    `<p>${'lorem ipsum '.repeat(20)}</p>` +
+      '<canvas id="c" style="position:fixed;inset:0;z-index:9999;width:100vw;height:100vh"></canvas>' +
+      '<script>const c=document.getElementById("c");c.width=innerWidth;c.height=innerHeight;' +
+      'const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height)</script>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.true(r.covered)
+})
+
+test('covered: a full-viewport video splash over SSR text is caught', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    `<p>${'lorem ipsum '.repeat(20)}</p>` +
+      '<video style="position:fixed;inset:0;z-index:9999;width:100vw;height:100vh;object-fit:cover" muted playsinline></video>'
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.true(r.covered)
+})
+
+test('covered: a full-viewport img splash over SSR text is caught', async t => {
+  const browserless = await getBrowserContext(t)
+  const r = await ready(
+    browserless,
+    `<p>${'lorem ipsum '.repeat(20)}</p>` +
+      `<img src="${PIXEL}" style="position:fixed;inset:0;z-index:9999;width:100vw;height:100vh;object-fit:cover">`
+  )(t)
+  t.false(r.timedOut)
+  t.true(r.text >= 200)
+  t.true(r.painted >= 1)
+  t.true(r.covered)
+})
+
 test('not covered: a transparent full-viewport click-catcher', async t => {
   const browserless = await getBrowserContext(t)
   const r = await ready(
