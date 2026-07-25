@@ -277,5 +277,7 @@ module.exports.scrollFullPageToLoadContent = scrollFullPageToLoadContent
 module.exports.expandOverflow = expandOverflow
 module.exports.getPageMeta = getPageMeta
 module.exports.checkPageReady = checkPageReady
+module.exports.tryHydrateScroll = tryHydrateScroll
+module.exports.resolveScrollTimeout = resolveScrollTimeout
 module.exports.prepareFullDocument = prepareFullDocument
 module.exports.SCREENSHOT_DEFAULT_OPTS = SCREENSHOT_DEFAULT_OPTS

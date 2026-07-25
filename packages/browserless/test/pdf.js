@@ -381,3 +381,21 @@ test('waitUntil auto: text behind a loading webfont does not trip the fast path'
   t.is(screenshotCalls, 1)
   t.is(pdfCalls, 1)
 })
+
+// Regression: @browserless/pdf destructures helpers from @browserless/screenshot,
+// so every one of those names must be re-exported by the screenshot entry point.
+// A missing re-export (e.g. tryHydrateScroll) only throws once the matching code
+// path fires on a real page, so guard the contract directly. Derived from pdf's
+// source so it tracks the imports automatically.
+test('screenshot re-exports every helper pdf imports from it', t => {
+  const screenshot = require('@browserless/screenshot')
+  const source = fs.readFileSync(require.resolve('@browserless/pdf'), 'utf8')
+  const block = source.match(/const\s*\{([^}]*)\}\s*=\s*require\('@browserless\/screenshot'\)/)
+  t.truthy(block, 'pdf must import from @browserless/screenshot')
+  const names = block[1]
+    .split(',')
+    .map(name => name.trim())
+    .filter(Boolean)
+  const missing = names.filter(name => screenshot[name] === undefined)
+  t.deepEqual(missing, [], `missing screenshot re-exports: ${missing.join(', ')}`)
+})
