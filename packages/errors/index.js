@@ -45,6 +45,11 @@ browserlessError.contextDisconnected = createBrowserlessError({
   message: 'The browser context is not connected.'
 })
 
+browserlessError.pageRange = createBrowserlessError({
+  code: 'EPAGERANGE',
+  message: 'Page range exceeds page count'
+})
+
 const getErrorMessage = rawError => {
   const error = isObject(rawError) && 'error' in rawError ? rawError.error : rawError
   if (typeof error === 'string') return error
@@ -76,6 +81,10 @@ const isContextDestroyed = rawError => {
   )
 }
 
+// Chrome clamps a page range's end but rejects an out-of-range start.
+const isPageRangeOvershoot = rawError =>
+  getErrorMessage(rawError).includes('Page range exceeds page count')
+
 browserlessError.ensureError = rawError => {
   if (isObject(rawError) && rawError.__parsed) return rawError
 
@@ -90,6 +99,7 @@ browserlessError.ensureError = rawError => {
   }
 
   if (errorMessage.startsWith('Protocol error')) {
+    if (isPageRangeOvershoot(errorMessage)) return browserlessError.pageRange()
     return browserlessError.protocolError({
       message: errorMessage.split(': ')[1]
     })
@@ -115,3 +125,4 @@ const isBrowserlessError = error => error.name === ERROR_NAME
 module.exports = browserlessError
 module.exports.isBrowserlessError = isBrowserlessError
 module.exports.isContextDestroyed = isContextDestroyed
+module.exports.isPageRangeOvershoot = isPageRangeOvershoot
