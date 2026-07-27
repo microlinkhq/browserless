@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.10](https://github.com/microlinkhq/browserless/compare/v13.6.9...v13.6.10) (2026-07-27)
+
+### Bug Fixes
+
+* **errors:** qualify an unsatisfiable page range with its own code ([#857](https://github.com/microlinkhq/browserless/issues/857)) ([b8cf0a7](https://github.com/microlinkhq/browserless/commit/b8cf0a733ec6878133dd035124581d90af563d15))
+
 ## [13.6.7](https://github.com/microlinkhq/browserless/compare/v13.6.6...v13.6.7) (2026-07-20)
 
 ### Bug Fixes
