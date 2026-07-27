@@ -36,7 +36,6 @@
     "lighthouse": "~13.4.0"
   },
   "devDependencies": {
-    "@browserless/test": "workspace:*",
     "ava": "5"
   },
   "engines": {
