@@ -3,6 +3,7 @@
 const debug = require('debug-logfmt')('browserless:screenshot')
 const { isContextDestroyed } = require('@browserless/errors')
 const createGoto = require('@browserless/goto')
+const { extname } = require('node:path')
 const pReflect = require('p-reflect')
 
 const isWhiteScreenshot = require('./is-white-screenshot')
@@ -96,6 +97,14 @@ const SCREENSHOT_DEFAULT_OPTS = {
   isPageReady: defaultIsPageReady
 }
 
+const LOSSY_TYPES = new Set(['jpeg', 'webp'])
+const LOSSY_EXTENSIONS = new Set(['.jpg', '.jpeg', '.webp'])
+
+const isLossy = ({ type, path }) =>
+  type !== undefined
+    ? LOSSY_TYPES.has(type)
+    : LOSSY_EXTENSIONS.has(extname(path ?? '').toLowerCase())
+
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
@@ -110,6 +119,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
         ...opts
       } = {}
     ) => {
+      if (opts.quality !== undefined && !isLossy(opts)) opts.quality = undefined
+
       let screenshot
       let response
 
