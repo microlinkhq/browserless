@@ -73,8 +73,8 @@ const rangeError = errors.ensureError({
 // => BrowserlessError: EPAGERANGE, Page range exceeds page count
 
 // Check if an error is a BrowserlessError
-if (errors.isBrowserlessError(error)) {
-  console.log('Error code:', error.code)
+if (errors.isBrowserlessError(normalizedError)) {
+  console.log('Error code:', normalizedError.code)
 }
 ```
 
