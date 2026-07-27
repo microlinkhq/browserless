@@ -1,7 +1,11 @@
 'use strict'
 
 const { getBrowserContext, runServer } = require('@browserless/test')
+const { readFile, rm } = require('node:fs/promises')
+const { randomUUID } = require('node:crypto')
 const createScreenshot = require('..')
+const path = require('node:path')
+const os = require('node:os')
 const test = require('ava')
 
 const isCI = !!process.env.CI
@@ -100,4 +104,38 @@ test('a quality asked for without a lossy type still captures', async t => {
   const { png, jpeg } = await run()
   t.deepEqual(png.subarray(0, 4), PNG_MAGIC, 'the ignored quality still yields a png')
   t.deepEqual(jpeg.subarray(0, 3), JPEG_MAGIC, 'an explicit jpeg still honours quality')
+})
+
+// puppeteer settles the encoder from the `path` extension when `type` is absent,
+// and validates `quality` only after that — so `{ path: 'out.jpg', quality }` is
+// a capture it accepts. A guard that reads `type` alone would strip the quality
+// and silently hand back the encoder default instead.
+test('a quality reaches the encoder puppeteer inferred from the path', async t => {
+  const browserless = await getBrowserContext(t)
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(
+      '<html><body style="margin:0;background:linear-gradient(45deg,#c84,#26c,#4a8,#a2c)"><h1>ok</h1></body></html>'
+    )
+  })
+
+  const capture = quality => {
+    const filepath = path.join(os.tmpdir(), `quality-${randomUUID()}.jpg`)
+    t.teardown(() => rm(filepath, { force: true }))
+    return browserless.withPage((page, goto) => async () => {
+      await createScreenshot({ goto })(page)(url, {
+        waitUntil: 'load',
+        adblock: false,
+        timeout: 5000,
+        path: filepath,
+        quality
+      })
+      return (await readFile(filepath)).length
+    })()
+  }
+
+  const [low, high] = [await capture(1), await capture(100)]
+  t.true(low > 0 && high > 0, 'both captures produced a file')
+  t.true(low < high, `quality reached the encoder (${low} bytes at q1 vs ${high} at q100)`)
 })
