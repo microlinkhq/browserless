@@ -160,6 +160,56 @@ test('isContextDestroyed', t => {
   t.false(errors.isContextDestroyed(null))
 })
 
+test('pageRange', t => {
+  const parsedError = errors.ensureError({
+    message: 'Protocol error (Page.printToPDF): Page range exceeds page count'
+  })
+
+  t.true(parsedError instanceof Error)
+  t.is(parsedError.name, 'BrowserlessError')
+  t.is(parsedError.code, 'EPAGERANGE')
+  t.is(parsedError.message, 'EPAGERANGE, Page range exceeds page count')
+
+  const error = errors.pageRange()
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EPAGERANGE')
+  t.is(error.message, 'EPAGERANGE, Page range exceeds page count')
+})
+
+test('isPageRangeOvershoot', t => {
+  t.true(
+    errors.isPageRangeOvershoot({
+      message: 'Protocol error (Page.printToPDF): Page range exceeds page count'
+    })
+  )
+  t.true(errors.isPageRangeOvershoot('Page range exceeds page count'))
+  t.true(errors.isPageRangeOvershoot({ error: { message: 'Page range exceeds page count' } }))
+  t.true(
+    errors.isPageRangeOvershoot(errors.protocolError({ message: 'Page range exceeds page count' }))
+  )
+
+  t.false(
+    errors.isPageRangeOvershoot({ message: 'Protocol error (Page.printToPDF): Printing failed' })
+  )
+  t.false(errors.isPageRangeOvershoot({ message: 'Page is too large.' }))
+  t.false(errors.isPageRangeOvershoot(null))
+  t.false(errors.isPageRangeOvershoot({}))
+})
+
+// The core retries `EBRWSRCONTEXTCONNRESET` and `EPROTOCOL` and nothing else.
+test('an overshoot is not classified as a retryable protocol error', t => {
+  const overshoot = errors.ensureError({
+    message: 'Protocol error (Page.printToPDF): Page range exceeds page count'
+  })
+  const printing = errors.ensureError({
+    message: 'Protocol error (Page.printToPDF): Printing failed'
+  })
+
+  t.is(overshoot.code, 'EPAGERANGE')
+  t.is(printing.code, 'EPROTOCOL')
+})
+
 test('ensureError handles non-object input', t => {
   const errorFromString = errors.ensureError('boom')
   t.true(errorFromString instanceof Error)

@@ -40,6 +40,9 @@ The `@browserless/errors` package allows you to:
 | `protocolError` | `EPROTOCOL` | Chrome DevTools Protocol error |
 | `evaluationFailed` | `EINVALEVAL` | Page evaluation/script execution failed |
 | `contextDisconnected` | `EBRWSRCONTEXTCONNRESET` | Browser context connection was reset |
+| `pageRange` | `EPAGERANGE` | `printToPDF` was given a page range starting past the end of the document |
+
+Codes carry retryability: the core retries `EPROTOCOL` and `EBRWSRCONTEXTCONNRESET`, and nothing else. `EPAGERANGE` exists because an unsatisfiable page range is the one protocol failure that is deterministic — retrying it burns the caller's budget and surfaces a timeout instead of the real reason.
 
 ### Usage
 
@@ -63,10 +66,23 @@ const rawError = { message: 'Protocol error (Runtime.callFunctionOn): Target clo
 const normalizedError = errors.ensureError(rawError)
 // => BrowserlessError: EPROTOCOL, Target closed.
 
+// Normalize a page range Chrome cannot satisfy
+const rangeError = errors.ensureError({
+  message: 'Protocol error (Page.printToPDF): Page range exceeds page count'
+})
+// => BrowserlessError: EPAGERANGE, Page range exceeds page count
+
 // Check if an error is a BrowserlessError
-if (errors.isBrowserlessError(error)) {
-  console.log('Error code:', error.code)
+if (errors.isBrowserlessError(normalizedError)) {
+  console.log('Error code:', normalizedError.code)
 }
+```
+
+Two predicates are exported for classifying a raw error before it is normalized:
+
+```js
+errors.isContextDestroyed(rawError)    // frame torn down mid-flight — transient
+errors.isPageRangeOvershoot(rawError)  // range starts past the last page — deterministic
 ```
 
 ### Error properties
