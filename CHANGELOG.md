@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.11](https://github.com/microlinkhq/browserless/compare/v13.6.10...v13.6.11) (2026-07-27)
+
+### Bug Fixes
+
+* **screenshot:** drop `quality` when the output is not a lossy encoder ([#858](https://github.com/microlinkhq/browserless/issues/858)) ([e9ff455](https://github.com/microlinkhq/browserless/commit/e9ff455b1e93e8ee215d903a4ea26931111b4d22))
+
 ## [13.6.10](https://github.com/microlinkhq/browserless/compare/v13.6.9...v13.6.10) (2026-07-27)
 
 ### Bug Fixes
