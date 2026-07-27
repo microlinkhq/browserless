@@ -52,7 +52,6 @@
     "svg-gradient": "~1.0.4"
   },
   "devDependencies": {
-    "@browserless/test": "workspace:*",
     "ava": "5"
   },
   "engines": {
