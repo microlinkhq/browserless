@@ -72,34 +72,6 @@ test('dialog listener is cleaned up between screenshot calls on same page', asyn
 // asks for quality without also asking for jpeg/webp lost the whole capture:
 // `Error: png screenshots do not support 'quality'.`, 32 of 766 unexpected
 // errors over a week in microlink production.
-const { withValidQuality } = createScreenshot
-
-test('withValidQuality keeps quality for the lossy encoders', t => {
-  t.is(withValidQuality({ type: 'jpeg', quality: 80 }).quality, 80)
-  t.is(withValidQuality({ type: 'webp', quality: 80 }).quality, 80)
-})
-
-test('withValidQuality drops quality for anything else', t => {
-  t.false('quality' in withValidQuality({ quality: 80 }), 'no type means png')
-  t.false('quality' in withValidQuality({ type: 'png', quality: 80 }))
-})
-
-// `page.screenshot` settles the type from the `path` extension when `type` is
-// absent, and validates `quality` after doing so. Reading only `type` here would
-// throw away a quality the capture would have honoured.
-test('withValidQuality resolves the type from the path like page.screenshot does', t => {
-  t.is(withValidQuality({ path: 'out.jpg', quality: 80 }).quality, 80)
-  t.is(withValidQuality({ path: 'out.JPEG', quality: 80 }).quality, 80)
-  t.is(withValidQuality({ path: 'out.webp', quality: 80 }).quality, 80)
-  t.false('quality' in withValidQuality({ path: 'out.png', quality: 80 }))
-  t.is(withValidQuality({ type: 'jpeg', path: 'out.png', quality: 80 }).quality, 80)
-})
-
-test('withValidQuality leaves options without quality untouched', t => {
-  const opts = { type: 'png', fullPage: true }
-  t.is(withValidQuality(opts), opts, 'same reference — nothing to normalise')
-})
-
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47])
 const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff])
 

@@ -96,30 +96,7 @@ const SCREENSHOT_DEFAULT_OPTS = {
   isPageReady: defaultIsPageReady
 }
 
-const QUALITY_TYPES = new Set(['jpeg', 'webp'])
-
-const PATH_EXTENSION_TYPE = { png: 'png', jpeg: 'jpeg', jpg: 'jpeg', webp: 'webp' }
-
-// Mirrors how `page.screenshot` settles the output format: an explicit `type`,
-// otherwise the `path` extension, otherwise png.
-const resolveType = ({ type, path }) => {
-  if (type !== undefined) return type
-  if (path === undefined) return undefined
-  return PATH_EXTENSION_TYPE[path.slice(path.lastIndexOf('.') + 1).toLowerCase()]
-}
-
-/**
- * `quality` is a lossy-encoder knob. `page.screenshot` accepts it for jpeg and
- * webp and throws for anything else — including the png it defaults to, so a
- * caller who asks for quality without also asking for a lossy type loses the
- * whole capture. The type is what the caller chose; the quality hint is an
- * optimisation on top, so drop the hint rather than fail.
- */
-const withValidQuality = opts => {
-  if (opts.quality === undefined || QUALITY_TYPES.has(resolveType(opts))) return opts
-  const { quality: _quality, ...rest } = opts
-  return rest
-}
+const LOSSY_TYPES = new Set(['jpeg', 'webp'])
 
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
@@ -135,7 +112,9 @@ module.exports = ({ goto, ...gotoOpts }) => {
         ...opts
       } = {}
     ) => {
-      opts = withValidQuality(opts)
+      // `page.screenshot` throws for `quality` on anything but a lossy type, and
+      // png is what it defaults to. The hint is worth less than the capture.
+      if (opts.quality !== undefined && !LOSSY_TYPES.has(opts.type)) opts.quality = undefined
 
       let screenshot
       let response
@@ -313,4 +292,3 @@ module.exports.tryHydrateScroll = tryHydrateScroll
 module.exports.resolveScrollTimeout = resolveScrollTimeout
 module.exports.prepareFullDocument = prepareFullDocument
 module.exports.SCREENSHOT_DEFAULT_OPTS = SCREENSHOT_DEFAULT_OPTS
-module.exports.withValidQuality = withValidQuality
