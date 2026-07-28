@@ -166,6 +166,55 @@ test('stops white screenshot retries after timeout', async t => {
   t.is(page.getScreenshotCalls(), goto.getWaitUntilAutoCalls() + 1)
 })
 
+test('hydrates fullPage while the viewport is still white', async t => {
+  const prepareModulePath = require.resolve('../src/prepare-full-document.js')
+  const originalPrepareModule = require.cache[prepareModulePath]
+  let hydrateCalls = 0
+
+  const prepareExports = {
+    ...require('../src/prepare-full-document'),
+    tryHydrateScroll: async () => {
+      hydrateCalls += 1
+      return { hydrated: true, info: { hydrated: true } }
+    },
+    prepareFullDocument: async () => ({ expanded: false, duration: 0, scrolled: true }),
+    expandOverflow: async () => false
+  }
+
+  require.cache[prepareModulePath] = {
+    id: prepareModulePath,
+    filename: prepareModulePath,
+    loaded: true,
+    exports: prepareExports
+  }
+
+  let whiteCalls = 0
+  const isWhiteScreenshotMock = async () => ++whiteCalls === 1
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(() => {
+    restore()
+    delete require.cache[prepareModulePath]
+    if (originalPrepareModule) {
+      require.cache[prepareModulePath] = originalPrepareModule
+    }
+  })
+
+  const goto = createGoto({ timeout: 5000 })
+  const white = Buffer.from('white')
+  const ready = Buffer.from('ready')
+  const page = createPage([white, ready, ready])
+  const screenshot = createScreenshot({ goto })(page)
+
+  const result = await screenshot('https://example.com', {
+    waitUntil: 'auto',
+    fullPage: true,
+    codeScheme: false
+  })
+
+  t.deepEqual(result, ready)
+  t.is(hydrateCalls, 1)
+})
+
 test('waits for verification interstitial to resolve before screenshot', async t => {
   const isWhiteScreenshotMock = async () => false
   const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
