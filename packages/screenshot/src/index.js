@@ -206,7 +206,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           if (isReady || elapsed() >= timeout) break
 
           const remaining = timeout - elapsed()
-          if (opts.fullPage && !didHydrateAttempt && !isWhite) {
+          if (opts.fullPage && !didHydrateAttempt) {
             didHydrateAttempt = true
             const { hydrated, info } = await tryHydrateScroll(page, remaining)
             didHydrateScroll = hydrated
