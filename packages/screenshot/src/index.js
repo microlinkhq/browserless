@@ -191,7 +191,9 @@ module.exports = ({ goto, ...gotoOpts }) => {
             () =>
               page.screenshot({
                 ...opts,
-                ...(opts.fullPage ? { fullPage: false, path: undefined } : {})
+                ...(opts.fullPage
+                  ? { fullPage: false, path: undefined, quality: undefined }
+                  : {})
               }),
             { page, goto, timeout }
           )

@@ -207,3 +207,38 @@ test('waits for verification interstitial to resolve before screenshot', async t
   t.is(goto.getWaitUntilAutoCalls(), 2)
   t.is(page.getScreenshotCalls(), 3)
 })
+
+// #852's fullPage readiness probe clears `path` so it does not write during the
+// white check. #858 keeps `quality` when that path looked lossy. Together the
+// probe becomes `{ quality }` with puppeteer's png default and throws.
+test('fullPage readiness probe drops path-inferred quality', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const goto = createGoto()
+  const page = createPage([Buffer.from('probe'), Buffer.from('full')])
+  const seen = []
+  page.screenshot = async opts => {
+    seen.push(opts)
+    return Buffer.from(`shot-${seen.length}`)
+  }
+
+  const screenshot = createScreenshot({ goto })(page)
+  const result = await screenshot('https://example.com', {
+    waitUntil: 'auto',
+    codeScheme: false,
+    fullPage: true,
+    path: '/tmp/out.jpg',
+    quality: 80
+  })
+
+  t.true(Buffer.isBuffer(result))
+  t.is(seen.length, 2)
+  t.is(seen[0].fullPage, false)
+  t.is(seen[0].path, undefined)
+  t.is(seen[0].quality, undefined)
+  t.is(seen[1].fullPage, true)
+  t.is(seen[1].path, '/tmp/out.jpg')
+  t.is(seen[1].quality, 80)
+})
