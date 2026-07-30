@@ -700,6 +700,65 @@ test('reuse browserless instance across page function invocations', t => {
   t.is(destroyContextCalls, 2)
 })
 
+test('destroys the browser context when withPage fails (subprocess)', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return ({ tmpdir } = {}) => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+    let destroyContextCalls = 0
+
+    const fakeBrowserless = {
+      withPage: () => async () => {
+        throw new Error('goto failed')
+      },
+      destroyContext: async () => {
+        destroyContextCalls += 1
+      }
+    }
+
+    const fn = browserlessFunction(({ page }) => 'ok', {
+      getBrowserless: async () => ({
+        createContext: async () => fakeBrowserless
+      })
+    })
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(() => {
+        process.stderr.write('expected rejection')
+        process.exit(1)
+      })
+      .catch(error => {
+        process.stdout.write(JSON.stringify({
+          message: error.message,
+          destroyContextCalls
+        }))
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  const { message, destroyContextCalls } = JSON.parse(stdout.trim())
+  t.is(message, 'goto failed')
+  t.is(destroyContextCalls, 1)
+})
+
 test('retry getBrowserless on next call when initial creation fails', t => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `
