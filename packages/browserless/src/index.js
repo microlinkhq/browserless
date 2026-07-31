@@ -150,7 +150,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
+              const previousContextPromise = _contextPromise
               _contextPromise = createBrowserContext(contextOpts)
+              await pReflect(previousContextPromise.then(ctx => ctx.close()))
               const { message, attemptNumber, retriesLeft } = error
               debug('retry', { attemptNumber, retriesLeft, message })
             }
