@@ -191,7 +191,9 @@ module.exports = ({ goto, ...gotoOpts }) => {
             () =>
               page.screenshot({
                 ...opts,
-                ...(opts.fullPage ? { fullPage: false, path: undefined } : {})
+                ...(opts.fullPage
+                  ? { fullPage: false, path: undefined, quality: undefined }
+                  : {})
               }),
             { page, goto, timeout }
           )
@@ -206,7 +208,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
           if (isReady || elapsed() >= timeout) break
 
           const remaining = timeout - elapsed()
-          if (opts.fullPage && !didHydrateAttempt && !isWhite) {
+          if (opts.fullPage && !didHydrateAttempt) {
             didHydrateAttempt = true
             const { hydrated, info } = await tryHydrateScroll(page, remaining)
             didHydrateScroll = hydrated

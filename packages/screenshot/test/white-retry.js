@@ -166,6 +166,55 @@ test('stops white screenshot retries after timeout', async t => {
   t.is(page.getScreenshotCalls(), goto.getWaitUntilAutoCalls() + 1)
 })
 
+test('hydrates fullPage while the viewport is still white', async t => {
+  const prepareModulePath = require.resolve('../src/prepare-full-document.js')
+  const originalPrepareModule = require.cache[prepareModulePath]
+  let hydrateCalls = 0
+
+  const prepareExports = {
+    ...require('../src/prepare-full-document'),
+    tryHydrateScroll: async () => {
+      hydrateCalls += 1
+      return { hydrated: true, info: { hydrated: true } }
+    },
+    prepareFullDocument: async () => ({ expanded: false, duration: 0, scrolled: true }),
+    expandOverflow: async () => false
+  }
+
+  require.cache[prepareModulePath] = {
+    id: prepareModulePath,
+    filename: prepareModulePath,
+    loaded: true,
+    exports: prepareExports
+  }
+
+  let whiteCalls = 0
+  const isWhiteScreenshotMock = async () => ++whiteCalls === 1
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(() => {
+    restore()
+    delete require.cache[prepareModulePath]
+    if (originalPrepareModule) {
+      require.cache[prepareModulePath] = originalPrepareModule
+    }
+  })
+
+  const goto = createGoto({ timeout: 5000 })
+  const white = Buffer.from('white')
+  const ready = Buffer.from('ready')
+  const page = createPage([white, ready, ready])
+  const screenshot = createScreenshot({ goto })(page)
+
+  const result = await screenshot('https://example.com', {
+    waitUntil: 'auto',
+    fullPage: true,
+    codeScheme: false
+  })
+
+  t.deepEqual(result, ready)
+  t.is(hydrateCalls, 1)
+})
+
 test('waits for verification interstitial to resolve before screenshot', async t => {
   const isWhiteScreenshotMock = async () => false
   const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
@@ -206,4 +255,39 @@ test('waits for verification interstitial to resolve before screenshot', async t
   t.deepEqual(result, screenshots[2])
   t.is(goto.getWaitUntilAutoCalls(), 2)
   t.is(page.getScreenshotCalls(), 3)
+})
+
+// #852's fullPage readiness probe clears `path` so it does not write during the
+// white check. #858 keeps `quality` when that path looked lossy. Together the
+// probe becomes `{ quality }` with puppeteer's png default and throws.
+test('fullPage readiness probe drops path-inferred quality', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const goto = createGoto()
+  const page = createPage([Buffer.from('probe'), Buffer.from('full')])
+  const seen = []
+  page.screenshot = async opts => {
+    seen.push(opts)
+    return Buffer.from(`shot-${seen.length}`)
+  }
+
+  const screenshot = createScreenshot({ goto })(page)
+  const result = await screenshot('https://example.com', {
+    waitUntil: 'auto',
+    codeScheme: false,
+    fullPage: true,
+    path: '/tmp/out.jpg',
+    quality: 80
+  })
+
+  t.true(Buffer.isBuffer(result))
+  t.is(seen.length, 2)
+  t.is(seen[0].fullPage, false)
+  t.is(seen[0].path, undefined)
+  t.is(seen[0].quality, undefined)
+  t.is(seen[1].fullPage, true)
+  t.is(seen[1].path, '/tmp/out.jpg')
+  t.is(seen[1].quality, 80)
 })

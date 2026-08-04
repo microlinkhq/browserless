@@ -338,7 +338,8 @@ test('response is serialized and reconstructed with callable methods (page funct
             device: { viewport: {}, userAgent: 'ua' },
             response: fakeResponse
           })
-        )()
+        )(),
+      destroyContext: async () => {}
     }
 
     const fn = browserlessFunction(
@@ -491,7 +492,8 @@ test('prefer page browser websocket endpoint when available', t => {
       browser: async () => {
         browserCalls += 1
         return { wsEndpoint: () => 'ws://from-browserless' }
-      }
+      },
+      destroyContext: async () => {}
     }
 
     const fn = browserlessFunction(({ page }) => page.title(), {
@@ -653,12 +655,16 @@ test('reuse browserless instance across page function invocations', t => {
     let getBrowserlessCalls = 0
     let createContextCalls = 0
 
+    let destroyContextCalls = 0
     const fakeBrowserless = {
       withPage: fn => async () =>
         fn(
           { browser: () => ({ wsEndpoint: () => 'ws://example' }) },
           async () => ({ device: { viewport: {}, userAgent: 'ua' } })
-        )()
+        )(),
+      destroyContext: async () => {
+        destroyContextCalls += 1
+      }
     }
 
     const fn = browserlessFunction(({ page }) => 'ok', {
@@ -676,7 +682,7 @@ test('reuse browserless instance across page function invocations', t => {
     Promise.resolve()
       .then(() => fn('https://example.com'))
       .then(() => fn('https://example.com'))
-      .then(result => process.stdout.write(JSON.stringify({ getBrowserlessCalls, createContextCalls })))
+      .then(result => process.stdout.write(JSON.stringify({ getBrowserlessCalls, createContextCalls, destroyContextCalls })))
       .catch(error => {
         process.stderr.write(String(error && error.stack ? error.stack : error))
         process.exit(1)
@@ -688,9 +694,69 @@ test('reuse browserless instance across page function invocations', t => {
   })
 
   t.is(status, 0, stderr)
-  const { getBrowserlessCalls, createContextCalls } = JSON.parse(stdout.trim())
+  const { getBrowserlessCalls, createContextCalls, destroyContextCalls } = JSON.parse(stdout.trim())
   t.is(getBrowserlessCalls, 1)
   t.is(createContextCalls, 2)
+  t.is(destroyContextCalls, 2)
+})
+
+test('destroys the browser context when withPage fails (subprocess)', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return ({ tmpdir } = {}) => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+    let destroyContextCalls = 0
+
+    const fakeBrowserless = {
+      withPage: () => async () => {
+        throw new Error('goto failed')
+      },
+      destroyContext: async () => {
+        destroyContextCalls += 1
+      }
+    }
+
+    const fn = browserlessFunction(({ page }) => 'ok', {
+      getBrowserless: async () => ({
+        createContext: async () => fakeBrowserless
+      })
+    })
+
+    Promise.resolve()
+      .then(() => fn('https://example.com'))
+      .then(() => {
+        process.stderr.write('expected rejection')
+        process.exit(1)
+      })
+      .catch(error => {
+        process.stdout.write(JSON.stringify({
+          message: error.message,
+          destroyContextCalls
+        }))
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  const { message, destroyContextCalls } = JSON.parse(stdout.trim())
+  t.is(message, 'goto failed')
+  t.is(destroyContextCalls, 1)
 })
 
 test('retry getBrowserless on next call when initial creation fails', t => {
@@ -718,7 +784,8 @@ test('retry getBrowserless on next call when initial creation fails', t => {
         fn(
           { browser: () => ({ wsEndpoint: () => 'ws://example' }) },
           async () => ({ device: { viewport: {}, userAgent: 'ua' } })
-        )()
+        )(),
+      destroyContext: async () => {}
     }
 
     const fn = browserlessFunction(({ page }) => 'ok', {

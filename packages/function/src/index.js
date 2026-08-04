@@ -69,42 +69,46 @@ module.exports = ({ tmpdir } = {}) => {
       const browser = await getBrowser()
       const browserless = await browser.createContext()
 
-      return browserless.withPage((page, goto) => async () => {
-        const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
+      try {
+        return await browserless.withPage((page, goto) => async () => {
+          const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
 
-        const targetId = await getTargetId(page)
+          const targetId = await getTargetId(page)
 
-        const runFunctionOpts = {
-          url,
-          code,
-          device,
-          ...opts,
-          ...fnOpts,
-          ...(isHttpResponse(response) && { _response: serializeResponse(response) })
-        }
+          const runFunctionOpts = {
+            url,
+            code,
+            device,
+            ...opts,
+            ...fnOpts,
+            ...(isHttpResponse(response) && { _response: serializeResponse(response) })
+          }
 
-        if (runFunctionOpts.code === code) {
-          runFunctionOpts.needsNetwork = needsNetwork
-          runFunctionOpts.source = source
-        }
+          if (runFunctionOpts.code === code) {
+            runFunctionOpts.needsNetwork = needsNetwork
+            runFunctionOpts.source = source
+          }
 
-        const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
-        const browserWSEndpoint =
-          browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
-            ? browserFromPage.wsEndpoint()
-            : undefined
+          const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
+          const browserWSEndpoint =
+            browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
+              ? browserFromPage.wsEndpoint()
+              : undefined
 
-        if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
-        runFunctionOpts.browserWSEndpoint = browserWSEndpoint
-        runFunctionOpts.targetId = targetId
+          if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
+          runFunctionOpts.browserWSEndpoint = browserWSEndpoint
+          runFunctionOpts.targetId = targetId
 
-        const result = await runFunction(runFunctionOpts)
+          const result = await runFunction(runFunctionOpts)
 
-        if (result.isFulfilled) return result
-        const error = ensureError(result.value)
-        if (isBrowserlessError(error)) throw error
-        return result
-      })()
+          if (result.isFulfilled) return result
+          const error = ensureError(result.value)
+          if (isBrowserlessError(error)) throw error
+          return result
+        })()
+      } finally {
+        await browserless.destroyContext()
+      }
     }
 
     const runWithoutBrowser = async (url, fnOpts) => {

@@ -140,7 +140,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
           isReady = await checkPageReady(page, { isPageReady, response, screenshot, isWhite })
 
           const remaining = pollTimeout - elapsed()
-          if (!isReady && !didHydrateAttempt && !isWhite) {
+          if (!isReady && !didHydrateAttempt) {
             didHydrateAttempt = true
             const { hydrated, info } = await tryHydrateScroll(page, remaining)
             didHydrateScroll = hydrated

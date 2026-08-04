@@ -222,7 +222,7 @@ const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {
       duration: elapsed()
     })
 
-    await scrollFullPageToLoadContent(page, scrollTimeout)
+    await pReflect(scrollFullPageToLoadContent(page, scrollTimeout))
     debug('prepareFullDocument:scroll', { duration: elapsed() })
   } else {
     debug('prepareFullDocument:skipScroll', { duration: elapsed() })

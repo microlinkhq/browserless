@@ -494,6 +494,8 @@ test('withPage retries transient context disconnections', async t => {
   const originalSpawn = driver.spawn
   const originalClose = driver.close
   let pid = 4000
+  let createBrowserContextCalls = 0
+  let contextCloseCalls = 0
 
   driver.spawn = () => {
     let isClosed = false
@@ -504,18 +506,22 @@ test('withPage retries transient context disconnections', async t => {
       isClosed: () => isClosed
     }
 
-    const browserContext = {
-      id: `ctx-${pid}`,
-      close: () => Promise.resolve(),
-      newPage: () => Promise.resolve(page)
-    }
-
     return Promise.resolve({
       process: () => ({ pid: ++pid }),
       connected: true,
       once: () => {},
       version: () => Promise.resolve('mock'),
-      createBrowserContext: () => Promise.resolve(browserContext),
+      createBrowserContext: () => {
+        createBrowserContextCalls += 1
+        return Promise.resolve({
+          id: `ctx-${pid}-${createBrowserContextCalls}`,
+          close: () => {
+            contextCloseCalls += 1
+            return Promise.resolve()
+          },
+          newPage: () => Promise.resolve(page)
+        })
+      },
       close: () => Promise.resolve(),
       disconnect: () => Promise.resolve()
     })
@@ -546,6 +552,11 @@ test('withPage retries transient context disconnections', async t => {
 
   t.is(result, 'ok')
   t.is(attempts, 2)
+  t.is(createBrowserContextCalls, 2)
+  t.is(contextCloseCalls, 1)
+
+  await browserless.destroyContext()
+  t.is(contextCloseCalls, 2)
 })
 
 test('withPage retries transient protocol errors', async t => {
