@@ -16,6 +16,30 @@ const opts = {
 
 const fileUrl = `file://${path.join(__dirname, './fixtures/example.html')}`
 
+const runPageFnSubprocess = body => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return () => {
+          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
+          instance.teardown = async () => {}
+          return instance
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+    ${body}
+  `
+
+  return spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' })
+}
+
 test('code runs in strict mode', async t => {
   const code = () => {
     function isStrict () {
@@ -464,25 +488,8 @@ test('non-page functions skip browser entirely', async t => {
 })
 
 test('prefer page browser websocket endpoint when available', t => {
-  const browserlessFunctionPath = require.resolve('..')
-  const script = `
-    const Module = require('module')
-    const originalLoad = Module._load
+  const { status, stdout, stderr } = runPageFnSubprocess(`
     let browserCalls = 0
-
-    Module._load = function (request, parent, isMain) {
-      if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
-          instance.teardown = async () => {}
-          return instance
-        }
-      }
-      return originalLoad(request, parent, isMain)
-    }
-
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
-
     const fakeBrowserless = {
       withPage: fn => async () =>
         fn(
@@ -511,11 +518,7 @@ test('prefer page browser websocket endpoint when available', t => {
         process.stderr.write(String(error && error.stack ? error.stack : error))
         process.exit(1)
       })
-  `
-
-  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
-    encoding: 'utf8'
-  })
+  `)
 
   t.is(status, 0, stderr)
   const { browserCalls, result } = JSON.parse(stdout.trim())
@@ -635,26 +638,9 @@ test('reuse compiled template source across invocations', t => {
 })
 
 test('reuse browserless instance across page function invocations', t => {
-  const browserlessFunctionPath = require.resolve('..')
-  const script = `
-    const Module = require('module')
-    const originalLoad = Module._load
-
-    Module._load = function (request, parent, isMain) {
-      if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
-          instance.teardown = async () => {}
-          return instance
-        }
-      }
-      return originalLoad(request, parent, isMain)
-    }
-
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+  const { status, stdout, stderr } = runPageFnSubprocess(`
     let getBrowserlessCalls = 0
     let createContextCalls = 0
-
     let destroyContextCalls = 0
     const fakeBrowserless = {
       withPage: fn => async () =>
@@ -682,16 +668,16 @@ test('reuse browserless instance across page function invocations', t => {
     Promise.resolve()
       .then(() => fn('https://example.com'))
       .then(() => fn('https://example.com'))
-      .then(result => process.stdout.write(JSON.stringify({ getBrowserlessCalls, createContextCalls, destroyContextCalls })))
+      .then(() =>
+        process.stdout.write(
+          JSON.stringify({ getBrowserlessCalls, createContextCalls, destroyContextCalls })
+        )
+      )
       .catch(error => {
         process.stderr.write(String(error && error.stack ? error.stack : error))
         process.exit(1)
       })
-  `
-
-  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
-    encoding: 'utf8'
-  })
+  `)
 
   t.is(status, 0, stderr)
   const { getBrowserlessCalls, createContextCalls, destroyContextCalls } = JSON.parse(stdout.trim())
@@ -701,25 +687,8 @@ test('reuse browserless instance across page function invocations', t => {
 })
 
 test('destroys the browser context when withPage fails (subprocess)', t => {
-  const browserlessFunctionPath = require.resolve('..')
-  const script = `
-    const Module = require('module')
-    const originalLoad = Module._load
-
-    Module._load = function (request, parent, isMain) {
-      if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
-          instance.teardown = async () => {}
-          return instance
-        }
-      }
-      return originalLoad(request, parent, isMain)
-    }
-
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+  const { status, stdout, stderr } = runPageFnSubprocess(`
     let destroyContextCalls = 0
-
     const fakeBrowserless = {
       withPage: () => async () => {
         throw new Error('goto failed')
@@ -742,16 +711,11 @@ test('destroys the browser context when withPage fails (subprocess)', t => {
         process.exit(1)
       })
       .catch(error => {
-        process.stdout.write(JSON.stringify({
-          message: error.message,
-          destroyContextCalls
-        }))
+        process.stdout.write(
+          JSON.stringify({ message: error.message, destroyContextCalls })
+        )
       })
-  `
-
-  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
-    encoding: 'utf8'
-  })
+  `)
 
   t.is(status, 0, stderr)
   const { message, destroyContextCalls } = JSON.parse(stdout.trim())
@@ -760,25 +724,8 @@ test('destroys the browser context when withPage fails (subprocess)', t => {
 })
 
 test('retry getBrowserless on next call when initial creation fails', t => {
-  const browserlessFunctionPath = require.resolve('..')
-  const script = `
-    const Module = require('module')
-    const originalLoad = Module._load
-
-    Module._load = function (request, parent, isMain) {
-      if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = () => async () => ({ isFulfilled: true, value: 'ok' })
-          instance.teardown = async () => {}
-          return instance
-        }
-      }
-      return originalLoad(request, parent, isMain)
-    }
-
-    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+  const { status, stdout, stderr } = runPageFnSubprocess(`
     let getBrowserlessCalls = 0
-
     const fakeBrowserless = {
       withPage: fn => async () =>
         fn(
@@ -804,22 +751,20 @@ test('retry getBrowserless on next call when initial creation fails', t => {
       .then(() => fn('https://example.com').then(() => 'no-error').catch(e => e.message))
       .then(firstResult => {
         return fn('https://example.com').then(second => {
-          process.stdout.write(JSON.stringify({
-            firstResult,
-            secondFulfilled: second.isFulfilled,
-            getBrowserlessCalls
-          }))
+          process.stdout.write(
+            JSON.stringify({
+              firstResult,
+              secondFulfilled: second.isFulfilled,
+              getBrowserlessCalls
+            })
+          )
         })
       })
       .catch(error => {
         process.stderr.write(String(error && error.stack ? error.stack : error))
         process.exit(1)
       })
-  `
-
-  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
-    encoding: 'utf8'
-  })
+  `)
 
   t.is(status, 0, stderr)
   const { firstResult, secondFulfilled, getBrowserlessCalls } = JSON.parse(stdout.trim())

@@ -171,21 +171,17 @@ test('hydrates fullPage while the viewport is still white', async t => {
   const originalPrepareModule = require.cache[prepareModulePath]
   let hydrateCalls = 0
 
-  const prepareExports = {
-    ...require('../src/prepare-full-document'),
-    tryHydrateScroll: async () => {
-      hydrateCalls += 1
-      return { hydrated: true, info: { hydrated: true } }
-    },
-    prepareFullDocument: async () => ({ expanded: false, duration: 0, scrolled: true }),
-    expandOverflow: async () => false
-  }
-
   require.cache[prepareModulePath] = {
     id: prepareModulePath,
     filename: prepareModulePath,
     loaded: true,
-    exports: prepareExports
+    exports: {
+      ...require('../src/prepare-full-document'),
+      tryHydrateScroll: async () => {
+        hydrateCalls += 1
+        return { hydrated: true, info: { hydrated: true } }
+      }
+    }
   }
 
   let whiteCalls = 0

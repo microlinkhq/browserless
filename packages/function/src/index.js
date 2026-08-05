@@ -69,8 +69,8 @@ module.exports = ({ tmpdir } = {}) => {
       const browser = await getBrowser()
       const browserless = await browser.createContext()
 
-      try {
-        return await browserless.withPage((page, goto) => async () => {
+      return browserless
+        .withPage((page, goto) => async () => {
           const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
 
           const targetId = await getTargetId(page)
@@ -106,9 +106,7 @@ module.exports = ({ tmpdir } = {}) => {
           if (isBrowserlessError(error)) throw error
           return result
         })()
-      } finally {
-        await browserless.destroyContext()
-      }
+        .finally(() => browserless.destroyContext())
     }
 
     const runWithoutBrowser = async (url, fnOpts) => {
