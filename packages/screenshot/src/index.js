@@ -188,13 +188,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
         do {
           screenshot = await captureWithNavigationRetry(
-            () =>
-              page.screenshot({
-                ...opts,
-                ...(opts.fullPage
-                  ? { fullPage: false, path: undefined, quality: undefined }
-                  : {})
-              }),
+            () => {
+              if (!opts.fullPage) return page.screenshot(opts)
+              const { fullPage, path, quality, ...probeOpts } = opts
+              return page.screenshot({ ...probeOpts, fullPage: false })
+            },
             { page, goto, timeout }
           )
           isWhite = await isWhiteScreenshot(screenshot)
