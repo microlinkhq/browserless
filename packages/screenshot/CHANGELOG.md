@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.6.12](https://github.com/microlinkhq/browserless/compare/v13.6.11...v13.6.12) (2026-08-05)
+
+### Bug Fixes
+
+* context leaks, screenshot readiness, and prepare scroll ([#869](https://github.com/microlinkhq/browserless/issues/869)) ([c3aa05a](https://github.com/microlinkhq/browserless/commit/c3aa05a6001934bd219708158ae34973cfe789aa)), closes [#852](https://github.com/microlinkhq/browserless/issues/852) [#858](https://github.com/microlinkhq/browserless/issues/858)
+
 ## [13.6.11](https://github.com/microlinkhq/browserless/compare/v13.6.10...v13.6.11) (2026-07-27)
 
 ### Bug Fixes
