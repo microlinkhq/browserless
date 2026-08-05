@@ -1,4 +1,6 @@
 dangerouslyAllowAllBuilds: true
-minimumReleaseAge: 0
+minimumReleaseAge: 10080
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
 packages:
   - 'packages/*'
