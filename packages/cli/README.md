@@ -47,7 +47,7 @@ The `@browserless/cli` package allows you to:
 | `html <url>` | Serialize the page content to HTML |
 | `text <url>` | Extract plain text content from the page |
 | `lighthouse <url>` | Run a Google Lighthouse audit and output JSON report |
-| `page-weight <url>` | Analyze network requests and resource sizes |
+| `page-weight <url>` | Analyze network requests, resource sizes, and basic load timings |
 | `ping <url>` | Get response info: status code, redirects, headers |
 | `status <url>` | Get the HTTP status code |
 | `goto <url>` | Navigate to a URL and return page/response info |
