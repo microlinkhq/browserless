@@ -2,7 +2,8 @@
 
 const prettyBytes = require('pretty-bytes')
 
-const prettyMs = ms => (ms == null ? null : `${Math.round(ms)} ms`)
+// Navigation Timing uses 0 for milestones that haven't been recorded.
+const timing = (ms, label) => (ms > 0 ? `${Math.round(ms)} ms ${label}` : null)
 
 module.exports = async ({ url, browserless, opts }) => {
   const getPageWeight = browserless.evaluate(async page =>
@@ -16,10 +17,10 @@ module.exports = async ({ url, browserless, opts }) => {
           transferredSize: resource.transferSize,
           decodedBodySize: resource.decodedBodySize
         })),
-        ttfb: nav?.responseStart ?? null,
-        fcp: fcp?.startTime ?? null,
-        domContentLoaded: nav?.domContentLoadedEventEnd ?? null,
-        loadEventEnd: nav?.loadEventEnd ?? null
+        ttfb: nav?.responseStart,
+        fcp: fcp?.startTime,
+        domContentLoaded: nav?.domContentLoadedEventEnd,
+        loadEventEnd: nav?.loadEventEnd
       }
     })
   )
@@ -41,10 +42,10 @@ module.exports = async ({ url, browserless, opts }) => {
     `${resources.length} network requests`,
     `${transferSize} transferred bytes`,
     `${resourcesSize} resources bytes`,
-    ttfb != null && `${prettyMs(ttfb)} TTFB`,
-    fcp != null && `${prettyMs(fcp)} FCP`,
-    domContentLoaded != null && `${prettyMs(domContentLoaded)} DOMContentLoaded`,
-    loadEventEnd != null && `${prettyMs(loadEventEnd)} load`
+    timing(ttfb, 'TTFB'),
+    timing(fcp, 'FCP'),
+    timing(domContentLoaded, 'DOMContentLoaded'),
+    timing(loadEventEnd, 'load')
   ].filter(Boolean)
 
   return ['\n' + lines.map(line => `  ⬩ ${line}`).join('\n')]
