@@ -20,12 +20,18 @@ module.exports = (page, opts) => {
     if (!stopped) return ack(sessionId)
   }
 
-  const onScreencastFrame = ({ data, metadata, sessionId }) => {
-    if (!metadata.timestamp || !onFrame) return ackIfActive(sessionId)
+  const onScreencastFrame = ({ data, metadata = {}, sessionId }) => {
+    if (!onFrame) return ackIfActive(sessionId)
+
+    // CDP marks ScreencastFrameMetadata.timestamp as optional. Dropping those
+    // frames made capture look empty under some GL/headless backends; fill a
+    // wall-clock fallback (seconds, same unit as TimeSinceEpoch) instead.
+    const frameMetadata =
+      metadata.timestamp == null ? { ...metadata, timestamp: Date.now() / 1000 } : metadata
 
     let result
     try {
-      result = onFrame(data, metadata)
+      result = onFrame(data, frameMetadata)
     } catch {
       // A synchronous onFrame throw must not propagate into puppeteer's CDP
       // dispatch loop; still ack so the stream can't stall on one bad frame.
