@@ -6,8 +6,15 @@ const requireOneOf = require('require-one-of')
 const createRunFunction = require('./function')
 const path = require('path')
 
+// `isolated-function` reads these to know which dependencies a snippet requires
+// are already on disk, so it can skip installing them. Walking up from a
+// dependency only lands on the consumer's `node_modules` under a flat install:
+// with pnpm it lands inside the isolated store, which holds that dependency's
+// own dependencies and nothing else, so every snippet paid a fresh install.
+// `module.paths` is the resolution chain Node itself would use from here, so it
+// reaches the consumer under either layout.
 const cloudflareDir = path.dirname(require.resolve('@cloudflare/puppeteer/package.json'))
-const nodePaths = [path.resolve(cloudflareDir, '..', '..')]
+const nodePaths = [...new Set([path.resolve(cloudflareDir, '..', '..'), ...module.paths])]
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
