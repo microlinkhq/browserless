@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.7.0](https://github.com/microlinkhq/browserless/compare/v13.6.13...v13.7.0) (2026-08-09)
+
+### Features
+
+* **cli:** add load timings to page-weight ([#873](https://github.com/microlinkhq/browserless/issues/873)) ([3ac7973](https://github.com/microlinkhq/browserless/commit/3ac7973e04b10c5a7eb735d805ac9a3f4f67c492))
+
 ## [13.6.13](https://github.com/microlinkhq/browserless/compare/v13.6.12...v13.6.13) (2026-08-05)
 
 **Note:** Version bump only for package @browserless/cli

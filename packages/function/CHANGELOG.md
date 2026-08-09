@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.7.0](https://github.com/microlinkhq/browserless/compare/v13.6.13...v13.7.0) (2026-08-09)
+
+### Bug Fixes
+
+* **function:** resolve nodePaths under an isolated store ([#875](https://github.com/microlinkhq/browserless/issues/875)) ([6308f0d](https://github.com/microlinkhq/browserless/commit/6308f0dd38fa9aeeaf0914c054e44ecd176e844e))
+
 ## [13.6.12](https://github.com/microlinkhq/browserless/compare/v13.6.11...v13.6.12) (2026-08-05)
 
 ### Bug Fixes

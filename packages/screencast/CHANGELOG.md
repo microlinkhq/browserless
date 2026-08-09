@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.7.0](https://github.com/microlinkhq/browserless/compare/v13.6.13...v13.7.0) (2026-08-09)
+
+### Bug Fixes
+
+* **screencast:** deliver frames without CDP timestamp ([#876](https://github.com/microlinkhq/browserless/issues/876)) ([2e21df5](https://github.com/microlinkhq/browserless/commit/2e21df5f84cf302369acbfce9c9dbb3855f7a2e1))
+
 ## [13.6.12](https://github.com/microlinkhq/browserless/compare/v13.6.11...v13.6.12) (2026-08-05)
 
 **Note:** Version bump only for package @browserless/screencast
