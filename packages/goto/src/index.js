@@ -12,6 +12,7 @@ const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
+const { runActions } = require('./actions')
 
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
@@ -243,6 +244,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     page,
     {
       abortTypes = [],
+      actions,
       adblock: withAdblock = true,
       animations = false,
       authenticate,
@@ -508,51 +510,69 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         ])
       }
 
-      if (waitForSelector) {
-        await run({
-          fn: page.waitForSelector(waitForSelector),
-          timeout: gotoTimeout,
-          debug: { waitForSelector }
+      const hasActions = Array.isArray(actions) && actions.length > 0
+      let actionCaptures
+
+      if (hasActions) {
+        // mediaType / reduced-motion still apply; CSS/JS injection only via actions
+        await inject(page, {
+          timeout: actionTimeout,
+          mediaType,
+          animations
         })
-      }
 
-      if (waitForFunction) {
-        await run({
-          fn: page.waitForFunction(waitForFunction),
-          timeout: gotoTimeout,
-          debug: { waitForFunction }
+        actionCaptures = await runActions(page, actions, {
+          inject,
+          run,
+          timeout: actionTimeout
         })
-      }
-
-      if (waitForTimeout) {
-        await setTimeout(waitForTimeout)
-      }
-
-      await inject(page, {
-        timeout: actionTimeout,
-        mediaType,
-        animations,
-        modules,
-        scripts,
-        styles
-      })
-
-      if (click) {
-        for (const selector of castArray(click)) {
+      } else {
+        if (waitForSelector) {
           await run({
-            fn: page.click(selector),
-            timeout: actionTimeout,
-            debug: { click: selector }
+            fn: page.waitForSelector(waitForSelector),
+            timeout: gotoTimeout,
+            debug: { waitForSelector }
           })
         }
-      }
 
-      if (scroll) {
-        await run({
-          fn: page.$eval(scroll, el => el.scrollIntoView()),
+        if (waitForFunction) {
+          await run({
+            fn: page.waitForFunction(waitForFunction),
+            timeout: gotoTimeout,
+            debug: { waitForFunction }
+          })
+        }
+
+        if (waitForTimeout) {
+          await setTimeout(waitForTimeout)
+        }
+
+        await inject(page, {
           timeout: actionTimeout,
-          debug: { scroll }
+          mediaType,
+          animations,
+          modules,
+          scripts,
+          styles
         })
+
+        if (click) {
+          for (const selector of castArray(click)) {
+            await run({
+              fn: page.click(selector),
+              timeout: actionTimeout,
+              debug: { click: selector }
+            })
+          }
+        }
+
+        if (scroll) {
+          await run({
+            fn: page.$eval(scroll, el => el.scrollIntoView()),
+            timeout: actionTimeout,
+            debug: { scroll }
+          })
+        }
       }
 
       if (isWaitUntilAuto) {
@@ -618,7 +638,9 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         if (isRejected) error = error || flattenError || new Error('flattenShadowDOM failed')
       }
 
-      return { response, device, error }
+      return actionCaptures
+        ? { response, device, error, actionCaptures }
+        : { response, device, error }
     } finally {
       if (abortTypesHandler) page.off('request', abortTypesHandler)
       if (disableInterceptionForAbortTypes) {
@@ -642,3 +664,5 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
 module.exports.parseCookies = parseCookies
 module.exports.inject = inject
+module.exports.runActions = runActions
+module.exports.actions = require('./actions')
