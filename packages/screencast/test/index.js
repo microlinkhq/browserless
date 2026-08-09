@@ -79,17 +79,29 @@ test('capture frames', async t => {
   })
 
   await screencast.start()
-  await page.goto('https://example.com', { waitUntil: 'load' })
 
-  // Page.startScreencast emits a frame per compositor commit. Under the GL
-  // backend a fully static page may not commit again after the initial paint,
-  // so drive a visual change each tick to force commits and poll until the
-  // screencast captures at least one frame.
-  const deadline = Date.now() + 5000
+  // Local animated page: no network, and a continuous CSS animation forces
+  // compositor commits under the GL/xvfb backend (a static page often does not).
+  await page.setContent(
+    `<!doctype html>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: linear-gradient(90deg, #f00, #00f);
+    background-size: 200% 100%;
+    animation: slide 0.2s linear infinite;
+  }
+  @keyframes slide {
+    from { background-position: 0 0; }
+    to { background-position: 100% 0; }
+  }
+</style>
+<body></body>`,
+    { waitUntil: 'load' }
+  )
+
+  const deadline = Date.now() + 10000
   while (frames.length === 0 && Date.now() < deadline) {
-    await page.evaluate(() => {
-      document.body.style.background = `hsl(${Date.now() % 360}, 50%, 50%)`
-    })
     await new Promise(resolve => setTimeout(resolve, 50))
   }
 
@@ -135,6 +147,32 @@ test('clean up cdp frame listeners across screencast sessions', async t => {
   t.is(countListeners(), 1)
   await screencastB.stop()
   t.is(countListeners(), 0)
+})
+
+test('delivers frames when CDP omits metadata.timestamp', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  let received
+
+  const screencast = createScreencast(page, {})
+  screencast.onFrame((data, metadata) => {
+    received = { data, metadata }
+  })
+
+  await screencast.start()
+  const before = Date.now() / 1000
+  cdp.emit('Page.screencastFrame', {
+    data: 'frame',
+    metadata: { deviceWidth: 800 },
+    sessionId: 41
+  })
+  const after = Date.now() / 1000
+
+  t.is(received.data, 'frame')
+  t.is(received.metadata.deviceWidth, 800)
+  t.true(received.metadata.timestamp >= before)
+  t.true(received.metadata.timestamp <= after)
+  t.true(calls.some(({ method }) => method === 'Page.screencastFrameAck'))
 })
 
 test('acks screencast frames after async onFrame resolves', async t => {
