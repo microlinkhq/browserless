@@ -812,3 +812,15 @@ test('isHttpResponse rejects non-response values', t => {
   // serializeResponse with "response.status is not a function"
   t.false(isHttpResponse({ isFulfilled: true, isRejected: false, value: undefined }))
 })
+
+test('a dependency already present is not installed again', async t => {
+  // `lodash` is a devDependency of this package, so it is on disk before the
+  // snippet runs. Resolving `nodePaths` by walking up from `@cloudflare/puppeteer`
+  // only found it under a flat install; with pnpm it landed in the isolated store
+  // and every snippet paid a fresh install of something already there.
+  const code = async () => require('lodash').VERSION
+
+  const { profiling } = await browserlessFunction(code, opts)(fileUrl)
+
+  t.is(profiling.phases.install, 0)
+})
