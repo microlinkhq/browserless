@@ -241,22 +241,33 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
       try {
         const timeScreenshot = prettyTimeSpan()
+        const hasActionScreenshot =
+          Array.isArray(opts.actions) && opts.actions.some(action => action.type === 'screenshot')
+        let actionCaptures
 
         if (waitUntil !== 'auto') {
-          ;({ response } = await goto(page, { ...opts, url, waitUntil }))
-          const screenshotOpts = await beforeScreenshot(page, response, opts)
-          if (opts.fullPage) {
-            await prepareFullDocument(page, { goto, timeout: opts.timeout })
+          ;({ response, actionCaptures } = await goto(page, { ...opts, url, waitUntil }))
+          if (!hasActionScreenshot) {
+            const screenshotOpts = await beforeScreenshot(page, response, opts)
+            if (opts.fullPage) {
+              await prepareFullDocument(page, { goto, timeout: opts.timeout })
+            }
+            screenshot = await captureExpanded(
+              opts.fullPage,
+              { ...opts, ...screenshotOpts },
+              goto.timeouts.action(opts.timeout)
+            )
           }
-          screenshot = await captureExpanded(
-            opts.fullPage,
-            { ...opts, ...screenshotOpts },
-            goto.timeouts.action(opts.timeout)
-          )
           debug('screenshot', { waitUntil, duration: timeScreenshot() })
         } else {
-          ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
+          ;({ response, actionCaptures } = await goto(page, {
+            ...opts,
+            url,
+            waitUntil,
+            waitUntilAuto
+          }))
           async function waitUntilAuto (page, { response }) {
+            if (hasActionScreenshot) return
             const screenshotOpts = await beforeScreenshot(page, response, opts)
             const { isWhite, isReady, retry } = await takeScreenshot({
               ...opts,
@@ -272,6 +283,14 @@ module.exports = ({ goto, ...gotoOpts }) => {
               duration: timeScreenshot()
             })
           }
+        }
+
+        if (hasActionScreenshot) {
+          const last = actionCaptures?.screenshots?.at(-1)
+          if (!last?.buffer) {
+            throw new Error('actions: screenshot action produced no buffer')
+          }
+          screenshot = last.buffer
         }
 
         return Object.keys(overlayOpts).length === 0
