@@ -2,11 +2,25 @@
 
 const debug = require('debug-logfmt')('browserless:goto:actions')
 
+const { hasElementLocator, isSet } = require('./locator')
 const { batchActions } = require('./batch')
 const handlers = require('./handlers')
 
+const MAX_BUFFERED_RESPONSES = 100
+
+const waitMode = action => {
+  if (hasElementLocator(action)) return 'element'
+  if (isSet(action.text)) return 'text'
+  if (isSet(action.request)) return 'request'
+  if (isSet(action.timeout)) return 'timeout'
+  return 'unknown'
+}
+
 /**
  * Run a flat ordered list of browser actions with internal auto-batching.
+ *
+ * `timeout` is the budget for the whole list: every action draws from the same
+ * deadline, so the total run time never grows with the action count.
  *
  * @param {import('puppeteer').Page} page
  * @param {Array<Record<string, *>>} actions
@@ -19,8 +33,11 @@ const handlers = require('./handlers')
 const runActions = async (page, actions, { inject, run, timeout }) => {
   const actionCaptures = { screenshots: [], pdfs: [] }
   const responseBuffer = []
+  const deadline = Date.now() + timeout
+  const remaining = () => Math.max(0, deadline - Date.now())
 
   const onResponse = response => {
+    if (responseBuffer.length === MAX_BUFFERED_RESPONSES) responseBuffer.shift()
     responseBuffer.push(response)
   }
   page.on('response', onResponse)
@@ -34,15 +51,16 @@ const runActions = async (page, actions, { inject, run, timeout }) => {
         if (!handler) throw new Error(`actions[${index}]: unknown type "${action.type}"`)
 
         const label = action.type === 'wait' ? `wait:${waitMode(action)}` : action.type
+        const budget = remaining()
         const result = await run({
           fn: handler(page, action, {
             inject,
-            timeout,
+            timeout: budget,
             responseBuffer,
             actionCaptures,
             index
           }),
-          timeout,
+          timeout: budget,
           debug: { action: label, index }
         })
 
@@ -78,21 +96,4 @@ const runActions = async (page, actions, { inject, run, timeout }) => {
   return actionCaptures
 }
 
-const waitMode = action => {
-  if (
-    action.selector ||
-    action.role ||
-    action.label ||
-    action.placeholder ||
-    action.testId ||
-    action.alt
-  ) {
-    return 'element'
-  }
-  if (action.text != null) return 'text'
-  if (action.request) return 'request'
-  if (action.timeout != null) return 'timeout'
-  return 'unknown'
-}
-
-module.exports = { runActions, batchActions: require('./batch').batchActions, handlers }
+module.exports = { runActions, batchActions, handlers, waitMode }

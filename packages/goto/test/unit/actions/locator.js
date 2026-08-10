@@ -2,7 +2,12 @@
 
 const test = require('ava')
 
-const { toSelector, hasElementLocator, escape } = require('../../../src/actions/locator')
+const {
+  toSelector,
+  hasElementLocator,
+  escape,
+  escapeText
+} = require('../../../src/actions/locator')
 
 test('toSelector compiles CSS selector pass-through', t => {
   t.is(toSelector({ selector: '#checkout' }), '#checkout')
@@ -43,4 +48,23 @@ test('hasElementLocator treats wait text as page-text mode', t => {
 
 test('escape quotes double quotes', t => {
   t.is(escape('a"b'), 'a\\"b')
+})
+
+test('escape escapes backslashes before quotes', t => {
+  t.is(escape('a\\"b'), 'a\\\\\\"b')
+  t.is(escape('a\\b'), 'a\\\\b')
+})
+
+test('escapeText escapes backslashes and parentheses', t => {
+  t.is(escapeText('Save (draft)'), 'Save \\(draft\\)')
+  t.is(escapeText('a\\b'), 'a\\\\b')
+})
+
+test('toSelector escapes text with parentheses', t => {
+  t.is(toSelector({ text: 'Save (draft)' }), '::-p-text(Save \\(draft\\))')
+})
+
+test('hasElementLocator ignores empty locator values', t => {
+  t.false(hasElementLocator({ type: 'click', selector: '' }))
+  t.false(hasElementLocator({ type: 'wait', selector: null }))
 })

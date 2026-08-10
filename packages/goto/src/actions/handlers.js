@@ -2,7 +2,7 @@
 
 const { setTimeout } = require('node:timers/promises')
 
-const { toSelector, hasElementLocator } = require('./locator')
+const { toSelector, hasElementLocator, isSet } = require('./locator')
 
 /**
  * Clamp a per-action timeout to the remaining request budget.
@@ -23,10 +23,17 @@ const clampTimeout = (value, budget) => {
   return Math.min(ms, budget)
 }
 
+const MAX_GLOB_LENGTH = 512
+
 const globToRegExp = pattern => {
-  const source = String(pattern)
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*/g, '.*')
+  const raw = String(pattern)
+  if (raw.length > MAX_GLOB_LENGTH) {
+    throw new Error(`wait: request pattern exceeds ${MAX_GLOB_LENGTH} characters`)
+  }
+  const source = raw
+    .split('*')
+    .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('[\\s\\S]*')
   return new RegExp(`^${source}$`)
 }
 
@@ -52,24 +59,30 @@ const waitForResponse = async (page, action, { timeout, responseBuffer }) => {
     }
   }
 
-  const buffered = responseBuffer.find(match)
-  if (buffered) return buffered
+  const consume = response => {
+    const index = responseBuffer.indexOf(response)
+    if (index !== -1) responseBuffer.splice(index, 1)
+    return response
+  }
 
-  return page.waitForResponse(match, { timeout })
+  const buffered = responseBuffer.find(match)
+  if (buffered) return consume(buffered)
+
+  return consume(await page.waitForResponse(match, { timeout }))
 }
 
 const handlers = {
   async inject (page, action, { inject, timeout }) {
     await inject(page, {
-      timeout,
+      timeout: clampTimeout(action.timeout, timeout),
       styles: action.styles,
       scripts: action.scripts,
       modules: action.modules
     })
   },
 
-  async click (page, action) {
-    await page.locator(toSelector(action)).click()
+  async click (page, action, { timeout }) {
+    await page.locator(toSelector(action)).setTimeout(clampTimeout(action.timeout, timeout)).click()
   },
 
   async wait (page, action, { timeout, responseBuffer }) {
@@ -82,18 +95,18 @@ const handlers = {
         hidden: action.hidden
       })
     }
-    if (action.text != null) return waitForText(page, action, budget)
-    if (action.request) return waitForResponse(page, action, { timeout: budget, responseBuffer })
-    if (action.timeout != null && action.timeout !== '') {
-      return setTimeout(clampTimeout(action.timeout, timeout))
+    if (isSet(action.text)) return waitForText(page, action, budget)
+    if (isSet(action.request)) {
+      return waitForResponse(page, action, { timeout: budget, responseBuffer })
     }
+    if (isSet(action.timeout)) return setTimeout(budget)
     throw new Error('wait: no target')
   },
 
-  async scroll (page, action) {
-    if (hasElementLocator(action) || action.selector || action.text) {
+  async scroll (page, action, { timeout }) {
+    if (hasElementLocator(action)) {
       const selector = toSelector(action)
-      await page.waitForSelector(selector)
+      await page.waitForSelector(selector, { timeout: clampTimeout(action.timeout, timeout) })
       await page.$eval(selector, el => el.scrollIntoView())
       return
     }
@@ -102,23 +115,32 @@ const handlers = {
     await page.evaluate((scrollX, scrollY) => window.scrollBy(scrollX, scrollY), x, y)
   },
 
-  async fill (page, action) {
-    await page.locator(toSelector(action)).fill(String(action.value ?? ''))
+  async fill (page, action, { timeout }) {
+    await page
+      .locator(toSelector(action))
+      .setTimeout(clampTimeout(action.timeout, timeout))
+      .fill(String(action.value ?? ''))
   },
 
   async evaluate (page, action) {
     await page.evaluate(action.expression)
   },
 
-  async screenshot (page, action, { actionCaptures, index }) {
+  async screenshot (page, action, { actionCaptures, index, timeout }) {
     const opts = {}
     if (action.fullPage != null) opts.fullPage = action.fullPage
-    if (hasElementLocator(action) || action.selector || action.text) {
-      const selector = toSelector(action)
-      await page.waitForSelector(selector)
-      const element = await page.$(selector)
-      const box = await element.boundingBox()
-      if (box) opts.clip = box
+    if (hasElementLocator(action)) {
+      const element = await page.waitForSelector(toSelector(action), {
+        timeout: clampTimeout(action.timeout, timeout)
+      })
+      if (element) {
+        try {
+          const box = await element.boundingBox()
+          if (box) opts.clip = box
+        } finally {
+          await element.dispose()
+        }
+      }
     }
     const buffer = await page.screenshot(opts)
     actionCaptures.screenshots.push({ buffer, opts, index })

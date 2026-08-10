@@ -30,3 +30,21 @@ test('globToRegExp matches request patterns', t => {
   t.true(re.test('https://api.example.com/user/1'))
   t.false(re.test('https://other.example.com/user/1'))
 })
+
+test('globToRegExp treats ? as a literal', t => {
+  const re = globToRegExp('*/user?id=*')
+  t.true(re.test('https://api.example.com/user?id=1'))
+  t.false(re.test('https://api.example.com/useid=1'))
+})
+
+test('globToRegExp escapes regex metacharacters', t => {
+  const re = globToRegExp('https://example.com/a+b(c)')
+  t.true(re.test('https://example.com/a+b(c)'))
+  t.false(re.test('https://example.com/aab(c)'))
+})
+
+test('globToRegExp rejects over-long patterns', t => {
+  t.throws(() => globToRegExp('*'.repeat(513)), {
+    message: /pattern exceeds 512 characters/
+  })
+})

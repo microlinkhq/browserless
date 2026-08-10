@@ -3,12 +3,14 @@
 /**
  * Parallel-safe batch key, or null for barrier actions.
  *
+ * `pdf` is a barrier: it toggles print media emulation on the shared page.
+ *
  * @param {string} type
- * @returns {'inject'|'capture'|null}
+ * @returns {'inject'|'screenshot'|null}
  */
 const batchKey = type => {
   if (type === 'inject') return 'inject'
-  if (type === 'screenshot' || type === 'pdf') return 'capture'
+  if (type === 'screenshot') return 'screenshot'
   return null
 }
 

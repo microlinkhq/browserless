@@ -2,7 +2,14 @@
 
 const LOCATOR_KEYS = ['selector', 'role', 'text', 'label', 'placeholder', 'testId', 'alt']
 
-const escape = value => String(value).replaceAll('"', '\\"')
+const ELEMENT_LOCATOR_KEYS = LOCATOR_KEYS.filter(key => key !== 'text')
+
+const escape = value => String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"')
+
+const escapeText = value =>
+  String(value).replaceAll('\\', '\\\\').replaceAll('(', '\\(').replaceAll(')', '\\)')
+
+const isSet = value => value != null && value !== ''
 
 /**
  * Compile an action's locator fields into a Puppeteer P-selector string.
@@ -11,16 +18,16 @@ const escape = value => String(value).replaceAll('"', '\\"')
  * @returns {string}
  */
 const toSelector = action => {
-  if (action.selector) return action.selector
-  if (action.role) {
-    const name = action.name ? `[name="${escape(action.name)}"]` : ''
+  if (isSet(action.selector)) return action.selector
+  if (isSet(action.role)) {
+    const name = isSet(action.name) ? `[name="${escape(action.name)}"]` : ''
     return `::-p-aria([role="${escape(action.role)}"]${name})`
   }
-  if (action.text) return `::-p-text(${action.text})`
-  if (action.label) return `::-p-aria([name="${escape(action.label)}"])`
-  if (action.placeholder) return `[placeholder="${escape(action.placeholder)}"]`
-  if (action.testId) return `[data-testid="${escape(action.testId)}"]`
-  if (action.alt) return `[alt="${escape(action.alt)}"]`
+  if (isSet(action.text)) return `::-p-text(${escapeText(action.text)})`
+  if (isSet(action.label)) return `::-p-aria([name="${escape(action.label)}"])`
+  if (isSet(action.placeholder)) return `[placeholder="${escape(action.placeholder)}"]`
+  if (isSet(action.testId)) return `[data-testid="${escape(action.testId)}"]`
+  if (isSet(action.alt)) return `[alt="${escape(action.alt)}"]`
   throw new Error('locator: no strategy')
 }
 
@@ -32,17 +39,16 @@ const toSelector = action => {
  * @returns {boolean}
  */
 const hasElementLocator = action => {
-  if (action.type === 'wait') {
-    return Boolean(
-      action.selector ||
-        action.role ||
-        action.label ||
-        action.placeholder ||
-        action.testId ||
-        action.alt
-    )
-  }
-  return LOCATOR_KEYS.some(key => action[key] != null)
+  const keys = action.type === 'wait' ? ELEMENT_LOCATOR_KEYS : LOCATOR_KEYS
+  return keys.some(key => isSet(action[key]))
 }
 
-module.exports = { toSelector, hasElementLocator, LOCATOR_KEYS, escape }
+module.exports = {
+  ELEMENT_LOCATOR_KEYS,
+  LOCATOR_KEYS,
+  escape,
+  escapeText,
+  hasElementLocator,
+  isSet,
+  toSelector
+}
