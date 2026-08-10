@@ -52,6 +52,10 @@ const runActions = async (page, actions, { inject, run, timeout }) => {
 
         const label = action.type === 'wait' ? `wait:${waitMode(action)}` : action.type
         const budget = remaining()
+
+        // a zero budget disables the timeout in both `run` and Puppeteer
+        if (budget === 0) throw new Error(`actions[${index}] (${label}): budget exhausted`)
+
         const result = await run({
           fn: handler(page, action, {
             inject,

@@ -80,6 +80,18 @@ test('runActions bounds the response buffer', async t => {
   await t.throwsAsync(promise)
 })
 
+test('runActions refuses to run an action on an exhausted budget', async t => {
+  const page = createPage()
+  const actions = [
+    { type: 'wait', timeout: '10s' },
+    { type: 'wait', timeout: '10s' }
+  ]
+
+  await t.throwsAsync(runActions(page, actions, { run, timeout: 0 }), {
+    message: 'actions[0] (wait:timeout): budget exhausted'
+  })
+})
+
 test('runActions shares one deadline across the whole list', async t => {
   const page = createPage()
   const actions = [
@@ -88,6 +100,8 @@ test('runActions shares one deadline across the whole list', async t => {
   ]
 
   const startedAt = Date.now()
-  await runActions(page, actions, { run, timeout: 200 })
+  await t.throwsAsync(runActions(page, actions, { run, timeout: 200 }), {
+    message: 'actions[1] (wait:timeout): budget exhausted'
+  })
   t.true(Date.now() - startedAt < 400)
 })
