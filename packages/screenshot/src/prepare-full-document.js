@@ -95,6 +95,11 @@ const settleDom = async (page, { idle, timeout }, label) => {
   debug(label, { ...result, duration: Date.now() - started })
 }
 
+const isCompleteScroll = scroll =>
+  !!scroll?.hasOverflow &&
+  Number(scroll.pageHeight) > 0 &&
+  scroll.scrolledPx + (scroll.viewport || 0) >= scroll.pageHeight
+
 const scrollFullPageToLoadContent = async (page, timeout) => {
   const preQuiet = Math.min(PRE_QUIET_MS, Math.floor(timeout / 20))
   const postQuiet = Math.min(POST_QUIET_MS, Math.floor(timeout / 20))
@@ -183,7 +188,7 @@ const scrollFullPageToLoadContent = async (page, timeout) => {
     )
   }
 
-  const hydrated = !!(scroll?.hasOverflow && scroll.scrolledPx >= (scroll.viewport || 0))
+  const hydrated = isCompleteScroll(scroll)
   return { ...scroll, hydrated, duration: Date.now() - started }
 }
 
@@ -245,5 +250,6 @@ module.exports = {
   scrollFullPageToLoadContent,
   prepareFullDocument,
   resolveScrollTimeout,
-  tryHydrateScroll
+  tryHydrateScroll,
+  isCompleteScroll
 }
