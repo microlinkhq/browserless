@@ -2,7 +2,7 @@
   "name": "@browserless/capture",
   "description": "Record a Puppeteer page to video using the Chrome tabCapture API via Browserless.",
   "homepage": "https://browserless.js.org/#/?id=capturepage-options",
-  "version": "13.7.0",
+  "version": "13.7.1",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
