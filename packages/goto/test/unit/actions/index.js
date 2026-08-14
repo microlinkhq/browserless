@@ -4,7 +4,7 @@ const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const test = require('ava')
 
-const { runActions, waitMode } = require('../../../src/actions')
+const { runActions, waitMode, lastActionCapture } = require('../../../src/actions')
 
 const run = async ({ fn, timeout }) => pReflect(timeout ? pTimeout(fn, timeout) : fn)
 
@@ -104,4 +104,17 @@ test('runActions shares one deadline across the whole list', async t => {
     message: 'actions[1] (wait:timeout): budget exhausted'
   })
   t.true(Date.now() - startedAt < 400)
+})
+
+test('lastActionCapture picks the highest action index, not completion order', t => {
+  const last = lastActionCapture([
+    { buffer: 'later-action', index: 3 },
+    { buffer: 'earlier-action', index: 1 }
+  ])
+  t.is(last.buffer, 'later-action')
+})
+
+test('lastActionCapture returns undefined for an empty list', t => {
+  t.is(lastActionCapture(undefined), undefined)
+  t.is(lastActionCapture([]), undefined)
 })

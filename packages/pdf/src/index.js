@@ -5,6 +5,8 @@ const debug = require('debug-logfmt')('browserless:pdf')
 const createGoto = require('@browserless/goto')
 const pReflect = require('p-reflect')
 
+const { lastActionCapture } = createGoto.actions
+
 const {
   captureWithNavigationRetry,
   isWhiteScreenshot,
@@ -178,7 +180,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       async (url, opts = {}) => {
         const prepared = await prepare(page, url, opts)
         if (prepared?.hasActionPdf) {
-          const last = prepared.actionCaptures?.pdfs?.at(-1)
+          const last = lastActionCapture(prepared.actionCaptures?.pdfs)
           if (!last?.buffer) {
             throw new Error('actions: pdf action produced no buffer')
           }

@@ -8,6 +8,20 @@ const handlers = require('./handlers')
 
 const MAX_BUFFERED_RESPONSES = 100
 
+/**
+ * The last capture in action-list order. Concurrent screenshot/pdf waves
+ * `push` in completion order, so `.at(-1)` can be an earlier action.
+ *
+ * @param {Array<{ index?: number }>} items
+ * @returns {object|undefined}
+ */
+const lastActionCapture = items => {
+  if (!Array.isArray(items) || items.length === 0) return undefined
+  return items.reduce((best, item) =>
+    (item?.index ?? -1) > (best?.index ?? -1) ? item : best
+  )
+}
+
 const waitMode = action => {
   if (hasElementLocator(action)) return 'element'
   if (isSet(action.text)) return 'text'
@@ -100,4 +114,4 @@ const runActions = async (page, actions, { inject, run, timeout }) => {
   return actionCaptures
 }
 
-module.exports = { runActions, batchActions, handlers, waitMode }
+module.exports = { runActions, batchActions, handlers, waitMode, lastActionCapture }

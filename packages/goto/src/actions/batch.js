@@ -9,7 +9,6 @@
  * @returns {'inject'|'screenshot'|null}
  */
 const batchKey = type => {
-  if (type === 'inject') return 'inject'
   if (type === 'screenshot') return 'screenshot'
   return null
 }

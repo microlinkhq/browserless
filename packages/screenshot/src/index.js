@@ -6,6 +6,8 @@ const createGoto = require('@browserless/goto')
 const { extname } = require('node:path')
 const pReflect = require('p-reflect')
 
+const { lastActionCapture } = createGoto.actions
+
 const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
@@ -286,7 +288,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         }
 
         if (hasActionScreenshot) {
-          const last = actionCaptures?.screenshots?.at(-1)
+          const last = lastActionCapture(actionCaptures?.screenshots)
           if (!last?.buffer) {
             throw new Error('actions: screenshot action produced no buffer')
           }
@@ -315,4 +317,5 @@ module.exports.checkPageReady = checkPageReady
 module.exports.tryHydrateScroll = tryHydrateScroll
 module.exports.resolveScrollTimeout = resolveScrollTimeout
 module.exports.prepareFullDocument = prepareFullDocument
+module.exports.lastActionCapture = lastActionCapture
 module.exports.SCREENSHOT_DEFAULT_OPTS = SCREENSHOT_DEFAULT_OPTS

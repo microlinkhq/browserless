@@ -25,16 +25,46 @@ const clampTimeout = (value, budget) => {
 
 const MAX_GLOB_LENGTH = 512
 
+/**
+ * Linear glob match (`*` only). A `RegExp` of `[\s\S]*` per star backtracks
+ * exponentially (`*a*a*…` vs `aaa…y`) and can stall the shared event loop
+ * inside `waitForResponse` before any action timeout fires.
+ *
+ * @param {string} pattern
+ * @param {string} input
+ * @returns {boolean}
+ */
+const globMatch = (pattern, input) => {
+  const parts = pattern.split('*')
+  if (parts.length === 1) return input === pattern
+
+  let pos = 0
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+    if (i === 0) {
+      if (part.length > 0 && !input.startsWith(part)) return false
+      pos = part.length
+      continue
+    }
+    if (i === parts.length - 1) {
+      if (part.length === 0) return true
+      const start = input.length - part.length
+      return start >= pos && input.endsWith(part)
+    }
+    if (part.length === 0) continue
+    const idx = input.indexOf(part, pos)
+    if (idx === -1) return false
+    pos = idx + part.length
+  }
+  return true
+}
+
 const globToRegExp = pattern => {
   const raw = String(pattern)
   if (raw.length > MAX_GLOB_LENGTH) {
     throw new Error(`wait: request pattern exceeds ${MAX_GLOB_LENGTH} characters`)
   }
-  const source = raw
-    .split('*')
-    .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('[\\s\\S]*')
-  return new RegExp(`^${source}$`)
+  return { test: input => globMatch(raw, input) }
 }
 
 const waitForText = (page, action, timeout) =>
