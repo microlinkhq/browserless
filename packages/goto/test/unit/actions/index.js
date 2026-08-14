@@ -4,7 +4,8 @@ const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const test = require('ava')
 
-const { runActions, waitMode, lastActionCapture } = require('../../../src/actions')
+const { lastActionCapture } = require('../../../src/actions/last-action-capture')
+const { runActions, waitMode } = require('../../../src/actions')
 
 const run = async ({ fn, timeout }) => pReflect(timeout ? pTimeout(fn, timeout) : fn)
 

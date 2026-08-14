@@ -3,24 +3,11 @@
 const debug = require('debug-logfmt')('browserless:goto:actions')
 
 const { hasElementLocator, isSet } = require('./locator')
+const { lastActionCapture } = require('./last-action-capture')
 const { batchActions } = require('./batch')
 const handlers = require('./handlers')
 
 const MAX_BUFFERED_RESPONSES = 100
-
-/**
- * The last capture in action-list order. Concurrent screenshot/pdf waves
- * `push` in completion order, so `.at(-1)` can be an earlier action.
- *
- * @param {Array<{ index?: number }>} items
- * @returns {object|undefined}
- */
-const lastActionCapture = items => {
-  if (!Array.isArray(items) || items.length === 0) return undefined
-  return items.reduce((best, item) =>
-    (item?.index ?? -1) > (best?.index ?? -1) ? item : best
-  )
-}
 
 const waitMode = action => {
   if (hasElementLocator(action)) return 'element'
