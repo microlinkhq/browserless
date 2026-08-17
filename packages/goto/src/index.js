@@ -12,7 +12,6 @@ const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
-const { runActions } = require('./actions')
 
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
@@ -228,7 +227,6 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   const timeouts = {
     base: (milliseconds = globalTimeout) => Math.round(milliseconds * (2 / 3)),
     action: (milliseconds = globalTimeout) => Math.round(milliseconds * (1 / 11)),
-    actions: (milliseconds = globalTimeout) => Math.round(milliseconds * (1 / 2)),
     goto: (milliseconds = globalTimeout) => Math.round(milliseconds * (7 / 8))
   }
 
@@ -245,7 +243,6 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     page,
     {
       abortTypes = [],
-      actions,
       adblock: withAdblock = true,
       animations = false,
       authenticate,
@@ -274,10 +271,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   ) => {
     const baseTimeout = timeouts.base(timeout || globalTimeout)
     const actionTimeout = timeouts.action(baseTimeout)
-    const actionsTimeout = timeouts.actions(baseTimeout)
     const gotoTimeout = timeouts.goto(baseTimeout)
-
-    const hasActions = Array.isArray(actions) && actions.length > 0
 
     const isWaitUntilAuto = waitUntil === 'auto'
     if (isWaitUntilAuto) waitUntil = 'load'
@@ -294,7 +288,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
-    if (modules || scripts || styles || hasActions) {
+    if (modules || scripts || styles) {
       prePromises.push(
         run({
           fn: page.setBypassCSP(true),
@@ -514,82 +508,51 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         ])
       }
 
-      let actionCaptures
-
-      if (hasActions) {
-        const ignored = Object.entries({
-          click,
-          modules,
-          scripts,
-          scroll,
-          styles,
-          waitForFunction,
-          waitForSelector,
-          waitForTimeout
+      if (waitForSelector) {
+        await run({
+          fn: page.waitForSelector(waitForSelector),
+          timeout: gotoTimeout,
+          debug: { waitForSelector }
         })
-          .filter(([, value]) => castArray(value).length > 0)
-          .map(([name]) => name)
+      }
 
-        if (ignored.length > 0) debug('actions:ignoring', { ignored })
-
-        await inject(page, {
-          timeout: actionTimeout,
-          mediaType,
-          animations
+      if (waitForFunction) {
+        await run({
+          fn: page.waitForFunction(waitForFunction),
+          timeout: gotoTimeout,
+          debug: { waitForFunction }
         })
+      }
 
-        actionCaptures = await runActions(page, actions, {
-          inject,
-          run,
-          timeout: actionsTimeout
-        })
-      } else {
-        if (waitForSelector) {
+      if (waitForTimeout) {
+        await setTimeout(waitForTimeout)
+      }
+
+      await inject(page, {
+        timeout: actionTimeout,
+        mediaType,
+        animations,
+        modules,
+        scripts,
+        styles
+      })
+
+      if (click) {
+        for (const selector of castArray(click)) {
           await run({
-            fn: page.waitForSelector(waitForSelector),
-            timeout: gotoTimeout,
-            debug: { waitForSelector }
-          })
-        }
-
-        if (waitForFunction) {
-          await run({
-            fn: page.waitForFunction(waitForFunction),
-            timeout: gotoTimeout,
-            debug: { waitForFunction }
-          })
-        }
-
-        if (waitForTimeout) {
-          await setTimeout(waitForTimeout)
-        }
-
-        await inject(page, {
-          timeout: actionTimeout,
-          mediaType,
-          animations,
-          modules,
-          scripts,
-          styles
-        })
-
-        if (click) {
-          for (const selector of castArray(click)) {
-            await run({
-              fn: page.click(selector),
-              timeout: actionTimeout,
-              debug: { click: selector }
-            })
-          }
-        }
-
-        if (scroll) {
-          await run({
-            fn: page.$eval(scroll, el => el.scrollIntoView()),
+            fn: page.click(selector),
             timeout: actionTimeout,
-            debug: { scroll }
+            debug: { click: selector }
           })
         }
+      }
+
+      if (scroll) {
+        await run({
+          fn: page.$eval(scroll, el => el.scrollIntoView()),
+          timeout: actionTimeout,
+          debug: { scroll }
+        })
       }
 
       if (isWaitUntilAuto) {
@@ -655,9 +618,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         if (isRejected) error = error || flattenError || new Error('flattenShadowDOM failed')
       }
 
-      return actionCaptures
-        ? { response, device, error, actionCaptures }
-        : { response, device, error }
+      return { response, device, error }
     } finally {
       if (abortTypesHandler) page.off('request', abortTypesHandler)
       if (disableInterceptionForAbortTypes) {
@@ -681,5 +642,3 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
 module.exports.parseCookies = parseCookies
 module.exports.inject = inject
-module.exports.runActions = runActions
-module.exports.actions = require('./actions')
