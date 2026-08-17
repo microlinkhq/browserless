@@ -73,29 +73,19 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       ...rest
     } = opts
 
-    const hasActionPdf =
-      Array.isArray(rest.actions) && rest.actions.some(action => action.type === 'pdf')
-
     if (waitUntil !== 'auto') {
-      const { actionCaptures } = await goto(page, { ...rest, url, waitUntil })
-      if (!hasActionPdf) {
-        await prepareFullDocument(page, { goto, timeout: rest.timeout })
-      }
-      return { actionCaptures, hasActionPdf }
+      await goto(page, { ...rest, url, waitUntil })
+      await prepareFullDocument(page, { goto, timeout: rest.timeout })
+      return
     }
 
     let readiness
     let isReady = false
     let didHydrateScroll = false
 
-    const { actionCaptures } = await goto(page, {
-      ...rest,
-      url,
-      waitUntil,
-      waitUntilAuto
-    })
+    await goto(page, { ...rest, url, waitUntil, waitUntilAuto })
 
-    if (isReady && !hasActionPdf) {
+    if (isReady) {
       const prep = await prepareFullDocument(page, {
         goto,
         timeout: rest.timeout,
@@ -104,10 +94,9 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       readiness = { ...readiness, ...prep }
     }
 
-    return { readiness, actionCaptures, hasActionPdf }
+    return readiness
 
     async function waitUntilAuto (page, { response, timeout: autoTimeout } = {}) {
-      if (hasActionPdf) return
       const timeout = autoTimeout ?? goto.timeouts.action(rest.timeout)
       let didHydrateAttempt = false
 
@@ -176,14 +165,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
   const pdf =
     page =>
       async (url, opts = {}) => {
-        const prepared = await prepare(page, url, opts)
-        if (prepared?.hasActionPdf) {
-          const last = prepared.actionCaptures?.pdfs?.at(-1)
-          if (!last?.buffer) {
-            throw new Error('actions: pdf action produced no buffer')
-          }
-          return last.buffer
-        }
+        await prepare(page, url, opts)
         return render(page, opts)
       }
 
