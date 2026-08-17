@@ -54,6 +54,8 @@ const spawn = ({
   headless = true,
   ignoreDefaultArgs,
   ignoreHTTPSErrors = true,
+  // Puppeteer ≥23 renamed this; the old key is a silent no-op.
+  acceptInsecureCerts = ignoreHTTPSErrors,
   mode = 'launch',
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   waitForInitialPage = false,
@@ -64,6 +66,7 @@ const spawn = ({
     headless,
     ignoreDefaultArgs,
     ignoreHTTPSErrors,
+    acceptInsecureCerts,
     waitForInitialPage,
     ...launchOpts
   })

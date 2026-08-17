@@ -51,3 +51,27 @@ test('spawn preserves ignoreDefaultArgs=true', async t => {
 
   t.true(launchOptions.ignoreDefaultArgs)
 })
+
+test('spawn maps ignoreHTTPSErrors to acceptInsecureCerts for Puppeteer 23+', async t => {
+  let launchOptions
+  const puppeteer = createFakePuppeteer(options => {
+    launchOptions = options
+  })
+
+  await driver.spawn({ puppeteer })
+
+  t.true(launchOptions.ignoreHTTPSErrors)
+  t.true(launchOptions.acceptInsecureCerts)
+})
+
+test('spawn acceptInsecureCerts follows ignoreHTTPSErrors=false', async t => {
+  let launchOptions
+  const puppeteer = createFakePuppeteer(options => {
+    launchOptions = options
+  })
+
+  await driver.spawn({ puppeteer, ignoreHTTPSErrors: false })
+
+  t.false(launchOptions.ignoreHTTPSErrors)
+  t.false(launchOptions.acceptInsecureCerts)
+})
