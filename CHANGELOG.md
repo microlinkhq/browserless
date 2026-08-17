@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.8.0](https://github.com/microlinkhq/browserless/compare/v13.7.1...v13.8.0) (2026-08-17)
+
+### Features
+
+* **goto:** add actions runner with locators and auto-batching ([#877](https://github.com/microlinkhq/browserless/issues/877)) ([4ff7810](https://github.com/microlinkhq/browserless/commit/4ff781095ec65782a5fe9edcb195c33ea35f300c))
+
 ## [13.7.1](https://github.com/microlinkhq/browserless/compare/v13.7.0...v13.7.1) (2026-08-10)
 
 **Note:** Version bump only for package browserless
