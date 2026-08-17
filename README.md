@@ -136,8 +136,7 @@ const createBrowser = require('browserless')
 
 const browser = createBrowser({
   timeout: 25000,
-  lossyDeviceName: true,
-  acceptInsecureCerts: true
+  lossyDeviceName: true
 })
 ```
 

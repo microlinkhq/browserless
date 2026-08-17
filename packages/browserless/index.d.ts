@@ -13,7 +13,6 @@ export interface LaunchOptions {
   mode?: 'launch' | 'connect'
   proxyServer?: string
   proxyBypassList?: string[]
-  acceptInsecureCerts?: boolean
   [key: string]: unknown
 }
 

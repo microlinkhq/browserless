@@ -53,7 +53,6 @@ const spawn = ({
   args = defaultArgs,
   headless = true,
   ignoreDefaultArgs,
-  acceptInsecureCerts = true,
   mode = 'launch',
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   waitForInitialPage = false,
@@ -63,7 +62,6 @@ const spawn = ({
     args,
     headless,
     ignoreDefaultArgs,
-    acceptInsecureCerts,
     waitForInitialPage,
     ...launchOpts
   })
