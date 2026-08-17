@@ -48,3 +48,11 @@ test('globToRegExp rejects over-long patterns', t => {
     message: /pattern exceeds 512 characters/
   })
 })
+
+test('globToRegExp matches a crafted backtracking pattern in linear time', t => {
+  const re = globToRegExp(`${'*a'.repeat(20)}z`)
+  const input = `${'a'.repeat(80)}y`
+  const started = Date.now()
+  t.false(re.test(input))
+  t.true(Date.now() - started < 50)
+})

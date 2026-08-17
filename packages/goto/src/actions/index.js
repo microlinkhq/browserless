@@ -3,6 +3,7 @@
 const debug = require('debug-logfmt')('browserless:goto:actions')
 
 const { hasElementLocator, isSet } = require('./locator')
+const { lastActionCapture } = require('./last-action-capture')
 const { batchActions } = require('./batch')
 const handlers = require('./handlers')
 
@@ -100,4 +101,4 @@ const runActions = async (page, actions, { inject, run, timeout }) => {
   return actionCaptures
 }
 
-module.exports = { runActions, batchActions, handlers, waitMode }
+module.exports = { runActions, batchActions, handlers, waitMode, lastActionCapture }
