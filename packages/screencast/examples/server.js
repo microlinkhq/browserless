@@ -13,7 +13,7 @@ const createScreencast = require('..')
 const browser = createBrowser({
   timeout: 25000,
   lossyDeviceName: true,
-  ignoreHTTPSErrors: true
+  acceptInsecureCerts: true
 })
 
 const CACHE = new NullProtoObj()

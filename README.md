@@ -137,7 +137,6 @@ const createBrowser = require('browserless')
 const browser = createBrowser({
   timeout: 25000,
   lossyDeviceName: true,
-  ignoreHTTPSErrors: true, // maps to acceptInsecureCerts (Puppeteer ≥23)
   acceptInsecureCerts: true
 })
 ```
