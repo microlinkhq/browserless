@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.8.2](https://github.com/microlinkhq/browserless/compare/v13.8.1...v13.8.2) (2026-08-17)
+
+### Reverts
+
+* drop actions runner from goto ([#877](https://github.com/microlinkhq/browserless/issues/877)) ([#884](https://github.com/microlinkhq/browserless/issues/884)) ([50136c1](https://github.com/microlinkhq/browserless/commit/50136c1c716545cce9b78abd7b50f5ba7b82a2e3))
+
 ## [13.8.1](https://github.com/microlinkhq/browserless/compare/v13.8.0...v13.8.1) (2026-08-17)
 
 ### Bug Fixes
