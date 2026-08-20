@@ -881,21 +881,23 @@ const ai = createAi(async teardown => {
 await ai.capabilities()
 await ai.summarize('https://example.com', { type: 'tldr' })
 await ai.prompt('https://example.com', { prompt: 'What is this page about?' })
+await ai.extract('https://example.com', { schema: { type: 'object', properties: { title: { type: 'string' } } } })
 await ai.translate('https://example.com', { sourceLanguage: 'en', targetLanguage: 'es' })
 await ai.detectLanguage('https://example.com')
 ```
 
-Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Native create options are passed through.
+Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Create options are allow-listed per method (`temperature` / `topK` for prompt, `type` / `length` for summarize, languages for translate and detect).
 
 | Method | Chrome API |
 |--------|------------|
 | `capabilities` | feature detect |
 | `prompt` | `LanguageModel` |
+| `extract` | `LanguageModel` + schema |
 | `summarize` | `Summarizer` |
 | `translate` | `Translator` |
 | `detectLanguage` | `LanguageDetector` |
 
-`translate` requires `sourceLanguage` and `targetLanguage`.
+`extract` requires `schema`. `translate` requires `sourceLanguage` and `targetLanguage`.
 
 ### function
 

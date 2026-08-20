@@ -41,6 +41,7 @@
     "node": ">= 24"
   },
   "files": [
+    "examples",
     "scripts",
     "src"
   ],

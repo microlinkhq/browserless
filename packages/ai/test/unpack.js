@@ -82,9 +82,11 @@ test('unpack force re-extracts over an installed tree', async t => {
   mkdirSync(path.join(dir, 'detect'), { recursive: true })
   writeFileSync(path.join(dir, 'nano', 'weights.bin'), 'old')
   writeFileSync(path.join(dir, 'detect', 'model-info.pb'), 'old')
+  writeFileSync(path.join(dir, 'stale.txt'), 'x')
 
   await createAi.unpack(zipPath, { dir, force: true })
   t.is(require('node:fs').readFileSync(path.join(dir, 'nano', 'weights.bin'), 'utf8'), 'weights')
+  t.false(existsSync(path.join(dir, 'stale.txt')))
 })
 
 test('unpack throws when the zip is missing', async t => {
@@ -109,6 +111,19 @@ test('unpack does not write zip-slip paths outside dest', async t => {
   writeStoreZip(zipPath, [['../evil.bin', Buffer.from('nope')]])
   await t.throwsAsync(createAi.unpack(zipPath, { dir }))
   t.false(existsSync(path.join(root, 'evil.bin')))
+})
+
+test('unpack rejects zip entries with a data descriptor', async t => {
+  const root = tmp('descriptor')
+  const zipPath = path.join(root, 'bundle.zip')
+  const dir = path.join(root, 'out')
+  const nameBuf = Buffer.from('nano/weights.bin')
+  const local = Buffer.alloc(30)
+  local.writeUInt32LE(0x04034b50, 0)
+  local.writeUInt16LE(0x08, 6)
+  local.writeUInt16LE(nameBuf.length, 26)
+  writeFileSync(zipPath, Buffer.concat([local, nameBuf]))
+  await t.throwsAsync(createAi.unpack(zipPath, { dir }), { message: /data descriptor/ })
 })
 
 test('unpack rejects a bundle without an adaptation', async t => {

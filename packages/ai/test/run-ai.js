@@ -127,12 +127,20 @@ test('schema without a prompt extracts metadata from the page', async t => {
 })
 
 test('summarize with schema uses LanguageModel', async t => {
+  let seen
   globalThis.LanguageModel = ctor('available', {
     prompt: async () => '{"summary":"x"}'
   })
-  t.deepEqual(await runAi({ api: 'summarize', schema: { type: 'object' }, text: 'long' }), {
-    summary: 'x'
-  })
+  const original = globalThis.LanguageModel.create
+  globalThis.LanguageModel.create = async opts => {
+    seen = opts
+    return original(opts)
+  }
+  t.deepEqual(
+    await runAi({ api: 'summarize', schema: { type: 'object' }, type: 'tldr', text: 'long' }),
+    { summary: 'x' }
+  )
+  t.is(seen.type, undefined)
 })
 
 test('summarize and detect and translate call the native methods', async t => {

@@ -13,6 +13,7 @@ const {
   createWriteStream,
   existsSync,
   mkdirSync,
+  rmSync,
   unlinkSync,
   writeFileSync
 } = require('node:fs')
@@ -75,6 +76,7 @@ const unzipJs = async (zipPath, dir) => {
       const sig = await read(4, pos)
       if (sig.length < 4 || sig.readUInt32LE(0) !== 0x04034b50) break
       const rest = await read(26, pos + 4)
+      const flags = rest.readUInt16LE(2)
       const method = rest.readUInt16LE(4)
       const compressed = rest.readUInt32LE(14)
       const nameLen = rest.readUInt16LE(22)
@@ -84,6 +86,9 @@ const unzipJs = async (zipPath, dir) => {
       const dest = safeDest(dir, name)
       pos = dataStart + compressed
       if (!dest) continue
+      if (flags & 0x08) {
+        throw new Error(`unsupported zip entry with data descriptor (${name})`)
+      }
       if (method !== 0 && method !== 8) {
         throw new Error(`unsupported zip method ${method} (${name})`)
       }
@@ -124,6 +129,10 @@ const unpack = async (get, { dir, force = false } = {}) => {
 
   const already = installed(dir)
   if (already && !force) return already
+  if (force) {
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+  }
 
   const dest = path.join(dir, 'bundle.zip')
   const zipPath =

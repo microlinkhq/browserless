@@ -57,6 +57,12 @@ test('launch overrides on-device models for Chrome for Testing', t => {
   t.is(protocolTimeout, 120000)
 })
 
+test('launch ignores a missing dir', t => {
+  const { args } = createAi.launch({ dir: '/no/such/browserless-ai-dir' })
+  t.false(args.some(arg => arg.includes('ondevice-model-execution-override')))
+  t.false(args.some(arg => arg.includes('optimization-guide-model-override=')))
+})
+
 test('launch accepts a single adaptation file', t => {
   const fs = require('node:fs')
   const os = require('node:os')

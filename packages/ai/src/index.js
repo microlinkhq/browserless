@@ -20,10 +20,12 @@ const withContext = async (getBrowserless, fn) => {
 
 const createMethod =
   (getBrowserless, spec) =>
-    (url, { timeout, ...opts } = {}) =>
+    (url, { timeout = 120000, ...opts } = {}) =>
       withContext(getBrowserless, browserless =>
         browserless.evaluate(page => page.evaluate(runAi, { ...opts, ...spec }), { timeout })(url)
       )
+
+const OVERRIDE_SEP = process.platform === 'win32' ? '|' : ':'
 
 const FEATURES = 'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano'
 
@@ -142,7 +144,7 @@ const packAdaptation = (dir, { name, skipSafety }) => {
 const resolveAdaptations = adaptationPath => {
   const stat = fs.statSync(adaptationPath)
   if (stat.isFile()) {
-    return [`OPTIMIZATION_TARGET_LANGUAGE_DETECTION:${path.resolve(adaptationPath)}`]
+    return [`OPTIMIZATION_TARGET_LANGUAGE_DETECTION${OVERRIDE_SEP}${path.resolve(adaptationPath)}`]
   }
 
   const pairs = []
@@ -150,7 +152,7 @@ const resolveAdaptations = adaptationPath => {
     const dir =
       hasFile(path.join(adaptationPath, feature.name), 'model-info.pb') ||
       hasFile(path.join(adaptationPath, String(feature.target)), 'model-info.pb')
-    if (dir) pairs.push(`${feature.flag}:${packAdaptation(dir, feature)}`)
+    if (dir) pairs.push(`${feature.flag}${OVERRIDE_SEP}${packAdaptation(dir, feature)}`)
   }
   return pairs
 }
@@ -164,7 +166,7 @@ const resolveModelPath = dir =>
   hasFile(dir || chromeSupport('OptGuideOnDeviceModel') || '', 'weights.bin')
 
 const resolveAdaptationPath = dir => {
-  if (dir) return dir
+  if (dir) return fs.existsSync(dir) ? dir : undefined
   const store = chromeSupport('optimization_guide_model_store')
   return store && fs.existsSync(store) ? store : undefined
 }
@@ -209,7 +211,7 @@ const createMethods = getBrowserless => {
     summarize: createMethod(getBrowserless, { api: 'summarize' }),
     translate: createMethod(getBrowserless, { api: 'translate' }),
     detectLanguage: createMethod(getBrowserless, { api: 'detectLanguage' }),
-    capabilities: ({ timeout, url = 'https://example.com' } = {}) =>
+    capabilities: ({ timeout = 120000, url = 'https://example.com' } = {}) =>
       withContext(getBrowserless, browserless =>
         browserless.evaluate(page => page.evaluate(runAi, { api: 'availability' }), { timeout })(
           url

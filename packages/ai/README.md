@@ -39,6 +39,7 @@ await ai.capabilities()
 await ai.detectLanguage('https://example.com', { text: 'Hello, how are you today?' })
 await ai.summarize('https://example.com', { type: 'tldr' })
 await ai.prompt('https://example.com', { prompt: 'What is this page about?' })
+const schema = { type: 'object', properties: { title: { type: 'string' } } }
 await ai.extract('https://example.com', { schema })
 await ai.translate('https://example.com', { text: 'Hello', sourceLanguage: 'en', targetLanguage: 'es' })
 await ai.close()
@@ -60,14 +61,14 @@ const ai = createAi(async teardown => {
 })
 ```
 
-Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Native create options are passed through.
+Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Supported create options are `temperature` / `topK` / `initialPrompts` / `expectedInputs` / `expectedOutputs` for prompt, `type` / `format` / `length` / `sharedContext` / `expectedInputLanguages` / `outputLanguage` / `expectedContextLanguages` for summarize, `sourceLanguage` / `targetLanguage` for translate, and `expectedInputLanguages` for detectLanguage.
 
 ### Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `dir` | `string` | `BROWSERLESS_AI_DIR` | Unpacked model tree (`nano/`, `prompt/`, `summarize/`, `detect/`) |
-| `timeout` | `number` | browserless default | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
+| `timeout` | `number` | `120000` | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
 
 `unpack(source, { dir, force })` writes to `dir` when given, otherwise `BROWSERLESS_AI_DIR` or `~/.cache/browserless-ai`.
 

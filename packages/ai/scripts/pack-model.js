@@ -153,7 +153,8 @@ const main = async () => {
   if (!opts.upload) return
 
   const env = credentials()
-  if (!env.endpoint || !env.bucket) throw new Error('set R2_ENDPOINT')
+  if (!env.endpoint) throw new Error('set R2_ENDPOINT or R2_ACCOUNT_ID')
+  if (!env.bucket) throw new Error('set R2_BUCKET, or include the bucket in R2_ENDPOINT')
   if (!env.accessKey || !env.secretKey) {
     throw new Error('set R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY')
   }

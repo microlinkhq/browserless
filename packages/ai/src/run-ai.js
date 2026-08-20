@@ -82,8 +82,10 @@ const runAi = async spec => {
     detectLanguage: ['expectedInputLanguages']
   }
 
+  const keys =
+    name === 'LanguageModel' ? createKeys.prompt : createKeys[spec.api] || createKeys.prompt
   const createOpts = {}
-  for (const key of createKeys[spec.api] || createKeys.prompt) {
+  for (const key of keys) {
     if (spec[key] !== undefined) createOpts[key] = spec[key]
   }
 
@@ -117,7 +119,7 @@ const runAi = async spec => {
     const pageText =
       (globalThis.document && globalThis.document.body && globalThis.document.body.innerText) || ''
     const input = spec.text !== undefined ? spec.text : pageText
-    if (spec.api === 'prompt' || schema) {
+    if (spec.api === 'prompt' || (schema && name === 'LanguageModel')) {
       let prompt = input
       if (spec.prompt) prompt = input ? `${spec.prompt}\n\n${input}` : spec.prompt
       else if (schema) prompt = `Extract metadata from this page.\n\n${input}`
