@@ -80,28 +80,15 @@ test('capture frames', async t => {
 
   await screencast.start()
 
-  // Local animated page: no network, and a continuous CSS animation forces
-  // compositor commits under the GL/xvfb backend (a static page often does not).
-  await page.setContent(
-    `<!doctype html>
-<style>
-  html, body { margin: 0; height: 100%; }
-  body {
-    background: linear-gradient(90deg, #f00, #00f);
-    background-size: 200% 100%;
-    animation: slide 0.2s linear infinite;
-  }
-  @keyframes slide {
-    from { background-position: 0 0; }
-    to { background-position: 100% 0; }
-  }
-</style>
-<body></body>`,
-    { waitUntil: 'load' }
-  )
+  // Local page: no network. CSS animation alone often does not commit under
+  // GL/xvfb; mutate a style each tick so Page.startScreencast emits a frame.
+  await page.setContent('<!doctype html><body></body>', { waitUntil: 'load' })
 
   const deadline = Date.now() + 10000
   while (frames.length === 0 && Date.now() < deadline) {
+    await page.evaluate(() => {
+      document.body.style.background = `hsl(${Date.now() % 360}, 50%, 50%)`
+    })
     await new Promise(resolve => setTimeout(resolve, 50))
   }
 
