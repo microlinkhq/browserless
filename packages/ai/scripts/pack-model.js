@@ -20,13 +20,14 @@ const parseArgs = argv => {
   const extra = argv.slice(2).filter(flag => flag !== '--upload')
   if (extra.length) throw new Error('usage: pack-model.js [--upload]')
   const dir = process.env.BROWSERLESS_AI_DIR
+  const model = process.env.BROWSERLESS_AI_MODEL || dir || chromeSupport('OptGuideOnDeviceModel')
+  const adaptation =
+    process.env.BROWSERLESS_AI_ADAPTATION || dir || chromeSupport('optimization_guide_model_store')
+  if (!model) throw new Error('set BROWSERLESS_AI_DIR or BROWSERLESS_AI_MODEL')
+  if (!adaptation) throw new Error('set BROWSERLESS_AI_DIR or BROWSERLESS_AI_ADAPTATION')
   return {
-    model: process.env.BROWSERLESS_AI_MODEL || dir || chromeSupport('OptGuideOnDeviceModel') || '',
-    adaptation:
-      process.env.BROWSERLESS_AI_ADAPTATION ||
-      dir ||
-      chromeSupport('optimization_guide_model_store') ||
-      '',
+    model,
+    adaptation,
     out: path.join(os.tmpdir(), 'browserless-ai-nano.zip'),
     upload: argv.includes('--upload')
   }
