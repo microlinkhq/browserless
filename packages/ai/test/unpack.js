@@ -23,6 +23,17 @@ const writeStoreZip = (zipPath, files) => {
 
 const tmp = label => mkdtempSync(path.join(tmpdir(), `browserless-ai-${label}-`))
 
+const fixture = label => {
+  const root = tmp(label)
+  const zipPath = path.join(root, 'bundle.zip')
+  const dir = path.join(root, 'out')
+  writeStoreZip(zipPath, [
+    ['nano/weights.bin', Buffer.from('weights')],
+    ['detect/model-info.pb', Buffer.from('detect')]
+  ])
+  return { zipPath, dir }
+}
+
 test('unpack is exported', t => {
   t.true(typeof createAi.unpack === 'function')
 })
@@ -32,14 +43,7 @@ test('unpack requires a source', async t => {
 })
 
 test('unpack extracts weights and adaptations', async t => {
-  const root = tmp('unpack')
-  const zipPath = path.join(root, 'bundle.zip')
-  const dir = path.join(root, 'out')
-  writeStoreZip(zipPath, [
-    ['nano/weights.bin', Buffer.from('weights')],
-    ['detect/model-info.pb', Buffer.from('detect')]
-  ])
-
+  const { zipPath, dir } = fixture('unpack')
   const { dir: unpacked } = await createAi.unpack(zipPath, { dir })
   t.is(unpacked, dir)
   t.true(existsSync(path.join(dir, 'nano', 'weights.bin')))
@@ -47,28 +51,14 @@ test('unpack extracts weights and adaptations', async t => {
 })
 
 test('unpack accepts a download function', async t => {
-  const root = tmp('download-fn')
-  const zipPath = path.join(root, 'bundle.zip')
-  const dir = path.join(root, 'out')
-  writeStoreZip(zipPath, [
-    ['nano/weights.bin', Buffer.from('weights')],
-    ['detect/model-info.pb', Buffer.from('detect')]
-  ])
-
+  const { zipPath, dir } = fixture('download-fn')
   const { dir: unpacked } = await createAi.unpack(() => zipPath, { dir })
   t.is(unpacked, dir)
   t.true(existsSync(path.join(dir, 'nano', 'weights.bin')))
 })
 
 test('unpack passes dest to the download function', async t => {
-  const root = tmp('download-dest')
-  const zipPath = path.join(root, 'bundle.zip')
-  const dir = path.join(root, 'out')
-  writeStoreZip(zipPath, [
-    ['nano/weights.bin', Buffer.from('weights')],
-    ['detect/model-info.pb', Buffer.from('detect')]
-  ])
-
+  const { zipPath, dir } = fixture('download-dest')
   const { dir: unpacked } = await createAi.unpack(dest => copyFileSync(zipPath, dest), { dir })
   t.is(unpacked, dir)
   t.true(existsSync(path.join(dir, 'nano', 'weights.bin')))

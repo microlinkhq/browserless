@@ -13,38 +13,24 @@ const {
   createWriteStream,
   existsSync,
   mkdirSync,
-  readdirSync,
-  statSync,
   unlinkSync,
   writeFileSync
 } = require('node:fs')
+
+const { hasFile } = require('./find-dir')
 
 const cacheRoot = () =>
   process.env.XDG_CACHE_HOME
     ? path.join(process.env.XDG_CACHE_HOME, 'browserless-ai')
     : path.join(os.homedir(), '.cache', 'browserless-ai')
 
-const findDir = (root, predicate) => {
-  if (!existsSync(root)) return
-  if (predicate(root)) return root
-  if (!statSync(root).isDirectory()) return
-  for (const name of readdirSync(root)) {
-    const next = path.join(root, name)
-    if (statSync(next).isDirectory()) {
-      const found = findDir(next, predicate)
-      if (found) return found
-    }
-  }
-}
-
 const installed = dir => {
-  if (!findDir(dir, current => existsSync(path.join(current, 'weights.bin')))) return
-  const hasNamed = ['prompt', 'summarize', 'detect'].some(name =>
-    findDir(path.join(dir, name), current => existsSync(path.join(current, 'model-info.pb')))
-  )
-  if (!hasNamed && !findDir(dir, current => existsSync(path.join(current, 'model-info.pb')))) {
-    return
-  }
+  if (!hasFile(dir, 'weights.bin')) return
+  const hasAdaptation =
+    ['prompt', 'summarize', 'detect'].some(name =>
+      hasFile(path.join(dir, name), 'model-info.pb')
+    ) || hasFile(dir, 'model-info.pb')
+  if (!hasAdaptation) return
   return { dir }
 }
 

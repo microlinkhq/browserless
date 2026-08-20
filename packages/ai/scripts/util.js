@@ -219,4 +219,4 @@ const uploadFile = async (opts, file) => {
   }
 }
 
-module.exports = { parseS3Url, credentials, objectUrl, signedFetch, request, uploadFile }
+module.exports = { credentials, objectUrl, uploadFile }

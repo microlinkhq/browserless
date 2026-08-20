@@ -5,6 +5,8 @@ const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
 
+const { hasFile } = require('./find-dir')
+
 const runAi = async spec => {
   const parseJson = raw => {
     try {
@@ -32,28 +34,34 @@ const runAi = async spec => {
   if (spec.api === 'availability') {
     const probes = {
       languageModel: {
-        expectedInputs: [{ type: 'text', languages: ['en'] }],
-        expectedOutputs: [{ type: 'text', languages: ['en'] }]
+        name: 'LanguageModel',
+        opts: {
+          expectedInputs: [{ type: 'text', languages: ['en'] }],
+          expectedOutputs: [{ type: 'text', languages: ['en'] }]
+        }
       },
-      summarizer: { expectedInputLanguages: ['en'], outputLanguage: 'en' },
-      translator: { sourceLanguage: 'en', targetLanguage: 'es' },
-      languageDetector: { expectedInputLanguages: ['en'] }
-    }
-    const ctors = {
-      languageModel: 'LanguageModel',
-      summarizer: 'Summarizer',
-      translator: 'Translator',
-      languageDetector: 'LanguageDetector'
+      summarizer: {
+        name: 'Summarizer',
+        opts: { expectedInputLanguages: ['en'], outputLanguage: 'en' }
+      },
+      translator: {
+        name: 'Translator',
+        opts: { sourceLanguage: 'en', targetLanguage: 'es' }
+      },
+      languageDetector: {
+        name: 'LanguageDetector',
+        opts: { expectedInputLanguages: ['en'] }
+      }
     }
     const result = {}
-    for (const [api, name] of Object.entries(ctors)) {
+    for (const [api, { name, opts }] of Object.entries(probes)) {
       const Ctor = globalThis[name]
       if (typeof Ctor === 'undefined') {
         result[api] = 'unavailable'
         continue
       }
       try {
-        result[api] = await Ctor.availability(probes[api])
+        result[api] = await Ctor.availability(opts)
       } catch {
         result[api] = 'unavailable'
       }
@@ -113,20 +121,15 @@ const runAi = async spec => {
     }
   })
   try {
-    const input =
-      spec.text !== undefined
-        ? spec.text
-        : (globalThis.document && globalThis.document.body && globalThis.document.body.innerText) ||
-        ''
+    const pageText =
+      (globalThis.document && globalThis.document.body && globalThis.document.body.innerText) || ''
+    const input = spec.text !== undefined ? spec.text : pageText
     if (spec.api === 'prompt' || schema) {
+      let prompt = input
+      if (spec.prompt) prompt = input ? `${spec.prompt}\n\n${input}` : spec.prompt
+      else if (schema) prompt = `Extract metadata from this page.\n\n${input}`
       const result = await instance.prompt(
-        spec.prompt
-          ? input
-            ? `${spec.prompt}\n\n${input}`
-            : spec.prompt
-          : schema
-            ? `Extract metadata from this page.\n\n${input}`
-            : input,
+        prompt,
         schema ? { responseConstraint: schema } : undefined
       )
       return schema ? parseJson(result) : result
@@ -255,19 +258,6 @@ const ADAPTATIONS = [
   }
 ]
 
-const findDirWith = (root, needed) => {
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) return
-  const names = fs.readdirSync(root)
-  if (needed.every(name => names.includes(name))) return root
-  for (const name of names) {
-    const next = path.join(root, name)
-    if (fs.statSync(next).isDirectory()) {
-      const found = findDirWith(next, needed)
-      if (found) return found
-    }
-  }
-}
-
 const packAdaptation = (dir, { name, skipSafety }) => {
   const dest = path.join(os.tmpdir(), `browserless-ai-${name}.crx3`)
   const read = file => {
@@ -294,8 +284,8 @@ const resolveAdaptations = adaptationPath => {
   const pairs = []
   for (const feature of ADAPTATIONS) {
     const dir =
-      findDirWith(path.join(adaptationPath, feature.name), ['model-info.pb']) ||
-      findDirWith(path.join(adaptationPath, String(feature.target)), ['model-info.pb'])
+      hasFile(path.join(adaptationPath, feature.name), 'model-info.pb') ||
+      hasFile(path.join(adaptationPath, String(feature.target)), 'model-info.pb')
     if (dir) pairs.push(`${feature.flag}:${packAdaptation(dir, feature)}`)
   }
   return pairs
@@ -307,7 +297,7 @@ const chromeSupport = (...parts) =>
     : undefined
 
 const resolveModelPath = dir =>
-  findDirWith(dir || chromeSupport('OptGuideOnDeviceModel') || '', ['weights.bin'])
+  hasFile(dir || chromeSupport('OptGuideOnDeviceModel') || '', 'weights.bin')
 
 const resolveAdaptationPath = dir => {
   if (dir) return dir

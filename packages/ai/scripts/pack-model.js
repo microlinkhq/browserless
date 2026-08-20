@@ -4,14 +4,9 @@ const { crc32 } = require('node:zlib')
 const path = require('node:path')
 const os = require('node:os')
 
-const {
-  createReadStream,
-  createWriteStream,
-  existsSync,
-  readdirSync,
-  statSync
-} = require('node:fs')
+const { createReadStream, createWriteStream, existsSync, statSync } = require('node:fs')
 
+const { hasFile } = require('../src/find-dir')
 const { credentials, objectUrl, uploadFile } = require('./util')
 
 const ZIP32_MAX = 0xffffffff
@@ -40,22 +35,8 @@ const ADAPTATIONS = [
   { name: 'detect', target: 2 }
 ]
 
-const findDir = (root, predicate) => {
-  if (!existsSync(root)) return
-  if (predicate(root)) return root
-  if (!statSync(root).isDirectory()) return
-  for (const name of readdirSync(root)) {
-    if (name === '_metadata') continue
-    const next = path.join(root, name)
-    if (statSync(next).isDirectory()) {
-      const found = findDir(next, predicate)
-      if (found) return found
-    }
-  }
-}
-
 const resolveModelDir = root => {
-  const dir = findDir(root, current => existsSync(path.join(current, 'weights.bin')))
+  const dir = hasFile(root, 'weights.bin')
   if (!dir) throw new Error(`No weights.bin under ${root}`)
   for (const name of ['weights.bin', 'manifest.json', 'on_device_model_execution_config.pb']) {
     if (!existsSync(path.join(dir, name))) throw new Error(`Missing ${name} in ${dir}`)
@@ -64,10 +45,8 @@ const resolveModelDir = root => {
 }
 
 const resolveFeatureDir = (root, { name, target }) =>
-  findDir(path.join(root, name), current => existsSync(path.join(current, 'model-info.pb'))) ||
-  findDir(path.join(root, String(target)), current =>
-    existsSync(path.join(current, 'model-info.pb'))
-  )
+  hasFile(path.join(root, name), 'model-info.pb') ||
+  hasFile(path.join(root, String(target)), 'model-info.pb')
 
 const crcAndSize = async file => {
   const { size } = statSync(file)
