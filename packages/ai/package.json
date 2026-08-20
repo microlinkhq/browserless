@@ -30,15 +30,23 @@
     "translator"
   ],
   "devDependencies": {
-    "ava": "5"
+    "ava": "5",
+    "browserless": "workspace:*",
+    "puppeteer": "25"
+  },
+  "peerDependencies": {
+    "browserless": ">=13"
   },
   "engines": {
     "node": ">= 24"
   },
   "files": [
+    "scripts",
     "src"
   ],
   "scripts": {
+    "start": "node examples/index.js",
+    "pack-model": "node scripts/pack-model.js",
     "test": "ava"
   },
   "license": "MIT",

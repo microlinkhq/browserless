@@ -870,9 +870,7 @@ The [`@browserless/ai`](https://npm.im/@browserless/ai) package runs [Chrome Bui
 const createAi = require('@browserless/ai')
 const createBrowser = require('browserless')
 
-const browser = createBrowser({
-  executablePath: '/path/to/Google Chrome'
-})
+const browser = createBrowser(createAi.launch({ dir: process.env.BROWSERLESS_AI_DIR }))
 
 const ai = createAi(async teardown => {
   const browserless = await browser.createContext()
@@ -880,18 +878,18 @@ const ai = createAi(async teardown => {
   return browserless
 })
 
+await ai.capabilities()
 await ai.summarize('https://example.com', { type: 'tldr' })
 await ai.prompt('https://example.com', { prompt: 'What is this page about?' })
 await ai.translate('https://example.com', { sourceLanguage: 'en', targetLanguage: 'es' })
 await ai.detectLanguage('https://example.com')
 ```
 
-These APIs require **Google Chrome**, not Puppeteer's bundled Chromium. Persist `userDataDir` so the on-device model is not re-downloaded.
-
 Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Native create options are passed through.
 
 | Method | Chrome API |
 |--------|------------|
+| `capabilities` | feature detect |
 | `prompt` | `LanguageModel` |
 | `summarize` | `Summarizer` |
 | `translate` | `Translator` |

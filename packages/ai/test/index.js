@@ -1,9 +1,14 @@
 'use strict'
 
-const { getBrowserContext } = require('@browserless/test')
+const createHelpers = require('@browserless/test/create')
 const test = require('ava')
 
 const createAi = require('..')
+
+const { getBrowserContext } = createHelpers({
+  timeout: 120000,
+  ...createAi.launch()
+})
 
 const ai = t => createAi(() => getBrowserContext(t))
 
@@ -12,37 +17,53 @@ const url = 'https://example.com'
 test('factory methods', t => {
   const methods = createAi(() => {})
   t.true(typeof methods.prompt === 'function')
+  t.true(typeof methods.extract === 'function')
   t.true(typeof methods.summarize === 'function')
   t.true(typeof methods.translate === 'function')
   t.true(typeof methods.detectLanguage === 'function')
-  t.true(typeof methods.availability === 'function')
+  t.true(typeof methods.capabilities === 'function')
+  t.is(methods.close, undefined)
 })
 
-test('availability reports each API', async t => {
-  const available = await ai(t).availability(url)
+test('createAi() owns the browser', async t => {
+  const methods = createAi()
+  t.true(typeof methods.close === 'function')
+  await methods.close()
+})
+
+test('launch overrides on-device models for Chrome for Testing', t => {
+  const fs = require('node:fs')
+  const os = require('node:os')
+  const path = require('node:path')
+  const dir = path.join(os.tmpdir(), 'browserless-ai-launch-test')
+  fs.mkdirSync(path.join(dir, 'nano'), { recursive: true })
+  fs.mkdirSync(path.join(dir, 'detect'), { recursive: true })
+  fs.writeFileSync(path.join(dir, 'nano', 'weights.bin'), '')
+  fs.writeFileSync(path.join(dir, 'detect', 'model-info.pb'), '')
+  const { args, timeout, protocolTimeout } = createAi.launch({ dir, timeout: 120000 })
+  t.true(
+    args.some(arg => arg.includes(`ondevice-model-execution-override=${path.join(dir, 'nano')}`))
+  )
+  t.true(args.some(arg => arg.includes('OPTIMIZATION_TARGET_LANGUAGE_DETECTION')))
+  t.true(args.some(arg => arg.includes('PromptAPIForGeminiNano')))
+  t.is(timeout, 120000)
+  t.is(protocolTimeout, 120000)
+})
+
+test('capabilities reports each API', async t => {
+  const available = await ai(t).capabilities()
   t.deepEqual(Object.keys(available).sort(), [
     'languageDetector',
     'languageModel',
     'summarizer',
     'translator'
   ])
-  for (const value of Object.values(available)) t.is(typeof value, 'boolean')
+  for (const value of Object.values(available)) t.is(typeof value, 'string')
 })
 
-test('prompt throws when LanguageModel is missing or unavailable', async t => {
-  const methods = ai(t)
-  const available = await methods.availability(url)
-  if (available.languageModel) return t.pass()
-  const error = await t.throwsAsync(methods.prompt(url, { prompt: 'hi' }))
-  t.true(error.message.includes('LanguageModel'))
-})
-
-test('summarize throws when Summarizer is missing or unavailable', async t => {
-  const methods = ai(t)
-  const available = await methods.availability(url)
-  if (available.summarizer) return t.pass()
-  const error = await t.throwsAsync(methods.summarize(url, { text: 'Hello world.' }))
-  t.true(error.message.includes('Summarizer'))
+test('extract requires schema', async t => {
+  const error = await t.throwsAsync(createAi(() => {}).extract(url, { text: 'Hello' }))
+  t.true(error.message.includes('schema'))
 })
 
 test('translate requires sourceLanguage and targetLanguage', async t => {
@@ -50,10 +71,20 @@ test('translate requires sourceLanguage and targetLanguage', async t => {
   t.true(error.message.includes('Translator'))
 })
 
+test('detectLanguage', async t => {
+  const methods = ai(t)
+  const available = await methods.capabilities()
+  if (available.languageDetector !== 'available') return t.pass()
+  const result = await methods.detectLanguage(url, { text: 'Hello, how are you today?' })
+  t.true(Array.isArray(result))
+  t.true(result.length > 0)
+  t.is(typeof result[0].detectedLanguage, 'string')
+})
+
 test('summarize', async t => {
   const methods = ai(t)
-  const available = await methods.availability(url)
-  if (!available.summarizer) return t.pass()
+  const available = await methods.capabilities()
+  if (available.summarizer === 'unavailable') return t.pass()
   const result = await methods.summarize(url, {
     type: 'tldr',
     text: 'Chrome is a web browser made by Google. It is available on many platforms.'
@@ -62,34 +93,24 @@ test('summarize', async t => {
   t.true(result.length > 0)
 })
 
-test('detectLanguage', async t => {
+test('prompt', async t => {
   const methods = ai(t)
-  const available = await methods.availability(url)
-  if (!available.languageDetector) return t.pass()
-  const result = await methods.detectLanguage(url, { text: 'Hello, how are you today?' })
-  t.true(Array.isArray(result))
+  const available = await methods.capabilities()
+  if (available.languageModel === 'unavailable') return t.pass()
+  const result = await methods.prompt(url, { prompt: 'Reply with the word ok.', text: '' })
+  t.is(typeof result, 'string')
   t.true(result.length > 0)
-  t.is(typeof result[0].detectedLanguage, 'string')
 })
 
 test('translate', async t => {
   const methods = ai(t)
-  const available = await methods.availability(url)
-  if (!available.translator) return t.pass()
+  const available = await methods.capabilities()
+  if (available.translator !== 'available') return t.pass()
   const result = await methods.translate(url, {
     text: 'Hello',
     sourceLanguage: 'en',
     targetLanguage: 'es'
   })
-  t.is(typeof result, 'string')
-  t.true(result.length > 0)
-})
-
-test('prompt', async t => {
-  const methods = ai(t)
-  const available = await methods.availability(url)
-  if (!available.languageModel) return t.pass()
-  const result = await methods.prompt(url, { prompt: 'Reply with the word ok.', text: '' })
   t.is(typeof result, 'string')
   t.true(result.length > 0)
 })

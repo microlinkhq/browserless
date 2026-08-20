@@ -9,7 +9,7 @@
   <br><br>
 </div>
 
-> @browserless/ai: Chrome Built-in AI (Prompt, Summarizer, Translator, Language Detector) via browserless.
+> @browserless/ai: Chrome Built-in AI via browserless (Chrome for Testing, headless; GPU or CPU).
 
 See the [ai section](https://browserless.js.org/#/?id=ai) on our website for more information.
 
@@ -25,45 +25,42 @@ npm install @browserless/ai --save
 
 This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) APIs from Node by evaluating them on a browserless page.
 
-It requires **Google Chrome** (not Puppeteer's bundled Chromium). Pass `executablePath` when creating the browser. Persist `userDataDir` so Gemini Nano is not re-downloaded on every run.
-
 ### Usage
 
 ```js
-const createAi = require('@browserless/ai')
-const createBrowser = require('browserless')
+const ai = require('@browserless/ai')()
 
-const browser = createBrowser({
-  executablePath: '/path/to/Google Chrome'
-})
-
-const ai = createAi(async teardown => {
-  const browserless = await browser.createContext()
-  teardown(() => browserless.destroyContext())
-  return browserless
-})
-
+await ai.capabilities()
+await ai.detectLanguage('https://example.com', { text: 'Hello, how are you today?' })
 await ai.summarize('https://example.com', { type: 'tldr' })
 await ai.prompt('https://example.com', { prompt: 'What is this page about?' })
-await ai.translate('https://example.com', { sourceLanguage: 'en', targetLanguage: 'es' })
-await ai.detectLanguage('https://example.com')
+await ai.translate('https://example.com', { text: 'Hello', sourceLanguage: 'en', targetLanguage: 'es' })
+await ai.close()
 ```
 
+`createAi()` launches Chrome for Testing headless. Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)**. This stack is CfT + headless + no Metal, so it uses the CPU path. Pass `{ dir }` (or `BROWSERLESS_AI_DIR`) because CfT cannot download Gemini Nano. Pass a `getBrowserless` factory if you already own the browser.
+
 Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation.
+
+### Example
+
+```sh
+pnpm --filter @browserless/ai start
+pnpm --filter @browserless/ai start https://example.com
+```
 
 ### Methods
 
 | Method | Chrome API | Chrome |
 |--------|------------|--------|
 | `prompt` | `LanguageModel` | 148 |
+| `extract` | `LanguageModel` + schema | 148 |
 | `summarize` | `Summarizer` | 138 |
-| `translate` | `Translator` | 138 |
 | `detectLanguage` | `LanguageDetector` | 138 |
-| `availability` | feature detect | — |
+| `translate` | `Translator` | 138 |
+| `capabilities` | feature detect | — |
 
-Native create options are passed through (`type`/`format`/`length` for Summarizer, `initialPrompts`/`expectedInputs` for Prompt, language pairs for Translator).
-
-`translate` requires `sourceLanguage` and `targetLanguage`.
+`translate` requires `sourceLanguage` and `targetLanguage`. Language Detector and Translator are expert models. Prompt / Summarizer use Gemini Nano on CPU or GPU.
 
 ### How it fits in the monorepo
 
