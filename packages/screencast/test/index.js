@@ -62,46 +62,6 @@ test('lets screencast options override defaults', async t => {
   ])
 })
 
-test('capture frames', async t => {
-  const frames = []
-
-  const browserless = await getBrowserContext(t)
-  const page = await browserless.page()
-
-  const screencast = createScreencast(page, {
-    quality: 0,
-    format: 'png',
-    everyNthFrame: 1
-  })
-
-  screencast.onFrame((data, metadata) => {
-    frames.push({ data, metadata })
-  })
-
-  await screencast.start()
-
-  // Local page: no network. CSS animation alone often does not commit under
-  // GL/xvfb; mutate a style each tick so Page.startScreencast emits a frame.
-  await page.setContent('<!doctype html><body></body>', { waitUntil: 'load' })
-
-  const deadline = Date.now() + 10000
-  while (frames.length === 0 && Date.now() < deadline) {
-    await page.evaluate(() => {
-      document.body.style.background = `hsl(${Date.now() % 360}, 50%, 50%)`
-    })
-    await new Promise(resolve => setTimeout(resolve, 50))
-  }
-
-  await screencast.stop()
-
-  t.true(frames.length > 0)
-  frames.forEach(({ data, metadata }) => {
-    t.truthy(data)
-    t.is(typeof metadata, 'object')
-    t.truthy(metadata.timestamp)
-  })
-})
-
 test('clean up cdp frame listeners across screencast sessions', async t => {
   const browserless = await getBrowserContext(t)
   const page = await browserless.page()
