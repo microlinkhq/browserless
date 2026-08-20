@@ -80,8 +80,8 @@ test('capture frames', async t => {
 
   await screencast.start()
 
-  // Local page: no network. CSS animation alone often does not commit under
-  // GL/xvfb; mutate a style each tick so Page.startScreencast emits a frame.
+  // Local page: no network. setContent navigates (session restarts). Mutate a
+  // style each tick so the new Page.startScreencast emits a frame under GL/xvfb.
   await page.setContent('<!doctype html><body></body>', { waitUntil: 'load' })
 
   const deadline = Date.now() + 10000
@@ -107,7 +107,8 @@ test('clean up cdp frame listeners across screencast sessions', async t => {
   const page = await browserless.page()
   const cdp = page._client()
 
-  const countListeners = () => cdp.listenerCount('Page.screencastFrame')
+  const countFrames = () => cdp.listenerCount('Page.screencastFrame')
+  const navBaseline = cdp.listenerCount('Page.frameNavigated')
 
   const screencastA = createScreencast(page, {
     quality: 0,
@@ -115,13 +116,15 @@ test('clean up cdp frame listeners across screencast sessions', async t => {
     everyNthFrame: 1
   })
 
-  t.is(countListeners(), 0)
+  t.is(countFrames(), 0)
 
   screencastA.onFrame(() => {})
   await screencastA.start()
-  t.is(countListeners(), 1)
+  t.is(countFrames(), 1)
+  t.is(cdp.listenerCount('Page.frameNavigated'), navBaseline + 1)
   await screencastA.stop()
-  t.is(countListeners(), 0)
+  t.is(countFrames(), 0)
+  t.is(cdp.listenerCount('Page.frameNavigated'), navBaseline)
 
   const screencastB = createScreencast(page, {
     quality: 0,
@@ -131,9 +134,55 @@ test('clean up cdp frame listeners across screencast sessions', async t => {
 
   screencastB.onFrame(() => {})
   await screencastB.start()
-  t.is(countListeners(), 1)
+  t.is(countFrames(), 1)
   await screencastB.stop()
-  t.is(countListeners(), 0)
+  t.is(countFrames(), 0)
+})
+
+test('restarts screencast after main-frame navigation', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  const screencast = createScreencast(page)
+
+  screencast.onFrame(() => {})
+  await screencast.start()
+  calls.length = 0
+
+  cdp.emit('Page.frameNavigated', { frame: { id: 'main' } })
+  await settle()
+
+  t.deepEqual(calls, [{ method: 'Page.startScreencast', params: { format: 'jpeg', quality: 80 } }])
+})
+
+test('does not restart screencast after iframe navigation', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  const screencast = createScreencast(page)
+
+  screencast.onFrame(() => {})
+  await screencast.start()
+  calls.length = 0
+
+  cdp.emit('Page.frameNavigated', { frame: { id: 'iframe', parentId: 'main' } })
+  await settle()
+
+  t.deepEqual(calls, [])
+})
+
+test('does not restart screencast after stop()', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  const screencast = createScreencast(page)
+
+  screencast.onFrame(() => {})
+  await screencast.start()
+  await screencast.stop()
+  calls.length = 0
+
+  cdp.emit('Page.frameNavigated', { frame: { id: 'main' } })
+  await settle()
+
+  t.false(calls.some(({ method }) => method === 'Page.startScreencast'))
 })
 
 test('delivers frames when CDP omits metadata.timestamp', async t => {

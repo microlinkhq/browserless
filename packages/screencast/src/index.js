@@ -48,15 +48,26 @@ module.exports = (page, opts) => {
       .then(() => ackIfActive(sessionId))
   }
 
+  const startScreencast = () => cdp.send('Page.startScreencast', { ...DEFAULT_OPTS, ...opts })
+
+  // start() then goto/setContent is the documented capture shape. Navigation
+  // swaps the renderer and the old screencast session goes silent — restart.
+  const onMainFrameNavigated = ({ frame } = {}) => {
+    if (stopped || (frame && frame.parentId)) return
+    startScreencast().catch(() => {})
+  }
+
   const attachFrameListener = () => {
     if (hasFrameListener) return
     cdp.on('Page.screencastFrame', onScreencastFrame)
+    cdp.on('Page.frameNavigated', onMainFrameNavigated)
     hasFrameListener = true
   }
 
   const detachFrameListener = () => {
     if (!hasFrameListener) return
     cdp.off('Page.screencastFrame', onScreencastFrame)
+    cdp.off('Page.frameNavigated', onMainFrameNavigated)
     hasFrameListener = false
   }
 
@@ -66,7 +77,7 @@ module.exports = (page, opts) => {
       if (!onFrame) throw new Error('onFrame callback must be registered before calling start()')
       stopped = false
       attachFrameListener()
-      return cdp.send('Page.startScreencast', { ...DEFAULT_OPTS, ...opts })
+      return startScreencast()
     },
     onFrame: fn => (onFrame = fn),
     stop: () => {
