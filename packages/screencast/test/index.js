@@ -169,6 +169,32 @@ test('does not restart screencast after iframe navigation', async t => {
   t.deepEqual(calls, [])
 })
 
+test('does not ack a frame that settles after main-frame navigation', async t => {
+  const { cdp, calls } = createFakeCdp()
+  const page = { _client: () => cdp }
+  const frame = Promise.withResolvers()
+
+  const screencast = createScreencast(page, {})
+  screencast.onFrame(() => frame.promise)
+
+  await screencast.start()
+  cdp.emit('Page.screencastFrame', {
+    data: 'frame',
+    metadata: { timestamp: 1 },
+    sessionId: 48
+  })
+
+  cdp.emit('Page.frameNavigated', { frame: { id: 'main' } })
+  frame.resolve()
+  await settle()
+
+  t.false(
+    calls.some(
+      ({ method, params }) => method === 'Page.screencastFrameAck' && params.sessionId === 48
+    )
+  )
+})
+
 test('does not restart screencast after stop()', async t => {
   const { cdp, calls } = createFakeCdp()
   const page = { _client: () => cdp }
