@@ -23,24 +23,64 @@ npm install @browserless/ai --save
 
 ## About
 
-This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) APIs from Node by evaluating them on a browserless page.
+This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) from Node by evaluating the APIs on a browserless page.
+
+Chrome for Testing cannot download Gemini Nano. Unpack a packed model into one directory, then pass that `dir` to `createAi` / `launch`. Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)**.
 
 ### Usage
 
 ```js
-const ai = require('@browserless/ai')()
+const createAi = require('@browserless/ai')
+
+const { dir } = await createAi.unpack(dest => s3.download(url, dest))
+const ai = createAi({ dir })
 
 await ai.capabilities()
 await ai.detectLanguage('https://example.com', { text: 'Hello, how are you today?' })
 await ai.summarize('https://example.com', { type: 'tldr' })
 await ai.prompt('https://example.com', { prompt: 'What is this page about?' })
+await ai.extract('https://example.com', { schema })
 await ai.translate('https://example.com', { text: 'Hello', sourceLanguage: 'en', targetLanguage: 'es' })
 await ai.close()
 ```
 
-`createAi()` launches Chrome for Testing headless. Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)**. This stack is CfT + headless + no Metal, so it uses the CPU path. Pass `{ dir }` (or `BROWSERLESS_AI_DIR`) because CfT cannot download Gemini Nano. Pass a `getBrowserless` factory if you already own the browser.
+`unpack` accepts a local zip path or a download function. The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. Already-unpacked trees are reused unless `{ force: true }`.
 
-Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation.
+If you already own the browser (lighthouse-style):
+
+```js
+const createBrowser = require('browserless')
+const createAi = require('@browserless/ai')
+
+const browser = createBrowser(createAi.launch({ dir: process.env.BROWSERLESS_AI_DIR }))
+const ai = createAi(async teardown => {
+  const browserless = await browser.createContext()
+  teardown(() => browserless.destroyContext())
+  return browserless
+})
+```
+
+Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Native create options are passed through.
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `dir` | `string` | `BROWSERLESS_AI_DIR` | Unpacked model tree (`nano/`, `prompt/`, `summarize/`, `detect/`) |
+| `timeout` | `number` | browserless default | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
+
+`unpack(source, { dir, force })` writes to `dir` when given, otherwise `BROWSERLESS_AI_DIR` or `~/.cache/browserless-ai`.
+
+### Pack a model
+
+From a machine that already has Nano (desktop Chrome, or `BROWSERLESS_AI_DIR`):
+
+```sh
+pnpm --filter @browserless/ai pack-model
+pnpm --filter @browserless/ai pack-model -- --upload
+```
+
+Writes `/tmp/browserless-ai-nano.zip`. `--upload` also pushes it to R2 (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`).
 
 ### Example
 
@@ -60,7 +100,7 @@ pnpm --filter @browserless/ai start https://example.com
 | `translate` | `Translator` | 138 |
 | `capabilities` | feature detect | — |
 
-`translate` requires `sourceLanguage` and `targetLanguage`. Language Detector and Translator are expert models. Prompt / Summarizer use Gemini Nano on CPU or GPU.
+`extract` requires `schema`. `translate` requires `sourceLanguage` and `targetLanguage`. Language Detector and Translator are expert models. Prompt / Summarizer use Gemini Nano.
 
 ### How it fits in the monorepo
 
