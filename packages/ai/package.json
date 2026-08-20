@@ -1,0 +1,50 @@
+{
+  "name": "@browserless/ai",
+  "description": "Run Chrome Built-in AI APIs (Prompt, Summarizer, Translator, Language Detector) from Node using browserless.",
+  "homepage": "https://browserless.js.org",
+  "version": "13.8.3",
+  "main": "src",
+  "author": {
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
+  },
+  "repository": {
+    "directory": "packages/ai",
+    "type": "git",
+    "url": "git+https://github.com/microlinkhq/browserless.git#master"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless/issues"
+  },
+  "keywords": [
+    "ai",
+    "browserless",
+    "chrome",
+    "gemini-nano",
+    "headless",
+    "language-detector",
+    "prompt",
+    "puppeteer",
+    "summarizer",
+    "translator"
+  ],
+  "devDependencies": {
+    "ava": "5"
+  },
+  "engines": {
+    "node": ">= 24"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "ava"
+  },
+  "license": "MIT",
+  "ava": {
+    "serial": true,
+    "timeout": "2m",
+    "workerThreads": false
+  }
+}

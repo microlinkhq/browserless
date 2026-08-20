@@ -34,6 +34,7 @@
   - [.withPage(fn, \[options\])](#withpagefn-options)
   - [.page(\[name\])](#pagename)
 - [Extended](#extended)
+  - [ai](#ai)
   - [function](#function)
   - [lighthouse](#lighthouse)
   - [screencast](#screencast)
@@ -861,6 +862,43 @@ Optional name for the page, used in debug logs.
 
 ## Extended
 
+### ai
+
+The [`@browserless/ai`](https://npm.im/@browserless/ai) package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) APIs from Node:
+
+```js
+const createAi = require('@browserless/ai')
+const createBrowser = require('browserless')
+
+const browser = createBrowser({
+  executablePath: '/path/to/Google Chrome'
+})
+
+const ai = createAi(async teardown => {
+  const browserless = await browser.createContext()
+  teardown(() => browserless.destroyContext())
+  return browserless
+})
+
+await ai.summarize('https://example.com', { type: 'tldr' })
+await ai.prompt('https://example.com', { prompt: 'What is this page about?' })
+await ai.translate('https://example.com', { sourceLanguage: 'en', targetLanguage: 'es' })
+await ai.detectLanguage('https://example.com')
+```
+
+These APIs require **Google Chrome**, not Puppeteer's bundled Chromium. Persist `userDataDir` so the on-device model is not re-downloaded.
+
+Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Native create options are passed through.
+
+| Method | Chrome API |
+|--------|------------|
+| `prompt` | `LanguageModel` |
+| `summarize` | `Summarizer` |
+| `translate` | `Translator` |
+| `detectLanguage` | `LanguageDetector` |
+
+`translate` requires `sourceLanguage` and `targetLanguage`.
+
 ### function
 
 The [`@browserless/function`](https://npm.im/@browserless/function) package provides a secure sandbox to run arbitrary JavaScript code with runtime access to a browser page:
@@ -1015,6 +1053,7 @@ See [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/to
 | Package                                                                                               | Version                                                                                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | [browserless](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         |
+| [@browserless/ai](https://github.com/microlinkhq/browserless/tree/master/packages/ai)                 | [![npm](https://img.shields.io/npm/v/@browserless/ai.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/ai)                 |
 | [@browserless/benchmark](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   |
 | [@browserless/capture](https://github.com/microlinkhq/browserless/tree/master/packages/capture)       | [![npm](https://img.shields.io/npm/v/@browserless/capture.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/capture)       |
 | [@browserless/cli](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               |
