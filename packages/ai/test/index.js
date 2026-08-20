@@ -40,14 +40,31 @@ test('launch overrides on-device models for Chrome for Testing', t => {
   fs.mkdirSync(path.join(dir, 'detect'), { recursive: true })
   fs.writeFileSync(path.join(dir, 'nano', 'weights.bin'), '')
   fs.writeFileSync(path.join(dir, 'detect', 'model-info.pb'), '')
+  fs.mkdirSync(path.join(dir, 'prompt'), { recursive: true })
+  fs.writeFileSync(path.join(dir, 'prompt', 'model-info.pb'), '')
+  fs.writeFileSync(
+    path.join(dir, 'prompt', 'on_device_model_execution_config.pb'),
+    Buffer.from([0x0a, 0x00])
+  )
   const { args, timeout, protocolTimeout } = createAi.launch({ dir, timeout: 120000 })
   t.true(
     args.some(arg => arg.includes(`ondevice-model-execution-override=${path.join(dir, 'nano')}`))
   )
   t.true(args.some(arg => arg.includes('OPTIMIZATION_TARGET_LANGUAGE_DETECTION')))
+  t.true(args.some(arg => arg.includes('OPTIMIZATION_TARGET_MODEL_EXECUTION_FEATURE_PROMPT_API')))
   t.true(args.some(arg => arg.includes('PromptAPIForGeminiNano')))
   t.is(timeout, 120000)
   t.is(protocolTimeout, 120000)
+})
+
+test('launch accepts a single adaptation file', t => {
+  const fs = require('node:fs')
+  const os = require('node:os')
+  const path = require('node:path')
+  const file = path.join(os.tmpdir(), 'browserless-ai-adapt.crx3')
+  fs.writeFileSync(file, '')
+  const { args } = createAi.launch({ dir: file })
+  t.true(args.some(arg => arg.includes(`OPTIMIZATION_TARGET_LANGUAGE_DETECTION:${file}`)))
 })
 
 test('capabilities reports each API', async t => {

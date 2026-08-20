@@ -75,3 +75,46 @@ test('unpack skips download when already installed', async t => {
   const { dir: unpacked } = await createAi.unpack('/missing.zip', { dir })
   t.is(unpacked, dir)
 })
+
+test('unpack force re-extracts over an installed tree', async t => {
+  const { zipPath, dir } = fixture('force')
+  mkdirSync(path.join(dir, 'nano'), { recursive: true })
+  mkdirSync(path.join(dir, 'detect'), { recursive: true })
+  writeFileSync(path.join(dir, 'nano', 'weights.bin'), 'old')
+  writeFileSync(path.join(dir, 'detect', 'model-info.pb'), 'old')
+
+  await createAi.unpack(zipPath, { dir, force: true })
+  t.is(require('node:fs').readFileSync(path.join(dir, 'nano', 'weights.bin'), 'utf8'), 'weights')
+})
+
+test('unpack throws when the zip is missing', async t => {
+  const dir = tmp('missing')
+  await t.throwsAsync(createAi.unpack(path.join(dir, 'nope.zip'), { dir }), {
+    message: /missing zip/
+  })
+})
+
+test('unpack accepts a buffer', async t => {
+  const { zipPath, dir } = fixture('buffer')
+  const buf = require('node:fs').readFileSync(zipPath)
+  const { dir: unpacked } = await createAi.unpack(() => buf, { dir })
+  t.is(unpacked, dir)
+  t.true(existsSync(path.join(dir, 'nano', 'weights.bin')))
+})
+
+test('unpack does not write zip-slip paths outside dest', async t => {
+  const root = tmp('slip')
+  const zipPath = path.join(root, 'bundle.zip')
+  const dir = path.join(root, 'out')
+  writeStoreZip(zipPath, [['../evil.bin', Buffer.from('nope')]])
+  await t.throwsAsync(createAi.unpack(zipPath, { dir }))
+  t.false(existsSync(path.join(root, 'evil.bin')))
+})
+
+test('unpack rejects a bundle without an adaptation', async t => {
+  const root = tmp('no-adapt')
+  const zipPath = path.join(root, 'bundle.zip')
+  const dir = path.join(root, 'out')
+  writeStoreZip(zipPath, [['nano/weights.bin', Buffer.from('weights')]])
+  await t.throwsAsync(createAi.unpack(zipPath, { dir }), { message: /adaptation/ })
+})
