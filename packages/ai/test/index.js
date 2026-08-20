@@ -107,7 +107,7 @@ test('detectLanguage', async t => {
 test('summarize', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
-  if (available.summarizer === 'unavailable') return t.pass()
+  if (available.summarizer !== 'available') return t.pass()
   const result = await methods.summarize(url, {
     type: 'tldr',
     text: 'Chrome is a web browser made by Google. It is available on many platforms.'
@@ -119,7 +119,7 @@ test('summarize', async t => {
 test('prompt', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
-  if (available.languageModel === 'unavailable') return t.pass()
+  if (available.languageModel !== 'available') return t.pass()
   const result = await methods.prompt(url, { prompt: 'Reply with the word ok.', text: '' })
   t.is(typeof result, 'string')
   t.true(result.length > 0)

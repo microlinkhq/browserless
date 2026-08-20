@@ -115,6 +115,39 @@ test('unpack does not write zip-slip paths outside dest', async t => {
   t.false(existsSync(path.join(root, 'evil.bin')))
 })
 
+test('unpack rejects a data-descriptor directory entry', async t => {
+  const root = tmp('descriptor-dir')
+  const zipPath = path.join(root, 'bundle.zip')
+  const dir = path.join(root, 'out')
+  const nameBuf = Buffer.from('nano/')
+  const local = Buffer.alloc(30)
+  local.writeUInt32LE(0x04034b50, 0)
+  local.writeUInt16LE(0x08, 6)
+  local.writeUInt16LE(nameBuf.length, 26)
+  writeFileSync(zipPath, Buffer.concat([local, nameBuf]))
+  await t.throwsAsync(createAi.unpack(zipPath, { dir }), { message: /data descriptor/ })
+})
+
+test('unpack does not cache a failed extract', async t => {
+  const root = tmp('partial')
+  const zipPath = path.join(root, 'bundle.zip')
+  const dir = path.join(root, 'out')
+  writeStoreZip(zipPath, [
+    ['nano/weights.bin', Buffer.from('weights')],
+    ['detect/model-info.pb', Buffer.from('detect')]
+  ])
+  const extraName = Buffer.from('extra.bin')
+  const local = Buffer.alloc(30)
+  local.writeUInt32LE(0x04034b50, 0)
+  local.writeUInt16LE(0x08, 6)
+  local.writeUInt16LE(extraName.length, 26)
+  require('node:fs').appendFileSync(zipPath, Buffer.concat([local, extraName]))
+  await t.throwsAsync(createAi.unpack(zipPath, { dir }), { message: /data descriptor/ })
+  await t.throwsAsync(createAi.unpack(path.join(root, 'missing.zip'), { dir }), {
+    message: /missing zip/
+  })
+})
+
 test('unpack rejects zip entries with a data descriptor', async t => {
   const root = tmp('descriptor')
   const zipPath = path.join(root, 'bundle.zip')

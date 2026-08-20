@@ -125,7 +125,10 @@ const ADAPTATIONS = [
 ]
 
 const packAdaptation = (dir, { name, skipSafety }) => {
-  const dest = path.join(os.tmpdir(), `browserless-ai-${name}.crx3`)
+  const dest = path.join(
+    os.tmpdir(),
+    `browserless-ai-${name}-${process.pid}-${process.hrtime.bigint()}.crx3`
+  )
   const read = file => {
     const filePath = path.join(dir, file)
     return fs.existsSync(filePath) ? fs.readFileSync(filePath) : Buffer.alloc(0)

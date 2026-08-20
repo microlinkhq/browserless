@@ -12,6 +12,7 @@ const {
   createWriteStream,
   existsSync,
   mkdirSync,
+  renameSync,
   rmSync,
   unlinkSync,
   writeFileSync
@@ -81,13 +82,13 @@ const unzipJs = async (zipPath, dir) => {
       const nameLen = rest.readUInt16LE(22)
       const extraLen = rest.readUInt16LE(24)
       const name = (await read(nameLen, pos + 30)).toString()
+      if (flags & 0x08) {
+        throw new Error(`unsupported zip entry with data descriptor (${name})`)
+      }
       const dataStart = pos + 30 + nameLen + extraLen
       const dest = safeDest(dir, name)
       pos = dataStart + compressed
       if (!dest) continue
-      if (flags & 0x08) {
-        throw new Error(`unsupported zip entry with data descriptor (${name})`)
-      }
       if (method !== 0 && method !== 8) {
         throw new Error(`unsupported zip method ${method} (${name})`)
       }
@@ -122,21 +123,27 @@ const unpack = async (get, { dir, force = false } = {}) => {
 
   const already = installed(dir)
   if (already && !force) return already
-  if (force) {
+
+  const staging = `${dir}.partial`
+  rmSync(staging, { recursive: true, force: true })
+  mkdirSync(staging, { recursive: true })
+  try {
+    const dest = path.join(staging, 'bundle.zip')
+    const zipPath =
+      typeof get === 'function' ? await writeZip(await get(dest), dest) : path.resolve(get)
+    if (!existsSync(zipPath)) throw new Error(`missing zip: ${zipPath}`)
+
+    await unzip(zipPath, staging)
+    if (zipPath === dest) unlinkSync(dest)
+    const paths = installed(staging)
+    if (!paths) throw new Error('bundle did not contain nano weights and an adaptation')
     rmSync(dir, { recursive: true, force: true })
-    mkdirSync(dir, { recursive: true })
+    renameSync(staging, dir)
+    return { dir }
+  } catch (error) {
+    rmSync(staging, { recursive: true, force: true })
+    throw error
   }
-
-  const dest = path.join(dir, 'bundle.zip')
-  const zipPath =
-    typeof get === 'function' ? await writeZip(await get(dest), dest) : path.resolve(get)
-  if (!existsSync(zipPath)) throw new Error(`missing zip: ${zipPath}`)
-
-  await unzip(zipPath, dir)
-  const paths = installed(dir)
-  if (!paths) throw new Error('bundle did not contain nano weights and an adaptation')
-  if (zipPath === dest) unlinkSync(dest)
-  return paths
 }
 
 module.exports = unpack
