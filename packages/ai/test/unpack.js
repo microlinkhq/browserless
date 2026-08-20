@@ -50,6 +50,14 @@ test('unpack extracts weights and adaptations', async t => {
   t.true(existsSync(path.join(dir, 'detect', 'model-info.pb')))
 })
 
+test('unpack accepts a dir with a trailing slash', async t => {
+  const { zipPath, dir } = fixture('slash')
+  const { dir: unpacked } = await createAi.unpack(zipPath, { dir: `${dir}${path.sep}` })
+  t.is(unpacked, path.resolve(dir))
+  t.true(existsSync(path.join(dir, 'nano', 'weights.bin')))
+  t.false(existsSync(path.join(dir, '.partial')))
+})
+
 test('unpack accepts a download function', async t => {
   const { zipPath, dir } = fixture('download-fn')
   const { dir: unpacked } = await createAi.unpack(() => zipPath, { dir })

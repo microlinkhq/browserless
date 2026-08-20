@@ -118,7 +118,7 @@ const unzip = async (zipPath, dir) => {
 
 const unpack = async (get, { dir, force = false } = {}) => {
   if (get == null) throw new Error('unpack requires a zip path or download function')
-  dir = dir || process.env.BROWSERLESS_AI_DIR || cacheRoot()
+  dir = path.resolve(dir || process.env.BROWSERLESS_AI_DIR || cacheRoot())
   mkdirSync(dir, { recursive: true })
 
   const already = installed(dir)
