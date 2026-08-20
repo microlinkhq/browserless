@@ -1,7 +1,6 @@
 'use strict'
 
 const { pipeline } = require('node:stream/promises')
-const { spawnSync } = require('node:child_process')
 const { createInflateRaw } = require('node:zlib')
 const { open } = require('node:fs/promises')
 const { Readable } = require('node:stream')
@@ -113,12 +112,6 @@ const unzipJs = async (zipPath, dir) => {
 
 const unzip = async (zipPath, dir) => {
   mkdirSync(dir, { recursive: true })
-  const probe = spawnSync('unzip', ['-tqq', zipPath], { stdio: 'ignore' })
-  if (probe.status === 0) {
-    const result = spawnSync('unzip', ['-o', zipPath, '-d', dir], { stdio: 'inherit' })
-    if (result.status !== 0) throw new Error('unzip failed')
-    return
-  }
   await unzipJs(zipPath, dir)
 }
 

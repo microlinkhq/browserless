@@ -12,18 +12,21 @@ const { credentials, objectUrl, uploadFile } = require('./util')
 const ZIP32_MAX = 0xffffffff
 
 const chromeSupport = (...parts) =>
-  path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome', ...parts)
+  process.platform === 'darwin'
+    ? path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome', ...parts)
+    : undefined
 
 const parseArgs = argv => {
   const extra = argv.slice(2).filter(flag => flag !== '--upload')
   if (extra.length) throw new Error('usage: pack-model.js [--upload]')
   const dir = process.env.BROWSERLESS_AI_DIR
   return {
-    model: process.env.BROWSERLESS_AI_MODEL || dir || chromeSupport('OptGuideOnDeviceModel'),
+    model: process.env.BROWSERLESS_AI_MODEL || dir || chromeSupport('OptGuideOnDeviceModel') || '',
     adaptation:
       process.env.BROWSERLESS_AI_ADAPTATION ||
       dir ||
-      chromeSupport('optimization_guide_model_store'),
+      chromeSupport('optimization_guide_model_store') ||
+      '',
     out: path.join(os.tmpdir(), 'browserless-ai-nano.zip'),
     upload: argv.includes('--upload')
   }

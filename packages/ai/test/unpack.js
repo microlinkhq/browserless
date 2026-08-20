@@ -109,7 +109,9 @@ test('unpack does not write zip-slip paths outside dest', async t => {
   const zipPath = path.join(root, 'bundle.zip')
   const dir = path.join(root, 'out')
   writeStoreZip(zipPath, [['../evil.bin', Buffer.from('nope')]])
-  await t.throwsAsync(createAi.unpack(zipPath, { dir }))
+  await t.throwsAsync(createAi.unpack(zipPath, { dir }), {
+    message: /refusing to extract/
+  })
   t.false(existsSync(path.join(root, 'evil.bin')))
 })
 
