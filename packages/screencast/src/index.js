@@ -10,22 +10,18 @@ module.exports = (page, opts) => {
   let onFrame
   let hasFrameListener = false
   let stopped = false
-  let generation = 0
 
   const ack = sessionId => cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
 
   // Never ack a torn-down session: a stale ack could race a subsequent screencast
-  // on the same page. `stopped` flips true when stop() runs; `generation` bumps
-  // when start() or a main-frame restart opens a new session — including a
-  // reentrant stop() from inside onFrame, or an async frame settling after stop()
-  // / navigation.
-  const ackIfActive = (sessionId, gen) => {
-    if (!stopped && gen === generation) return ack(sessionId)
+  // on the same page. `stopped` flips true when stop() runs — including a
+  // reentrant stop() from inside onFrame, or an async frame settling after stop().
+  const ackIfActive = sessionId => {
+    if (!stopped) return ack(sessionId)
   }
 
   const onScreencastFrame = ({ data, metadata = {}, sessionId }) => {
-    const gen = generation
-    if (!onFrame) return ackIfActive(sessionId, gen)
+    if (!onFrame) return ackIfActive(sessionId)
 
     // CDP marks ScreencastFrameMetadata.timestamp as optional. Dropping those
     // frames made capture look empty under some GL/headless backends; fill a
@@ -39,42 +35,28 @@ module.exports = (page, opts) => {
     } catch {
       // A synchronous onFrame throw must not propagate into puppeteer's CDP
       // dispatch loop; still ack so the stream can't stall on one bad frame.
-      return ackIfActive(sessionId, gen)
+      return ackIfActive(sessionId)
     }
 
     // Common path: onFrame did nothing async (e.g. muxer.write applied no
     // backpressure). Ack synchronously — no Promise/microtask hop per frame.
-    if (!result || typeof result.then !== 'function') return ackIfActive(sessionId, gen)
+    if (!result || typeof result.then !== 'function') return ackIfActive(sessionId)
 
     // Backpressure path: defer the ack until the frame is consumed.
     return Promise.resolve(result)
       .catch(() => {})
-      .then(() => ackIfActive(sessionId, gen))
-  }
-
-  const startScreencast = () => {
-    generation++
-    return cdp.send('Page.startScreencast', { ...DEFAULT_OPTS, ...opts })
-  }
-
-  // start() then goto/setContent is the documented capture shape. Navigation
-  // swaps the renderer and the old screencast session goes silent — restart.
-  const onMainFrameNavigated = ({ frame } = {}) => {
-    if (stopped || (frame && frame.parentId)) return
-    startScreencast().catch(() => {})
+      .then(() => ackIfActive(sessionId))
   }
 
   const attachFrameListener = () => {
     if (hasFrameListener) return
     cdp.on('Page.screencastFrame', onScreencastFrame)
-    cdp.on('Page.frameNavigated', onMainFrameNavigated)
     hasFrameListener = true
   }
 
   const detachFrameListener = () => {
     if (!hasFrameListener) return
     cdp.off('Page.screencastFrame', onScreencastFrame)
-    cdp.off('Page.frameNavigated', onMainFrameNavigated)
     hasFrameListener = false
   }
 
@@ -84,7 +66,7 @@ module.exports = (page, opts) => {
       if (!onFrame) throw new Error('onFrame callback must be registered before calling start()')
       stopped = false
       attachFrameListener()
-      return startScreencast()
+      return cdp.send('Page.startScreencast', { ...DEFAULT_OPTS, ...opts })
     },
     onFrame: fn => (onFrame = fn),
     stop: () => {
