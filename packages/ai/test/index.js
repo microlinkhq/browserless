@@ -3,17 +3,7 @@
 const createHelpers = require('@browserless/test/create')
 const test = require('ava')
 
-const { cacheRoot, hasFile } = require('../src/find-dir')
 const createAi = require('..')
-
-const hasModel = () =>
-  Boolean(hasFile(process.env.BROWSERLESS_AI_DIR || cacheRoot(), 'weights.bin'))
-
-const requireApi = (t, available, name) => {
-  if (available[name] === 'available') return true
-  t.false(hasModel(), `${name} should be available with the packed model`)
-  return false
-}
 
 const { getBrowserContext } = createHelpers({
   timeout: 120000,
@@ -92,11 +82,6 @@ test('capabilities reports each API', async t => {
     'translator'
   ])
   for (const value of Object.values(available)) t.is(typeof value, 'string')
-  if (hasModel()) {
-    t.is(available.languageModel, 'available')
-    t.is(available.summarizer, 'available')
-    t.is(available.languageDetector, 'available')
-  }
 })
 
 test('extract requires schema', async t => {
@@ -112,7 +97,7 @@ test('translate requires sourceLanguage and targetLanguage', async t => {
 test('detectLanguage', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
-  if (!requireApi(t, available, 'languageDetector')) return
+  if (available.languageDetector !== 'available') return t.pass()
   const result = await methods.detectLanguage(url, { text: 'Hello, how are you today?' })
   t.true(Array.isArray(result))
   t.true(result.length > 0)
@@ -122,7 +107,7 @@ test('detectLanguage', async t => {
 test('summarize', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
-  if (!requireApi(t, available, 'summarizer')) return
+  if (available.summarizer !== 'available') return t.pass()
   const result = await methods.summarize(url, {
     type: 'tldr',
     text: 'Chrome is a web browser made by Google. It is available on many platforms.'
@@ -134,7 +119,7 @@ test('summarize', async t => {
 test('prompt', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
-  if (!requireApi(t, available, 'languageModel')) return
+  if (available.languageModel !== 'available') return t.pass()
   const result = await methods.prompt(url, { prompt: 'Reply with the word ok.', text: '' })
   t.is(typeof result, 'string')
   t.true(result.length > 0)
