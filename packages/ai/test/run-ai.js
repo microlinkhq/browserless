@@ -32,7 +32,7 @@ const ctor = (availability, methods = {}) => {
 }
 
 test('availability reports missing constructors as unavailable', async t => {
-  t.deepEqual(await runAi({ api: 'availability' }), {
+  t.deepEqual((await runAi({ api: 'availability' })).apis, {
     languageModel: 'unavailable',
     summarizer: 'unavailable',
     translator: 'unavailable',
@@ -48,11 +48,11 @@ test('availability uses constructor status and treats throws as unavailable', as
     }
   }
   globalThis.Translator = ctor('downloadable')
-  const result = await runAi({ api: 'availability' })
-  t.is(result.languageModel, 'available')
-  t.is(result.summarizer, 'unavailable')
-  t.is(result.translator, 'downloadable')
-  t.is(result.languageDetector, 'unavailable')
+  const { apis } = await runAi({ api: 'availability' })
+  t.is(apis.languageModel, 'available')
+  t.is(apis.summarizer, 'unavailable')
+  t.is(apis.translator, 'downloadable')
+  t.is(apis.languageDetector, 'unavailable')
 })
 
 test('prompt concatenates prompt and text', async t => {

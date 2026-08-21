@@ -1,11 +1,12 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:ai')
 const { crc32 } = require('node:zlib')
 const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
 
-const { hasFile } = require('./find-dir')
+const { cacheRoot, hasFile } = require('./find-dir')
 const runAi = require('./run-ai')
 
 const withContext = async (getBrowserless, fn) => {
@@ -20,14 +21,16 @@ const withContext = async (getBrowserless, fn) => {
 
 const createMethod =
   (getBrowserless, spec) =>
-    (url, { timeout = 120000, ...opts } = {}) =>
+    (url, { timeout = TIMEOUT, ...opts } = {}) =>
       withContext(getBrowserless, browserless =>
         browserless.evaluate(page => page.evaluate(runAi, { ...opts, ...spec }), { timeout })(url)
       )
 
 const OVERRIDE_SEP = process.platform === 'win32' ? '|' : ':'
 
-const FEATURES = 'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano'
+const FEATURES = 'OnDeviceModelForceCpuBackend,OptimizationHints'
+
+const TIMEOUT = 300000
 
 const readVarint = (buf, offset) => {
   let value = 0
@@ -156,6 +159,7 @@ const resolveAdaptations = adaptationPath => {
       hasFile(path.join(adaptationPath, feature.name), 'model-info.pb') ||
       hasFile(path.join(adaptationPath, String(feature.target)), 'model-info.pb')
     if (dir) pairs.push(`${feature.flag}${OVERRIDE_SEP}${packAdaptation(dir, feature)}`)
+    debug('adaptation', { name: feature.name, dir: dir || false })
   }
   return pairs
 }
@@ -165,28 +169,36 @@ const chromeSupport = (...parts) =>
     ? path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome', ...parts)
     : undefined
 
-const resolveModelPath = dir =>
-  hasFile(dir || chromeSupport('OptGuideOnDeviceModel') || '', 'weights.bin')
+const resolveModelPath = dir => {
+  if (dir) return hasFile(dir, 'weights.bin')
+  const chrome = chromeSupport('OptGuideOnDeviceModel')
+  return hasFile(cacheRoot(), 'weights.bin') || (chrome && hasFile(chrome, 'weights.bin'))
+}
 
 const resolveAdaptationPath = dir => {
   if (dir) return fs.existsSync(dir) ? dir : undefined
+  if (hasFile(cacheRoot(), 'model-info.pb')) return cacheRoot()
   const store = chromeSupport('optimization_guide_model_store')
   return store && fs.existsSync(store) ? store : undefined
 }
 
 const launch = ({
   dir = process.env.BROWSERLESS_AI_DIR,
-  timeout,
+  userDataDir = process.env.BROWSERLESS_AI_PROFILE,
+  timeout = TIMEOUT,
   protocolTimeout = timeout
 } = {}) => {
   const modelPath = resolveModelPath(dir)
   const adaptationPath = resolveAdaptationPath(dir)
 
   const { defaultArgs } = require('browserless').driver
-  const args = defaultArgs.map(arg =>
-    arg.startsWith('--enable-features=') ? `${arg},${FEATURES}` : arg
-  )
-  args.push('--optimization-guide-on-device-model=Enabled')
+  const args = defaultArgs
+    .filter(arg => arg !== '--no-startup-window')
+    .map(arg => (arg.startsWith('--enable-features=') ? `${arg},${FEATURES}` : arg))
+  if (process.env.BROWSERLESS_AI_DUMPIO) {
+    args.push('--enable-logging=stderr', '--vmodule=optimization_guide*=1,on_device_model*=2')
+  }
+  args.push('--disable-model-download-verification')
   if (modelPath) {
     args.push(`--optimization-guide-ondevice-model-execution-override=${modelPath}`)
   }
@@ -194,9 +206,25 @@ const launch = ({
     const pairs = resolveAdaptations(adaptationPath)
     if (pairs.length) args.push(`--optimization-guide-model-override=${pairs.join(',')}`)
   }
+  const weights = modelPath && path.join(modelPath, 'weights.bin')
+  debug('launch', {
+    dir: dir || false,
+    modelPath: modelPath || false,
+    weightsBytes: weights && fs.existsSync(weights) ? fs.statSync(weights).size : 0,
+    adaptationPath: adaptationPath || false,
+    overrides: args.filter(
+      arg =>
+        arg.includes('optimization-guide') ||
+        arg.includes('PromptAPI') ||
+        arg.includes('Summarization')
+    )
+  })
   return {
-    ...(timeout != null && { timeout }),
-    ...(protocolTimeout != null && { protocolTimeout }),
+    timeout,
+    protocolTimeout,
+    ...(userDataDir && { userDataDir }),
+    ...(process.env.BROWSERLESS_AI_DUMPIO && { dumpio: true }),
+    ...(process.env.CI && { headless: false }),
     args
   }
 }
@@ -214,12 +242,48 @@ const createMethods = getBrowserless => {
     summarize: createMethod(getBrowserless, { api: 'summarize' }),
     translate: createMethod(getBrowserless, { api: 'translate' }),
     detectLanguage: createMethod(getBrowserless, { api: 'detectLanguage' }),
-    capabilities: ({ timeout = 120000, url = 'https://example.com' } = {}) =>
-      withContext(getBrowserless, browserless =>
-        browserless.evaluate(page => page.evaluate(runAi, { api: 'availability' }), { timeout })(
-          url
-        )
-      )
+    capabilities: ({ timeout = TIMEOUT, url = 'https://example.com' } = {}) =>
+      withContext(getBrowserless, async browserless => {
+        const ctors = await browserless.evaluate(
+          page =>
+            page.evaluate(() => ({
+              languageModel: typeof globalThis.LanguageModel,
+              summarizer: typeof globalThis.Summarizer,
+              translator: typeof globalThis.Translator,
+              languageDetector: typeof globalThis.LanguageDetector
+            })),
+          { timeout: Math.min(timeout, 30000) }
+        )(url)
+        debug('ctors', ctors)
+        const started = Date.now()
+        let available
+        let lastError
+        for (;;) {
+          const left = timeout - (Date.now() - started)
+          if (left <= 0) break
+          try {
+            available = await browserless.evaluate(
+              page => page.evaluate(runAi, { api: 'availability' }),
+              { timeout: Math.min(20000, left) }
+            )(url)
+            lastError = undefined
+          } catch (error) {
+            lastError = error
+            if (left <= 20000) throw error
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            continue
+          }
+          const apis = available.apis || available
+          const pending = ['languageModel', 'summarizer', 'languageDetector'].some(
+            api => apis[api] === 'downloading'
+          )
+          if (!pending) break
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+        if (!available) throw lastError || new Error('capabilities timed out')
+        debug('capabilities', available.apis || available, available.env)
+        return available.apis || available
+      })
   }
 }
 
@@ -239,3 +303,11 @@ const createAi = (input = {}) => {
 module.exports = createAi
 module.exports.launch = launch
 module.exports.unpack = require('./unpack')
+module.exports.download = dest => {
+  const { credentials, downloadFile } = require('../scripts/util')
+  const env = credentials()
+  if (!env.endpoint || !env.bucket || !env.accessKey || !env.secretKey) {
+    throw new Error('set R2_ENDPOINT, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY')
+  }
+  return downloadFile(env, dest)
+}

@@ -98,7 +98,22 @@ jobs:
         # libgl1-mesa-dri ships on the ubuntu-24.04 runner; only install (and
         # refresh the index) on the off chance a future image drops it.
         run: dpkg -s libgl1-mesa-dri >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1-mesa-dri)
+      - name: Cache AI model
+        if: matrix.package.name == '@browserless/ai'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/browserless-ai
+          key: browserless-ai-nano-2025.8.8.1141
+      - name: Install AI model
+        if: matrix.package.name == '@browserless/ai'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: pnpm --filter @browserless/ai install-model
       - name: Test
+        env:
+          DEBUG: browserless:ai
         run: xvfb-run -a pnpm --filter "${{ matrix.package.filter }}" exec c8 pnpm test
       - name: Coverage
         run: pnpm --filter "${{ matrix.package.filter }}" exec c8 report --reporter=lcov --report-dir=coverage
@@ -149,7 +164,20 @@ jobs:
         # libgl1-mesa-dri ships on the ubuntu-24.04 runner; only install (and
         # refresh the index) on the off chance a future image drops it.
         run: dpkg -s libgl1-mesa-dri >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1-mesa-dri)
+      - name: Cache AI model
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/browserless-ai
+          key: browserless-ai-nano-2025.8.8.1141
+      - name: Install AI model
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: pnpm --filter @browserless/ai install-model
       - name: Test
+        env:
+          DEBUG: browserless:ai
         run: xvfb-run -a pnpm --recursive --sequential test
       - name: Release
         env:

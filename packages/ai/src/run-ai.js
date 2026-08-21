@@ -46,20 +46,29 @@ const runAi = async spec => {
         opts: { expectedInputLanguages: ['en'] }
       }
     }
-    const result = {}
+    const apis = {}
+    const ctors = {}
     for (const [api, { name, opts }] of Object.entries(probes)) {
       const Ctor = globalThis[name]
+      ctors[api] = typeof Ctor
       if (typeof Ctor === 'undefined') {
-        result[api] = 'unavailable'
+        apis[api] = 'unavailable'
         continue
       }
       try {
-        result[api] = await Ctor.availability(opts)
+        apis[api] = await Ctor.availability(opts)
       } catch {
-        result[api] = 'unavailable'
+        apis[api] = 'unavailable'
       }
     }
-    return result
+    return {
+      apis,
+      env: {
+        hardwareConcurrency: globalThis.navigator && globalThis.navigator.hardwareConcurrency,
+        deviceMemory: globalThis.navigator && globalThis.navigator.deviceMemory,
+        ...Object.fromEntries(Object.entries(ctors).map(([key, value]) => [`ctor_${key}`, value]))
+      }
+    }
   }
 
   const schema = spec.schema || spec.responseConstraint
@@ -98,8 +107,8 @@ const runAi = async spec => {
 
   if (availability === 'downloading') {
     const started = Date.now()
-    while (availability === 'downloading' && Date.now() - started < 60000) {
-      await new Promise(resolve => setTimeout(resolve, 250))
+    while (availability === 'downloading' && Date.now() - started < 240000) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
       availability = await Ctor.availability(createOpts)
     }
     if (availability === 'unavailable' || availability === 'downloading') {

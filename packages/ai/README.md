@@ -36,7 +36,7 @@ Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB R
 ```js
 const createAi = require('@browserless/ai')
 
-const { dir } = await createAi.unpack(dest => s3.download(url, dest))
+const { dir } = await createAi.unpack(createAi.download)
 const ai = createAi({ dir })
 
 await ai.capabilities()
@@ -49,7 +49,7 @@ await ai.translate('https://example.com', { text: 'Hello', sourceLanguage: 'en',
 await ai.close()
 ```
 
-`unpack` accepts a local zip path or a download function. The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. If the directory is already unpacked, `unpack` reuses it unless you pass `{ force: true }`.
+`unpack` accepts a local zip path or a download function. `createAi.download` is a signed R2 GetObject (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). The bucket and object key can live in `R2_ENDPOINT` (`https://<account>.r2.cloudflarestorage.com/<bucket>/<key>`), or in `R2_BUCKET` / `R2_KEY`. The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. If the directory is already unpacked, `unpack` reuses it unless you pass `{ force: true }`.
 
 If you already have a browserless instance:
 
@@ -79,7 +79,7 @@ Each page-processing method is `(url, options)`. Pass `options.text` to use your
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `dir` | `string` | `BROWSERLESS_AI_DIR` | Unpacked model tree (`nano/`, `prompt/`, `summarize/`, `detect/`) |
-| `timeout` | `number` | `120000` | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
+| `timeout` | `number` | `300000` | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
 
 `unpack(source, { dir, force })` writes to `dir` when you pass one. Otherwise it uses `BROWSERLESS_AI_DIR`, or `~/.cache/browserless-ai`.
 
@@ -92,7 +92,7 @@ pnpm --filter @browserless/ai pack-model
 pnpm --filter @browserless/ai pack-model -- --upload
 ```
 
-Writes `/tmp/browserless-ai-nano.zip`. `--upload` also pushes it to R2 (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`).
+Writes `/tmp/browserless-ai-nano.zip`. `--upload` also pushes it to R2 (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`; bucket/key may be in the endpoint URL). Tests run `install-model` first and download that object when the same variables are set.
 
 ### Example
 

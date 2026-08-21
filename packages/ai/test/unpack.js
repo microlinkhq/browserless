@@ -36,6 +36,31 @@ const fixture = label => {
 
 test('unpack is exported', t => {
   t.true(typeof createAi.unpack === 'function')
+  t.true(typeof createAi.download === 'function')
+})
+
+test('download requires R2 credentials', t => {
+  const keys = [
+    'R2_ENDPOINT',
+    'R2_ACCESS_KEY_ID',
+    'R2_SECRET_ACCESS_KEY',
+    'R2_ACCOUNT_ID',
+    'R2_BUCKET',
+    'R2_KEY',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'CLOUDFLARE_ACCOUNT_ID'
+  ]
+  const prev = Object.fromEntries(keys.map(key => [key, process.env[key]]))
+  for (const key of keys) delete process.env[key]
+  try {
+    t.throws(() => createAi.download('/tmp/x'), { message: /R2_/ })
+  } finally {
+    for (const [key, value] of Object.entries(prev)) {
+      if (value === undefined) delete process.env[key]
+      else process.env[key] = value
+    }
+  }
 })
 
 test('unpack requires a source', async t => {

@@ -33,3 +33,4 @@ coverage
 .envrc
 .envrc
 packages/goto/src/engine.bin
+packages/ai/model

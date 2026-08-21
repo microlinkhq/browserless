@@ -5,7 +5,6 @@ const { createInflateRaw } = require('node:zlib')
 const { open } = require('node:fs/promises')
 const { Readable } = require('node:stream')
 const path = require('node:path')
-const os = require('node:os')
 
 const {
   createReadStream,
@@ -18,12 +17,8 @@ const {
   writeFileSync
 } = require('node:fs')
 
-const { hasFile } = require('./find-dir')
-
-const cacheRoot = () =>
-  process.env.XDG_CACHE_HOME
-    ? path.join(process.env.XDG_CACHE_HOME, 'browserless-ai')
-    : path.join(os.homedir(), '.cache', 'browserless-ai')
+const debug = require('debug-logfmt')('browserless:ai')
+const { hasFile, cacheRoot } = require('./find-dir')
 
 const installed = dir => {
   if (!hasFile(dir, 'weights.bin')) return
@@ -122,6 +117,7 @@ const unpack = async (get, { dir, force = false } = {}) => {
   mkdirSync(dir, { recursive: true })
 
   const already = installed(dir)
+  debug('unpack', { dir, force, installed: Boolean(already) })
   if (already && !force) return already
 
   const staging = `${dir}.partial`
