@@ -36,7 +36,7 @@ Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB R
 ```js
 const createAi = require('@browserless/ai')
 
-const { dir } = await createAi.unpack(dest => s3.download(url, dest))
+const { dir } = await createAi.unpack(createAi.download)
 const ai = createAi({ dir })
 
 await ai.capabilities()
@@ -49,7 +49,7 @@ await ai.translate('https://example.com', { text: 'Hello', sourceLanguage: 'en',
 await ai.close()
 ```
 
-`unpack` accepts a local zip path or a download function. The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. If the directory is already unpacked, `unpack` reuses it unless you pass `{ force: true }`.
+`unpack` accepts a local zip path or a download function. `createAi.download` is a signed R2 GetObject (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. If the directory is already unpacked, `unpack` reuses it unless you pass `{ force: true }`.
 
 If you already have a browserless instance:
 
@@ -92,7 +92,7 @@ pnpm --filter @browserless/ai pack-model
 pnpm --filter @browserless/ai pack-model -- --upload
 ```
 
-Writes `/tmp/browserless-ai-nano.zip`. `--upload` also pushes it to R2 (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`).
+Writes `/tmp/browserless-ai-nano.zip`. `--upload` also pushes it to R2 (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). Tests run `install-model` first and download that object when the same variables are set.
 
 ### Example
 

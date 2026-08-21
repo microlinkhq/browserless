@@ -1,7 +1,10 @@
 'use strict'
 
+const { pipeline } = require('node:stream/promises')
 const { createHmac, createHash } = require('node:crypto')
-const { createReadStream, statSync } = require('node:fs')
+const { Readable, Transform } = require('node:stream')
+const { createReadStream, createWriteStream, mkdirSync, statSync } = require('node:fs')
+const path = require('node:path')
 
 const UNSIGNED = 'UNSIGNED-PAYLOAD'
 const PART_SIZE = 16 * 1024 * 1024
@@ -152,22 +155,53 @@ const prettyBytes = n => {
   return `${n} B`
 }
 
-const reportUpload = (loaded, total) => {
+const reportProgress = (label, loaded, total) => {
   const pct = total ? Math.min(100, Math.floor((loaded / total) * 100)) : 0
-  process.stderr.write(`\ruploading ${prettyBytes(loaded)}/${prettyBytes(total)} ${pct}%`)
+  process.stderr.write(`\r${label} ${prettyBytes(loaded)}/${prettyBytes(total)} ${pct}%`)
+}
+
+const toNodeStream = body => {
+  if (!body) throw new Error('empty S3 body')
+  if (typeof body.pipe === 'function') return body
+  if (typeof body.getReader === 'function') return Readable.fromWeb(body)
+  return Readable.from(body)
+}
+
+const downloadFile = async (opts, dest) => {
+  const res = await signedFetch(opts, { method: 'GET' })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`R2 GET ${res.status}: ${text.slice(0, 500)}`)
+  }
+  const total = Number(res.headers.get('content-length')) || 0
+  let loaded = 0
+  mkdirSync(path.dirname(dest), { recursive: true })
+  await pipeline(
+    toNodeStream(res.body),
+    new Transform({
+      transform (chunk, _enc, cb) {
+        loaded += chunk.length
+        reportProgress('downloading', loaded, total)
+        cb(null, chunk)
+      }
+    }),
+    createWriteStream(dest)
+  )
+  reportProgress('downloading', loaded, total)
+  process.stderr.write('\n')
 }
 
 const uploadFile = async (opts, file) => {
   const { size } = statSync(file)
   if (size <= PART_SIZE) {
-    reportUpload(0, size)
+    reportProgress('uploading', 0, size)
     await request(opts, {
       method: 'PUT',
       body: createReadStream(file),
       contentLength: size,
       contentType: 'application/zip'
     })
-    reportUpload(size, size)
+    reportProgress('uploading', size, size)
     process.stderr.write('\n')
     return
   }
@@ -184,7 +218,7 @@ const uploadFile = async (opts, file) => {
     for (let start = 0; start < size; start += PART_SIZE, partNumber++) {
       const end = Math.min(start + PART_SIZE, size) - 1
       const length = end - start + 1
-      reportUpload(start, size)
+      reportProgress('uploading', start, size)
       const { headers } = await request(opts, {
         method: 'PUT',
         query: { partNumber, uploadId },
@@ -194,7 +228,7 @@ const uploadFile = async (opts, file) => {
       const etag = headers.get('etag')
       if (!etag) throw new Error(`part ${partNumber} missing ETag`)
       parts.push({ partNumber, etag })
-      reportUpload(end + 1, size)
+      reportProgress('uploading', end + 1, size)
     }
     process.stderr.write('\n')
     const body =
@@ -219,4 +253,4 @@ const uploadFile = async (opts, file) => {
   }
 }
 
-module.exports = { credentials, objectUrl, uploadFile }
+module.exports = { credentials, downloadFile, objectUrl, uploadFile }

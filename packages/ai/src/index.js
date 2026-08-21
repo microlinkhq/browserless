@@ -5,7 +5,7 @@ const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
 
-const { hasFile } = require('./find-dir')
+const { cacheRoot, hasFile } = require('./find-dir')
 const runAi = require('./run-ai')
 
 const withContext = async (getBrowserless, fn) => {
@@ -165,11 +165,15 @@ const chromeSupport = (...parts) =>
     ? path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome', ...parts)
     : undefined
 
-const resolveModelPath = dir =>
-  hasFile(dir || chromeSupport('OptGuideOnDeviceModel') || '', 'weights.bin')
+const resolveModelPath = dir => {
+  if (dir) return hasFile(dir, 'weights.bin')
+  const chrome = chromeSupport('OptGuideOnDeviceModel')
+  return hasFile(cacheRoot(), 'weights.bin') || (chrome && hasFile(chrome, 'weights.bin'))
+}
 
 const resolveAdaptationPath = dir => {
   if (dir) return fs.existsSync(dir) ? dir : undefined
+  if (hasFile(cacheRoot(), 'model-info.pb')) return cacheRoot()
   const store = chromeSupport('optimization_guide_model_store')
   return store && fs.existsSync(store) ? store : undefined
 }
@@ -239,3 +243,11 @@ const createAi = (input = {}) => {
 module.exports = createAi
 module.exports.launch = launch
 module.exports.unpack = require('./unpack')
+module.exports.download = dest => {
+  const { credentials, downloadFile } = require('../scripts/util')
+  const env = credentials()
+  if (!env.endpoint || !env.bucket || !env.accessKey || !env.secretKey) {
+    throw new Error('set R2_ENDPOINT, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY')
+  }
+  return downloadFile(env, dest)
+}

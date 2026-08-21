@@ -1,7 +1,13 @@
 'use strict'
 
 const path = require('node:path')
+const os = require('node:os')
 const { existsSync, readdirSync, statSync } = require('node:fs')
+
+const cacheRoot = () =>
+  process.env.XDG_CACHE_HOME
+    ? path.join(process.env.XDG_CACHE_HOME, 'browserless-ai')
+    : path.join(os.homedir(), '.cache', 'browserless-ai')
 
 const findDir = (root, predicate) => {
   if (!existsSync(root)) return
@@ -19,4 +25,4 @@ const findDir = (root, predicate) => {
 
 const hasFile = (root, file) => findDir(root, current => existsSync(path.join(current, file)))
 
-module.exports = { findDir, hasFile }
+module.exports = { cacheRoot, findDir, hasFile }

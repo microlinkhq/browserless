@@ -46,14 +46,16 @@
     "src"
   ],
   "scripts": {
-    "start": "node examples/index.js",
+    "install-model": "node scripts/install-model.js",
     "pack-model": "node scripts/pack-model.js",
+    "pretest": "node scripts/install-model.js",
+    "start": "node examples/index.js",
     "test": "ava"
   },
   "license": "MIT",
   "ava": {
     "serial": true,
-    "timeout": "2m",
+    "timeout": "5m",
     "workerThreads": false
   }
 }
