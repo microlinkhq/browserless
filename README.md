@@ -34,6 +34,7 @@
   - [.withPage(fn, \[options\])](#withpagefn-options)
   - [.page(\[name\])](#pagename)
 - [Extended](#extended)
+  - [ai](#ai)
   - [function](#function)
   - [lighthouse](#lighthouse)
   - [screencast](#screencast)
@@ -861,6 +862,43 @@ Optional name for the page, used in debug logs.
 
 ## Extended
 
+### ai
+
+The [`@browserless/ai`](https://npm.im/@browserless/ai) package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) APIs from Node:
+
+```js
+const createAi = require('@browserless/ai')
+const createBrowser = require('browserless')
+
+const browser = createBrowser(createAi.launch({ dir: process.env.BROWSERLESS_AI_DIR }))
+
+const ai = createAi(async teardown => {
+  const browserless = await browser.createContext()
+  teardown(() => browserless.destroyContext())
+  return browserless
+})
+
+await ai.capabilities()
+await ai.summarize('https://example.com', { type: 'tldr' })
+await ai.prompt('https://example.com', { prompt: 'What is this page about?' })
+await ai.extract('https://example.com', { schema: { type: 'object', properties: { title: { type: 'string' } } } })
+await ai.translate('https://example.com', { sourceLanguage: 'en', targetLanguage: 'es' })
+await ai.detectLanguage('https://example.com')
+```
+
+Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Create options are allow-listed per method (`temperature` / `topK` for prompt, `type` / `length` for summarize, languages for translate and detect).
+
+| Method | Chrome API |
+|--------|------------|
+| `capabilities` | feature detect |
+| `prompt` | `LanguageModel` |
+| `extract` | `LanguageModel` + schema |
+| `summarize` | `Summarizer` |
+| `translate` | `Translator` |
+| `detectLanguage` | `LanguageDetector` |
+
+`extract` requires `schema`. `translate` requires `sourceLanguage` and `targetLanguage`.
+
 ### function
 
 The [`@browserless/function`](https://npm.im/@browserless/function) package provides a secure sandbox to run arbitrary JavaScript code with runtime access to a browser page:
@@ -1015,6 +1053,7 @@ See [Page.startScreencast](https://chromedevtools.github.io/devtools-protocol/to
 | Package                                                                                               | Version                                                                                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | [browserless](https://github.com/microlinkhq/browserless/tree/master/packages/browserless)            | [![npm](https://img.shields.io/npm/v/browserless.svg?style=flat-square)](https://www.npmjs.com/package/browserless)                         |
+| [@browserless/ai](https://github.com/microlinkhq/browserless/tree/master/packages/ai)                 | [![npm](https://img.shields.io/npm/v/@browserless/ai.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/ai)                 |
 | [@browserless/benchmark](https://github.com/microlinkhq/browserless/tree/master/packages/benchmark)   | [![npm](https://img.shields.io/npm/v/@browserless/benchmark.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/benchmark)   |
 | [@browserless/capture](https://github.com/microlinkhq/browserless/tree/master/packages/capture)       | [![npm](https://img.shields.io/npm/v/@browserless/capture.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/capture)       |
 | [@browserless/cli](https://github.com/microlinkhq/browserless/tree/master/packages/cli)               | [![npm](https://img.shields.io/npm/v/@browserless/cli.svg?style=flat-square)](https://www.npmjs.com/package/@browserless/cli)               |
