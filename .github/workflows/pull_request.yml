@@ -52,6 +52,7 @@ jobs:
           key: browserless-ai-nano
       - name: Test
         env:
+          DEBUG: browserless:ai
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

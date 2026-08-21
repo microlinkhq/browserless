@@ -48,14 +48,17 @@
   "scripts": {
     "install-model": "node scripts/install-model.js",
     "pack-model": "node scripts/pack-model.js",
-    "pretest": "node scripts/install-model.js",
+    "pretest": "DEBUG=browserless:ai node scripts/install-model.js",
     "start": "node examples/index.js",
-    "test": "ava"
+    "test": "DEBUG=browserless:ai ava"
   },
   "license": "MIT",
   "ava": {
     "serial": true,
     "timeout": "5m",
     "workerThreads": false
+  },
+  "dependencies": {
+    "debug-logfmt": "~1.4.12"
   }
 }

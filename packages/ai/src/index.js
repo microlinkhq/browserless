@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:ai')
 const { crc32 } = require('node:zlib')
 const path = require('node:path')
 const fs = require('node:fs')
@@ -156,6 +157,7 @@ const resolveAdaptations = adaptationPath => {
       hasFile(path.join(adaptationPath, feature.name), 'model-info.pb') ||
       hasFile(path.join(adaptationPath, String(feature.target)), 'model-info.pb')
     if (dir) pairs.push(`${feature.flag}${OVERRIDE_SEP}${packAdaptation(dir, feature)}`)
+    debug('adaptation', { name: feature.name, dir: dir || false })
   }
   return pairs
 }
@@ -198,6 +200,19 @@ const launch = ({
     const pairs = resolveAdaptations(adaptationPath)
     if (pairs.length) args.push(`--optimization-guide-model-override=${pairs.join(',')}`)
   }
+  const weights = modelPath && path.join(modelPath, 'weights.bin')
+  debug('launch', {
+    dir: dir || false,
+    modelPath: modelPath || false,
+    weightsBytes: weights && fs.existsSync(weights) ? fs.statSync(weights).size : 0,
+    adaptationPath: adaptationPath || false,
+    overrides: args.filter(
+      arg =>
+        arg.includes('optimization-guide') ||
+        arg.includes('PromptAPI') ||
+        arg.includes('Summarization')
+    )
+  })
   return {
     ...(timeout != null && { timeout }),
     ...(protocolTimeout != null && { protocolTimeout }),
@@ -219,11 +234,14 @@ const createMethods = getBrowserless => {
     translate: createMethod(getBrowserless, { api: 'translate' }),
     detectLanguage: createMethod(getBrowserless, { api: 'detectLanguage' }),
     capabilities: ({ timeout = 120000, url = 'https://example.com' } = {}) =>
-      withContext(getBrowserless, browserless =>
-        browserless.evaluate(page => page.evaluate(runAi, { api: 'availability' }), { timeout })(
-          url
-        )
-      )
+      withContext(getBrowserless, async browserless => {
+        const available = await browserless.evaluate(
+          page => page.evaluate(runAi, { api: 'availability' }),
+          { timeout }
+        )(url)
+        debug('capabilities', available)
+        return available
+      })
   }
 }
 

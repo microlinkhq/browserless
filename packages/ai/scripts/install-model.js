@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug-logfmt')('browserless:ai')
 const createAi = require('..')
 const { credentials } = require('./util')
 
@@ -10,6 +11,7 @@ const main = async () => {
     return
   }
   const { dir } = await createAi.unpack(createAi.download)
+  debug('install-model', { dir })
   process.stdout.write(`${dir}\n`)
 }
 

@@ -17,6 +17,7 @@ const {
   writeFileSync
 } = require('node:fs')
 
+const debug = require('debug-logfmt')('browserless:ai')
 const { hasFile, cacheRoot } = require('./find-dir')
 
 const installed = dir => {
@@ -116,6 +117,7 @@ const unpack = async (get, { dir, force = false } = {}) => {
   mkdirSync(dir, { recursive: true })
 
   const already = installed(dir)
+  debug('unpack', { dir, force, installed: Boolean(already) })
   if (already && !force) return already
 
   const staging = `${dir}.partial`
