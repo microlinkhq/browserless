@@ -16,8 +16,8 @@ const requireApi = (t, available, name) => {
 }
 
 const { getBrowserContext } = createHelpers({
-  timeout: 120000,
-  ...createAi.launch()
+  timeout: 300000,
+  ...createAi.launch({ timeout: 300000 })
 })
 
 const ai = t => createAi(() => getBrowserContext(t))

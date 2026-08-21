@@ -21,7 +21,7 @@ const withContext = async (getBrowserless, fn) => {
 
 const createMethod =
   (getBrowserless, spec) =>
-    (url, { timeout = 120000, ...opts } = {}) =>
+    (url, { timeout = TIMEOUT, ...opts } = {}) =>
       withContext(getBrowserless, browserless =>
         browserless.evaluate(page => page.evaluate(runAi, { ...opts, ...spec }), { timeout })(url)
       )
@@ -30,6 +30,8 @@ const OVERRIDE_SEP = process.platform === 'win32' ? '|' : ':'
 
 const FEATURES =
   'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano,OnDeviceModelForceCpuBackend,OptimizationHints'
+
+const TIMEOUT = 300000
 
 const readVarint = (buf, offset) => {
   let value = 0
@@ -219,6 +221,7 @@ const launch = ({
   return {
     ...(timeout != null && { timeout }),
     ...(protocolTimeout != null && { protocolTimeout }),
+    ...(process.env.CI && { headless: false }),
     args
   }
 }
@@ -236,8 +239,19 @@ const createMethods = getBrowserless => {
     summarize: createMethod(getBrowserless, { api: 'summarize' }),
     translate: createMethod(getBrowserless, { api: 'translate' }),
     detectLanguage: createMethod(getBrowserless, { api: 'detectLanguage' }),
-    capabilities: ({ timeout = 120000, url = 'https://example.com' } = {}) =>
+    capabilities: ({ timeout = TIMEOUT, url = 'https://example.com' } = {}) =>
       withContext(getBrowserless, async browserless => {
+        const ctors = await browserless.evaluate(
+          page =>
+            page.evaluate(() => ({
+              languageModel: typeof globalThis.LanguageModel,
+              summarizer: typeof globalThis.Summarizer,
+              translator: typeof globalThis.Translator,
+              languageDetector: typeof globalThis.LanguageDetector
+            })),
+          { timeout: Math.min(timeout, 30000) }
+        )(url)
+        debug('ctors', ctors)
         const available = await browserless.evaluate(
           page => page.evaluate(runAi, { api: 'availability' }),
           { timeout }

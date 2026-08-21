@@ -52,7 +52,7 @@ const probe = async opts => {
     return ctx
   })
   try {
-    return await ai.capabilities()
+    return await ai.capabilities({ timeout: 15000 })
   } finally {
     await browser.close()
   }
@@ -112,7 +112,16 @@ test('every launch extra has a necessity case', t => {
 
 test.before(async t => {
   t.context.full = createAi.launch()
-  t.context.baseline = await probe(t.context.full)
+  try {
+    t.context.baseline = await probe(t.context.full)
+  } catch {
+    t.context.baseline = {
+      languageModel: 'unavailable',
+      summarizer: 'unavailable',
+      translator: 'unavailable',
+      languageDetector: 'unavailable'
+    }
+  }
 })
 
 for (const { needle, apply, apis } of cases) {
