@@ -864,7 +864,7 @@ Optional name for the page, used in debug logs.
 
 ### ai
 
-The [`@browserless/ai`](https://npm.im/@browserless/ai) package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) APIs from Node:
+The [`@browserless/ai`](https://npm.im/@browserless/ai) package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) APIs from Node.js:
 
 ```js
 const createAi = require('@browserless/ai')

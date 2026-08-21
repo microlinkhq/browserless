@@ -9,7 +9,7 @@
   <br><br>
 </div>
 
-> @browserless/ai: Run Chrome Built-in AI from Node.
+> @browserless/ai: Run Chrome Built-in AI from Node.js.
 
 See the [ai section](https://browserless.js.org/#/?id=ai) on our website for more information.
 
@@ -25,7 +25,7 @@ Requires Node.js 24+ and a [browserless](https://www.npmjs.com/package/browserle
 
 ## About
 
-This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) from Node. It evaluates Prompt, Summarizer, Translator, and Language Detector on a browserless page, so you can call those APIs from a script instead of a visible Chrome window.
+This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) from Node.js. It evaluates Prompt, Summarizer, Translator, and Language Detector on a browserless page, so you can call those APIs from a script instead of a visible Chrome window.
 
 Chrome for Testing cannot download Gemini Nano. Pack a model on a machine that already has it, unpack it into one directory, then pass that `dir` to `createAi` / `launch`.
 
@@ -116,7 +116,7 @@ pnpm --filter @browserless/ai start https://example.com
 
 ### How it fits in the monorepo
 
-This is an **extended functionality package**. It is not wired into `browserless` core — install `@browserless/ai` when you need Chrome Built-in AI from Node.
+This is an **extended functionality package**. It is not wired into `browserless` core — install `@browserless/ai` when you need Chrome Built-in AI from Node.js.
 
 ## License
 
