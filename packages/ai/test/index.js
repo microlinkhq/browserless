@@ -41,6 +41,14 @@ test('createAi() owns the browser', async t => {
   await methods.close()
 })
 
+test('createAi() uses Chrome for Testing', async t => {
+  const browser = require('browserless')(createAi.launch())
+  t.teardown(() => browser.close())
+  const instance = await browser.browser()
+  const exe = instance.process().spawnfile
+  t.true(/chrome-for-testing|chrome-(linux64|win64|win32|mac-(x64|arm64))/i.test(exe), exe)
+})
+
 test('launch overrides on-device models for Chrome for Testing', t => {
   const fs = require('node:fs')
   const os = require('node:os')
@@ -62,10 +70,10 @@ test('launch overrides on-device models for Chrome for Testing', t => {
   )
   t.true(args.some(arg => arg.includes('OPTIMIZATION_TARGET_LANGUAGE_DETECTION')))
   t.true(args.some(arg => arg.includes('OPTIMIZATION_TARGET_MODEL_EXECUTION_FEATURE_PROMPT_API')))
-  t.true(args.some(arg => arg.includes('PromptAPIForGeminiNano')))
+  t.false(args.some(arg => arg.includes('PromptAPIForGeminiNano')))
   t.true(args.some(arg => arg.includes('OnDeviceModelForceCpuBackend')))
   t.true(args.some(arg => arg.includes('OptimizationHints')))
-  t.true(args.some(arg => arg.includes('--optimization-guide-performance-class=3')))
+  t.true(args.some(arg => arg.includes('--disable-model-download-verification')))
   t.is(timeout, 120000)
   t.is(protocolTimeout, 120000)
 })

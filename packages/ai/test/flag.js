@@ -23,15 +23,11 @@ const extrasFrom = opts => {
 }
 
 const cases = [
-  'PromptAPIForGeminiNano',
-  'SummarizationAPIForGeminiNano',
   'OnDeviceModelForceCpuBackend',
   'OptimizationHints',
-  '--optimization-guide-performance-class',
-  '--optimization-guide-on-device-model',
+  '--disable-model-download-verification',
   '--optimization-guide-ondevice-model-execution-override',
-  '--optimization-guide-model-override',
-  '--disable-model-download-verification'
+  '--optimization-guide-model-override'
 ]
 
 test('every launch extra has a necessity case', t => {

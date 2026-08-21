@@ -50,12 +50,11 @@
     "pack-model": "node scripts/pack-model.js",
     "pretest": "DEBUG=browserless:ai node scripts/install-model.js",
     "start": "node examples/index.js",
-    "test": "DEBUG=browserless:ai ava --serial"
+    "test": "DEBUG=browserless:ai ava"
   },
   "license": "MIT",
   "ava": {
     "serial": true,
-    "concurrency": 1,
     "timeout": "10m",
     "workerThreads": false
   },

@@ -28,8 +28,7 @@ const createMethod =
 
 const OVERRIDE_SEP = process.platform === 'win32' ? '|' : ':'
 
-const FEATURES =
-  'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano,OnDeviceModelForceCpuBackend,OptimizationHints'
+const FEATURES = 'OnDeviceModelForceCpuBackend,OptimizationHints'
 
 const TIMEOUT = 300000
 
@@ -196,14 +195,10 @@ const launch = ({
   const args = defaultArgs
     .filter(arg => arg !== '--no-startup-window')
     .map(arg => (arg.startsWith('--enable-features=') ? `${arg},${FEATURES}` : arg))
-  args.push('--optimization-guide-on-device-model=Enabled')
-  // CfT hardcodes performance class to kGpuBlocked unless this is set.
-  args.push('--optimization-guide-performance-class=3')
-  // Unsigned zip named .crx3; skip Google publisher proof so Chrome will unzip it.
-  args.push('--disable-model-download-verification')
   if (process.env.BROWSERLESS_AI_DUMPIO) {
     args.push('--enable-logging=stderr', '--vmodule=optimization_guide*=1,on_device_model*=2')
   }
+  args.push('--disable-model-download-verification')
   if (modelPath) {
     args.push(`--optimization-guide-ondevice-model-execution-override=${modelPath}`)
   }

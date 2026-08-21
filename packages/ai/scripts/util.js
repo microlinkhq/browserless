@@ -1,9 +1,9 @@
 'use strict'
 
-const { pipeline } = require('node:stream/promises')
+const { createReadStream, createWriteStream, mkdirSync, statSync } = require('node:fs')
 const { createHmac, createHash } = require('node:crypto')
 const { Readable, Transform } = require('node:stream')
-const { createReadStream, createWriteStream, mkdirSync, statSync } = require('node:fs')
+const { pipeline } = require('node:stream/promises')
 const path = require('node:path')
 
 const UNSIGNED = 'UNSIGNED-PAYLOAD'
