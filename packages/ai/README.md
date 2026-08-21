@@ -79,7 +79,7 @@ Each page-processing method is `(url, options)`. Pass `options.text` to use your
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `dir` | `string` | `BROWSERLESS_AI_DIR` | Unpacked model tree (`nano/`, `prompt/`, `summarize/`, `detect/`) |
-| `timeout` | `number` | `120000` | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
+| `timeout` | `number` | `300000` | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
 
 `unpack(source, { dir, force })` writes to `dir` when you pass one. Otherwise it uses `BROWSERLESS_AI_DIR`, or `~/.cache/browserless-ai`.
 
