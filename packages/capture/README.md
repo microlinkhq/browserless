@@ -119,24 +119,25 @@ All three share the same factory signature — `createCapture({ goto })(page)(ur
 - `capture.extensionId`: Extension ID used by the package.
 - `capture.MODES`: Names of the available capture modes (entry points).
 - `capture.types`: Supported values for `type`.
-`capture` uses `goto(...).device.viewport` as the capture viewport source.
-When `video` is `true` or omitted, video constraints are inferred from that viewport to keep capture framing aligned with screenshot/pdf rendering.
-When `video` is an object, that object is used as the video constraints.
-When `audio` is an object, that object is used as the audio constraints.
-The inferred constraints also account for `deviceScaleFactor`, so output video pixels match screenshot pixel density.
-`type` is mapped internally to the MediaRecorder mime type, and `codec` is appended as `;codecs=...`.
-Default codecs are `vp9` for `webm` and `avc1.4D401F` for `mp4`.
-You can override codec per request using `opts.codec`.
-For example:
+
+`capture` uses `goto(...).device.viewport` as the capture viewport. When `video` is `true` or omitted, video constraints are inferred from that viewport so framing matches screenshot and PDF. Pass an object for `video` or `audio` to set those constraints yourself.
+
+Inferred constraints include `deviceScaleFactor`, so output pixels match screenshot density.
+
+`type` maps to a MediaRecorder mime type. `codec` is appended as `;codecs=...`. Defaults are `vp9` for `webm` and `avc1.4D401F` for `mp4`. Override per request with `opts.codec`:
 
 ```js
 await capture(page)(url, { type: 'webm', codec: 'vp8' })
 await capture(page)(url, { type: 'mp4', codec: 'avc1.640033' })
 ```
 
-When `type` is `'mp4'`, the running Chromium build must support MP4 MediaRecorder output.
-For strict screenshot/poster parity in headless mode, launch Chrome with matching `--screen-info`.
+When `type` is `'mp4'`, Chromium must support MP4 MediaRecorder output. For screenshot/poster parity in headless mode, launch Chrome with matching `--screen-info`.
 
 ## License
 
-**@browserless/capture** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.
+**@browserless/capture** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
+Authored and maintained by [Microlink](https://microlink.io) with help from [contributors](https://github.com/microlinkhq/browserless/contributors).
+
+The [logo](https://thenounproject.com/term/browser/288309/) has been designed by [xinh studio](https://xinh.studio).
+
+> [microlink.io](https://microlink.io) · GitHub [microlinkhq](https://github.com/microlinkhq) · X [@microlinkhq](https://x.com/microlinkhq)

@@ -9,6 +9,10 @@
   <br><br>
 </div>
 
+> browserless: The headless Chrome/Chromium driver on top of Puppeteer.
+
+See the [website](https://browserless.js.org) for the full API.
+
 ## Install
 
 Using npm:

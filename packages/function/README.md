@@ -9,9 +9,9 @@
   <br><br>
 </div>
 
-> @browserless/function: Run abritrary JavaScript inside a browser sandbox.
+> @browserless/function: Run arbitrary JavaScript inside a browser sandbox.
 
-See [function section](https://browserless.js.org/#/?id=function) our website for more information.
+See the [function section](https://browserless.js.org/#/?id=function) on our website for more information.
 
 ## Install
 
@@ -222,7 +222,7 @@ console.log(result.value.message) // => 'Something went wrong'
 
 ### How it fits in the monorepo
 
-This is an **extended functionality package** for advanced use cases. It makes the repository more extensible and customizable for any edge case you may encounter.
+This is an **extended functionality package**. It is not wired into `browserless` core — install it when you need a sandbox that can touch a page.
 
 ### Dependencies
 
@@ -235,7 +235,7 @@ This is an **extended functionality package** for advanced use cases. It makes t
 
 ## License
 
-**@browserless/functions** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
+**@browserless/function** © [Microlink](https://microlink.io), released under the [MIT](https://github.com/microlinkhq/browserless/blob/master/LICENSE.md) License.<br>
 Authored and maintained by [Microlink](https://microlink.io) with help from [contributors](https://github.com/microlinkhq/browserless/contributors).
 
 The [logo](https://thenounproject.com/term/browser/288309/) has been designed by [xinh studio](https://xinh.studio).

@@ -25,7 +25,7 @@ npm install @browserless/screenshot --save
 
 This package provides **advanced screenshot capture** with smart defaults, browser frame overlays, gradient backgrounds, and automatic code syntax highlighting. It wraps Puppeteer's `page.screenshot()` with features optimized for production use.
 
-### What This Package Does
+### What this package does
 
 The `@browserless/screenshot` package allows you to:
 
@@ -323,7 +323,7 @@ const buffer = await browserless.screenshot('https://example.com', {
     └── index.js            → Tests
 ```
 
-### How It Fits in the Monorepo
+### How it fits in the monorepo
 
 This is a **core functionality package** for screenshot capture:
 

@@ -11,7 +11,7 @@
 
 > @browserless/devices: A collection of different devices for emulation purposes.
 
-See [devices section](https://browserless.js.org/#/?id=getdeviceoptions) our website for more information.
+See the [devices section](https://browserless.js.org/#/?id=getdeviceoptions) on our website for more information.
 
 ## Install
 

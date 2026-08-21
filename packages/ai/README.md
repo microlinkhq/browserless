@@ -9,7 +9,7 @@
   <br><br>
 </div>
 
-> @browserless/ai: Chrome Built-in AI via browserless (Chrome for Testing, headless; GPU or CPU).
+> @browserless/ai: Run Chrome Built-in AI from Node.
 
 See the [ai section](https://browserless.js.org/#/?id=ai) on our website for more information.
 
@@ -21,11 +21,15 @@ Using npm:
 npm install @browserless/ai --save
 ```
 
+Requires Node.js 24+ and a [browserless](https://www.npmjs.com/package/browserless) peer.
+
 ## About
 
-This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) from Node by evaluating the APIs on a browserless page.
+This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) from Node. It evaluates Prompt, Summarizer, Translator, and Language Detector on a browserless page, so you can call those APIs from a script instead of a visible Chrome window.
 
-Chrome for Testing cannot download Gemini Nano. Unpack a packed model into one directory, then pass that `dir` to `createAi` / `launch`. Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)**.
+Chrome for Testing cannot download Gemini Nano. Pack a model on a machine that already has it, unpack it into one directory, then pass that `dir` to `createAi` / `launch`.
+
+Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)**.
 
 ### Usage
 
@@ -45,9 +49,9 @@ await ai.translate('https://example.com', { text: 'Hello', sourceLanguage: 'en',
 await ai.close()
 ```
 
-`unpack` accepts a local zip path or a download function. The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. Already-unpacked trees are reused unless `{ force: true }`.
+`unpack` accepts a local zip path or a download function. The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. If the directory is already unpacked, `unpack` reuses it unless you pass `{ force: true }`.
 
-If you already own the browser (lighthouse-style):
+If you already have a browserless instance:
 
 ```js
 const createBrowser = require('browserless')
@@ -61,7 +65,14 @@ const ai = createAi(async teardown => {
 })
 ```
 
-Each method is `(url, options)`. Input text is `options.text` when provided, otherwise `document.body.innerText` after navigation. Supported create options are `temperature` / `topK` / `initialPrompts` / `expectedInputs` / `expectedOutputs` for prompt, `type` / `format` / `length` / `sharedContext` / `expectedInputLanguages` / `outputLanguage` / `expectedContextLanguages` for summarize, `sourceLanguage` / `targetLanguage` for translate, and `expectedInputLanguages` for detectLanguage.
+Each method is `(url, options)`. Pass `options.text` to use your own input; otherwise the package reads `document.body.innerText` after navigation.
+
+| Method | Create options |
+|--------|----------------|
+| `prompt` / `extract` | `temperature`, `topK`, `initialPrompts`, `expectedInputs`, `expectedOutputs` |
+| `summarize` | `type`, `format`, `length`, `sharedContext`, `expectedInputLanguages`, `outputLanguage`, `expectedContextLanguages` |
+| `translate` | `sourceLanguage`, `targetLanguage` (required) |
+| `detectLanguage` | `expectedInputLanguages` |
 
 ### Options
 
@@ -70,7 +81,7 @@ Each method is `(url, options)`. Input text is `options.text` when provided, oth
 | `dir` | `string` | `BROWSERLESS_AI_DIR` | Unpacked model tree (`nano/`, `prompt/`, `summarize/`, `detect/`) |
 | `timeout` | `number` | `120000` | Launch and evaluate timeout (ms). `protocolTimeout` follows it |
 
-`unpack(source, { dir, force })` writes to `dir` when given, otherwise `BROWSERLESS_AI_DIR` or `~/.cache/browserless-ai`.
+`unpack(source, { dir, force })` writes to `dir` when you pass one. Otherwise it uses `BROWSERLESS_AI_DIR`, or `~/.cache/browserless-ai`.
 
 ### Pack a model
 
@@ -101,11 +112,11 @@ pnpm --filter @browserless/ai start https://example.com
 | `translate` | `Translator` | 138 |
 | `capabilities` | feature detect | — |
 
-`extract` requires `schema`. `translate` requires `sourceLanguage` and `targetLanguage`. Language Detector and Translator are expert models. Prompt / Summarizer use Gemini Nano.
+`extract` requires `schema`. `translate` requires `sourceLanguage` and `targetLanguage`. Language Detector and Translator download separately from Gemini Nano. Prompt and Summarizer use Nano.
 
 ### How it fits in the monorepo
 
-This is an **extended functionality package**. It is not wired into `browserless` core.
+This is an **extended functionality package**. It is not wired into `browserless` core — install `@browserless/ai` when you need Chrome Built-in AI from Node.
 
 ## License
 

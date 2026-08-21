@@ -11,7 +11,7 @@
 
 > @browserless/cli: CLI to interact with Browserless capabilities.
 
-See [CLI section](https://browserless.js.org/#/?id=cli) our website for more information.
+See the [CLI section](https://browserless.js.org/#/?id=cli) on our website for more information.
 
 ## Install
 
@@ -68,6 +68,7 @@ browserless capture https://example.com --type=webm --path=./capture.webm
 > <kbd>npm install -g @browserless/lighthouse</kbd>
 
 ### How it fits in the monorepo
+
 This package depends on:
 
 | Dependency                | Purpose                                                 |

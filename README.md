@@ -224,7 +224,7 @@ Changes the default maximum navigation time.
 type: `Puppeteer`<br/>
 default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
 
-By default, it automatically detects which libary is installed (thus either [puppeteer](https://www.npmjs.com/package/puppeteer) or [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) based on your installed dependecies.
+By default, it automatically detects which library is installed — either [puppeteer](https://www.npmjs.com/package/puppeteer) or [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) — based on your installed dependencies.
 
 ### .createContext(options)
 
@@ -415,7 +415,7 @@ default: `'atom-dark'`
 
 Whenever the incoming response `'Content-Type'` is set to `'json'`, the JSON payload will be presented as a formatted JSON string, beautified using the provided `codeScheme` theme or by default `atom-dark`. 
 
-The color schemes is based on the [Prism library](https://prismjs.com).
+The color scheme is based on the [Prism library](https://prismjs.com).
 
 ![](https://i.imgur.com/uFfviX7.png)
 
@@ -813,7 +813,7 @@ console.log(browserContext.id)
 
 ### .withPage(fn, [options])
 
-Returns a higher-order function as convenient way to interact with a page:
+Returns a higher-order function as a convenient way to interact with a page:
 
 ```js
 const getTitle = browserless.withPage((page, goto) => async opts => {
@@ -961,7 +961,7 @@ The [Lighthouse configuration](https://github.com/GoogleChrome/lighthouse/blob/m
 
 ```js
 const report = await lighthouse(url, {
-  onlyAudits: ['accessibility']
+  onlyCategories: ['accessibility']
 })
 ```
 
@@ -970,7 +970,7 @@ Also, you can extend from a different preset of settings:
 ```js
 const report = await lighthouse(url, {
   preset: 'desktop',
-  onlyAudits: ['accessibility']
+  onlyCategories: ['accessibility']
 })
 ```
 
@@ -1085,7 +1085,7 @@ Headless navigation is expensive compared to just fetching the content from a we
 
 To speed up the process, we block ad scripts by default because most of them are resource-intensive.
 
-**Q: My output is different from the expected**
+**Q: My output is different from what I expected**
 
 **Browserless** might have been too smart and blocked a request that you need.
 
@@ -1093,7 +1093,7 @@ You can activate debug mode using `DEBUG=browserless` environment variable in or
 
 Consider opening an [issue](https://github.com/microlinkhq/browserless/issues/new) with the debug trace.
 
-**Q: I want to use `browserless` with my AWS Lambda like project**
+**Q: I want to use `browserless` on AWS Lambda**
 
 Yes, check [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) to setup AWS Lambda with a binary compatible.
 

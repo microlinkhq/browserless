@@ -30,7 +30,7 @@ This package provides **PDF generation** from web pages with sensible defaults a
 The `@browserless/pdf` package allows you to:
 
 - **Generate PDFs** from any URL with production-ready defaults
-- **Auto-detect content rendering** using white screenshot detection
+- **Wait until the page is ready** before printing, including blank-screen checks
 - **Customize margins** with a simple string or per-side configuration
 - **Scale content** to fit pages optimally
 - **Use all Puppeteer PDF options** for advanced customization
