@@ -106,7 +106,7 @@ pnpm --filter @browserless/ai start https://example.com
 | Method | Chrome API | Chrome |
 |--------|------------|--------|
 | `prompt` | `LanguageModel` | 148 |
-| `extract` | `LanguageModel` + schema | 148 |
+| `extract` | `LanguageModel` + `schema` / `responseConstraint` | 148 |
 | `summarize` | `Summarizer` | 138 |
 | `detectLanguage` | `LanguageDetector` | 138 |
 | `translate` | `Translator` | 138 |
