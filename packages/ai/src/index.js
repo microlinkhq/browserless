@@ -263,15 +263,23 @@ const createMethods = getBrowserless => {
         const started = Date.now()
         let available
         for (;;) {
-          available = await browserless.evaluate(
-            page => page.evaluate(runAi, { api: 'availability' }),
-            { timeout }
-          )(url)
+          const left = timeout - (Date.now() - started)
+          if (left <= 0) break
+          try {
+            available = await browserless.evaluate(
+              page => page.evaluate(runAi, { api: 'availability' }),
+              { timeout: Math.min(20000, left) }
+            )(url)
+          } catch (error) {
+            if (left <= 20000) throw error
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            continue
+          }
           const apis = available.apis || available
           const pending = ['languageModel', 'summarizer', 'languageDetector'].some(
             api => apis[api] === 'downloading'
           )
-          if (!pending || Date.now() - started > timeout - 15000) break
+          if (!pending) break
           await new Promise(resolve => setTimeout(resolve, 2000))
         }
         debug('capabilities', available.apis || available, available.env)

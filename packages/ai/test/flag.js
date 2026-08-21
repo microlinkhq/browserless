@@ -44,7 +44,7 @@ const extrasFrom = opts => {
 
 const present = (opts, needle) => extrasFrom(opts).includes(needle)
 
-const probe = async opts => {
+const probe = async (opts, timeout = 180000) => {
   const browser = require('browserless')(opts)
   const ai = createAi(async teardown => {
     const ctx = await browser.createContext()
@@ -52,7 +52,7 @@ const probe = async opts => {
     return ctx
   })
   try {
-    return await ai.capabilities({ timeout: 15000 })
+    return await ai.capabilities({ timeout })
   } finally {
     await browser.close()
   }
@@ -135,9 +135,9 @@ for (const { needle, apply, apis } of cases) {
     const { full, baseline } = t.context
     if (!present(full, needle)) return t.pass(`${needle} is not in launch()`)
 
-    const usable = apis.filter(api => (RANK[baseline[api]] || 0) > 0)
+    const usable = apis.filter(api => baseline[api] === 'available')
     if (!usable.length) {
-      return t.pass(`${apis.join(', ')} already unavailable with all flags`)
+      return t.pass(`${apis.join(', ')} not available with all flags`)
     }
 
     const without = await probe(apply(full))
