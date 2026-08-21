@@ -70,6 +70,16 @@ const cases = [
     apis: ['summarizer']
   },
   {
+    needle: 'OnDeviceModelForceCpuBackend',
+    apply: opts => dropFeature(opts, 'OnDeviceModelForceCpuBackend'),
+    apis: ['languageModel', 'summarizer']
+  },
+  {
+    needle: '--optimization-guide-performance-class',
+    apply: opts => dropArg(opts, '--optimization-guide-performance-class='),
+    apis: ['languageModel', 'summarizer']
+  },
+  {
     needle: '--optimization-guide-on-device-model',
     apply: opts => dropArg(opts, '--optimization-guide-on-device-model='),
     apis: ['languageModel', 'summarizer', 'languageDetector']

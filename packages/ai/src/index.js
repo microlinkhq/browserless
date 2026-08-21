@@ -28,7 +28,7 @@ const createMethod =
 
 const OVERRIDE_SEP = process.platform === 'win32' ? '|' : ':'
 
-const FEATURES = 'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano'
+const FEATURES = 'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano,OnDeviceModelForceCpuBackend'
 
 const readVarint = (buf, offset) => {
   let value = 0
@@ -193,6 +193,8 @@ const launch = ({
     arg.startsWith('--enable-features=') ? `${arg},${FEATURES}` : arg
   )
   args.push('--optimization-guide-on-device-model=Enabled')
+  // CfT hardcodes performance class to kGpuBlocked unless this is set.
+  args.push('--optimization-guide-performance-class=3')
   if (modelPath) {
     args.push(`--optimization-guide-ondevice-model-execution-override=${modelPath}`)
   }
@@ -239,8 +241,8 @@ const createMethods = getBrowserless => {
           page => page.evaluate(runAi, { api: 'availability' }),
           { timeout }
         )(url)
-        debug('capabilities', available)
-        return available
+        debug('capabilities', available.apis || available, available.env)
+        return available.apis || available
       })
   }
 }

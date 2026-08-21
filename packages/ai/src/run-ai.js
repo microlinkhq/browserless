@@ -46,20 +46,30 @@ const runAi = async spec => {
         opts: { expectedInputLanguages: ['en'] }
       }
     }
-    const result = {}
+    const apis = {}
+    const ctors = {}
     for (const [api, { name, opts }] of Object.entries(probes)) {
       const Ctor = globalThis[name]
+      ctors[api] = typeof Ctor
       if (typeof Ctor === 'undefined') {
-        result[api] = 'unavailable'
+        apis[api] = 'unavailable'
         continue
       }
       try {
-        result[api] = await Ctor.availability(opts)
+        apis[api] = await Ctor.availability(opts)
       } catch {
-        result[api] = 'unavailable'
+        apis[api] = 'unavailable'
       }
     }
-    return result
+    return {
+      apis,
+      env: {
+        userAgent: globalThis.navigator && globalThis.navigator.userAgent,
+        hardwareConcurrency: globalThis.navigator && globalThis.navigator.hardwareConcurrency,
+        deviceMemory: globalThis.navigator && globalThis.navigator.deviceMemory,
+        ctors
+      }
+    }
   }
 
   const schema = spec.schema || spec.responseConstraint
