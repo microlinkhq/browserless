@@ -29,7 +29,7 @@ This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/buil
 
 Chrome for Testing does not download Gemini Nano for you. Pack a model on a machine that already has it, unpack it into one directory, then pass that `dir` to `createAi` / `launch`.
 
-Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)**.
+Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)** at runtime. The 22 GB profile-volume space and unmetered connection apply only when desktop Chrome first downloads Nano, not when you launch with a packed `dir`.
 
 ### Usage
 
