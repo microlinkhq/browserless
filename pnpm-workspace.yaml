@@ -1,4 +1,7 @@
 dangerouslyAllowAllBuilds: true
 minimumReleaseAge: 0
+# 10.3+ drops the CJS export commitlint resolves; 10.4+ trips lerna-lite's writer shim
+overrides:
+  conventional-changelog-conventionalcommits: 10.2.1
 packages:
   - 'packages/*'
