@@ -25,7 +25,7 @@ npm install @browserless/screencast --save
 
 This package provides **frame-by-frame video capture** from browser page navigation using the Chrome DevTools Protocol. It allows you to capture individual frames during page interactions for creating GIFs, videos, or frame-by-frame analysis.
 
-### What This Package Does
+### What this package does
 
 The `@browserless/screencast` package allows you to:
 
@@ -38,13 +38,6 @@ The `@browserless/screencast` package allows you to:
 ### Usage
 
 ```js
-const createScreencast = require('@browserless/screencast')
-const createBrowser = require('browserless')
-
-const browser = createBrowser()
-const browserless = await browser.createContext()
-const page = await browserless.page()
-
 const createScreencast = require('@browserless/screencast')
 const createBrowser = require('browserless')
 

@@ -33,7 +33,7 @@ The `@browserless/lighthouse` package allows you to:
 - **Generate reports** in JSON, HTML, or CSV formats
 - **Use Lighthouse presets** for desktop or mobile configurations
 - **Customize audits** by selecting specific categories or skipping certain checks
-- **Integrate seamlessly** with your existing browserless browser instance
+- **Reuse your existing browserless instance** for the audit
 
 ### Usage
 
@@ -98,9 +98,9 @@ const report = await lighthouse(url, { preset: 'lr-mobile' })
 ### Customizing audits
 
 ```js
-// Run only accessibility audits
+// Run only specific audits
 const report = await lighthouse(url, {
-  onlyAudits: ['accessibility']
+  onlyAudits: ['first-contentful-paint', 'largest-contentful-paint']
 })
 
 // Run only specific categories
@@ -145,7 +145,6 @@ This is an **extended functionality package** for performance auditing:
 | Consumer | Purpose |
 |----------|---------|
 | `@browserless/cli` | Powers the `browserless lighthouse` command |
-| User applications | Performance monitoring, CI/CD quality gates |
 
 ### Dependencies
 

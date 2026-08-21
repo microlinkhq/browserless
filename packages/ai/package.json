@@ -1,6 +1,6 @@
 {
   "name": "@browserless/ai",
-  "description": "Run Chrome Built-in AI APIs (Prompt, Summarizer, Translator, Language Detector) from Node using browserless.",
+  "description": "Run Chrome Built-in AI APIs (Prompt, Summarizer, Translator, Language Detector) from Node.js using browserless.",
   "homepage": "https://browserless.js.org",
   "version": "13.8.3",
   "main": "src",

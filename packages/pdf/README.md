@@ -30,7 +30,7 @@ This package provides **PDF generation** from web pages with sensible defaults a
 The `@browserless/pdf` package allows you to:
 
 - **Generate PDFs** from any URL with production-ready defaults
-- **Auto-detect content rendering** using white screenshot detection
+- **Wait until the page is ready** before printing, including blank-screen checks
 - **Customize margins** with a simple string or per-side configuration
 - **Scale content** to fit pages optimally
 - **Use all Puppeteer PDF options** for advanced customization
@@ -178,7 +178,7 @@ This is a **core functionality package** for PDF generation:
 | Package | Purpose |
 |---------|---------|
 | `@browserless/goto` | Page navigation with ad blocking |
-| `@browserless/screenshot` | White screen detection for content verification |
+| `@browserless/screenshot` | Readiness and blank-screen checks |
 | `@kikobeats/time-span` | Timing measurements for retry logic |
 | `debug-logfmt` | Structured debug logging |
 | `pretty-ms` | Human-readable time formatting |

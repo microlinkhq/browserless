@@ -34,7 +34,7 @@ The `@browserless/goto` package allows you to:
 - **Inject scripts, modules, and styles** into pages
 - **Emulate devices** with viewport, user agent, and media features
 - **Intercept and abort requests** by resource type
-- **Handle cookies and authentication** seamlessly
+- **Handle cookies and HTTP authentication**
 
 ### Usage
 

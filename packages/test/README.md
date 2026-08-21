@@ -9,7 +9,7 @@
   <br><br>
 </div>
 
-> A test suite for the **browserless** api
+> @browserless/test: Shared helpers for the browserless test suite.
 
 ## Install
 
@@ -18,6 +18,12 @@ Using npm:
 ```sh
 npm install @browserless/test --save-dev
 ```
+
+## About
+
+Internal helpers used by the monorepo tests: spin up a browserless instance, serve a fixture page, and compare screenshot or PDF output.
+
+This package is not a public product API.
 
 ## License
 
