@@ -98,6 +98,11 @@ const cases = [
     needle: '--optimization-guide-model-override',
     apply: opts => dropArg(opts, '--optimization-guide-model-override='),
     apis: ['languageModel', 'summarizer', 'languageDetector']
+  },
+  {
+    needle: '--disable-model-download-verification',
+    apply: opts => dropArg(opts, '--disable-model-download-verification'),
+    apis: ['languageModel', 'summarizer', 'languageDetector']
   }
 ]
 

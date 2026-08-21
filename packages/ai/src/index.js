@@ -185,19 +185,25 @@ const resolveAdaptationPath = dir => {
 
 const launch = ({
   dir = process.env.BROWSERLESS_AI_DIR,
-  timeout,
+  userDataDir = process.env.BROWSERLESS_AI_PROFILE,
+  timeout = TIMEOUT,
   protocolTimeout = timeout
 } = {}) => {
   const modelPath = resolveModelPath(dir)
   const adaptationPath = resolveAdaptationPath(dir)
 
   const { defaultArgs } = require('browserless').driver
-  const args = defaultArgs.map(arg =>
-    arg.startsWith('--enable-features=') ? `${arg},${FEATURES}` : arg
-  )
+  const args = defaultArgs
+    .filter(arg => arg !== '--no-startup-window')
+    .map(arg => (arg.startsWith('--enable-features=') ? `${arg},${FEATURES}` : arg))
   args.push('--optimization-guide-on-device-model=Enabled')
   // CfT hardcodes performance class to kGpuBlocked unless this is set.
   args.push('--optimization-guide-performance-class=3')
+  // Unsigned zip named .crx3; skip Google publisher proof so Chrome will unzip it.
+  args.push('--disable-model-download-verification')
+  if (process.env.BROWSERLESS_AI_DUMPIO) {
+    args.push('--enable-logging=stderr', '--vmodule=optimization_guide*=1,on_device_model*=2')
+  }
   if (modelPath) {
     args.push(`--optimization-guide-ondevice-model-execution-override=${modelPath}`)
   }
@@ -219,8 +225,10 @@ const launch = ({
     )
   })
   return {
-    ...(timeout != null && { timeout }),
-    ...(protocolTimeout != null && { protocolTimeout }),
+    timeout,
+    protocolTimeout,
+    ...(userDataDir && { userDataDir }),
+    ...(process.env.BROWSERLESS_AI_DUMPIO && { dumpio: true }),
     ...(process.env.CI && { headless: false }),
     args
   }
@@ -252,10 +260,20 @@ const createMethods = getBrowserless => {
           { timeout: Math.min(timeout, 30000) }
         )(url)
         debug('ctors', ctors)
-        const available = await browserless.evaluate(
-          page => page.evaluate(runAi, { api: 'availability' }),
-          { timeout }
-        )(url)
+        const started = Date.now()
+        let available
+        for (;;) {
+          available = await browserless.evaluate(
+            page => page.evaluate(runAi, { api: 'availability' }),
+            { timeout }
+          )(url)
+          const apis = available.apis || available
+          const pending = ['languageModel', 'summarizer', 'languageDetector'].some(
+            api => apis[api] === 'downloading'
+          )
+          if (!pending || Date.now() - started > timeout - 15000) break
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
         debug('capabilities', available.apis || available, available.env)
         return available.apis || available
       })

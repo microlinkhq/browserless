@@ -107,8 +107,8 @@ const runAi = async spec => {
 
   if (availability === 'downloading') {
     const started = Date.now()
-    while (availability === 'downloading' && Date.now() - started < 60000) {
-      await new Promise(resolve => setTimeout(resolve, 250))
+    while (availability === 'downloading' && Date.now() - started < 240000) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
       availability = await Ctor.availability(createOpts)
     }
     if (availability === 'unavailable' || availability === 'downloading') {
