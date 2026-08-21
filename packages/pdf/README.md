@@ -178,7 +178,7 @@ This is a **core functionality package** for PDF generation:
 | Package | Purpose |
 |---------|---------|
 | `@browserless/goto` | Page navigation with ad blocking |
-| `@browserless/screenshot` | White screen detection for content verification |
+| `@browserless/screenshot` | Readiness and blank-screen checks |
 | `@kikobeats/time-span` | Timing measurements for retry logic |
 | `debug-logfmt` | Structured debug logging |
 | `pretty-ms` | Human-readable time formatting |

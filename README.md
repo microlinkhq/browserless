@@ -224,7 +224,7 @@ Changes the default maximum navigation time.
 type: `Puppeteer`<br/>
 default: `puppeteer`|`puppeteer-core`|`puppeteer-firefox`
 
-By default, it automatically detects which library is installed — either [puppeteer](https://www.npmjs.com/package/puppeteer) or [puppeteer-core](https://www.npmjs.com/package/puppeteer-core) — based on your installed dependencies.
+By default, it automatically detects which library is installed — [puppeteer](https://www.npmjs.com/package/puppeteer), [puppeteer-core](https://www.npmjs.com/package/puppeteer-core), or [puppeteer-firefox](https://www.npmjs.com/package/puppeteer-firefox) — based on your installed dependencies.
 
 ### .createContext(options)
 

@@ -27,7 +27,7 @@ Requires Node.js 24+ and a [browserless](https://www.npmjs.com/package/browserle
 
 This package runs [Chrome Built-in AI](https://developer.chrome.com/docs/ai/built-in-apis) from Node.js. It evaluates Prompt, Summarizer, Translator, and Language Detector on a browserless page, so you can call those APIs from a script instead of a visible Chrome window.
 
-Chrome for Testing cannot download Gemini Nano. Pack a model on a machine that already has it, unpack it into one directory, then pass that `dir` to `createAi` / `launch`.
+Chrome for Testing does not download Gemini Nano for you. Pack a model on a machine that already has it, unpack it into one directory, then pass that `dir` to `createAi` / `launch`.
 
 Chrome’s docs allow the foundation model on **GPU (>4 GB VRAM) or CPU (16 GB RAM, 4+ cores)**.
 
@@ -65,7 +65,7 @@ const ai = createAi(async teardown => {
 })
 ```
 
-Each method is `(url, options)`. Pass `options.text` to use your own input; otherwise the package reads `document.body.innerText` after navigation.
+Each page-processing method is `(url, options)`. Pass `options.text` to use your own input; otherwise the package reads `document.body.innerText` after navigation. `capabilities` accepts `{ timeout, url }` and supplies defaults.
 
 | Method | Create options |
 |--------|----------------|
@@ -112,7 +112,7 @@ pnpm --filter @browserless/ai start https://example.com
 | `translate` | `Translator` | 138 |
 | `capabilities` | feature detect | — |
 
-`extract` requires `schema`. `translate` requires `sourceLanguage` and `targetLanguage`. Language Detector and Translator download separately from Gemini Nano. Prompt and Summarizer use Nano.
+`extract` requires `schema` or `responseConstraint`. `translate` requires `sourceLanguage` and `targetLanguage`. Language Detector and Translator download separately from Gemini Nano. Prompt and Summarizer use Nano.
 
 ### How it fits in the monorepo
 
