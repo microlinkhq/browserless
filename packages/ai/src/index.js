@@ -28,7 +28,8 @@ const createMethod =
 
 const OVERRIDE_SEP = process.platform === 'win32' ? '|' : ':'
 
-const FEATURES = 'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano,OnDeviceModelForceCpuBackend'
+const FEATURES =
+  'PromptAPIForGeminiNano,SummarizationAPIForGeminiNano,OnDeviceModelForceCpuBackend,OptimizationHints'
 
 const readVarint = (buf, offset) => {
   let value = 0

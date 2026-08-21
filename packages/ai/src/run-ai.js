@@ -64,10 +64,9 @@ const runAi = async spec => {
     return {
       apis,
       env: {
-        userAgent: globalThis.navigator && globalThis.navigator.userAgent,
         hardwareConcurrency: globalThis.navigator && globalThis.navigator.hardwareConcurrency,
         deviceMemory: globalThis.navigator && globalThis.navigator.deviceMemory,
-        ctors
+        ...Object.fromEntries(Object.entries(ctors).map(([key, value]) => [`ctor_${key}`, value]))
       }
     }
   }

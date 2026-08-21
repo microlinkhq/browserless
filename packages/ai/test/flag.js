@@ -75,6 +75,11 @@ const cases = [
     apis: ['languageModel', 'summarizer']
   },
   {
+    needle: 'OptimizationHints',
+    apply: opts => dropFeature(opts, 'OptimizationHints'),
+    apis: ['languageModel', 'summarizer', 'languageDetector']
+  },
+  {
     needle: '--optimization-guide-performance-class',
     apply: opts => dropArg(opts, '--optimization-guide-performance-class='),
     apis: ['languageModel', 'summarizer']

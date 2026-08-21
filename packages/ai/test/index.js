@@ -64,6 +64,7 @@ test('launch overrides on-device models for Chrome for Testing', t => {
   t.true(args.some(arg => arg.includes('OPTIMIZATION_TARGET_MODEL_EXECUTION_FEATURE_PROMPT_API')))
   t.true(args.some(arg => arg.includes('PromptAPIForGeminiNano')))
   t.true(args.some(arg => arg.includes('OnDeviceModelForceCpuBackend')))
+  t.true(args.some(arg => arg.includes('OptimizationHints')))
   t.true(args.some(arg => arg.includes('--optimization-guide-performance-class=3')))
   t.is(timeout, 120000)
   t.is(protocolTimeout, 120000)
