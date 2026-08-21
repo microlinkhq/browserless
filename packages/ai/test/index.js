@@ -6,7 +6,7 @@ const test = require('ava')
 const { cacheRoot, hasFile } = require('../src/find-dir')
 const createAi = require('..')
 
-const isCI = !!process.env.CI
+const isGitHub = !!process.env.GITHUB_ACTIONS
 
 const hasModel = () =>
   Boolean(hasFile(process.env.BROWSERLESS_AI_DIR || cacheRoot(), 'weights.bin'))
@@ -95,7 +95,7 @@ test('launch accepts a single adaptation file', t => {
   const { args } = createAi.launch({ dir: file })
   t.true(args.some(arg => arg.includes(`OPTIMIZATION_TARGET_LANGUAGE_DETECTION:${file}`)))
 })
-;(isCI ? test.skip : test)('capabilities reports each API', async t => {
+;(isGitHub ? test.skip : test)('capabilities reports each API', async t => {
   const available = await ai(t).capabilities()
   t.deepEqual(Object.keys(available).sort(), [
     'languageDetector',
@@ -120,7 +120,7 @@ test('translate requires sourceLanguage and targetLanguage', async t => {
   const error = await t.throwsAsync(ai(t).translate(url, { text: 'Hello' }))
   t.true(error.message.includes('Translator'))
 })
-;(isCI ? test.skip : test)('detectLanguage', async t => {
+;(isGitHub ? test.skip : test)('detectLanguage', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
   if (!requireApi(t, available, 'languageDetector')) return
@@ -129,7 +129,7 @@ test('translate requires sourceLanguage and targetLanguage', async t => {
   t.true(result.length > 0)
   t.is(typeof result[0].detectedLanguage, 'string')
 })
-;(isCI ? test.skip : test)('summarize', async t => {
+;(isGitHub ? test.skip : test)('summarize', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
   if (!requireApi(t, available, 'summarizer')) return
@@ -151,7 +151,7 @@ test('translate requires sourceLanguage and targetLanguage', async t => {
     t.true(String(error.message).includes('low quality'), error.message)
   }
 })
-;(isCI ? test.skip : test)('prompt', async t => {
+;(isGitHub ? test.skip : test)('prompt', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
   if (!requireApi(t, available, 'languageModel')) return
@@ -159,7 +159,7 @@ test('translate requires sourceLanguage and targetLanguage', async t => {
   t.is(typeof result, 'string')
   t.true(result.length > 0)
 })
-;(isCI ? test.skip : test)('translate', async t => {
+;(isGitHub ? test.skip : test)('translate', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
   if (available.translator !== 'available') return t.pass()
