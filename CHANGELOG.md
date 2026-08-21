@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.0](https://github.com/microlinkhq/browserless/compare/v13.8.3...v13.9.0) (2026-08-21)
+
+### Features
+
+* **ai:** add Chrome Built-in AI package ([#887](https://github.com/microlinkhq/browserless/issues/887)) ([49a51b8](https://github.com/microlinkhq/browserless/commit/49a51b8d5cd65d0f76d113d25c92bb8aa7de64d5))
+* **ai:** download R2 model for CI tests ([#894](https://github.com/microlinkhq/browserless/issues/894)) ([88270cf](https://github.com/microlinkhq/browserless/commit/88270cf5c92eaec846379935f66c54a2063de32d))
+
+### Bug Fixes
+
+* pin changelog preset to 10.2.1 ([#892](https://github.com/microlinkhq/browserless/issues/892)) ([dd3c3d5](https://github.com/microlinkhq/browserless/commit/dd3c3d5d5909950d3dd10dab8ef63e47d116c4e7))
+
 ## [13.8.3](https://github.com/microlinkhq/browserless/compare/v13.8.2...v13.8.3) (2026-08-18)
 
 **Note:** Version bump only for package browserless
