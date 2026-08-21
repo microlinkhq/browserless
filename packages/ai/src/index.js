@@ -262,6 +262,7 @@ const createMethods = getBrowserless => {
         debug('ctors', ctors)
         const started = Date.now()
         let available
+        let lastError
         for (;;) {
           const left = timeout - (Date.now() - started)
           if (left <= 0) break
@@ -270,7 +271,9 @@ const createMethods = getBrowserless => {
               page => page.evaluate(runAi, { api: 'availability' }),
               { timeout: Math.min(20000, left) }
             )(url)
+            lastError = undefined
           } catch (error) {
+            lastError = error
             if (left <= 20000) throw error
             await new Promise(resolve => setTimeout(resolve, 2000))
             continue
@@ -282,6 +285,7 @@ const createMethods = getBrowserless => {
           if (!pending) break
           await new Promise(resolve => setTimeout(resolve, 2000))
         }
+        if (!available) throw lastError || new Error('capabilities timed out')
         debug('capabilities', available.apis || available, available.env)
         return available.apis || available
       })

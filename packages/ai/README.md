@@ -49,7 +49,7 @@ await ai.translate('https://example.com', { text: 'Hello', sourceLanguage: 'en',
 await ai.close()
 ```
 
-`unpack` accepts a local zip path or a download function. `createAi.download` is a signed R2 GetObject (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. If the directory is already unpacked, `unpack` reuses it unless you pass `{ force: true }`.
+`unpack` accepts a local zip path or a download function. `createAi.download` is a signed R2 GetObject (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). The bucket and object key can live in `R2_ENDPOINT` (`https://<account>.r2.cloudflarestorage.com/<bucket>/<key>`), or in `R2_BUCKET` / `R2_KEY`. The function can return a path, `Buffer`, stream, or S3 `GetObject` result, or write to the `dest` path it receives. If the directory is already unpacked, `unpack` reuses it unless you pass `{ force: true }`.
 
 If you already have a browserless instance:
 
@@ -92,7 +92,7 @@ pnpm --filter @browserless/ai pack-model
 pnpm --filter @browserless/ai pack-model -- --upload
 ```
 
-Writes `/tmp/browserless-ai-nano.zip`. `--upload` also pushes it to R2 (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). Tests run `install-model` first and download that object when the same variables are set.
+Writes `/tmp/browserless-ai-nano.zip`. `--upload` also pushes it to R2 (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`; bucket/key may be in the endpoint URL). Tests run `install-model` first and download that object when the same variables are set.
 
 ### Example
 

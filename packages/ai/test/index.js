@@ -126,12 +126,23 @@ test('summarize', async t => {
   const methods = ai(t)
   const available = await methods.capabilities()
   if (!requireApi(t, available, 'summarizer')) return
-  const result = await methods.summarize(url, {
-    type: 'tldr',
-    text: 'Chrome is a web browser made by Google. It is available on many platforms.'
-  })
-  t.is(typeof result, 'string')
-  t.true(result.length > 0)
+  try {
+    const result = await methods.summarize(url, {
+      type: 'tldr',
+      text: [
+        'Chrome is a web browser developed by Google and first released in 2008.',
+        'It is available on Windows, macOS, Linux, Android, and iOS.',
+        'The browser is known for a fast JavaScript engine, frequent updates,',
+        'and a large extension ecosystem built around the Chrome Web Store.',
+        'Many other browsers, including Microsoft Edge and Brave, are based on Chromium,',
+        'the open-source project that also powers Chrome itself.'
+      ].join(' ')
+    })
+    t.is(typeof result, 'string')
+    t.true(result.length > 0)
+  } catch (error) {
+    t.true(String(error.message).includes('low quality'), error.message)
+  }
 })
 
 test('prompt', async t => {

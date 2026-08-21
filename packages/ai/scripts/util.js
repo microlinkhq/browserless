@@ -111,7 +111,10 @@ const sign = ({
   return headers
 }
 
-const signedFetch = async (opts, { method, query = {}, body, contentLength, contentType }) => {
+const signedFetch = async (
+  opts,
+  { method, query = {}, body, contentLength, contentType, signal }
+) => {
   const pathname = objectPath(opts.bucket, opts.key)
   const extraHeaders = {}
   if (contentLength != null) extraHeaders['content-length'] = String(contentLength)
@@ -132,6 +135,7 @@ const signedFetch = async (opts, { method, query = {}, body, contentLength, cont
     method,
     headers,
     body,
+    signal,
     duplex: body && typeof body !== 'string' ? 'half' : undefined
   })
 }
@@ -176,8 +180,13 @@ const toNodeStream = body => {
   return Readable.from(body)
 }
 
+const DOWNLOAD_TIMEOUT = 15 * 60 * 1000
+
 const downloadFile = async (opts, dest) => {
-  const res = await signedFetch(opts, { method: 'GET' })
+  const res = await signedFetch(opts, {
+    method: 'GET',
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT)
+  })
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`R2 GET ${res.status}: ${text.slice(0, 500)}`)
