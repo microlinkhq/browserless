@@ -155,9 +155,18 @@ const prettyBytes = n => {
   return `${n} B`
 }
 
-const reportProgress = (label, loaded, total) => {
-  const pct = total ? Math.min(100, Math.floor((loaded / total) * 100)) : 0
-  process.stderr.write(`\r${label} ${prettyBytes(loaded)}/${prettyBytes(total)} ${pct}%`)
+const createReporter = label => {
+  const interactive = process.stderr.isTTY && !process.env.CI
+  let last = 0
+  return (loaded, total, done = false) => {
+    const now = Date.now()
+    if (!done && now - last < (interactive ? 200 : 5000)) return
+    last = now
+    const pct = total ? Math.min(100, Math.floor((loaded / total) * 100)) : 0
+    const line = `${label} ${prettyBytes(loaded)}/${prettyBytes(total)} ${pct}%`
+    process.stderr.write(interactive ? `\r${line}` : `${line}\n`)
+    if (done && interactive) process.stderr.write('\n')
+  }
 }
 
 const toNodeStream = body => {
@@ -174,6 +183,7 @@ const downloadFile = async (opts, dest) => {
     throw new Error(`R2 GET ${res.status}: ${text.slice(0, 500)}`)
   }
   const total = Number(res.headers.get('content-length')) || 0
+  const report = createReporter('downloading')
   let loaded = 0
   mkdirSync(path.dirname(dest), { recursive: true })
   await pipeline(
@@ -181,28 +191,27 @@ const downloadFile = async (opts, dest) => {
     new Transform({
       transform (chunk, _enc, cb) {
         loaded += chunk.length
-        reportProgress('downloading', loaded, total)
+        report(loaded, total)
         cb(null, chunk)
       }
     }),
     createWriteStream(dest)
   )
-  reportProgress('downloading', loaded, total)
-  process.stderr.write('\n')
+  report(loaded, total, true)
 }
 
 const uploadFile = async (opts, file) => {
   const { size } = statSync(file)
+  const report = createReporter('uploading')
   if (size <= PART_SIZE) {
-    reportProgress('uploading', 0, size)
+    report(0, size)
     await request(opts, {
       method: 'PUT',
       body: createReadStream(file),
       contentLength: size,
       contentType: 'application/zip'
     })
-    reportProgress('uploading', size, size)
-    process.stderr.write('\n')
+    report(size, size, true)
     return
   }
 
@@ -218,7 +227,7 @@ const uploadFile = async (opts, file) => {
     for (let start = 0; start < size; start += PART_SIZE, partNumber++) {
       const end = Math.min(start + PART_SIZE, size) - 1
       const length = end - start + 1
-      reportProgress('uploading', start, size)
+      report(start, size)
       const { headers } = await request(opts, {
         method: 'PUT',
         query: { partNumber, uploadId },
@@ -228,9 +237,9 @@ const uploadFile = async (opts, file) => {
       const etag = headers.get('etag')
       if (!etag) throw new Error(`part ${partNumber} missing ETag`)
       parts.push({ partNumber, etag })
-      reportProgress('uploading', end + 1, size)
+      report(end + 1, size)
     }
-    process.stderr.write('\n')
+    report(size, size, true)
     const body =
       '<CompleteMultipartUpload>' +
       parts
