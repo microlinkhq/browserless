@@ -1,11 +1,11 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless:screenshot')
-const { isContextDestroyed } = require('@browserless/errors')
 const createGoto = require('@browserless/goto')
 const { extname } = require('node:path')
 const pReflect = require('p-reflect')
 
+const isTransientContextLoss = require('./is-transient-context-loss')
 const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
@@ -22,15 +22,22 @@ const {
 
 const timeSpan = require('@kikobeats/time-span')()
 
+// No pacing here on purpose: `waitUntilAuto` is a network-idle wait, which on a
+// live page costs at least its idle window (~500ms) and at most what is left of
+// the budget. The runaway case was never a fast loop — it was retrying a page
+// that was gone, where the wait returns instantly. Classify that and the loop
+// paces itself on real work.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
+  const remaining = () => timeout - elapsed()
   while (true) {
     try {
       return await capture()
     } catch (error) {
-      if (!isContextDestroyed(error) || elapsed() >= timeout) throw error
+      if (!isTransientContextLoss(page, error) || remaining() <= 0) throw error
       debug('captureWithNavigationRetry', { error: error.message })
-      await goto.waitUntilAuto(page, { timeout })
+      await goto.waitUntilAuto(page, { timeout: remaining() })
+      if (remaining() <= 0) throw error
     }
   }
 }

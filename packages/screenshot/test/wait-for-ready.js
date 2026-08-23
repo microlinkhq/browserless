@@ -10,6 +10,7 @@ const { waitForReady } = require('..')
 const scriptedPage = frames => {
   let i = 0
   return {
+    isClosed: () => false,
     evaluate: async () => {
       const frame = frames[Math.min(i, frames.length - 1)]
       i++
@@ -54,6 +55,28 @@ test('clamps the quiet window to the budget so a tiny timeout still resolves', a
   t.false(r.timedOut)
 })
 
+test('a closed page surfaces at once instead of polling out its budget', async t => {
+  const boom = new Error('Session closed. Most likely the page has been closed.')
+  let evaluations = 0
+  const page = {
+    isClosed: () => true,
+    evaluate: async () => {
+      evaluations++
+      throw boom
+    }
+  }
+
+  // A budget far larger than the poll interval is the point: were the gate to
+  // keep polling, this would run ~200 evaluations before timing out. Counting
+  // them says that deterministically, where a wall-clock bound would only say
+  // it under a CI scheduler that behaved.
+  await t.throwsAsync(() => waitForReady(page, { timeout: 2000, quietMs: 40, poll: 10 }), {
+    message: /Session closed/
+  })
+
+  t.is(evaluations, 1, 'did not poll a page that is gone')
+})
+
 test('a non-navigation evaluate error surfaces instead of spinning to a timeout', async t => {
   const boom = new Error('Evaluation failed: ReferenceError: paintSignals is not defined')
   const page = scriptedPage([READY, boom])
@@ -65,6 +88,7 @@ test('a non-navigation evaluate error surfaces instead of spinning to a timeout'
 test('times out when the page never settles (height keeps growing)', async t => {
   let h = 0
   const page = {
+    isClosed: () => false,
     evaluate: async () => ({ height: (h += 100), images: 2, decoded: 2, complete: true })
   }
   const r = await waitForReady(page, { timeout: 200, quietMs: 60, poll: 10 })
@@ -74,6 +98,7 @@ test('times out when the page never settles (height keeps growing)', async t => 
 test('the poll sleep is clamped to the deadline so a huge poll cannot overshoot', async t => {
   let h = 0
   const page = {
+    isClosed: () => false,
     evaluate: async () => ({ height: (h += 100), images: 0, decoded: 0, complete: true })
   }
   const start = Date.now()
