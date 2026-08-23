@@ -184,5 +184,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          pnpm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN"
+          # lerna publishes via npm, which reads .npmrc — not pnpm config
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
           pnpm run release
