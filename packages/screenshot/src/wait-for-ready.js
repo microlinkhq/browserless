@@ -1,7 +1,7 @@
 'use strict'
 
 const { setTimeout: sleep } = require('node:timers/promises')
-const { isContextDestroyed } = require('@browserless/errors')
+const isTransientContextLoss = require('./is-transient-context-loss')
 
 const DEFAULT_QUIET_MS = 300
 const DEFAULT_POLL_MS = 150
@@ -193,7 +193,7 @@ const waitForReady = async (
     try {
       signals = await page.evaluate(paintSignals)
     } catch (error) {
-      if (!isContextDestroyed(error)) throw error
+      if (!isTransientContextLoss(page, error)) throw error
       resets++
       lastHeight = -1
       quietSince = 0

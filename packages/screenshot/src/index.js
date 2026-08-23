@@ -1,12 +1,12 @@
 'use strict'
 
 const debug = require('debug-logfmt')('browserless:screenshot')
-const { isContextDestroyed } = require('@browserless/errors')
 const createGoto = require('@browserless/goto')
 const { setTimeout: sleep } = require('node:timers/promises')
 const { extname } = require('node:path')
 const pReflect = require('p-reflect')
 
+const isTransientContextLoss = require('./is-transient-context-loss')
 const isWhiteScreenshot = require('./is-white-screenshot')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
@@ -23,11 +23,9 @@ const {
 
 const timeSpan = require('@kikobeats/time-span')()
 
-// A destroyed context is only worth retrying while the page is still alive: a
-// closed page (or session) never comes back, and `waitUntilAuto` resolves at
-// once against it, so retrying without a floor spins the loop for the whole
-// budget. Both guards keep the retry bounded, pacing at the same cadence the
-// readiness poll uses to re-check a page it is waiting on.
+// `waitUntilAuto` resolves at once against a page we no longer have, so without
+// a floor the retry spins for the whole budget. Pace it at the same cadence the
+// readiness poll re-checks a page with.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
   while (true) {
@@ -35,7 +33,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
       return await capture()
     } catch (error) {
       const remaining = timeout - elapsed()
-      if (!isContextDestroyed(error) || page.isClosed() || remaining <= 0) throw error
+      if (!isTransientContextLoss(page, error) || remaining <= 0) throw error
       debug('captureWithNavigationRetry', { error: error.message })
       await goto.waitUntilAuto(page, { timeout: remaining })
       await sleep(Math.max(0, Math.min(DEFAULT_POLL_MS, timeout - elapsed())))
