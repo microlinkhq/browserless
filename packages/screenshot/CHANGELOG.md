@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.2](https://github.com/microlinkhq/browserless/compare/v13.9.1...v13.9.2) (2026-08-23)
+
+### Bug Fixes
+
+* **screenshot:** bound the capture navigation retry ([#898](https://github.com/microlinkhq/browserless/issues/898)) ([ef80e7b](https://github.com/microlinkhq/browserless/commit/ef80e7b87aa91025635e0264e68bd34ef9461212))
+
 ## [13.9.1](https://github.com/microlinkhq/browserless/compare/v13.9.0...v13.9.1) (2026-08-23)
 
 ### Bug Fixes
