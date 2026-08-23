@@ -2,7 +2,6 @@
 
 const debug = require('debug-logfmt')('browserless:screenshot')
 const createGoto = require('@browserless/goto')
-const { setTimeout: sleep } = require('node:timers/promises')
 const { extname } = require('node:path')
 const pReflect = require('p-reflect')
 
@@ -12,7 +11,7 @@ const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
 const { waitForDomStability } = require('./wait-for-dom')
-const { waitForReady, paintSignals, DEFAULT_POLL_MS } = require('./wait-for-ready')
+const { waitForReady, paintSignals } = require('./wait-for-ready')
 const {
   expandOverflow,
   scrollFullPageToLoadContent,
@@ -23,9 +22,11 @@ const {
 
 const timeSpan = require('@kikobeats/time-span')()
 
-// `waitUntilAuto` resolves at once against a page we no longer have, so without
-// a floor the retry spins for the whole budget. Pace it at the same cadence the
-// readiness poll re-checks a page with.
+// No pacing here on purpose: `waitUntilAuto` is a network-idle wait, which on a
+// live page costs at least its idle window (~500ms) and at most what is left of
+// the budget. The runaway case was never a fast loop — it was retrying a page
+// that was gone, where the wait returns instantly. Classify that and the loop
+// paces itself on real work.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
   while (true) {
@@ -36,7 +37,6 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
       if (!isTransientContextLoss(page, error) || remaining <= 0) throw error
       debug('captureWithNavigationRetry', { error: error.message })
       await goto.waitUntilAuto(page, { timeout: remaining })
-      await sleep(Math.max(0, Math.min(DEFAULT_POLL_MS, timeout - elapsed())))
       if (elapsed() >= timeout) throw error
     }
   }

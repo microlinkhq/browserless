@@ -219,4 +219,4 @@ const waitForReady = async (
   return { ...last, resets, timedOut: true }
 }
 
-module.exports = { waitForReady, paintSignals, DEFAULT_POLL_MS }
+module.exports = { waitForReady, paintSignals }

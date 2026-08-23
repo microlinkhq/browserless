@@ -5,14 +5,22 @@ const test = require('ava')
 
 const { captureWithNavigationRetry } = require('../src/index.js')
 
-const sessionClosedError = () =>
-  new Error(
+// Puppeteer raises `TargetCloseError` (a `ProtocolError`) from `CdpSession.send`
+// once the session is detached. Reproduce the name, not just the message.
+const sessionClosedError = () => {
+  const error = new Error(
     'Protocol error (Page.captureScreenshot): Session closed. Most likely the page has been closed.'
   )
+  error.name = 'TargetCloseError'
+  return error
+}
+
+const navigationError = () =>
+  new Error('Execution context was destroyed, most likely because of a navigation.')
 
 const createPage = ({ isClosed = false } = {}) => ({ isClosed: () => isClosed })
 
-test('a closed page is terminal: it does not retry', async t => {
+test('a closed page is terminal even for an otherwise transient error', async t => {
   let attempts = 0
   let waits = 0
 
@@ -20,7 +28,7 @@ test('a closed page is terminal: it does not retry', async t => {
     captureWithNavigationRetry(
       () => {
         attempts++
-        throw sessionClosedError()
+        throw navigationError()
       },
       {
         page: createPage({ isClosed: true }),
@@ -34,32 +42,38 @@ test('a closed page is terminal: it does not retry', async t => {
     )
   )
 
-  t.true(error.message.includes('Session closed'))
+  t.true(error.message.includes('Execution context was destroyed'))
   t.is(attempts, 1)
   t.is(waits, 0)
 })
 
-test('an immediate waitUntilAuto does not spin the retry loop', async t => {
+test('a detached session is terminal even while the page still reports open', async t => {
   let attempts = 0
+  let waits = 0
 
-  const start = Date.now()
-  await t.throwsAsync(
+  // The CDP session flips `detached` before the page's close event lands, so
+  // there is a window where every call throws yet `isClosed()` answers false.
+  const error = await t.throwsAsync(
     captureWithNavigationRetry(
       () => {
         attempts++
         throw sessionClosedError()
       },
       {
-        page: createPage(),
-        goto: { waitUntilAuto: async () => {} },
-        timeout: 750
+        page: createPage({ isClosed: false }),
+        goto: {
+          waitUntilAuto: async () => {
+            waits++
+          }
+        },
+        timeout: 5000
       }
     )
   )
 
-  const elapsed = Date.now() - start
-  t.true(elapsed >= 700, `expected the full budget to be spent, got ${elapsed}ms`)
-  t.true(attempts <= 8, `expected a paced retry, got ${attempts} attempts`)
+  t.true(error.message.includes('Session closed'))
+  t.is(attempts, 1, 'a detached session is never retried')
+  t.is(waits, 0)
 })
 
 test('a wait that spends the budget does not capture again', async t => {
@@ -69,7 +83,7 @@ test('a wait that spends the budget does not capture again', async t => {
     captureWithNavigationRetry(
       () => {
         attempts++
-        throw sessionClosedError()
+        throw navigationError()
       },
       {
         page: createPage(),
@@ -79,7 +93,7 @@ test('a wait that spends the budget does not capture again', async t => {
     )
   )
 
-  t.true(error.message.includes('Session closed'))
+  t.true(error.message.includes('Execution context was destroyed'))
   t.is(attempts, 1)
 })
 
@@ -88,7 +102,7 @@ test('a live page still retries after the context is destroyed', async t => {
 
   const screenshot = await captureWithNavigationRetry(
     () => {
-      if (++attempts === 1) throw sessionClosedError()
+      if (++attempts === 1) throw navigationError()
       return 'screenshot'
     },
     {
