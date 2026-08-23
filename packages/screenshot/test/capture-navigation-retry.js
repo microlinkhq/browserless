@@ -78,6 +78,7 @@ test('a detached session is terminal even while the page still reports open', as
 
 test('a wait that spends the budget does not capture again', async t => {
   let attempts = 0
+  const timeout = 300
 
   const error = await t.throwsAsync(
     captureWithNavigationRetry(
@@ -87,8 +88,11 @@ test('a wait that spends the budget does not capture again', async t => {
       },
       {
         page: createPage(),
-        goto: { waitUntilAuto: (page, { timeout }) => sleep(timeout) },
-        timeout: 300
+        // Overshoot the budget rather than land exactly on it: a timer may
+        // settle a fraction before the elapsed clock reads its own deadline,
+        // and the assertion is about spending the budget, not about the tie.
+        goto: { waitUntilAuto: () => sleep(timeout * 2) },
+        timeout
       }
     )
   )
