@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.1](https://github.com/microlinkhq/browserless/compare/v13.9.0...v13.9.1) (2026-08-23)
+
+### Bug Fixes
+
+* **screenshot:** require full hydrate before skipping prepare scroll ([#880](https://github.com/microlinkhq/browserless/issues/880)) ([9b2d68a](https://github.com/microlinkhq/browserless/commit/9b2d68a504d060865d2732e967ce9f3508c59b5d))
+
 ## [13.9.0](https://github.com/microlinkhq/browserless/compare/v13.8.3...v13.9.0) (2026-08-21)
 
 **Note:** Version bump only for package @browserless/screenshot

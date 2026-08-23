@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.1](https://github.com/microlinkhq/browserless/compare/v13.9.0...v13.9.1) (2026-08-23)
+
+### Bug Fixes
+
+* restore workspace link so release CI installs ([#895](https://github.com/microlinkhq/browserless/issues/895)) ([ea38369](https://github.com/microlinkhq/browserless/commit/ea3836944a46912a409ce5202997dedea68268af))
+* **screenshot:** require full hydrate before skipping prepare scroll ([#880](https://github.com/microlinkhq/browserless/issues/880)) ([9b2d68a](https://github.com/microlinkhq/browserless/commit/9b2d68a504d060865d2732e967ce9f3508c59b5d))
+* write npm token outside the repo ([#896](https://github.com/microlinkhq/browserless/issues/896)) ([911f82b](https://github.com/microlinkhq/browserless/commit/911f82b07e0d5ae058e78d9267bc1851958762a1))
+
 ## [13.9.0](https://github.com/microlinkhq/browserless/compare/v13.8.3...v13.9.0) (2026-08-21)
 
 ### Features
