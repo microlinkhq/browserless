@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.3](https://github.com/microlinkhq/browserless/compare/v13.9.2...v13.9.3) (2026-08-23)
+
+### Bug Fixes
+
+* **ai:** publish as a public scoped package ([#899](https://github.com/microlinkhq/browserless/issues/899)) ([5b0ca15](https://github.com/microlinkhq/browserless/commit/5b0ca15ae97217e18d0772aa3af36b381112302d))
+
 ## [13.9.2](https://github.com/microlinkhq/browserless/compare/v13.9.1...v13.9.2) (2026-08-23)
 
 **Note:** Version bump only for package @browserless/ai
