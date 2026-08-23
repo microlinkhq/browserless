@@ -12,7 +12,7 @@ const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
 const { waitForDomStability } = require('./wait-for-dom')
-const { waitForReady, paintSignals } = require('./wait-for-ready')
+const { waitForReady, paintSignals, DEFAULT_POLL_MS } = require('./wait-for-ready')
 const {
   expandOverflow,
   scrollFullPageToLoadContent,
@@ -23,12 +23,11 @@ const {
 
 const timeSpan = require('@kikobeats/time-span')()
 
-const RETRY_POLL_MS = 250
-
 // A destroyed context is only worth retrying while the page is still alive: a
 // closed page (or session) never comes back, and `waitUntilAuto` resolves at
 // once against it, so retrying without a floor spins the loop for the whole
-// budget. Both guards keep the retry bounded.
+// budget. Both guards keep the retry bounded, pacing at the same cadence the
+// readiness poll uses to re-check a page it is waiting on.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
   while (true) {
@@ -39,7 +38,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
       if (!isContextDestroyed(error) || page.isClosed() || remaining <= 0) throw error
       debug('captureWithNavigationRetry', { error: error.message })
       await goto.waitUntilAuto(page, { timeout: remaining })
-      await sleep(Math.max(0, Math.min(RETRY_POLL_MS, timeout - elapsed())))
+      await sleep(Math.max(0, Math.min(DEFAULT_POLL_MS, timeout - elapsed())))
       if (elapsed() >= timeout) throw error
     }
   }

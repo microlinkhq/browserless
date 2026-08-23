@@ -59,7 +59,7 @@ test('an immediate waitUntilAuto does not spin the retry loop', async t => {
 
   const elapsed = Date.now() - start
   t.true(elapsed >= 700, `expected the full budget to be spent, got ${elapsed}ms`)
-  t.true(attempts <= 6, `expected a paced retry, got ${attempts} attempts`)
+  t.true(attempts <= 8, `expected a paced retry, got ${attempts} attempts`)
 })
 
 test('a wait that spends the budget does not capture again', async t => {
