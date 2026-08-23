@@ -7,10 +7,10 @@ const { waitForReady } = require('..')
 // A fake page whose `evaluate` yields scripted snapshots (or throws to simulate
 // a client-side navigation destroying the execution context). No browser: this
 // exercises the gate's decision logic deterministically and fast.
-const scriptedPage = (frames, { isClosed = () => false } = {}) => {
+const scriptedPage = frames => {
   let i = 0
   return {
-    isClosed,
+    isClosed: () => false,
     evaluate: async () => {
       const frame = frames[Math.min(i, frames.length - 1)]
       i++
@@ -58,11 +58,12 @@ test('clamps the quiet window to the budget so a tiny timeout still resolves', a
 test('a closed page surfaces at once instead of polling out its budget', async t => {
   const boom = new Error('Session closed. Most likely the page has been closed.')
   let evaluations = 0
-  const page = scriptedPage([boom], { isClosed: () => true })
-  const evaluate = page.evaluate
-  page.evaluate = (...args) => {
-    evaluations++
-    return evaluate(...args)
+  const page = {
+    isClosed: () => true,
+    evaluate: async () => {
+      evaluations++
+      throw boom
+    }
   }
 
   // A budget far larger than the poll interval is the point: were the gate to

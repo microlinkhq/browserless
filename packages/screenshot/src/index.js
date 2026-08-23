@@ -29,15 +29,15 @@ const timeSpan = require('@kikobeats/time-span')()
 // paces itself on real work.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
+  const remaining = () => timeout - elapsed()
   while (true) {
     try {
       return await capture()
     } catch (error) {
-      const remaining = timeout - elapsed()
-      if (!isTransientContextLoss(page, error) || remaining <= 0) throw error
+      if (!isTransientContextLoss(page, error) || remaining() <= 0) throw error
       debug('captureWithNavigationRetry', { error: error.message })
-      await goto.waitUntilAuto(page, { timeout: remaining })
-      if (elapsed() >= timeout) throw error
+      await goto.waitUntilAuto(page, { timeout: remaining() })
+      if (remaining() <= 0) throw error
     }
   }
 }
