@@ -82,6 +82,10 @@ const FONT_PENDING_READY = { ...TEXT_READY, fonts: false }
 const COVERED_TEXT_READY = { ...TEXT_READY, covered: true }
 const COVERED_PAINTED_READY = { ...PAINTED_READY, covered: true }
 
+// A real puppeteer `Page` always answers `isClosed`, which the capture retry
+// consults before treating a destroyed context as transient.
+const PAGE_DEFAULTS = { isClosed: () => false }
+
 // A `goto` stub that just runs the `waitUntilAuto` hook and reports an action
 // timeout. `onWaitUntilAuto` observes the blank-SPA re-wait `prepare` triggers.
 const makeGoto = ({ action = 100000, onWaitUntilAuto } = {}) => {
@@ -103,6 +107,7 @@ test('waitUntil auto should generate final pdf once', async t => {
   let waitUntilAutoCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => (screenshotCalls++ === 0 ? whiteScreenshot : noWhiteScreenshot),
     evaluate: scriptEvaluate(IMAGELESS_READY),
     pdf: async () => {
@@ -127,6 +132,7 @@ test('retries pdf generation when navigation destroys the execution context', as
   let waitUntilAutoCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => noWhiteScreenshot,
     evaluate: scriptEvaluate(IMAGELESS_READY, () => {}),
     pdf: async () => {
@@ -152,6 +158,7 @@ test('waitUntil auto skips the screenshot poll for painted content', async t => 
   let pdfCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       screenshotCalls += 1
       return whiteScreenshot
@@ -178,6 +185,7 @@ test('waitUntil auto: a decoded tracking pixel does not trip the painted fast pa
   let pdfCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       screenshotCalls += 1
       return noWhiteScreenshot
@@ -208,6 +216,7 @@ test('waitUntil auto: a timed-out gate does not take the painted fast path', asy
   // Never settles (height keeps growing), so the gate times out while still
   // reporting painted content. The fast path must be skipped and the poll run.
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       screenshotCalls += 1
       return noWhiteScreenshot
@@ -246,6 +255,7 @@ test('the capture retry budget is the remaining action budget, not a fresh one',
   // up when the SHARED budget is spent — handing it a fresh full timeout
   // would let prepare run ~1.5x the action budget (gate half + full retry).
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       throw new Error('Execution context was destroyed, most likely because of a navigation.')
     },
@@ -282,6 +292,7 @@ test('waitUntil auto skips the screenshot poll for visible text', async t => {
   let pdfCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       screenshotCalls += 1
       return whiteScreenshot
@@ -307,6 +318,7 @@ test('waitUntil auto: text under an opaque overlay does not skip the blank check
   let waitUntilAutoCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       screenshotCalls += 1
       // The overlay keeps the first poll capture white; then content shows.
@@ -333,6 +345,7 @@ test('waitUntil auto: painted images under an opaque overlay do not skip the bla
   let pdfCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       screenshotCalls += 1
       return noWhiteScreenshot
@@ -360,6 +373,7 @@ test('waitUntil auto: text behind a loading webfont does not trip the fast path'
   let pdfCalls = 0
 
   const page = {
+    ...PAGE_DEFAULTS,
     screenshot: async () => {
       screenshotCalls += 1
       return noWhiteScreenshot

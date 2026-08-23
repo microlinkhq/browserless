@@ -1,5 +1,6 @@
 'use strict'
 
+const { setTimeout: sleep } = require('node:timers/promises')
 const test = require('ava')
 
 const { captureWithNavigationRetry } = require('../src/index.js')
@@ -59,6 +60,27 @@ test('an immediate waitUntilAuto does not spin the retry loop', async t => {
   const elapsed = Date.now() - start
   t.true(elapsed >= 700, `expected the full budget to be spent, got ${elapsed}ms`)
   t.true(attempts <= 6, `expected a paced retry, got ${attempts} attempts`)
+})
+
+test('a wait that spends the budget does not capture again', async t => {
+  let attempts = 0
+
+  const error = await t.throwsAsync(
+    captureWithNavigationRetry(
+      () => {
+        attempts++
+        throw sessionClosedError()
+      },
+      {
+        page: createPage(),
+        goto: { waitUntilAuto: (page, { timeout }) => sleep(timeout) },
+        timeout: 300
+      }
+    )
+  )
+
+  t.true(error.message.includes('Session closed'))
+  t.is(attempts, 1)
 })
 
 test('a live page still retries after the context is destroyed', async t => {

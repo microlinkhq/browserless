@@ -40,6 +40,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
       debug('captureWithNavigationRetry', { error: error.message })
       await goto.waitUntilAuto(page, { timeout: remaining })
       await sleep(Math.max(0, Math.min(RETRY_POLL_MS, timeout - elapsed())))
+      if (elapsed() >= timeout) throw error
     }
   }
 }
