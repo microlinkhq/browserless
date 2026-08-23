@@ -84,6 +84,7 @@ const createPage = (screenshots, { pageMetas = [] } = {}) => {
       return undefined
     },
     $$eval: async () => undefined,
+    isClosed: () => false,
     screenshot: async () => screenshots[screenshotCalls++],
     getScreenshotCalls: () => screenshotCalls
   }

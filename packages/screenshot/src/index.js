@@ -3,6 +3,7 @@
 const debug = require('debug-logfmt')('browserless:screenshot')
 const { isContextDestroyed } = require('@browserless/errors')
 const createGoto = require('@browserless/goto')
+const { setTimeout: sleep } = require('node:timers/promises')
 const { extname } = require('node:path')
 const pReflect = require('p-reflect')
 
@@ -22,15 +23,23 @@ const {
 
 const timeSpan = require('@kikobeats/time-span')()
 
+const RETRY_POLL_MS = 250
+
+// A destroyed context is only worth retrying while the page is still alive: a
+// closed page (or session) never comes back, and `waitUntilAuto` resolves at
+// once against it, so retrying without a floor spins the loop for the whole
+// budget. Both guards keep the retry bounded.
 const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
   const elapsed = timeSpan()
   while (true) {
     try {
       return await capture()
     } catch (error) {
-      if (!isContextDestroyed(error) || elapsed() >= timeout) throw error
+      const remaining = timeout - elapsed()
+      if (!isContextDestroyed(error) || page.isClosed() || remaining <= 0) throw error
       debug('captureWithNavigationRetry', { error: error.message })
-      await goto.waitUntilAuto(page, { timeout })
+      await goto.waitUntilAuto(page, { timeout: remaining })
+      await sleep(Math.max(0, Math.min(RETRY_POLL_MS, timeout - elapsed())))
     }
   }
 }
