@@ -31,7 +31,7 @@
   ],
   "devDependencies": {
     "ava": "5",
-    "browserless": "^13.9.0",
+    "browserless": "workspace:*",
     "puppeteer": "25"
   },
   "peerDependencies": {
