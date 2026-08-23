@@ -1,4 +1,5 @@
 dangerouslyAllowAllBuilds: true
+lockfile: false
 minimumReleaseAge: 0
 # 10.3+ drops the CJS export commitlint resolves; 10.4+ trips lerna-lite's writer shim
 overrides:
