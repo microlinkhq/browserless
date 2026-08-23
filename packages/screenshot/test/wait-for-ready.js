@@ -65,13 +65,15 @@ test('a closed page surfaces at once instead of polling out its budget', async t
     return evaluate(...args)
   }
 
-  const start = Date.now()
+  // A budget far larger than the poll interval is the point: were the gate to
+  // keep polling, this would run ~200 evaluations before timing out. Counting
+  // them says that deterministically, where a wall-clock bound would only say
+  // it under a CI scheduler that behaved.
   await t.throwsAsync(() => waitForReady(page, { timeout: 2000, quietMs: 40, poll: 10 }), {
     message: /Session closed/
   })
 
-  t.is(evaluations, 1)
-  t.true(Date.now() - start < 500, 'did not poll a page that is gone')
+  t.is(evaluations, 1, 'did not poll a page that is gone')
 })
 
 test('a non-navigation evaluate error surfaces instead of spinning to a timeout', async t => {
