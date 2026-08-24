@@ -46,7 +46,7 @@ jobs:
         run: dpkg -s libgl1-mesa-dri >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1-mesa-dri)
       - name: Cache AI model
         if: matrix.package.name == '@browserless/ai'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/browserless-ai
           key: browserless-ai-nano-2025.8.8.1141
