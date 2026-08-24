@@ -186,3 +186,10 @@ jobs:
         run: |
           pnpm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN"
           pnpm run release
+      - name: Publish unpublished versions
+        if: success() || failure()
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          pnpm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN"
+          pnpm exec lerna publish from-package --yes --sort
