@@ -180,6 +180,7 @@ jobs:
           DEBUG: browserless:ai
         run: xvfb-run -a pnpm --recursive --sequential test
       - name: Release
+        id: release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -187,9 +188,10 @@ jobs:
           pnpm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN"
           pnpm run release
       - name: Publish unpublished versions
-        if: success() || failure()
+        if: ${{ !cancelled() && (steps.release.outcome == 'success' || steps.release.outcome == 'failure') }}
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           pnpm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN"
+          git restore --source=HEAD --worktree --staged -- .
           pnpm exec lerna publish from-package --yes --sort
