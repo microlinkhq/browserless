@@ -106,7 +106,7 @@
     "browser-sync": "latest",
     "c8": "latest",
     "concurrently": "latest",
-    "conventional-changelog-conventionalcommits": "10.2.1",
+    "conventional-changelog-conventionalcommits": "10.4.0",
     "cssnano": "latest",
     "cssnano-preset-advanced": "latest",
     "finepack": "latest",
