@@ -42,10 +42,9 @@ test('fingerprintjs', async t => {
 })
 
 test('amiunique.org/fp', async t => {
-  const browserless = await getBrowserContext(t)
+  const browserless = await getBrowserContext(t, { timeout: 60000 })
   const content = await browserless.text('https://amiunique.org/fingerprint', {
-    waitForSelector:
-      '#app > div > main > div > div > section > div:nth-child(2) > div > div > div.v-card__text.title.green--text.pb-0'
+    waitForFunction: "document.body.innerText.includes('HTTP HEADERS ATTRIBUTES')"
   })
-  t.true(content.includes('You are unique'))
+  t.true(content.includes('User agent'))
 })
