@@ -27,22 +27,24 @@ test('creepjs', async t => {
 })
 
 test('fingerprintjs', async t => {
-  const browserless = await getBrowserContext(t)
+  const browserless = await getBrowserContext(t, { retry: 0, timeout: 20000 })
 
   const fingerprint = await browserless.evaluate(page =>
     page.evaluate("document.querySelector('.giant').innerText")
   )
 
-  const [fingerprintOne, fingerprintTwo] = await Promise.all([
-    fingerprint('https://fingerprintjs.github.io/fingerprintjs/', { timezone: 'Europe/Madrid' }),
-    fingerprint('https://fingerprintjs.github.io/fingerprintjs/', { timezone: 'Europe/Paris' })
-  ])
+  const fingerprintOne = await fingerprint('https://fingerprintjs.github.io/fingerprintjs/', {
+    timezone: 'Europe/Madrid'
+  })
+  const fingerprintTwo = await fingerprint('https://fingerprintjs.github.io/fingerprintjs/', {
+    timezone: 'Europe/Paris'
+  })
 
   t.true(fingerprintOne !== fingerprintTwo)
 })
 
 test('amiunique.org/fp', async t => {
-  const browserless = await getBrowserContext(t, { timeout: 60000 })
+  const browserless = await getBrowserContext(t, { retry: 0, timeout: 45000 })
   const content = await browserless.text('https://amiunique.org/fingerprint', {
     waitForFunction: "document.body.innerText.includes('HTTP HEADERS ATTRIBUTES')"
   })
