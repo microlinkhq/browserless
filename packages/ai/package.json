@@ -29,13 +29,13 @@
     "summarizer",
     "translator"
   ],
+  "dependencies": {
+    "debug-logfmt": "~1.4.15"
+  },
   "devDependencies": {
     "ava": "5",
     "browserless": "^13.9.7",
     "puppeteer": "25"
-  },
-  "peerDependencies": {
-    "browserless": ">=13"
   },
   "engines": {
     "node": ">= 24"
@@ -53,15 +53,15 @@
     "test": "DEBUG=browserless:ai ava"
   },
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
   "ava": {
     "serial": true,
     "timeout": "10m",
     "workerThreads": false
   },
-  "dependencies": {
-    "debug-logfmt": "~1.4.15"
+  "peerDependencies": {
+    "browserless": ">=13"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
