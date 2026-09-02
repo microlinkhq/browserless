@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.10](https://github.com/microlinkhq/browserless/compare/v13.9.9...v13.9.10) (2026-09-02)
+
+### Bug Fixes
+
+* json lint ([5f52774](https://github.com/microlinkhq/browserless/commit/5f52774bebe7a2ea301aee5da5256719f46f7235))
+
 ## [13.9.9](https://github.com/microlinkhq/browserless/compare/v13.9.8...v13.9.9) (2026-09-01)
 
 **Note:** Version bump only for package @browserless/pdf
