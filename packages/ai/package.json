@@ -62,6 +62,6 @@
     "workerThreads": false
   },
   "dependencies": {
-    "debug-logfmt": "~1.4.12"
+    "debug-logfmt": "~1.4.15"
   }
 }
