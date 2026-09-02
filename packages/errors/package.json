@@ -29,9 +29,9 @@
     "puppeteer"
   ],
   "dependencies": {
+    "debug-logfmt": "~1.4.15",
     "ensure-error": "~3.0.1",
     "serialize-error": "~8.1.0",
-    "debug-logfmt": "~1.4.15",
     "whoops": "~5.1.4"
   },
   "devDependencies": {
