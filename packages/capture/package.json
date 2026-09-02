@@ -39,8 +39,8 @@
   "dependencies": {
     "@browserless/goto": "workspace:*",
     "@browserless/screencast": "workspace:*",
-    "debug-logfmt": "~1.4.10",
-    "ws": "~8.21.0"
+    "debug-logfmt": "~1.4.15",
+    "ws": "~8.21.3"
   },
   "devDependencies": {
     "ava": "5"

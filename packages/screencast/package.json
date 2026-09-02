@@ -32,7 +32,7 @@
     "video"
   ],
   "dependencies": {
-    "null-prototype-object": "~1.2.6"
+    "null-prototype-object": "~1.2.7"
   },
   "devDependencies": {
     "@kikobeats/time-span": "latest",

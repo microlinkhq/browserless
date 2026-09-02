@@ -35,7 +35,7 @@
   ],
   "dependencies": {
     "@browserless/capture": "workspace:*",
-    "beauty-error": "~1.2.22",
+    "beauty-error": "~1.2.23",
     "browserless": "workspace:*",
     "dark-mode": "~3.0.0",
     "dset": "~3.1.4",
