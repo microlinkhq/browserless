@@ -38,7 +38,7 @@
     "@kikobeats/time-span": "~1.0.13",
     "automad-prism-themes": "~0.3.8",
     "debug-logfmt": "~1.4.15",
-    "got": "~11.8.6",
+    "got": "~16.0.0",
     "is-html-content": "~1.0.0",
     "is-url-http": "~2.3.13",
     "lodash": "~4.18.1",
