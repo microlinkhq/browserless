@@ -54,17 +54,17 @@ const timeoutError = errors.browserTimeout({ timeout: 30000 })
 // => BrowserlessError: EBRWSRTIMEOUT, Promise timed out after 30000 milliseconds
 
 // Create a protocol error
-const protocolError = errors.protocolError({ message: 'Target closed.' })
-// => BrowserlessError: EPROTOCOL, Target closed.
+const protocolError = errors.protocolError({ message: 'Printing failed' })
+// => BrowserlessError: EPROTOCOL, Printing failed
 
 // Create an evaluation error
 const evalError = errors.evaluationFailed({ message: 'foo is not defined' })
 // => BrowserlessError: EINVALEVAL, foo is not defined
 
-// Normalize a raw error from Puppeteer
-const rawError = { message: 'Protocol error (Runtime.callFunctionOn): Target closed.' }
+// Normalize a raw error from Puppeteer (page target gone mid-evaluate)
+const rawError = { message: 'Protocol error (Runtime.evaluate): Target closed' }
 const normalizedError = errors.ensureError(rawError)
-// => BrowserlessError: EPROTOCOL, Target closed.
+// => BrowserlessError: EBRWSRCONTEXTCONNRESET, The browser context is not connected.
 
 // Normalize a page range Chrome cannot satisfy
 const rangeError = errors.ensureError({

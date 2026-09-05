@@ -12,19 +12,19 @@ test('avoid parse ensureError twice', t => {
 
 test('protocolError', t => {
   const parsedError = errors.ensureError({
-    message: 'Protocol error (Runtime.callFunctionOn): Target closed.'
+    message: 'Protocol error (Page.printToPDF): Printing failed'
   })
 
   t.true(parsedError instanceof Error)
   t.is(parsedError.name, 'BrowserlessError')
   t.is(parsedError.code, 'EPROTOCOL')
-  t.is(parsedError.message, 'EPROTOCOL, Target closed.')
+  t.is(parsedError.message, 'EPROTOCOL, Printing failed')
 
-  const error = errors.protocolError({ message: 'Target closed.' })
+  const error = errors.protocolError({ message: 'Printing failed' })
   t.true(error instanceof Error)
   t.is(error.name, 'BrowserlessError')
   t.is(error.code, 'EPROTOCOL')
-  t.is(error.message, 'EPROTOCOL, Target closed.')
+  t.is(error.message, 'EPROTOCOL, Printing failed')
 })
 
 test('browserTimeout', t => {
@@ -92,6 +92,34 @@ test('evaluationFailed', t => {
   }
 })
 
+test('contextDisconnected from Runtime.evaluate Target closed', t => {
+  const error = errors.ensureError({
+    message: 'Protocol error (Runtime.evaluate): Protocol error (Runtime.evaluate): Target closed'
+  })
+
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
+})
+
+test('Evaluation failed: Target closed stays EINVALEVAL', t => {
+  const error = errors.ensureError({
+    message: 'Evaluation failed: Target closed'
+  })
+
+  t.is(error.code, 'EINVALEVAL')
+})
+
+test('contextDisconnected from Runtime.callFunctionOn Target closed', t => {
+  const error = errors.ensureError({
+    message: 'Protocol error (Runtime.callFunctionOn): Target closed.'
+  })
+
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
+})
+
 test('contextDisconnected from "Session closed"', t => {
   const error = errors.ensureError({
     message: 'Session closed. Most likely the page has been closed.'
@@ -138,6 +166,16 @@ test('isContextDestroyed', t => {
     })
   )
   t.true(
+    errors.isContextDestroyed({
+      message: 'Protocol error (Runtime.evaluate): Protocol error (Runtime.evaluate): Target closed'
+    })
+  )
+  t.true(
+    errors.isContextDestroyed({
+      message: 'Protocol error (Runtime.callFunctionOn): Target closed.'
+    })
+  )
+  t.true(
     errors.isContextDestroyed(
       'Execution context was destroyed, most likely because of a navigation.'
     )
@@ -154,6 +192,7 @@ test('isContextDestroyed', t => {
   // The inverse race: an operation ran before the main frame attached.
   t.true(errors.isContextDestroyed({ message: 'Requesting main frame too early!' }))
 
+  t.false(errors.isContextDestroyed({ message: 'Evaluation failed: Target closed' }))
   t.false(errors.isContextDestroyed({ message: 'Evaluation failed: boom' }))
   t.false(errors.isContextDestroyed({ message: 'Navigation timeout of 30000 ms exceeded' }))
   t.false(errors.isContextDestroyed('boom'))
