@@ -47,6 +47,35 @@ test('a closed page is terminal even for an otherwise transient error', async t 
   t.is(waits, 0)
 })
 
+test('a protocol Target closed is terminal even without TargetCloseError', async t => {
+  let attempts = 0
+  let waits = 0
+
+  const error = await t.throwsAsync(
+    captureWithNavigationRetry(
+      () => {
+        attempts++
+        throw new Error(
+          'Protocol error (Runtime.evaluate): Protocol error (Runtime.evaluate): Target closed'
+        )
+      },
+      {
+        page: createPage({ isClosed: false }),
+        goto: {
+          waitUntilAuto: async () => {
+            waits++
+          }
+        },
+        timeout: 5000
+      }
+    )
+  )
+
+  t.true(error.message.includes('Target closed'))
+  t.is(attempts, 1, 'a gone target is never retried in place')
+  t.is(waits, 0)
+})
+
 test('a detached session is terminal even while the page still reports open', async t => {
   let attempts = 0
   let waits = 0

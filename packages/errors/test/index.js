@@ -102,6 +102,14 @@ test('contextDisconnected from Runtime.evaluate Target closed', t => {
   t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
 })
 
+test('Evaluation failed: Target closed stays EINVALEVAL', t => {
+  const error = errors.ensureError({
+    message: 'Evaluation failed: Target closed'
+  })
+
+  t.is(error.code, 'EINVALEVAL')
+})
+
 test('contextDisconnected from Runtime.callFunctionOn Target closed', t => {
   const error = errors.ensureError({
     message: 'Protocol error (Runtime.callFunctionOn): Target closed.'
@@ -184,6 +192,7 @@ test('isContextDestroyed', t => {
   // The inverse race: an operation ran before the main frame attached.
   t.true(errors.isContextDestroyed({ message: 'Requesting main frame too early!' }))
 
+  t.false(errors.isContextDestroyed({ message: 'Evaluation failed: Target closed' }))
   t.false(errors.isContextDestroyed({ message: 'Evaluation failed: boom' }))
   t.false(errors.isContextDestroyed({ message: 'Navigation timeout of 30000 ms exceeded' }))
   t.false(errors.isContextDestroyed('boom'))

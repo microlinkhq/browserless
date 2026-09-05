@@ -55,7 +55,7 @@ const timeoutError = errors.browserTimeout({ timeout: 30000 })
 
 // Create a protocol error
 const protocolError = errors.protocolError({ message: 'Printing failed' })
-// => BrowserlessError: EPROTOCOL, Printing failed.
+// => BrowserlessError: EPROTOCOL, Printing failed
 
 // Create an evaluation error
 const evalError = errors.evaluationFailed({ message: 'foo is not defined' })
