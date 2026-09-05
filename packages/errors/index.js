@@ -63,11 +63,12 @@ const getErrorMessage = rawError => {
 const isContextDestroyed = rawError => {
   const errorMessage = getErrorMessage(rawError)
   return (
-    [
-      'Protocol error (Target.createTarget): Failed to find browser context with id',
-      'Protocol error (Target.createTarget): Target closed',
-      'Protocol error (Target.createBrowserContext): Target closed'
-    ].some(message => errorMessage.startsWith(message)) ||
+    errorMessage.startsWith(
+      'Protocol error (Target.createTarget): Failed to find browser context with id'
+    ) ||
+    // Page or browser target gone: Runtime.evaluate, Runtime.callFunctionOn,
+    // Target.createTarget, Target.createBrowserContext, Page.createIsolatedWorld.
+    errorMessage.includes('Target closed') ||
     errorMessage.includes('Session closed') ||
     errorMessage.includes('Attempted to use detached Frame') ||
     // Chrome's other phrasing of a frame detaching mid-operation (a navigation
