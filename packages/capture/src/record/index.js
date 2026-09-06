@@ -1,6 +1,7 @@
 'use strict'
 
 const { setTimeout: delay } = require('timers/promises')
+const { Writable } = require('stream')
 const fs = require('fs/promises')
 const debug = require('debug-logfmt')('browserless:capture')
 
@@ -36,13 +37,13 @@ const runRecord = async (page, opts, viewport, { onStarted } = {}) => {
       maxWidth: even(viewport.width),
       maxHeight: even(viewport.height)
     })
-    recorder.pipe({
-      write (chunk) {
+    const sink = new Writable({
+      write (chunk, _encoding, callback) {
         chunks.push(Buffer.from(chunk))
-        return true
-      },
-      end: NOOP
+        callback()
+      }
     })
+    recorder.pipe(sink)
 
     navigation = Promise.resolve(onStarted?.()).catch(error => {
       captureError = error
