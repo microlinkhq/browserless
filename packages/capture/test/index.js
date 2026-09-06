@@ -522,22 +522,17 @@ test('record starts before goto', async t => {
   const createRecordCapture = require('../src/record')
   const { page } = createFixture()
   const events = []
-  page.record = async () => {
+  attachFakeRecord(page)
+  const start = page.record
+  page.record = async options => {
     events.push('record')
-    const destinations = []
-    return {
-      pipe (destination) {
-        destinations.push(destination)
-        return destination
-      },
-      async stop () {
-        events.push('stop')
-        for (const dest of destinations) {
-          dest.write(Buffer.from('mp4'))
-          dest.end?.()
-        }
-      }
+    const recorder = await start(options)
+    const { stop } = recorder
+    recorder.stop = async () => {
+      events.push('stop')
+      return stop()
     }
+    return recorder
   }
   const capture = createRecordCapture({
     goto: createGoto(() => {

@@ -23,28 +23,29 @@ const runRecord = async (page, opts, viewport, { onStarted } = {}) => {
   }
 
   const { path: outputPath, duration = DEFAULT.duration, fps = DEFAULT.fps, audio = false } = opts
+  const recorder = await page.record({
+    audio: Boolean(audio),
+    frameRate: fps,
+    maxWidth: even(viewport.width),
+    maxHeight: even(viewport.height)
+  })
 
   const chunks = []
+  const recordingWindow = new AbortController()
   let captureError
   let navigation = Promise.resolve()
-  let recorder
-  const recordingWindow = new AbortController()
 
+  // Start the source, then navigate concurrently so load animations are in the
+  // clip. A goto failure aborts the window early; the first error wins.
   try {
-    recorder = await page.record({
-      audio: Boolean(audio),
-      frameRate: fps,
-      maxWidth: even(viewport.width),
-      maxHeight: even(viewport.height)
-    })
-    const sink = new Writable({
-      write (chunk, _encoding, callback) {
-        chunks.push(Buffer.from(chunk))
-        callback()
-      }
-    })
-    recorder.pipe(sink)
-
+    recorder.pipe(
+      new Writable({
+        write (chunk, _encoding, callback) {
+          chunks.push(Buffer.from(chunk))
+          callback()
+        }
+      })
+    )
     navigation = Promise.resolve(onStarted?.()).catch(error => {
       captureError = error
       recordingWindow.abort()
@@ -53,11 +54,9 @@ const runRecord = async (page, opts, viewport, { onStarted } = {}) => {
   } catch (error) {
     captureError = captureError || error
   } finally {
-    if (recorder) {
-      await recorder.stop().catch(error => {
-        captureError = captureError || error
-      })
-    }
+    await recorder.stop().catch(error => {
+      captureError = captureError || error
+    })
   }
 
   await navigation
