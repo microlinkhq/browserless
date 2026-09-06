@@ -26,7 +26,7 @@ const prepareViewport = async (goto, page, opts) => {
 }
 
 // Build the public capture factory for a given mode. Each mode (extension /
-// screencast / screenshot) is published as its own entry point and wraps its
+// screencast / screenshot / record) is published as its own entry point and wraps its
 // runner with this shared "navigate concurrently inside the recording window"
 // flow, so the selected mode is explicit at `require` time rather than dispatched
 // from an option at call time.

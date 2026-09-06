@@ -417,7 +417,7 @@ test('exports capture format defaults', t => {
 
   t.deepEqual(createCapture.TYPES, ['webm', 'mp4'])
   t.is(createCapture.DEFAULT.type, 'mp4')
-  t.deepEqual(createCapture.MODES, ['extension', 'screencast', 'screenshot'])
+  t.deepEqual(createCapture.MODES, ['extension', 'screencast', 'screenshot', 'record'])
 })
 
 test('the default entry point ignores an unknown `mode` option', async t => {
@@ -454,6 +454,98 @@ test('screenshot entry point rejects when `video` is disabled', async t => {
     instanceOf: TypeError,
     message: /video.*cannot be disabled/
   })
+})
+
+const attachFakeRecord = (page, { chunks = [Buffer.from('mp4')] } = {}) => {
+  const calls = []
+  page.record = async options => {
+    calls.push(options)
+    const destinations = []
+    return {
+      pipe (destination) {
+        destinations.push(destination)
+        return destination
+      },
+      async stop () {
+        for (const dest of destinations) {
+          for (const chunk of chunks) dest.write(chunk)
+          dest.end?.()
+        }
+      }
+    }
+  }
+  return calls
+}
+
+test('record entry point returns the recorded buffer', async t => {
+  const createRecordCapture = require('../src/record')
+  const { page } = createFixture()
+  const calls = attachFakeRecord(page, { chunks: [Buffer.from('aaa'), Buffer.from('bbb')] })
+  const capture = createRecordCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', { duration: 20, fps: 24 })
+  t.deepEqual(result, Buffer.from('aaabbb'))
+  t.deepEqual(calls, [{ audio: false, frameRate: 24, maxWidth: 1280, maxHeight: 800 }])
+})
+
+test('record entry point rejects when `video` is disabled', async t => {
+  const createRecordCapture = require('../src/record')
+  const { page } = createFixture()
+  attachFakeRecord(page)
+  const capture = createRecordCapture({ goto: createGoto() })
+  await t.throwsAsync(() => capture(page)('https://example.com', { video: false, duration: 20 }), {
+    instanceOf: TypeError,
+    message: /video.*cannot be disabled/
+  })
+})
+
+test('record entry point rejects `type: webm`', async t => {
+  const createRecordCapture = require('../src/record')
+  const { page } = createFixture()
+  attachFakeRecord(page)
+  const capture = createRecordCapture({ goto: createGoto() })
+  await t.throwsAsync(() => capture(page)('https://example.com', { type: 'webm', duration: 20 }), {
+    instanceOf: TypeError,
+    message: /mp4.*webm/
+  })
+})
+
+test('record entry point rejects when `page.record` is missing', async t => {
+  const createRecordCapture = require('../src/record')
+  const { page } = createFixture()
+  const capture = createRecordCapture({ goto: createGoto() })
+  await t.throwsAsync(() => capture(page)('https://example.com', { duration: 20 }), {
+    message: /puppeteer >= 25\.10 and Chrome M153/
+  })
+})
+
+test('record starts before goto', async t => {
+  const createRecordCapture = require('../src/record')
+  const { page } = createFixture()
+  const events = []
+  page.record = async () => {
+    events.push('record')
+    const destinations = []
+    return {
+      pipe (destination) {
+        destinations.push(destination)
+        return destination
+      },
+      async stop () {
+        events.push('stop')
+        for (const dest of destinations) {
+          dest.write(Buffer.from('mp4'))
+          dest.end?.()
+        }
+      }
+    }
+  }
+  const capture = createRecordCapture({
+    goto: createGoto(() => {
+      events.push('goto')
+    })
+  })
+  await capture(page)('https://example.com', { duration: 20 })
+  t.deepEqual(events, ['record', 'goto', 'stop'])
 })
 
 test('sizes constraints from the resolved device viewport', async t => {
