@@ -11,7 +11,10 @@ const { isContextDestroyed } = require('@browserless/errors')
 // (`CdpSession.send` raises it the moment `detached` is set). Ask it as well as
 // the page: the session flips first, so between the two there is a window where
 // every call throws yet `isClosed()` still answers false.
+const isDeadTarget = error =>
+  error?.name === 'TargetCloseError' || (error?.message || '').includes('Target closed')
+
 const isTransientContextLoss = (page, error) =>
-  isContextDestroyed(error) && error?.name !== 'TargetCloseError' && !page.isClosed()
+  isContextDestroyed(error) && !isDeadTarget(error) && !page.isClosed()
 
 module.exports = isTransientContextLoss
