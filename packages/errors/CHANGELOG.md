@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.11](https://github.com/microlinkhq/browserless/compare/v13.9.10...v13.9.11) (2026-09-06)
+
+### Bug Fixes
+
+* **errors:** treat Target closed as context disconnect ([#913](https://github.com/microlinkhq/browserless/issues/913)) ([5e7981d](https://github.com/microlinkhq/browserless/commit/5e7981d5967a16941b01736ee7d4c08dbf6c8c9c))
+
 ## [13.9.10](https://github.com/microlinkhq/browserless/compare/v13.9.9...v13.9.10) (2026-09-02)
 
 ### Bug Fixes
