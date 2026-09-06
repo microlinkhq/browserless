@@ -178,7 +178,7 @@ jobs:
       - name: Test
         env:
           DEBUG: browserless:ai
-        run: xvfb-run -a pnpm --recursive --sequential test
+        run: xvfb-run -a pnpm --recursive run --sequential test
       - name: Release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}

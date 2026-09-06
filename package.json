@@ -136,7 +136,7 @@
     "lint": "standard",
     "pretest": "pnpm run lint",
     "release": "lerna publish --yes --sort --conventional-commits --changelog-preset conventionalcommits --create-release github -m \"chore(release): %s\"",
-    "test": "c8 pnpm --recursive --sequential test",
+    "test": "c8 pnpm --recursive run --sequential test",
     "update": "pnpm --recursive --parallel exec ncu -u"
   },
   "private": true,
