@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.14](https://github.com/microlinkhq/browserless/compare/v13.9.13...v13.9.14) (2026-09-10)
+
+### Bug Fixes
+
+* **devices:** sync Chrome UA with Puppeteer ([#918](https://github.com/microlinkhq/browserless/issues/918)) ([615406e](https://github.com/microlinkhq/browserless/commit/615406e6352c8b5e71c77fec023d3bae7dba001c))
+
 ## [13.9.10](https://github.com/microlinkhq/browserless/compare/v13.9.9...v13.9.10) (2026-09-02)
 
 **Note:** Version bump only for package @browserless/devices
