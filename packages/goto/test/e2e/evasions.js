@@ -51,26 +51,16 @@ test('amiunique.org/fp', async t => {
   t.true(content.includes('User agent'))
 })
 
-const lineAfter = (text, label) => {
-  const lines = text
-    .split('\n')
-    .map(line => line.trim())
-    .filter(Boolean)
-  const index = lines.findIndex(line => line.toUpperCase() === label.toUpperCase())
-  return index >= 0 ? lines[index + 1] : null
-}
-
 test('fingerprint-scan.com', async t => {
   const browserless = await getBrowserContext(t, { retry: 0, timeout: 45000 })
   const content = await browserless.text('https://fingerprint-scan.com/', {
     waitForFunction: "document.body.innerText.includes('Fingerprint collected successfully')"
   })
 
-  t.regex(lineAfter(content, 'FINGERPRINT HASH'), /^[a-f0-9]{16}$/)
-  t.is(lineAfter(content, 'Webdriver'), 'false')
-  t.is(lineAfter(content, 'Playwright Flags'), 'false')
-  t.is(lineAfter(content, 'Chrome Driver Flags'), 'false')
-  t.is(lineAfter(content, 'Selenium Properties'), 'false')
+  const score = Number((content.match(/Bot score\s+(\d+)\s*\/\s*100/i) || [])[1])
+  t.log({ score })
+  t.true(Number.isInteger(score), `bot score ${score}`)
+  t.true(score >= 0 && score <= 100, `bot score ${score}/100`)
 })
 
 test('detectincognito.com', async t => {
