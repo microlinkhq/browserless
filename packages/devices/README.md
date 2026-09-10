@@ -49,7 +49,7 @@ Each device descriptor includes:
 
 ### Custom Devices
 
-This package extends [Puppeteer's KnownDevices](https://pptr.dev/api/puppeteer.knowndevices/) with additional desktop devices:
+This package extends [Puppeteer's KnownDevices](https://pptr.dev/api/puppeteer.knowndevices/) with additional desktop devices. Chrome user agents (including Puppeteer's Android descriptors) are rewritten at runtime to `puppeteer.PUPPETEER_REVISIONS.chrome`. Safari/iOS descriptors are left unchanged.
 
 | Device | Resolution | Scale |
 |--------|------------|-------|

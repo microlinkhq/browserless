@@ -1,7 +1,6 @@
 {
   "Macbook Pro 13": {
     "name": "Macbook Pro 13",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1280,
       "height": 800,
@@ -13,7 +12,6 @@
   },
   "Macbook Pro 15": {
     "name": "Macbook Pro 15",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1440,
       "height": 900,
@@ -25,7 +23,6 @@
   },
   "Macbook Pro 16": {
     "name": "Macbook Pro 16",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1536,
       "height": 960,
@@ -37,7 +34,6 @@
   },
   "iMac 21": {
     "name": "iMac 21",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 1980,
       "height": 1080,
@@ -49,7 +45,6 @@
   },
   "iMac 21 4K": {
     "name": "iMac 21 4K",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 2048,
       "height": 1152,
@@ -61,7 +56,6 @@
   },
   "iMac 24 4.5K": {
     "name": "iMac 24 4.5K",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 4480,
       "height": 2520,
@@ -73,7 +67,6 @@
   },
   "iMac 27": {
     "name": "iMac 27",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 2560,
       "height": 1440,
@@ -85,7 +78,6 @@
   },
   "iMac 27 5K": {
     "name": "iMac 27 5K",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36",
     "viewport": {
       "width": 2560,
       "height": 1440,
