@@ -23,6 +23,8 @@ const {
 
 const timeSpan = require('@kikobeats/time-span')()
 
+const ELEMENT_CLIP_ATTEMPTS = 2
+
 // No pacing here on purpose: `waitUntilAuto` is a network-idle wait, which on a
 // live page costs at least its idle window (~500ms) and at most what is left of
 // the budget. The runaway case was never a fast loop — it was retrying a page
@@ -82,15 +84,23 @@ const waitForImagesOnViewport = page =>
     )
   )
 
+const readElementClip = async (page, element) => {
+  const handle = await page.waitForSelector(element, { visible: true })
+  try {
+    return await handle.boundingBox()
+  } finally {
+    await handle.dispose()
+  }
+}
+
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
   if (element) {
-    const handle = await page.waitForSelector(element, { visible: true })
-    try {
-      screenshotOpts.clip = await handle.boundingBox()
-    } finally {
-      await handle.dispose()
+    let clip = null
+    for (let attempt = 0; attempt < ELEMENT_CLIP_ATTEMPTS && clip === null; attempt++) {
+      clip = await readElementClip(page, element)
     }
+    screenshotOpts.clip = clip
     screenshotOpts.fullPage = false
     return screenshotOpts
   }
@@ -180,6 +190,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
             })
           )
         )
+
+        if (screenshotOpts.clip === null) {
+          throw new Error(`Element \`${element}\` detached before its clip could be read`)
+        }
 
         return screenshotOpts
       }
