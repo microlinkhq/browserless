@@ -49,10 +49,32 @@ const defaultArgs = [
   ].join(',')}`
 ]
 
+// Puppeteer still injects these; antibots fingerprint the command line even
+// when --disable-blink-features=AutomationControlled hides navigator.webdriver.
+// Keep the rest of puppeteer.defaultArgs() (shm, timer throttling, …).
+const ignoreDefaultArgs = [
+  '--enable-automation',
+  '--disable-extensions',
+  '--disable-component-update',
+  '--disable-default-apps',
+  '--disable-popup-blocking',
+  '--disable-client-side-phishing-detection',
+  '--disable-component-extensions-with-background-pages',
+  '--allow-pre-commit-input',
+  '--disable-ipc-flooding-protection',
+  '--metrics-recording-only'
+]
+
+const resolveIgnoreDefaultArgs = extra => {
+  if (extra === true || extra === false) return extra
+  if (Array.isArray(extra)) return [...new Set([...ignoreDefaultArgs, ...extra])]
+  return ignoreDefaultArgs
+}
+
 const spawn = ({
   args = defaultArgs,
   headless = true,
-  ignoreDefaultArgs,
+  ignoreDefaultArgs: extraIgnoreDefaultArgs,
   mode = 'launch',
   puppeteer = requireOneOf(['puppeteer', 'puppeteer-core', 'puppeteer-firefox']),
   waitForInitialPage = false,
@@ -61,7 +83,7 @@ const spawn = ({
   puppeteer[mode]({
     args,
     headless,
-    ignoreDefaultArgs,
+    ignoreDefaultArgs: resolveIgnoreDefaultArgs(extraIgnoreDefaultArgs),
     waitForInitialPage,
     ...launchOpts
   })
@@ -98,4 +120,4 @@ const close = async (subprocess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
   return pid === undefined ? {} : { pid }
 }
 
-module.exports = { spawn, pid: getPid, close, defaultArgs }
+module.exports = { spawn, pid: getPid, close, defaultArgs, ignoreDefaultArgs }

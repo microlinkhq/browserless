@@ -8,6 +8,7 @@ const ava = require('ava')
 
 const { runServer, createBrowser, getBrowserContext, getBrowser } = require('@browserless/test')
 const { detectBuild, parseGalliumVersion } = require('../src/report')
+const { ignoreDefaultArgs } = require('../src/driver')
 
 const test = process.env.CI ? ava.serial : ava
 
@@ -106,6 +107,11 @@ test('report() returns browser, GPU backend and host CPU', async t => {
   t.is(typeof browser.headless, 'boolean')
   t.true(browser.arguments === undefined || Array.isArray(browser.arguments))
   t.true(browser.customArguments === undefined || Array.isArray(browser.customArguments))
+  if (Array.isArray(browser.arguments)) {
+    for (const flag of ignoreDefaultArgs) {
+      t.false(browser.arguments.includes(flag), flag)
+    }
+  }
 
   t.is(typeof environment.virtualized, 'boolean')
   t.is(typeof environment.container, 'boolean')
