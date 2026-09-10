@@ -1,7 +1,6 @@
 'use strict'
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
-const { randomUUID } = require('crypto')
 const pTimeout = require('p-timeout')
 const fs = require('fs/promises')
 const path = require('path')
@@ -94,73 +93,130 @@ const autoconsentConfig = Object.freeze({
   }
 })
 
-const sendMessage = (page, message) =>
-  page
-    .evaluate(msg => {
-      if (window.autoconsentReceiveMessage) {
-        return window.autoconsentReceiveMessage(msg)
-      }
-    }, message)
+const AUTOCONSENT_WORLD = 'browserless_autoconsent'
+const AUTOCONSENT_BINDING = 'autoconsentSendMessage'
+
+const RECEIVE_MESSAGE = `function (message) {
+  return window.autoconsentReceiveMessage && window.autoconsentReceiveMessage(message)
+}`
+
+/* Top frame only, once per document: the CDP binding takes a string, so the
+   wrapper serializes every message before autoconsent captures it. */
+const toContentScript =
+  autoconsentScript => `if (window.self === window.top && !window.autoconsentReceiveMessage) {
+  const sendMessage = window.${AUTOCONSENT_BINDING}
+  window.${AUTOCONSENT_BINDING} = message => sendMessage(JSON.stringify(message))
+  ${autoconsentScript}
+}`
+
+const parseMessage = payload => {
+  try {
+    const message = JSON.parse(payload)
+    return message && typeof message === 'object' ? message : undefined
+  } catch {}
+}
+
+const sendMessage = (client, executionContextId, message) =>
+  client
+    .send('Runtime.callFunctionOn', {
+      functionDeclaration: RECEIVE_MESSAGE,
+      executionContextId,
+      arguments: [{ value: message }],
+      awaitPromise: true,
+      returnByValue: true
+    })
     .catch(() => {})
+
+const onMessage = async ({ page, client, executionContextId, message, timeout }) => {
+  switch (message.type) {
+    case 'init': {
+      page._autoconsentInitDone = true
+      const rules = await getAutoconsentRules()
+      return sendMessage(client, executionContextId, {
+        type: 'initResp',
+        config: autoconsentConfig,
+        rules
+      })
+    }
+
+    case 'eval': {
+      let result = false
+      try {
+        result = await pTimeout(page.evaluate(message.code), timeout)
+      } catch {}
+      return sendMessage(client, executionContextId, { type: 'evalResp', id: message.id, result })
+    }
+
+    case 'cmpDetected':
+    case 'popupFound':
+    case 'autoconsentDone':
+      debug(message.type, { cmp: message.cmp })
+      break
+
+    case 'optOutResult':
+      debug(message.type, { result: message.result })
+      break
+
+    case 'autoconsentError':
+      debug(message.type, { details: message.details })
+      break
+  }
+}
+
+const trackTopFrameContexts = (page, client) => {
+  const contextIds = new Set()
+  client.on('Runtime.executionContextCreated', ({ context }) => {
+    if (context.name === AUTOCONSENT_WORLD && context.auxData?.frameId === page.mainFrame()._id) {
+      contextIds.add(context.id)
+    }
+  })
+  client.on('Runtime.executionContextDestroyed', ({ executionContextId }) =>
+    contextIds.delete(executionContextId)
+  )
+  client.on('Runtime.executionContextsCleared', () => contextIds.clear())
+  return contextIds
+}
 
 const setupAutoConsent = async (page, timeout) => {
   if (page._autoconsentSetup) return
-  const autoconsentPlaywrightScript = await getAutoconsentPlaywrightScript()
-  const nonce = randomUUID()
+  const client = page._client()
+  const contentScript = toContentScript(await getAutoconsentPlaywrightScript())
+  const topFrameContexts = trackTopFrameContexts(page, client)
 
-  await page.exposeFunction('autoconsentSendMessage', async message => {
-    if (!message || typeof message !== 'object') return
-    if (message.__nonce !== nonce) return
-
-    switch (message.type) {
-      case 'init': {
-        page._autoconsentInitDone = true
-        const rules = await getAutoconsentRules()
-        return sendMessage(page, { type: 'initResp', config: autoconsentConfig, rules })
-      }
-
-      case 'eval': {
-        let result = false
-        try {
-          result = await pTimeout(page.evaluate(message.code), timeout)
-        } catch {}
-        return sendMessage(page, { type: 'evalResp', id: message.id, result })
-      }
-
-      case 'cmpDetected':
-      case 'popupFound':
-      case 'autoconsentDone':
-        debug(message.type, { cmp: message.cmp })
-        break
-
-      case 'optOutResult':
-        debug(message.type, { result: message.result })
-        break
-
-      case 'autoconsentError':
-        debug(message.type, { details: message.details })
-        break
-    }
+  client.on('Runtime.bindingCalled', ({ name, payload, executionContextId }) => {
+    if (name !== AUTOCONSENT_BINDING || !topFrameContexts.has(executionContextId)) return
+    const message = parseMessage(payload)
+    if (message) onMessage({ page, client, executionContextId, message, timeout })
   })
 
-  /* Single injection: wrap the binding in the top frame so every outgoing
-     message carries the nonce, then run the autoconsent script. Child frames
-     keep the raw CDP binding which lacks the nonce, so their messages are
-     silently rejected. */
-  const nonceGuard = `(function(n){if(window.self!==window.top)return;var raw=window.autoconsentSendMessage;if(raw)window.autoconsentSendMessage=function(msg){return raw(Object.assign({},msg,{__nonce:n}))}})(${JSON.stringify(
-    nonce
-  )});`
-  page._autoconsentScript = nonceGuard + autoconsentPlaywrightScript
-  await page.evaluateOnNewDocument(page._autoconsentScript)
+  await Promise.all([
+    client.send('Runtime.addBinding', {
+      name: AUTOCONSENT_BINDING,
+      executionContextName: AUTOCONSENT_WORLD
+    }),
+    client.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: contentScript,
+      worldName: AUTOCONSENT_WORLD
+    })
+  ])
+  page._autoconsentScript = contentScript
   page._autoconsentSetup = true
 }
 
 /* Fallback for documents where the new-document injection did not run.
-   It must re-inject the nonce guard too: without it the messages lack the
-   nonce and are silently dropped by the exposed function. */
+   `Page.createIsolatedWorld` returns the document's existing autoconsent world
+   when there is one, where the content script guard skips a second instance. */
 const runAutoConsent = async page => {
   if (page._autoconsentInitDone || !page._autoconsentScript) return
-  return page.evaluate(page._autoconsentScript)
+  const client = page._client()
+  const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+    frameId: page.mainFrame()._id,
+    worldName: AUTOCONSENT_WORLD
+  })
+  return client.send('Runtime.evaluate', {
+    expression: page._autoconsentScript,
+    contextId: executionContextId
+  })
 }
 
 const enableBlockingInPage = (page, run, timeout) => {
@@ -186,4 +242,4 @@ const enableBlockingInPage = (page, run, timeout) => {
   ]
 }
 
-module.exports = { enableBlockingInPage, runAutoConsent }
+module.exports = { enableBlockingInPage, runAutoConsent, AUTOCONSENT_WORLD }
