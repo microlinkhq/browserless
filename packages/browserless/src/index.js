@@ -205,7 +205,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       page: createPage,
       pdf: withPage(createPdf({ goto })),
       screenshot: withPage(createScreenshot({ goto })),
-      text: evaluate(page => page.evaluate(() => document.body.innerText)),
+      text: evaluate(page =>
+        page
+          .mainFrame()
+          .isolatedRealm()
+          .evaluate(() => document.body.innerText)
+      ),
       getDevice: goto.getDevice,
       destroyContext,
       withPage
