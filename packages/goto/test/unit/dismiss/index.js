@@ -45,6 +45,12 @@ const DIALOG = `
     <button onclick="window.__clicked='ack';document.getElementById('notice').remove()">I understand</button>
   </div>`
 
+const STICKY = `
+  <div id="sticky" role="alertdialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px">
+    <p>Scheduled maintenance this weekend.</p>
+    <button type="button" onclick="window.__clicks=(window.__clicks||0)+1">OK</button>
+  </div>`
+
 /* records every selector the page's main world is asked to query */
 const QUERY_RECORDER = `<script>
   window.__queries = []
@@ -258,13 +264,7 @@ test('does not query the DOM from the page main world', async t => {
 
 test('run after setup reuses the injected instance instead of clicking twice', async t => {
   const browserless = await getBrowserContext(t)
-  const url = await serve(
-    t,
-    `<div id="sticky" role="alertdialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px">
-       <p>Scheduled maintenance this weekend.</p>
-       <button type="button" onclick="window.__clicks=(window.__clicks||0)+1">OK</button>
-     </div>`
-  )
+  const url = await serve(t, STICKY)
 
   const run = browserless.withPage(page => async () => {
     await dismiss.setup(page)
@@ -384,10 +384,12 @@ test('re-scans on the post-navigation run for dialogs mounted after the initial 
   const browserless = await getBrowserContext(t)
   const url = await serve(t, '<p>no dialog yet</p>')
 
-  const run = browserless.withPage((page, goto) => async () => {
-    await goto(page, { url })
-    /* mount a dialog after setup, then trigger the same re-scan the run
-       fallback performs once goto resolves */
+  const run = browserless.withPage(page => async () => {
+    await dismiss.setup(page)
+    await page.goto(url)
+    /* mount a dialog after setup and re-scan right away: the observer waits
+       150ms after a mutation, so a click counted by `run` comes from its own
+       re-scan */
     await page.evaluate(() => {
       document.body.insertAdjacentHTML(
         'beforeend',
@@ -397,9 +399,79 @@ test('re-scans on the post-navigation run for dialogs mounted after the initial 
          </div>`
       )
     })
-    await dismiss.run(page)
-    return waitFor(page, () => window.__clicked)
+    return {
+      runClicks: await dismiss.run(page),
+      clicked: await waitFor(page, () => window.__clicked)
+    }
   })
 
-  t.is(await run(), 'ack')
+  const { runClicks, clicked } = await run()
+  t.is(runClicks, 1, 'the dialog must be clicked by the re-scan itself')
+  t.is(clicked, 'ack')
+})
+
+test('run resolves the world again when the page navigates between its CDP calls', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(t, STICKY)
+
+  const run = browserless.withPage(page => async () => {
+    await dismiss.setup(page)
+    await page.goto(url)
+    const client = page._client()
+    const send = client.send.bind(client)
+    let reloaded = false
+    client.send = async (method, ...args) => {
+      const response = await send(method, ...args)
+      if (method === 'Page.createIsolatedWorld' && !reloaded) {
+        reloaded = true
+        await page.reload()
+      }
+      return response
+    }
+    return dismiss.run(page)
+  })
+
+  t.is(await run(), 1)
+})
+
+const CMP = `
+  <div id="cmp" role="dialog" style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px">
+    <p>We use cookies to improve your experience on this website.</p>
+    <button type="button" onclick="window.__clicked='reject';document.getElementById('cmp').remove()">Reject all</button>
+    <button type="button" onclick="window.__clicked='ok';document.getElementById('cmp').remove()">OK</button>
+  </div>`
+
+test('goto lets autoconsent reject a consent dialog while dismiss clicks nothing', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(t, CMP)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return {
+      clicked: await waitFor(page, () => window.__clicked),
+      dismissClicks: await dismiss.run(page)
+    }
+  })
+
+  const { clicked, dismissClicks } = await run()
+  t.is(clicked, 'reject', 'autoconsent must opt out')
+  t.is(dismissClicks, 0, 'dismiss must not register any clicks')
+})
+
+test('goto lets autoconsent reject a CMP inserted after navigation while dismiss clicks nothing', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(t, '<p>no dialog yet</p>')
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    await page.evaluate(cmp => document.body.insertAdjacentHTML('beforeend', cmp), CMP)
+    return {
+      dismissClicks: await dismiss.run(page),
+      clicked: await waitFor(page, () => window.__clicked)
+    }
+  })
+
+  const { clicked, dismissClicks } = await run()
+  t.is(clicked, 'reject', 'autoconsent must opt out')
+  t.is(dismissClicks, 0, 'dismiss must not register any clicks')
 })

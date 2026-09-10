@@ -176,15 +176,17 @@ const WORLD_NAME = 'browserless_dismiss'
 
 const source = `(${dismissOverlays})()`
 
+const STALE_CONTEXT_ERROR =
+  /Cannot find context|navigated or closed|Execution context was destroyed/
+
+const MAX_ATTEMPTS = 3
+
 const evaluationError = ({ exception, text }) => new Error(exception?.description ?? text)
 
 const setup = page =>
   page._client().send('Page.addScriptToEvaluateOnNewDocument', { source, worldName: WORLD_NAME })
 
-/* Re-run for documents where the new-document injection did not fire;
-   `Page.createIsolatedWorld` returns the world the injection already created
-   when it did, so the idempotency guard is shared with `setup`. */
-const run = async page => {
+const evaluateInWorld = async page => {
   const client = page._client()
   const { executionContextId } = await client.send('Page.createIsolatedWorld', {
     frameId: page.mainFrame()._id,
@@ -196,9 +198,24 @@ const run = async page => {
     returnByValue: true
   })
   if (exceptionDetails) throw evaluationError(exceptionDetails)
-  const clicked = result.value
-  if (clicked > 0) debug('clicked', { clicked })
-  return clicked
+  return result.value
+}
+
+/* Re-run for documents where the new-document injection did not fire;
+   `Page.createIsolatedWorld` returns the world the injection already created
+   when it did, so the idempotency guard is shared with `setup`. A navigation
+   between both CDP calls destroys that world, so it is resolved again on the
+   new document. */
+const run = async page => {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const clicked = await evaluateInWorld(page)
+      if (clicked > 0) debug('clicked', { clicked })
+      return clicked
+    } catch (error) {
+      if (attempt === MAX_ATTEMPTS || !STALE_CONTEXT_ERROR.test(error.message)) throw error
+    }
+  }
 }
 
 module.exports = { setup, run, WORLD_NAME }
