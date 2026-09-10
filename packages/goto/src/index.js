@@ -30,7 +30,7 @@ const chromeVersionFromBrowser = async page => {
     if (chromeVersionCache.has(browser)) return chromeVersionCache.get(browser)
     const raw = await browser.version().catch(() => {})
     const version = raw?.match(/^(?:Headless)?Chrome\/([\d.]+)/)?.[1]
-    chromeVersionCache.set(browser, version)
+    if (version) chromeVersionCache.set(browser, version)
     return version
   } catch {
     return undefined
@@ -389,7 +389,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     })
 
     if (device.userAgent && !rawHeaders['user-agent']) {
-      rawHeaders['user-agent'] = syncChromeVersion(
+      device.userAgent = rawHeaders['user-agent'] = syncChromeVersion(
         device.userAgent,
         (await chromeVersionFromBrowser(page)) || getDevice.chromeVersion
       )
