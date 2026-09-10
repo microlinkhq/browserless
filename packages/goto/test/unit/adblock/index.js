@@ -447,6 +447,98 @@ test('eval triggered from child frame is rejected', async t => {
   t.is(result, false, 'eval from child frame must not execute in main frame')
 })
 
+const GHOSTERY_DOM_SELECTORS = [
+  '[id]:not(html):not(body),[class]:not(html):not(body),[href]:not(html):not(body)',
+  'iframe[src],iframe[href]'
+]
+
+const cosmeticFixture = `<html><head><script>
+  window.__foreignSelectors = []
+  for (const proto of [Document.prototype, Element.prototype]) {
+    const querySelectorAll = proto.querySelectorAll
+    proto.querySelectorAll = function (selector) {
+      const frames = (new Error().stack || '').split('\\n').slice(2)
+      if (!frames.some(frame => frame.includes(location.origin))) window.__foreignSelectors.push(String(selector))
+      return querySelectorAll.apply(this, arguments)
+    }
+  }
+</script></head><body>
+  <div id="content-box">content</div>
+  <div id="ad_banner">ad banner</div>
+  <div class="ad-slot">ad slot</div>
+  <iframe id="ad-frame" src="https://securepubads.g.doubleclick.net/gampad/ads?iu=/1/ad"></iframe>
+</body></html>`
+
+const getCosmeticUrl = async t => {
+  const url = new URL(
+    await runServer(t, ({ res }) => {
+      res.setHeader('content-type', 'text/html')
+      res.end(cosmeticFixture)
+    })
+  )
+  url.hostname = 'ghostery.localhost'
+  return url.toString()
+}
+
+const waitForHidden = async (page, id) => {
+  for (let attempts = 0; attempts < 100; attempts++) {
+    const hidden = await page
+      .evaluate(id => window.getComputedStyle(document.getElementById(id)).display === 'none', id)
+      .catch(() => false)
+    if (hidden) return true
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+  return false
+}
+
+test('cosmetic filters from DOM features still hide elements and remove blocked iframes', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getCosmeticUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    const adBannerHidden = await waitForHidden(page, 'ad_banner')
+    return page.evaluate(
+      adBannerHidden => ({
+        adBannerHidden,
+        adSlotHidden:
+          window.getComputedStyle(document.getElementsByClassName('ad-slot')[0]).display === 'none',
+        contentHidden:
+          window.getComputedStyle(document.getElementById('content-box')).display === 'none',
+        adFramePresent: !!document.getElementById('ad-frame')
+      }),
+      adBannerHidden
+    )
+  })
+
+  t.deepEqual(await run(), {
+    adBannerHidden: true,
+    adSlotHidden: true,
+    contentHidden: false,
+    adFramePresent: false
+  })
+})
+
+test('ghostery DOM scans do not run in the page main world', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getCosmeticUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    const adBannerHidden = await waitForHidden(page, 'ad_banner')
+    const foreignSelectors = await page.evaluate(() => window.__foreignSelectors)
+    return { adBannerHidden, foreignSelectors }
+  })
+
+  const { adBannerHidden, foreignSelectors } = await run()
+
+  t.true(adBannerHidden, 'DOM features must have been scanned')
+  t.deepEqual(
+    foreignSelectors.filter(selector => GHOSTERY_DOM_SELECTORS.includes(selector)),
+    []
+  )
+})
+
 test('`disableAdblock` removes blocker listeners and keeps request interception enabled', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)

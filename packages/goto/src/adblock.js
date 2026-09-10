@@ -15,9 +15,20 @@ const lazy = fn => {
 
 const autoconsentDir = path.dirname(require.resolve('@duckduckgo/autoconsent'))
 
+const withIsolatedEvaluate = frame =>
+  new Proxy(frame, {
+    get: (target, property) => {
+      if (property === 'evaluate') return (...args) => target.isolatedRealm().evaluate(...args)
+      const value = Reflect.get(target, property, target)
+      return typeof value === 'function' ? value.bind(target) : value
+    }
+  })
+
 const getEngine = lazy(() =>
   fs.readFile(path.resolve(__dirname, './engine.bin')).then(buffer => {
     const engine = PuppeteerBlocker.deserialize(new Uint8Array(buffer))
+    const { onFrameNavigated } = engine
+    engine.onFrameNavigated = frame => onFrameNavigated(withIsolatedEvaluate(frame))
     engine.on('request-blocked', ({ url }) => debug('block', url))
     engine.on('request-redirected', ({ url }) => debug('redirect', url))
     return engine
