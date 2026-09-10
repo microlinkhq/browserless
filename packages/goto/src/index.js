@@ -29,7 +29,7 @@ const chromeVersionFromBrowser = async page => {
     const browser = page.browser()
     if (chromeVersionCache.has(browser)) return chromeVersionCache.get(browser)
     const raw = await browser.version().catch(() => {})
-    const version = raw?.includes('/') ? raw.split('/')[1] : undefined
+    const version = raw?.match(/^(?:Headless)?Chrome\/([\d.]+)/)?.[1]
     chromeVersionCache.set(browser, version)
     return version
   } catch {
