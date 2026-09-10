@@ -3,6 +3,7 @@
 const { shallowEqualObjects } = require('shallow-equal')
 const { setTimeout } = require('node:timers/promises')
 const createDevices = require('@browserless/devices')
+const { syncChromeVersion } = createDevices
 const toughCookie = require('tough-cookie')
 const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
@@ -20,6 +21,21 @@ debug.abort = require('debug-logfmt')('browserless:goto:abort')
 const truncate = (str, n = 80) => (str.length > n ? str.substr(0, n - 1) + '…' : str)
 
 const isEmpty = val => val == null || !(Object.keys(val) || val).length
+
+const chromeVersionCache = new WeakMap()
+
+const chromeVersionFromBrowser = async page => {
+  try {
+    const browser = page.browser()
+    if (chromeVersionCache.has(browser)) return chromeVersionCache.get(browser)
+    const raw = await browser.version().catch(() => {})
+    const version = raw?.match(/^(?:Headless)?Chrome\/([\d.]+)/)?.[1]
+    if (version) chromeVersionCache.set(browser, version)
+    return version
+  } catch {
+    return undefined
+  }
+}
 
 const castArray = value => [].concat(value).filter(Boolean)
 
@@ -373,7 +389,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     })
 
     if (device.userAgent && !rawHeaders['user-agent']) {
-      rawHeaders['user-agent'] = device.userAgent
+      device.userAgent = rawHeaders['user-agent'] = syncChromeVersion(
+        device.userAgent,
+        (await chromeVersionFromBrowser(page)) || getDevice.chromeVersion
+      )
     }
 
     if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
