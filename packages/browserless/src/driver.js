@@ -15,11 +15,9 @@ const defaultArgs = [
   '--autoplay-policy=user-gesture-required', // https://source.chromium.org/search?q=lang:cpp+symbol:kAutoplayPolicy&ss=chromium
   '--disable-blink-features=PrettyPrintJSONDocument,AutomationControlled', // https://blog.m157q.tw/posts/2020/09/11/bypass-cloudflare-detection-while-using-selenium-with-chromedriver/
   '--disable-domain-reliability', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableDomainReliability&ss=chromium
-  '--disable-notifications', // https://source.chromium.org/search?q=lang%3Acpp+symbol%3AkDisablePermissionsAPI&ss=chromium
   '--disable-print-preview', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisablePrintPreview&ss=chromium
   '--disable-setuid-sandbox', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSetuidSandbox&ss=chromium
   '--disable-site-isolation-trials', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSiteIsolation&ss=chromium
-  '--disable-speech-api', // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSpeechAPI&ss=chromium
   '--disk-cache-size=33554432', // https://source.chromium.org/search?q=lang:cpp+symbol:kDiskCacheSize&ss=chromium
   '--font-render-hinting=none', // https://github.com/puppeteer/puppeteer/issues/2410#issuecomment-2886054614
   '--ignore-gpu-blocklist', // https://source.chromium.org/search?q=lang:cpp+symbol:kIgnoreGpuBlocklist&ss=chromium
@@ -43,9 +41,7 @@ const defaultArgs = [
     'CanvasOopRasterization',
     'InterestFeedV2',
     'IsolateOrigins',
-    'PushMessaging',
-    'site-per-process', // Disables OOPIF. https://www.chromium.org/Home/chromium-security/site-isolation
-    'WebPayments'
+    'site-per-process' // Disables OOPIF. https://www.chromium.org/Home/chromium-security/site-isolation
   ].join(',')}`
 ]
 
