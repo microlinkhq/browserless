@@ -104,13 +104,11 @@ test('report() returns browser, GPU backend and host CPU', async t => {
   const { browser, environment, os, gpu, cpu, memory } = await browserless.report()
 
   t.is(typeof browser.name, 'string')
-  t.is(typeof browser.headless, 'boolean')
-  t.true(browser.arguments === undefined || Array.isArray(browser.arguments))
-  t.true(browser.customArguments === undefined || Array.isArray(browser.customArguments))
-  if (Array.isArray(browser.arguments)) {
-    for (const flag of ignoreDefaultArgs) {
-      t.false(browser.arguments.includes(flag), flag)
-    }
+  t.true(browser.headless)
+  t.true(Array.isArray(browser.arguments) && browser.arguments.length > 0)
+  t.true(Array.isArray(browser.customArguments))
+  for (const flag of ignoreDefaultArgs) {
+    t.false(browser.arguments.includes(flag), flag)
   }
 
   t.is(typeof environment.virtualized, 'boolean')

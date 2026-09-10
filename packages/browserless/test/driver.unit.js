@@ -62,3 +62,14 @@ test('spawn preserves ignoreDefaultArgs=true', async t => {
 
   t.true(launchOptions.ignoreDefaultArgs)
 })
+
+test('spawn preserves ignoreDefaultArgs=false', async t => {
+  let launchOptions
+  const puppeteer = createFakePuppeteer(options => {
+    launchOptions = options
+  })
+
+  await driver.spawn({ puppeteer, ignoreDefaultArgs: false })
+
+  t.false(launchOptions.ignoreDefaultArgs)
+})

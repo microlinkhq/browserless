@@ -291,13 +291,16 @@ const readGpu = async page => {
   }
 }
 
-// The full launch command line, via CDP; null if unavailable.
+// spawnargs is the process argv. CDP Browser.getBrowserCommandLine is gated
+// on --enable-automation and returns [] once that flag is ignored.
 const readCommandLine = async browser => {
+  const proc = typeof browser.process === 'function' ? browser.process() : undefined
+  if (Array.isArray(proc?.spawnargs) && proc.spawnargs.length > 0) return proc.spawnargs
   try {
     const cdp = await browser.target().createCDPSession()
     try {
       const { arguments: argv = [] } = await cdp.send('Browser.getBrowserCommandLine')
-      return argv
+      return argv.length > 0 ? argv : null
     } finally {
       await cdp.detach().catch(() => {})
     }
