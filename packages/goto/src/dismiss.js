@@ -20,9 +20,13 @@ const debug = require('debug-logfmt')('browserless:goto:dismiss')
  *    close button (`aria-label="close"`) outside a form.
  *  - only buttons, never anchors, so a click cannot navigate.
  *
- * Re-invoking is idempotent (guarded by `window.__browserlessDismiss`) and
- * triggers a fresh scan, so the post-navigation `run` fallback catches
- * dialogs mounted after a slow `goto`, even once the observer has stopped.
+ * Runs inside the `WORLD_NAME` isolated world: it shares the DOM with the page
+ * but none of its JavaScript globals, so the page cannot observe its state or
+ * its DOM queries.
+ *
+ * Re-invoking is idempotent (guarded by `window.__browserlessDismiss` inside
+ * that world) and triggers a fresh scan, so the post-navigation `run` fallback
+ * catches dialogs mounted after a slow `goto`, even once the observer has stopped.
  */
 const dismissOverlays = () => {
   if (window.self !== window.top) return 0
@@ -168,14 +172,33 @@ const dismissOverlays = () => {
   return state.clicked
 }
 
-const setup = page => page.evaluateOnNewDocument(dismissOverlays)
+const WORLD_NAME = 'browserless_dismiss'
+
+const source = `(${dismissOverlays})()`
+
+const evaluationError = ({ exception, text }) => new Error(exception?.description ?? text)
+
+const setup = page =>
+  page._client().send('Page.addScriptToEvaluateOnNewDocument', { source, worldName: WORLD_NAME })
 
 /* Re-run for documents where the new-document injection did not fire;
-   the script is idempotent (guarded by `window.__browserlessDismiss`). */
-const run = page =>
-  page.evaluate(dismissOverlays).then(clicked => {
-    if (clicked > 0) debug('clicked', { clicked })
-    return clicked
+   `Page.createIsolatedWorld` returns the world the injection already created
+   when it did, so the idempotency guard is shared with `setup`. */
+const run = async page => {
+  const client = page._client()
+  const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+    frameId: page.mainFrame()._id,
+    worldName: WORLD_NAME
   })
+  const { result, exceptionDetails } = await client.send('Runtime.evaluate', {
+    expression: source,
+    contextId: executionContextId,
+    returnByValue: true
+  })
+  if (exceptionDetails) throw evaluationError(exceptionDetails)
+  const clicked = result.value
+  if (clicked > 0) debug('clicked', { clicked })
+  return clicked
+}
 
-module.exports = { setup, run }
+module.exports = { setup, run, WORLD_NAME }
