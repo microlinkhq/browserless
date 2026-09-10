@@ -25,6 +25,7 @@ const createPage = boxes => {
     evaluate: async () => undefined,
     waitForSelector: async () => {
       const box = boxes[Math.min(page.waitForSelectorCalls++, boxes.length - 1)]
+      if (box instanceof Error) throw box
       return { boundingBox: async () => box, dispose: async () => {} }
     },
     screenshot: async opts => {
@@ -60,5 +61,12 @@ test('element clip re-queries when the matched node is replaced before it is mea
 test('element screenshot throws instead of capturing the viewport when the node keeps detaching', async t => {
   const page = createPage([null])
   await t.throwsAsync(capture(page), { message: /#card/ })
+  t.is(page.screenshots.length, 0)
+})
+
+test('element screenshot throws when the re-query fails after the node detached', async t => {
+  const timedOut = new Error('Waiting for selector `#card` failed: Waiting failed: 1000ms exceeded')
+  const page = createPage([null, timedOut])
+  await t.throwsAsync(capture(page), { message: /detached/ })
   t.is(page.screenshots.length, 0)
 })

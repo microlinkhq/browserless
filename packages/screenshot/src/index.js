@@ -93,18 +93,12 @@ const readElementClip = async (page, element) => {
   }
 }
 
-const waitForElement = async (page, element) => {
-  const screenshotOpts = {}
-  if (element) {
-    let clip = null
-    for (let attempt = 0; attempt < ELEMENT_CLIP_ATTEMPTS && clip === null; attempt++) {
-      clip = await readElementClip(page, element)
-    }
-    screenshotOpts.clip = clip
-    screenshotOpts.fullPage = false
-    return screenshotOpts
+const waitForElement = async (page, element, screenshotOpts) => {
+  for (let attempt = 0; attempt < ELEMENT_CLIP_ATTEMPTS; attempt++) {
+    screenshotOpts.clip = await readElementClip(page, element)
+    if (screenshotOpts.clip !== null) break
   }
-  return screenshotOpts
+  screenshotOpts.fullPage = false
 }
 
 const SCREENSHOT_DEFAULT_OPTS = {
@@ -153,7 +147,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
 
-        let screenshotOpts = {}
+        const screenshotOpts = {}
         const tasks = [
           {
             fn: () => evaluateIsolated(page, 'document.fonts.ready'),
@@ -174,9 +168,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
         if (element && !fullPage) {
           tasks.push({
-            fn: async () => {
-              screenshotOpts = await waitForElement(page, element)
-            },
+            fn: () => waitForElement(page, element, screenshotOpts),
             debug: 'beforeScreenshot:waitForElement'
           })
         }
