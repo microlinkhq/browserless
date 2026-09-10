@@ -2,6 +2,7 @@
 
 const { setTimeout: sleep } = require('node:timers/promises')
 const isTransientContextLoss = require('./is-transient-context-loss')
+const { evaluateIsolated } = require('./evaluate-isolated')
 
 const DEFAULT_QUIET_MS = 300
 const DEFAULT_POLL_MS = 150
@@ -191,7 +192,7 @@ const waitForReady = async (
   while (Date.now() < deadline) {
     let signals
     try {
-      signals = await page.evaluate(paintSignals)
+      signals = await evaluateIsolated(page, paintSignals)
     } catch (error) {
       if (!isTransientContextLoss(page, error)) throw error
       resets++

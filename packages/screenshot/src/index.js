@@ -7,6 +7,7 @@ const pReflect = require('p-reflect')
 
 const isTransientContextLoss = require('./is-transient-context-loss')
 const isWhiteScreenshot = require('./is-white-screenshot')
+const { evaluateIsolated } = require('./evaluate-isolated')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
@@ -43,7 +44,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
 }
 
 const getPageMeta = page =>
-  page.evaluate(() => ({
+  evaluateIsolated(page, () => ({
     title: document.title || '',
     bodyText: document.body ? document.body.innerText || '' : '',
     url: window.location.href || ''
@@ -63,15 +64,10 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
   return !pageReadyResult.isRejected && !!pageReadyResult.value
 }
 
-const getBoundingClientRect = element => {
-  const { top, left, height, width, x, y } = element.getBoundingClientRect()
-  return { top, left, height, width, x, y }
-}
-
 const waitForImagesOnViewport = page =>
-  page.$$eval('img[src]:not([aria-hidden="true"])', elements =>
+  evaluateIsolated(page, () =>
     Promise.all(
-      elements
+      Array.from(document.querySelectorAll('img[src]:not([aria-hidden="true"])'))
         .filter(el => {
           if (el.naturalHeight === 0 || el.naturalWidth === 0) return false
           const { top, left, bottom, right } = el.getBoundingClientRect()
@@ -89,8 +85,12 @@ const waitForImagesOnViewport = page =>
 const waitForElement = async (page, element) => {
   const screenshotOpts = {}
   if (element) {
-    await page.waitForSelector(element, { visible: true })
-    screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
+    const handle = await page.waitForSelector(element, { visible: true })
+    try {
+      screenshotOpts.clip = await handle.boundingBox()
+    } finally {
+      await handle.dispose()
+    }
     screenshotOpts.fullPage = false
     return screenshotOpts
   }
@@ -146,7 +146,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let screenshotOpts = {}
         const tasks = [
           {
-            fn: () => page.evaluate('document.fonts.ready'),
+            fn: () => evaluateIsolated(page, 'document.fonts.ready'),
             debug: 'beforeScreenshot:fontsReady'
           },
           {
