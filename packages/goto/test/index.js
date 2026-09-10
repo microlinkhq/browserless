@@ -350,3 +350,118 @@ test('supports waitForSelector and waitForFunction in the same navigation', asyn
   const { response } = await run()
   t.true(response.ok())
 })
+
+const readEmulation = page =>
+  page.evaluate(async () => ({
+    screenWidth: window.screen.width,
+    screenHeight: window.screen.height,
+    innerWidth: window.innerWidth,
+    innerHeight: window.innerHeight,
+    tabletMediaQuery: window.matchMedia('(max-device-width: 1024px)').matches,
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    brands: navigator.userAgentData.brands,
+    hints: await navigator.userAgentData.getHighEntropyValues(['platform', 'fullVersionList'])
+  }))
+
+const emulationServer = (t, requests = []) =>
+  runServer(t, ({ req, res }) => {
+    requests.push(req.headers)
+    res.setHeader('content-type', 'text/html')
+    res.end('<html><body><h1>ok</h1></body></html>')
+  })
+
+test('desktop screen fits the viewport across reloads and navigations', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const first = await readEmulation(page)
+    await page.reload()
+    const afterReload = await readEmulation(page)
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const afterSecondGoto = await readEmulation(page)
+    return [first, afterReload, afterSecondGoto]
+  })
+
+  for (const state of await run()) {
+    t.true(state.screenWidth >= state.innerWidth)
+    t.true(state.screenHeight >= state.innerHeight)
+    t.false(state.tabletMediaQuery)
+  }
+})
+
+test('mobile screen matches the device viewport', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const { device } = await goto(page, {
+      url,
+      device: 'Galaxy S8',
+      waitUntil: 'load',
+      adblock: false
+    })
+    return { device, state: await readEmulation(page) }
+  })
+
+  const { device, state } = await run()
+  t.is(state.screenWidth, device.viewport.width)
+  t.is(state.screenHeight, device.viewport.height)
+})
+
+test('Chrome user agent sends matching client hints', async t => {
+  const browserless = await getBrowserContext(t)
+  const requests = []
+  const url = await emulationServer(t, requests)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    return readEmulation(page)
+  })
+
+  const state = await run()
+  const major = state.userAgent.match(/Chrome\/(\d+)/)[1]
+
+  t.true(requests[0]['sec-ch-ua'].includes(`"Google Chrome";v="${major}"`))
+  t.true(state.brands.some(({ brand, version }) => brand === 'Google Chrome' && version === major))
+  t.is(state.hints.platform, 'macOS')
+  t.is(state.platform, 'MacIntel')
+})
+
+test('Android Chrome device reports mobile client hints', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, device: 'Galaxy S8', waitUntil: 'load', adblock: false })
+    return readEmulation(page)
+  })
+
+  const state = await run()
+  t.true(state.brands.some(({ brand }) => brand === 'Google Chrome'))
+  t.is(state.hints.platform, 'Android')
+})
+
+test('non Chrome user agents get no fabricated client hints', async t => {
+  const browserless = await getBrowserContext(t)
+  const requests = []
+  const url = await emulationServer(t, requests)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, device: 'iPhone 15', waitUntil: 'load', adblock: false })
+    const iphone = await readEmulation(page)
+    await goto(page, {
+      url,
+      headers: { 'user-agent': 'googlebot' },
+      waitUntil: 'load',
+      adblock: false
+    })
+    const googlebot = await readEmulation(page)
+    return [iphone, googlebot]
+  })
+
+  for (const state of await run()) t.deepEqual(state.brands, [])
+  t.false(requests.some(headers => (headers['sec-ch-ua'] || '').includes('Google Chrome')))
+})

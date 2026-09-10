@@ -11,6 +11,7 @@ const isUrl = require('is-url-http')
 
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 
+const { getClientHints, getScreen } = require('./emulation')
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
 
@@ -35,6 +36,26 @@ const chromeVersionFromBrowser = async page => {
   } catch {
     return undefined
   }
+}
+
+const emulatedScreens = new WeakMap()
+
+const emulateScreen = async page => {
+  const viewport = page.viewport()
+  if (!viewport || viewport.isMobile || emulatedScreens.get(page) === viewport) return
+  const { width: screenWidth, height: screenHeight } = getScreen(viewport)
+  await page._client().send('Emulation.setDeviceMetricsOverride', {
+    mobile: false,
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
+    screenOrientation: viewport.isLandscape
+      ? { angle: 90, type: 'landscapePrimary' }
+      : { angle: 0, type: 'portraitPrimary' },
+    screenWidth,
+    screenHeight
+  })
+  emulatedScreens.set(page, viewport)
 }
 
 const castArray = value => [].concat(value).filter(Boolean)
@@ -395,10 +416,13 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
-    if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
+    if (!isEmpty(device.viewport)) {
+      const setViewport = shallowEqualObjects(defaultViewport, device.viewport)
+        ? Promise.resolve()
+        : page.setViewport(device.viewport)
       prePromises.push(
         run({
-          fn: page.setViewport(device.viewport),
+          fn: setViewport.then(() => emulateScreen(page)),
           timeout: actionTimeout,
           debug: 'viewport'
         })
@@ -432,9 +456,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       }
 
       if (userAgent) {
+        const clientHints = getClientHints(userAgent, await chromeVersionFromBrowser(page))
         prePromises.push(
           run({
-            fn: page.setUserAgent(userAgent),
+            fn: page.setUserAgent({ userAgent, ...clientHints }),
             timeout: actionTimeout,
             debug: { 'user-agent': userAgent }
           })
