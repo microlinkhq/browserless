@@ -91,6 +91,21 @@ test('Android user agent reports a mobile device with its model', t => {
   })
 })
 
+test('Android WebView user agent reports the Android WebView brand', t => {
+  const { platform, userAgentMetadata } = getClientHints(
+    'Mozilla/5.0 (Linux; Android 13; Pixel 7 Build/TQ3A.230805.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.83 Mobile Safari/537.36'
+  )
+
+  t.is(platform, 'Linux armv81')
+  t.deepEqual(brandsOf(userAgentMetadata.brands), [
+    'Chromium/152',
+    'Not?A_Brand/24',
+    'Android WebView/152'
+  ])
+  t.false(userAgentMetadata.brands.some(({ brand }) => brand === 'Google Chrome'))
+  t.like(userAgentMetadata, { platform: 'Android', model: 'Pixel 7', mobile: true })
+})
+
 test('Linux and Chrome OS user agents report their platform', t => {
   const linux = getClientHints(
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'

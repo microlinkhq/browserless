@@ -21,11 +21,13 @@ const DESKTOP_SCREENS = [
 ]
 
 const MAC_PLATFORM_VERSION = '26.6.2'
+const MAC_ARCHITECTURE = { architecture: 'arm', bitness: '64' }
 const LINUX_PLATFORM_VERSION = '6.8.0'
 const WINDOWS_PLATFORM_VERSIONS = { '10.0': '19.0.0', 6.3: '0.3.0', 6.2: '0.2.0', 6.1: '0.1.0' }
 
 const CHROME_USER_AGENT = / Chrome\/((\d+)\.[\d.]+) (?:Mobile )?Safari\/[\d.]+$/
 const REDUCED_VERSION = /^\d+\.0\.0\.0$/
+const ANDROID_WEBVIEW = /; wv\)/
 
 const toPlatformVersion = version => {
   const parts = version.split(/[._]/)
@@ -92,10 +94,7 @@ const detectPlatform = userAgent => {
   }
 
   if (/Macintosh/.test(userAgent)) {
-    return desktop('macOS', 'MacIntel', MAC_PLATFORM_VERSION, {
-      architecture: 'arm',
-      bitness: '64'
-    })
+    return desktop('macOS', 'MacIntel', MAC_PLATFORM_VERSION, MAC_ARCHITECTURE)
   }
 
   const linux = userAgent.match(/Linux (\w+)/)
@@ -136,6 +135,7 @@ const getClientHints = (userAgent, browserVersion) => {
       ? browserVersion
       : userAgentVersion
   const grease = greaseBrand(major)
+  const brand = ANDROID_WEBVIEW.test(userAgent) ? 'Android WebView' : 'Google Chrome'
   const { navigatorPlatform, ...metadata } = device
 
   return {
@@ -144,12 +144,12 @@ const getClientHints = (userAgent, browserVersion) => {
       brands: orderBrands(major, [
         grease,
         { brand: 'Chromium', version: majorVersion },
-        { brand: 'Google Chrome', version: majorVersion }
+        { brand, version: majorVersion }
       ]),
       fullVersionList: orderBrands(major, [
         { brand: grease.brand, version: `${grease.version}.0.0.0` },
         { brand: 'Chromium', version: fullVersion },
-        { brand: 'Google Chrome', version: fullVersion }
+        { brand, version: fullVersion }
       ]),
       fullVersion,
       ...metadata

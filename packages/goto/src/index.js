@@ -38,24 +38,44 @@ const chromeVersionFromBrowser = async page => {
   }
 }
 
-const emulatedScreens = new WeakMap()
+const primaryScreens = new WeakMap()
 
-const emulateScreen = async page => {
-  const viewport = page.viewport()
-  if (!viewport || viewport.isMobile || emulatedScreens.get(page) === viewport) return
-  const { width: screenWidth, height: screenHeight } = getScreen(viewport)
-  await page._client().send('Emulation.setDeviceMetricsOverride', {
-    mobile: false,
-    width: viewport.width,
-    height: viewport.height,
-    deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
-    screenOrientation: viewport.isLandscape
-      ? { angle: 90, type: 'landscapePrimary' }
-      : { angle: 0, type: 'portraitPrimary' },
-    screenWidth,
-    screenHeight
+const isTargetClosed = error => error.name === 'TargetCloseError'
+
+const readPrimaryScreen = page =>
+  page
+    ._client()
+    .send('Emulation.getScreenInfos')
+    .then(
+      ({ screenInfos }) => screenInfos.find(({ isPrimary }) => isPrimary) ?? null,
+      error => (isTargetClosed(error) ? undefined : null)
+    )
+
+const growScreen = (page, screen, viewport) => {
+  if (!screen || (screen.width >= viewport.width && screen.height >= viewport.height)) {
+    return screen
+  }
+  const { width, height } = getScreen({
+    width: Math.max(viewport.width, screen.width),
+    height: Math.max(viewport.height, screen.height)
   })
-  emulatedScreens.set(page, viewport)
+  return page
+    ._client()
+    .send('Emulation.updateScreen', { screenId: screen.id, width, height })
+    .then(
+      ({ screenInfo }) => screenInfo,
+      error => (isTargetClosed(error) ? screen : null)
+    )
+}
+
+const fitScreen = async (page, viewport) => {
+  if (viewport.isMobile) return
+  const browser = page.browser()
+  const screen = (primaryScreens.get(browser) ?? Promise.resolve())
+    .then(screen => (screen === undefined ? readPrimaryScreen(page) : screen))
+    .then(screen => growScreen(page, screen, viewport))
+  primaryScreens.set(browser, screen)
+  return screen
 }
 
 const castArray = value => [].concat(value).filter(Boolean)
@@ -417,12 +437,14 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     }
 
     if (!isEmpty(device.viewport)) {
-      const setViewport = shallowEqualObjects(defaultViewport, device.viewport)
-        ? Promise.resolve()
-        : page.setViewport(device.viewport)
       prePromises.push(
         run({
-          fn: setViewport.then(() => emulateScreen(page)),
+          fn: Promise.all([
+            shallowEqualObjects(page.viewport(), device.viewport)
+              ? undefined
+              : page.setViewport(device.viewport),
+            fitScreen(page, device.viewport)
+          ]),
           timeout: actionTimeout,
           debug: 'viewport'
         })

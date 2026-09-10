@@ -50,6 +50,7 @@ test('waitUntilAuto is overridable via goto options', async t => {
   const noop = () => Promise.resolve()
   const page = {
     setViewport: noop,
+    viewport: () => null,
     setExtraHTTPHeaders: noop,
     setUserAgent: noop,
     emulateMediaFeatures: noop,

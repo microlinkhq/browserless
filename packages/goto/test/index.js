@@ -392,6 +392,136 @@ test('desktop screen fits the viewport across reloads and navigations', async t 
   }
 })
 
+test('non default desktop viewport renders inside a screen that fits it', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, {
+      url,
+      viewport: { width: 1920, height: 1080 },
+      waitUntil: 'load',
+      adblock: false
+    })
+    return readEmulation(page)
+  })
+
+  const state = await run()
+  t.is(state.innerWidth, 1920)
+  t.true(state.screenWidth >= state.innerWidth)
+  t.true(state.screenHeight >= state.innerHeight)
+})
+
+test('screen stays fitted after puppeteer re-applies the same viewport', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    await page.setViewport(page.viewport())
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const afterSetViewport = await readEmulation(page)
+    await page.screenshot({ fullPage: true, captureBeyondViewport: false })
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const afterScreenshot = await readEmulation(page)
+    return [afterSetViewport, afterScreenshot]
+  })
+
+  for (const state of await run()) {
+    t.true(state.screenWidth >= state.innerWidth)
+    t.false(state.tabletMediaQuery)
+  }
+})
+
+test('switching from a mobile device back to the default device restores desktop metrics', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, device: 'iPhone 15', waitUntil: 'load', adblock: false })
+    const { device } = await goto(page, { url, waitUntil: 'load', adblock: false })
+    return { device, state: await readEmulation(page) }
+  })
+
+  const { device, state } = await run()
+  t.is(state.innerWidth, device.viewport.width)
+  t.true(state.screenWidth >= state.innerWidth)
+  t.false(state.tabletMediaQuery)
+  t.is(state.hints.platform, 'macOS')
+})
+
+test('repeat navigations do not add emulation round trips', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const client = page._client()
+    const originalSend = client.send.bind(client)
+    const calls = []
+    client.send = (method, ...args) => {
+      calls.push(method)
+      return originalSend(method, ...args)
+    }
+
+    const countRepeatGoto = async opts => {
+      await goto(page, { url, waitUntil: 'load', adblock: false, ...opts })
+      calls.length = 0
+      await goto(page, { url, waitUntil: 'load', adblock: false, ...opts })
+      return calls.filter(method => method.startsWith('Emulation.'))
+    }
+
+    const counts = {
+      defaultDevice: await countRepeatGoto({}),
+      desktopViewport: await countRepeatGoto({ viewport: { width: 1920, height: 1080 } }),
+      mobileDevice: await countRepeatGoto({ device: 'iPhone 15' })
+    }
+
+    client.send = originalSend
+    return counts
+  })
+
+  const counts = await run()
+  const emulationCalls = ['defaultDevice', 'desktopViewport', 'mobileDevice'].map(name =>
+    counts[name].filter(method => method !== 'Emulation.setEmulatedMedia')
+  )
+  t.deepEqual(emulationCalls, [[], [], []], JSON.stringify(counts))
+})
+
+test('Windows and Linux user agents send matching client hints', async t => {
+  const browserless = await getBrowserContext(t)
+  const requests = []
+  const url = await emulationServer(t, requests)
+  const userAgents = {
+    Windows:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36',
+    Linux:
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
+  }
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const states = {}
+    for (const [name, userAgent] of Object.entries(userAgents)) {
+      requests.length = 0
+      await goto(page, {
+        url,
+        headers: { 'user-agent': userAgent },
+        waitUntil: 'load',
+        adblock: false
+      })
+      states[name] = { headers: requests[0], ...(await readEmulation(page)) }
+    }
+    return states
+  })
+
+  const { Windows, Linux } = await run()
+  t.is(Windows.headers['sec-ch-ua-platform'], '"Windows"')
+  t.is(Windows.platform, 'Win32')
+  t.is(Windows.hints.platform, 'Windows')
+  t.is(Linux.headers['sec-ch-ua-platform'], '"Linux"')
+  t.is(Linux.platform, 'Linux x86_64')
+  t.is(Linux.hints.platform, 'Linux')
+})
+
 test('mobile screen matches the device viewport', async t => {
   const browserless = await getBrowserContext(t)
   const url = await emulationServer(t)
