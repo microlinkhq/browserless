@@ -6,7 +6,7 @@ const test = require('ava')
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { runServer, getBrowserContext } = require('@browserless/test')
-const { AUTOCONSENT_WORLD, runAutoConsent } = require('../../../src/adblock')
+const { AUTOCONSENT_WORLD, AUTOCONSENT_BINDING, runAutoConsent } = require('../../../src/adblock')
 
 const TEST_RULES = [
   '###browserless-test-ad',
@@ -34,14 +34,14 @@ const getUrlWithFrame = t =>
     res.end('<html><body><iframe src="/frame"></iframe></body></html>')
   })
 
-const evaluateInAutoconsentWorld = async (page, fn, frame = page.mainFrame()) => {
+const evaluateInAutoconsentWorld = async (page, fn, frame = page.mainFrame(), args = []) => {
   const client = page._client()
   const { executionContextId } = await client.send('Page.createIsolatedWorld', {
     frameId: frame._id,
     worldName: AUTOCONSENT_WORLD
   })
   const { result, exceptionDetails } = await client.send('Runtime.evaluate', {
-    expression: `(${fn})()`,
+    expression: `(${fn})(...${JSON.stringify(args)})`,
     contextId: executionContextId,
     awaitPromise: true,
     returnByValue: true
@@ -99,8 +99,9 @@ test('pre-warm rules failure does not crash the process', t => {
     }
     const adblock = require(${JSON.stringify(adblockPath)})
     const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
-    const client = { on: () => {}, send: async () => ({}) }
-    adblock.enableBlockingInPage({ _client: () => client, mainFrame: () => ({ _id: 'main' }) }, run, 5000)
+    const client = { on: () => {}, off: () => {}, send: async () => ({}) }
+    const page = { _client: () => client, mainFrame: () => ({ _id: 'main' }), on: () => {}, off: () => {} }
+    adblock.enableBlockingInPage(page, run, 5000)
     setTimeout(() => { process.stdout.write('ok'); process.exit(0) }, 500)
   `
 
@@ -311,6 +312,127 @@ test('runAutoConsent fallback reuses the running autoconsent instance', async t 
     initContextIds,
     'the fallback must evaluate in the world that already runs autoconsent'
   )
+})
+
+const spyAdblockListeners = client => {
+  const added = []
+  const removed = new Set()
+  const on = client.on.bind(client)
+  const off = client.off.bind(client)
+  client.on = (event, handler) => {
+    if (new Error().stack.includes('/src/adblock.js')) added.push(handler)
+    return on(event, handler)
+  }
+  client.off = (event, handler) => {
+    removed.add(handler)
+    return off(event, handler)
+  }
+  return { added, removed }
+}
+
+test('concurrent goto calls on the same page set up autoconsent once', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const { added } = spyAdblockListeners(page._client())
+    await Promise.all([goto(page, { url: `${url}1` }), goto(page, { url: `${url}2` })])
+    return added.length
+  })
+
+  t.is(await run(), 3, 'one listener per CDP event, registered once')
+})
+
+test('autoconsent session listeners are removed when the page closes', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const { added, removed } = spyAdblockListeners(page._client())
+    await goto(page, { url })
+    await page.close()
+    return { added: added.length, detached: added.filter(handler => removed.has(handler)).length }
+  })
+
+  const { added, detached } = await run()
+  t.is(added, 3)
+  t.is(detached, 3)
+})
+
+test('autoconsent tracks only the contexts of the current document', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    for (const path of ['one', 'two', 'three']) await goto(page, { url: `${url}${path}` })
+    await waitForInitDone(page)
+    return page._autoconsentContextIds.size
+  })
+
+  t.is(await run(), 1)
+})
+
+test('autoconsent ignores messages from other worlds even when the binding reaches them', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    await waitForInitDone(page)
+    await page._client().send('Runtime.addBinding', { name: AUTOCONSENT_BINDING })
+    await page.evaluate(binding => {
+      window.__forged = false
+      window[binding](
+        JSON.stringify({ type: 'eval', id: 'forged', code: 'window.__forged = true' })
+      )
+    }, AUTOCONSENT_BINDING)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    return page.evaluate(() => window.__forged)
+  })
+
+  t.false(await run(), 'main-world messages must not reach the autoconsent handler')
+})
+
+test('autoconsent keeps messaging after a back/forward cache restore', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(
+      "<html><head><script>window.__persisted = []; addEventListener('pageshow', event => window.__persisted.push(event.persisted))</script></head><body><h1>hello</h1></body></html>"
+    )
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    await goto(page, { url: url.replace('127.0.0.1', 'localhost') })
+    await page.goBack({ waitUntil: 'load' })
+    await waitForInitDone(page)
+    const restoredFromCache = await page.evaluate(() => window.__persisted.includes(true))
+
+    const reply = await evaluateInAutoconsentWorld(page, () => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(() => resolve('NO_REPLY'), 3000)
+        window.autoconsentReceiveMessage = msg => {
+          if (msg.type === 'evalResp' && msg.id === 'bfcache') {
+            clearTimeout(timeout)
+            resolve(msg.result)
+          }
+        }
+        try {
+          window.autoconsentSendMessage({ type: 'eval', id: 'bfcache', code: '40 + 2' })
+        } catch (error) {
+          clearTimeout(timeout)
+          resolve(`THREW ${error.message}`)
+        }
+      })
+    })
+
+    return { restoredFromCache, reply }
+  })
+
+  const { restoredFromCache, reply } = await run()
+  t.true(restoredFromCache, 'the page must be restored from the back/forward cache')
+  t.is(reply, 42)
 })
 
 const consentBanner = buttons => `<html><body>
@@ -537,14 +659,15 @@ test('autoconsent does not run in child frames and ignores their messages', asyn
 
     const childWorld = await evaluateInAutoconsentWorld(
       page,
-      () => {
+      binding => {
         const initialized = typeof window.autoconsentReceiveMessage === 'function'
-        window.autoconsentSendMessage(
+        window[binding](
           JSON.stringify({ type: 'eval', id: 'frame-eval', code: 'window.__iframeEval = true' })
         )
         return initialized
       },
-      iframe
+      iframe,
+      [AUTOCONSENT_BINDING]
     )
 
     await new Promise(resolve => setTimeout(resolve, 1000))

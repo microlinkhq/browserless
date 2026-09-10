@@ -94,18 +94,17 @@ const autoconsentConfig = Object.freeze({
 })
 
 const AUTOCONSENT_WORLD = 'browserless_autoconsent'
-const AUTOCONSENT_BINDING = 'autoconsentSendMessage'
+const AUTOCONSENT_BINDING = 'browserlessAutoconsentBinding'
 
 const RECEIVE_MESSAGE = `function (message) {
   return window.autoconsentReceiveMessage && window.autoconsentReceiveMessage(message)
 }`
 
-/* Top frame only, once per document: the CDP binding takes a string, so the
-   wrapper serializes every message before autoconsent captures it. */
-const toContentScript =
-  autoconsentScript => `if (window.self === window.top && !window.autoconsentReceiveMessage) {
-  const sendMessage = window.${AUTOCONSENT_BINDING}
-  window.${AUTOCONSENT_BINDING} = message => sendMessage(JSON.stringify(message))
+/* Top frame only. autoconsent sends objects through `autoconsentSendMessage`,
+   while the CDP binding takes a string under its own name: Chrome re-installs
+   bindings on a back/forward cache restore, which must not replace the wrapper. */
+const toContentScript = autoconsentScript => `if (window.self === window.top) {
+  window.autoconsentSendMessage = message => window.${AUTOCONSENT_BINDING}(JSON.stringify(message))
   ${autoconsentScript}
 }`
 
@@ -163,49 +162,67 @@ const onMessage = async ({ page, client, executionContextId, message, timeout })
   }
 }
 
-const trackTopFrameContexts = (page, client) => {
-  const contextIds = new Set()
-  client.on('Runtime.executionContextCreated', ({ context }) => {
-    if (context.name === AUTOCONSENT_WORLD && context.auxData?.frameId === page.mainFrame()._id) {
-      contextIds.add(context.id)
-    }
-  })
-  client.on('Runtime.executionContextDestroyed', ({ executionContextId }) =>
-    contextIds.delete(executionContextId)
-  )
-  client.on('Runtime.executionContextsCleared', () => contextIds.clear())
-  return contextIds
+const listenUntilClose = (page, client, listeners) => {
+  const detach = () => {
+    page.off('close', detach)
+    for (const [event, handler] of listeners) client.off(event, handler)
+  }
+  for (const [event, handler] of listeners) client.on(event, handler)
+  page.on('close', detach)
+  return detach
 }
 
-const setupAutoConsent = async (page, timeout) => {
-  if (page._autoconsentSetup) return
+const createAutoConsent = async (page, timeout) => {
   const client = page._client()
-  const contentScript = toContentScript(await getAutoconsentPlaywrightScript())
-  const topFrameContexts = trackTopFrameContexts(page, client)
+  const topFrameContexts = (page._autoconsentContextIds = new Set())
 
-  client.on('Runtime.bindingCalled', ({ name, payload, executionContextId }) => {
-    if (name !== AUTOCONSENT_BINDING || !topFrameContexts.has(executionContextId)) return
-    const message = parseMessage(payload)
-    if (message) onMessage({ page, client, executionContextId, message, timeout })
-  })
-
-  await Promise.all([
-    client.send('Runtime.addBinding', {
-      name: AUTOCONSENT_BINDING,
-      executionContextName: AUTOCONSENT_WORLD
-    }),
-    client.send('Page.addScriptToEvaluateOnNewDocument', {
-      source: contentScript,
-      worldName: AUTOCONSENT_WORLD
-    })
+  const detach = listenUntilClose(page, client, [
+    [
+      'Runtime.executionContextCreated',
+      ({ context }) => {
+        if (context.name !== AUTOCONSENT_WORLD) return
+        if (context.auxData?.frameId === page.mainFrame()._id) topFrameContexts.add(context.id)
+      }
+    ],
+    ['Runtime.executionContextsCleared', () => topFrameContexts.clear()],
+    [
+      'Runtime.bindingCalled',
+      ({ name, payload, executionContextId }) => {
+        if (name !== AUTOCONSENT_BINDING || !topFrameContexts.has(executionContextId)) return
+        const message = parseMessage(payload)
+        if (message) onMessage({ page, client, executionContextId, message, timeout })
+      }
+    ]
   ])
-  page._autoconsentScript = contentScript
-  page._autoconsentSetup = true
+
+  try {
+    const contentScript = toContentScript(await getAutoconsentPlaywrightScript())
+    await Promise.all([
+      client.send('Runtime.addBinding', {
+        name: AUTOCONSENT_BINDING,
+        executionContextName: AUTOCONSENT_WORLD
+      }),
+      client.send('Page.addScriptToEvaluateOnNewDocument', {
+        source: contentScript,
+        worldName: AUTOCONSENT_WORLD
+      })
+    ])
+    page._autoconsentScript = contentScript
+  } catch (error) {
+    detach()
+    throw error
+  }
 }
+
+const setupAutoConsent = (page, timeout) =>
+  (page._autoconsentSetup ??= createAutoConsent(page, timeout).catch(error => {
+    page._autoconsentSetup = undefined
+    throw error
+  }))
 
 /* Fallback for documents where the new-document injection did not run.
    `Page.createIsolatedWorld` returns the document's existing autoconsent world
-   when there is one, where the content script guard skips a second instance. */
+   when there is one, where autoconsent's own guard skips a second instance. */
 const runAutoConsent = async page => {
   if (page._autoconsentInitDone || !page._autoconsentScript) return
   const client = page._client()
@@ -242,4 +259,4 @@ const enableBlockingInPage = (page, run, timeout) => {
   ]
 }
 
-module.exports = { enableBlockingInPage, runAutoConsent, AUTOCONSENT_WORLD }
+module.exports = { enableBlockingInPage, runAutoConsent, AUTOCONSENT_WORLD, AUTOCONSENT_BINDING }
