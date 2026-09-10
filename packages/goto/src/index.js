@@ -74,7 +74,10 @@ const fitScreen = async (page, viewport) => {
   const screen = (primaryScreens.get(browser) ?? Promise.resolve())
     .then(screen => (screen === undefined ? readPrimaryScreen(page) : screen))
     .then(screen => growScreen(page, screen, viewport))
-  primaryScreens.set(browser, screen)
+  primaryScreens.set(
+    browser,
+    screen.catch(() => undefined)
+  )
   return screen
 }
 
