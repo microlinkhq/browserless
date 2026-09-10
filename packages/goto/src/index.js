@@ -579,8 +579,9 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       }
 
       if (flattenShadowDOM) {
+        const isolatedRealm = page.mainFrame().isolatedRealm()
         const { isRejected, reason: flattenError } = await run({
-          fn: page.evaluate(() => {
+          fn: isolatedRealm.evaluate(() => {
             ;(function flatten (root) {
               const replaceSlot = (slot, nodes) => {
                 const parent = slot.parentNode
