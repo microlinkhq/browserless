@@ -276,6 +276,46 @@ test('slots with fallback content use the fallback when no nodes are assigned', 
   t.true(withoutScripts.includes('<span class="default-label">Default</span>'))
 })
 
+const getHookedUrl = t =>
+  runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    for (const proto of [Document.prototype, Element.prototype, DocumentFragment.prototype]) {
+      const querySelectorAll = proto.querySelectorAll
+      proto.querySelectorAll = function (...args) {
+        document.documentElement.setAttribute('data-main-world-query', 'true')
+        return querySelectorAll.apply(this, args)
+      }
+    }
+    class MyRow extends HTMLElement {
+      connectedCallback() {
+        const shadow = this.attachShadow({ mode: 'open' })
+        shadow.innerHTML = '<div class="row"><span>' + this.getAttribute('name') + '</span></div>'
+      }
+    }
+    customElements.define('my-row', MyRow)
+  </script>
+</head>
+<body>
+  <my-row name="Alice"></my-row>
+</body>
+</html>`)
+  })
+
+test('shadow DOM flattening is invisible to main-world page scripts', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getHookedUrl(t)
+
+  const html = await browserless.html(url, { adblock: false })
+  const withoutScripts = html.replace(/<script[\s\S]*?<\/script>/gi, '')
+
+  t.true(withoutScripts.includes('<div class="row"><span>Alice</span></div>'))
+  t.false(withoutScripts.includes('data-main-world-query'))
+})
+
 test('custom element attributes are preserved after flattening', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)
