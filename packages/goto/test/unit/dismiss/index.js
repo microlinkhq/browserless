@@ -212,13 +212,11 @@ test('dismiss.run fallback works when injection did not run', async t => {
   const url = await serve(t, DIALOG)
 
   const run = browserless.withPage((page, goto) => async () => {
-    /* simulate a document where the new-document injection never ran */
+    /* simulate a document where the DOMContentLoaded dismissal never ran */
     const client = page._client()
-    const send = client.send.bind(client)
-    client.send = (method, params, ...rest) =>
-      method === 'Page.addScriptToEvaluateOnNewDocument' && params?.worldName === dismiss.WORLD_NAME
-        ? Promise.resolve({ identifier: '' })
-        : send(method, params, ...rest)
+    const on = client.on.bind(client)
+    client.on = (event, handler) =>
+      event === 'Page.domContentEventFired' ? client : on(event, handler)
     await goto(page, { url })
     return waitFor(page, () => window.__clicked)
   })
@@ -474,4 +472,55 @@ test('goto lets autoconsent reject a CMP inserted after navigation while dismiss
   const { clicked, dismissClicks } = await run()
   t.is(clicked, 'reject', 'autoconsent must opt out')
   t.is(dismissClicks, 0, 'dismiss must not register any clicks')
+})
+
+test('creates the dismiss world only in the top frame', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    DIALOG +
+      '<iframe srcdoc="<p>one</p>"></iframe><iframe srcdoc="<p>two</p>"></iframe><iframe srcdoc="<p>three</p>"></iframe>'
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    const clicked = await waitFor(page, () => window.__clicked)
+    const session = await page.createCDPSession()
+    const worldNames = []
+    session.on('Runtime.executionContextCreated', ({ context }) => worldNames.push(context.name))
+    await session.send('Runtime.enable')
+    await session.detach()
+    return {
+      clicked,
+      frames: page.frames().length,
+      dismissWorlds: worldNames.filter(name => name === dismiss.WORLD_NAME).length
+    }
+  })
+
+  const { clicked, frames, dismissWorlds } = await run()
+  t.is(clicked, 'ack')
+  t.is(frames, 4)
+  t.is(dismissWorlds, 1, 'child frames must not get a dismiss world')
+})
+
+test('run does not retry page exceptions that look like a stale context', async t => {
+  const methods = []
+  const client = {
+    send: async method => {
+      methods.push(method)
+      return method === 'Page.createIsolatedWorld'
+        ? { executionContextId: 1 }
+        : {
+            result: {},
+            exceptionDetails: {
+              text: 'Uncaught',
+              exception: { description: 'Error: Cannot find context' }
+            }
+          }
+    }
+  }
+  const page = { _client: () => client, mainFrame: () => ({ _id: 'main' }) }
+
+  await t.throwsAsync(dismiss.run(page), { message: 'Error: Cannot find context' })
+  t.deepEqual(methods, ['Page.createIsolatedWorld', 'Runtime.evaluate'])
 })

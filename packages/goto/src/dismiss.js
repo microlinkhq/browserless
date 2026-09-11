@@ -181,10 +181,9 @@ const STALE_CONTEXT_ERROR =
 
 const MAX_ATTEMPTS = 3
 
-const evaluationError = ({ exception, text }) => new Error(exception?.description ?? text)
+const pagesWithSetup = new WeakSet()
 
-const setup = page =>
-  page._client().send('Page.addScriptToEvaluateOnNewDocument', { source, worldName: WORLD_NAME })
+const evaluationError = ({ exception, text }) => new Error(exception?.description ?? text)
 
 const evaluateInWorld = async page => {
   const client = page._client()
@@ -192,30 +191,46 @@ const evaluateInWorld = async page => {
     frameId: page.mainFrame()._id,
     worldName: WORLD_NAME
   })
-  const { result, exceptionDetails } = await client.send('Runtime.evaluate', {
+  return client.send('Runtime.evaluate', {
     expression: source,
     contextId: executionContextId,
     returnByValue: true
   })
-  if (exceptionDetails) throw evaluationError(exceptionDetails)
-  return result.value
 }
 
-/* Re-run for documents where the new-document injection did not fire;
-   `Page.createIsolatedWorld` returns the world the injection already created
-   when it did, so the idempotency guard is shared with `setup`. A navigation
-   between both CDP calls destroys that world, so it is resolved again on the
-   new document. */
-const run = async page => {
+/* A navigation between both CDP calls destroys the world, so it is resolved
+   again on the new document. */
+const evaluateWithRetry = async page => {
   for (let attempt = 1; ; attempt++) {
     try {
-      const clicked = await evaluateInWorld(page)
-      if (clicked > 0) debug('clicked', { clicked })
-      return clicked
+      return await evaluateInWorld(page)
     } catch (error) {
       if (attempt === MAX_ATTEMPTS || !STALE_CONTEXT_ERROR.test(error.message)) throw error
     }
   }
+}
+
+/* Runs for documents where the DOMContentLoaded dismissal did not fire;
+   `Page.createIsolatedWorld` returns the same named world either way, so the
+   idempotency guard is shared with `setup`. */
+const run = async page => {
+  const { result, exceptionDetails } = await evaluateWithRetry(page)
+  if (exceptionDetails) throw evaluationError(exceptionDetails)
+  const clicked = result.value
+  if (clicked > 0) debug('clicked', { clicked })
+  return clicked
+}
+
+/* `Page.domContentEventFired` only fires for the main frame, so child frames
+   never get a dismiss world. */
+const setup = async page => {
+  if (pagesWithSetup.has(page)) return
+  pagesWithSetup.add(page)
+  page
+    ._client()
+    .on('Page.domContentEventFired', () =>
+      run(page).catch(error => debug('error', { message: error.message }))
+    )
 }
 
 module.exports = { setup, run, WORLD_NAME }
