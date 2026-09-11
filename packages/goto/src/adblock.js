@@ -97,25 +97,104 @@ const AUTOCONSENT_WORLD = 'browserless_autoconsent'
 const AUTOCONSENT_BINDING = 'browserlessAutoconsentBinding'
 
 const RECEIVE_MESSAGE = `function (message) {
-  return window.autoconsentReceiveMessage && window.autoconsentReceiveMessage(message)
+  const receive = Object.prototype.hasOwnProperty.call(window, 'autoconsentReceiveMessage') && window.autoconsentReceiveMessage
+  return typeof receive === 'function' ? receive(message) : undefined
 }`
 
 /* autoconsent sends objects through `autoconsentSendMessage`, while the CDP
    binding takes a string under its own name: Chrome re-installs bindings on a
-   back/forward cache restore, which must not replace the wrapper. */
-const toContentScript =
-  autoconsentScript => `window.autoconsentSendMessage = message => window.${AUTOCONSENT_BINDING}(JSON.stringify(message));
-${autoconsentScript}`
+   back/forward cache restore, which must not replace the wrapper.
+   The injection runs after the document exists, so `window.<id>` can already
+   resolve to a page element: an own `autoconsentReceiveMessage` property keeps
+   autoconsent's startup guard from reading `<div id="autoconsentReceiveMessage">`.
+   The first run in a world delivers `initResp` in the same evaluation, so
+   prehide does not wait for an init round trip; its `init` is marked
+   `preinitialized` for Node to skip the reply. */
+const toContentScript = (autoconsentScript, initResp) => `{
+  if (!Object.prototype.hasOwnProperty.call(window, 'autoconsentReceiveMessage')) {
+    Object.defineProperty(window, 'autoconsentReceiveMessage', { value: undefined, writable: true, configurable: true });
+  }
+  const firstRun = typeof window.autoconsentReceiveMessage !== 'function';
+  let bootstrapping = firstRun;
+  window.autoconsentSendMessage = message => window.${AUTOCONSENT_BINDING}(JSON.stringify(
+    bootstrapping && message && message.type === 'init' ? Object.assign({}, message, { preinitialized: true }) : message
+  ));
+  ${autoconsentScript}
+  ;bootstrapping = false;
+  if (firstRun && typeof window.autoconsentReceiveMessage === 'function') {
+    window.autoconsentReceiveMessage(JSON.parse(${JSON.stringify(JSON.stringify(initResp))}));
+  }
+}`
 
-const injectContentScript = async (client, frameId, contentScript) => {
+const getContentScript = lazy(() =>
+  Promise.all([getAutoconsentPlaywrightScript(), getAutoconsentRules()]).then(
+    ([autoconsentScript, rules]) =>
+      toContentScript(autoconsentScript, { type: 'initResp', config: autoconsentConfig, rules })
+  )
+)
+
+const AUTOCONSENT_PREHIDE_ID = 'autoconsent-prehide'
+const AUTOCONSENT_GLOBAL_PREHIDE =
+  '#didomi-popup,.didomi-popup-container,.didomi-popup-notice,.didomi-consent-popup-preferences,#didomi-notice,.didomi-popup-backdrop,.didomi-screen-medium'
+
+/* Mirrors autoconsent's own prehide (`style#autoconsent-prehide`, opacity rule)
+   so it lands before the bundle is compiled; autoconsent appends to the same
+   element and removes it, and an unclaimed prehide removes itself. */
+const toPrehideScript = (selectors, patterned) => `{
+  try {
+    const receive = Object.prototype.hasOwnProperty.call(window, 'autoconsentReceiveMessage') && window.autoconsentReceiveMessage;
+    if (typeof receive !== 'function' && !document.getElementById('${AUTOCONSENT_PREHIDE_ID}')) {
+      const selector = [${JSON.stringify(selectors)}]
+        .concat(${JSON.stringify(
+          patterned
+        )}.filter(([pattern]) => window.location.href.match(pattern)).map(([, patternSelectors]) => patternSelectors))
+        .join(',');
+      const css = selector + ' { opacity: 0 !important; z-index: -1 !important; pointer-events: none !important; } ';
+      const style = document.createElement('style');
+      style.id = '${AUTOCONSENT_PREHIDE_ID}';
+      style.innerText = css;
+      const append = () => (document.head || document.documentElement).appendChild(style);
+      if (document.head || document.documentElement) append();
+      else document.addEventListener('DOMContentLoaded', append, { once: true });
+      setTimeout(() => { if (style.innerText === css) style.remove(); }, ${
+        autoconsentConfig.prehideTimeout
+      });
+    }
+  } catch {}
+}`
+
+const getPrehideScript = lazy(() =>
+  getAutoconsentRules().then(compactRules => {
+    const { decodeRules } = require('@duckduckgo/autoconsent')
+    const topFrameRules = decodeRules(compactRules).filter(
+      rule => rule.prehideSelectors?.length && rule.runContext?.main !== false
+    )
+    const selectors = topFrameRules
+      .filter(rule => !rule.runContext?.urlPattern)
+      .flatMap(rule => rule.prehideSelectors)
+    const patterned = topFrameRules
+      .filter(rule => rule.runContext?.urlPattern)
+      .map(rule => [rule.runContext.urlPattern, rule.prehideSelectors.join(',')])
+    return toPrehideScript([AUTOCONSENT_GLOBAL_PREHIDE, ...selectors].join(','), patterned)
+  })
+)
+
+const injectContentScript = async (client, frameId, contentScript, prehideScript) => {
   const { executionContextId } = await client.send('Page.createIsolatedWorld', {
     frameId,
     worldName: AUTOCONSENT_WORLD
   })
-  return client.send('Runtime.evaluate', {
+  const prehide =
+    prehideScript &&
+    client
+      .send('Runtime.evaluate', { expression: prehideScript, contextId: executionContextId })
+      .catch(() => {})
+  const result = await client.send('Runtime.evaluate', {
     expression: contentScript,
     contextId: executionContextId
   })
+  await prehide
+  return result
 }
 
 const parseMessage = payload => {
@@ -140,6 +219,7 @@ const onMessage = async ({ page, client, executionContextId, message, timeout })
   switch (message.type) {
     case 'init': {
       page._autoconsentInitDone = true
+      if (message.preinitialized) return
       const rules = await getAutoconsentRules()
       return sendMessage(client, executionContextId, {
         type: 'initResp',
@@ -182,8 +262,7 @@ const listenUntilClose = (page, client, listeners) => {
   return detach
 }
 
-const createAutoConsent = async (page, timeout) => {
-  const client = page._client()
+const createAutoConsent = async (page, client, timeout) => {
   const topFrameContexts = (page._autoconsentContextIds = new Set())
 
   const detach = listenUntilClose(page, client, [
@@ -197,7 +276,8 @@ const createAutoConsent = async (page, timeout) => {
           page._autoconsentInjection = injectContentScript(
             client,
             context.auxData.frameId,
-            page._autoconsentScript
+            page._autoconsentScript,
+            page._autoconsentPrehideScript
           ).then(
             ({ exceptionDetails }) => !exceptionDetails,
             error => {
@@ -230,8 +310,16 @@ const createAutoConsent = async (page, timeout) => {
     ]
   ])
 
+  page._autoconsentDetach = detach
+
   try {
-    const contentScript = toContentScript(await getAutoconsentPlaywrightScript())
+    const [contentScript, prehideScript] = await Promise.all([
+      getContentScript(),
+      getPrehideScript().catch(error => {
+        debug('autoconsent:prehide:error', { message: error.message })
+      })
+    ])
+    page._autoconsentPrehideScript = prehideScript
     await client.send('Runtime.addBinding', {
       name: AUTOCONSENT_BINDING,
       executionContextName: AUTOCONSENT_WORLD
@@ -243,11 +331,23 @@ const createAutoConsent = async (page, timeout) => {
   }
 }
 
-const setupAutoConsent = (page, timeout) =>
-  (page._autoconsentSetup ??= createAutoConsent(page, timeout).catch(error => {
-    page._autoconsentSetup = undefined
-    throw error
-  }))
+/* Puppeteer swaps the page to a new CDP session when a prerendered page is
+   activated, so listeners and the binding follow the session, not the page. */
+const setupAutoConsent = (page, timeout) => {
+  const client = page._client()
+  if (page._autoconsentSession !== client) {
+    page._autoconsentDetach?.()
+    page._autoconsentSession = client
+    page._autoconsentSetup = createAutoConsent(page, client, timeout).catch(error => {
+      if (page._autoconsentSession === client) {
+        page._autoconsentSession = undefined
+        page._autoconsentSetup = undefined
+      }
+      throw error
+    })
+  }
+  return page._autoconsentSetup
+}
 
 /* Fallback for documents where the injection did not run or failed.
    `Page.createIsolatedWorld` returns the document's existing autoconsent world
