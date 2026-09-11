@@ -521,65 +521,145 @@ test('dismisses a page whose element id clobbers the guard name', async t => {
   t.is(await run(), 'ack')
 })
 
-/* an <input name="…"> makes HTMLFormElement named access shadow that builtin
-   on the <form> dialog, so reading it off the element throws */
-const HOSTILE_FORM_METHODS = ['getClientRects', 'querySelector', 'querySelectorAll']
+const dismissOnGoto = (browserless, url) =>
+  browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return {
+      clicked: await waitFor(page, () => window.__clicked),
+      runClicks: await dismiss.run(page)
+    }
+  })()
 
-const hostileForm = method =>
-  `<form role="dialog" style="position:fixed;top:60%;left:20%;background:#fff;padding:16px">
-     <p>Newsletter</p><input name="${method}">
-     <button type="button" aria-label="Close">x</button>
+/* HTMLFormElement named access shadows builtins on the <form> itself: a named
+   control shadows a <form> dialog's methods, and a named <img> shadows a
+   <form role="button">'s, so the dismissal must never read them off the element */
+const formDialog = method =>
+  `<form role="dialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px" onsubmit="return false">
+     <p>Scheduled maintenance this weekend.</p>
+     <button type="button" name="${method}" onclick="window.__clicked='ack'">OK</button>
    </form>`
 
-for (const method of HOSTILE_FORM_METHODS) {
-  test(`dismisses a later dialog when a form shadows Element.prototype.${method}`, async t => {
+for (const method of ['getClientRects', 'querySelector', 'querySelectorAll']) {
+  test(`clicks a form dialog whose button shadows ${method}`, async t => {
     const browserless = await getBrowserContext(t)
-    const url = await serve(t, hostileForm(method) + DIALOG)
+    const url = await serve(t, formDialog(method))
 
-    const run = browserless.withPage((page, goto) => async () => {
-      await goto(page, { url })
-      return waitFor(page, () => window.__clicked)
-    })
-
-    t.is(await run(), 'ack', `a form shadowing ${method} must not stop dismissal`)
+    const { clicked, runClicks } = await dismissOnGoto(browserless, url)
+    t.is(clicked, 'ack')
+    t.is(runClicks, 1)
   })
 
-  test(`dismisses a late dialog when a form shadows Element.prototype.${method}`, async t => {
+  test(`clicks a late form dialog whose button shadows ${method}`, async t => {
     const browserless = await getBrowserContext(t)
     const url = await serve(
       t,
-      hostileForm(method) +
-        `<script>setTimeout(() => document.body.insertAdjacentHTML('beforeend', ${JSON.stringify(
-          DIALOG
-        )}), 500)</script>`
+      `<script>setTimeout(() => document.body.insertAdjacentHTML('beforeend', ${JSON.stringify(
+        formDialog(method)
+      )}), 500)</script>`
     )
 
-    const run = browserless.withPage((page, goto) => async () => {
-      await goto(page, { url })
-      return waitFor(page, () => window.__clicked)
-    })
-
-    t.is(await run(), 'ack', `a form shadowing ${method} must not stop later rescans`)
+    const { clicked } = await dismissOnGoto(browserless, url)
+    t.is(clicked, 'ack')
   })
 }
 
-test('dismisses a dialog whose first button is a non-HTML (SVG) element', async t => {
+const formButton = (method, attributes = '') =>
+  `<div role="dialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px">
+     <p>Scheduled maintenance this weekend.</p>
+     <form role="button" ${attributes} style="display:inline-block" onclick="window.__clicked='ack'"><span>OK</span><img name="${method}" width="1" height="1"></form>
+   </div>`
+
+/* closest is only read for a button labelled as a close control */
+const FORM_BUTTON_CASES = [
+  { method: 'getClientRects' },
+  { method: 'innerText' },
+  { method: 'getAttribute' },
+  { method: 'closest', attributes: 'aria-label="Close"' },
+  { method: 'click' }
+]
+
+for (const { method, attributes } of FORM_BUTTON_CASES) {
+  test(`clicks a form button that shadows ${method}`, async t => {
+    const browserless = await getBrowserContext(t)
+    const url = await serve(t, formButton(method, attributes))
+
+    const { clicked, runClicks } = await dismissOnGoto(browserless, url)
+    t.is(clicked, 'ack')
+    t.is(runClicks, 1)
+  })
+}
+
+test('keeps scanning past a dialog whose button still throws', async t => {
   const browserless = await getBrowserContext(t)
+  /* an empty <form role="button"> falls back to `value`, which a named <img>
+     turns into an element, so reading its text throws inside the dismissal */
   const url = await serve(
     t,
-    `<div role="alertdialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px">
-       <p>Scheduled maintenance this weekend.</p>
-       <svg role="button" width="24" height="24" style="display:inline-block"><rect width="24" height="24"></rect></svg>
-       <button onclick="window.__clicked='ack';this.closest('[role=alertdialog]').remove()">OK</button>
-     </div>`
+    `<div role="dialog" style="position:fixed;top:60%;left:20%;background:#fff;padding:16px">
+       <p>Newsletter</p>
+       <form role="button" style="display:inline-block"><img name="value" width="1" height="1"></form>
+     </div>` + DIALOG
   )
 
-  const run = browserless.withPage((page, goto) => async () => {
-    await goto(page, { url })
-    return waitFor(page, () => window.__clicked)
-  })
+  const { clicked, runClicks } = await dismissOnGoto(browserless, url)
+  t.is(clicked, 'ack', 'a throwing dialog must not stop the scan')
+  t.is(runClicks, 1)
+})
 
-  t.is(await run(), 'ack', 'an SVG button must not stop the sibling acknowledge button')
+const nonHtmlButtonDialog = button =>
+  `<div role="dialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px">
+     <p>Scheduled maintenance this weekend.</p>
+     ${button}
+     <button type="button" onclick="window.__clicked='ack'">OK</button>
+   </div>`
+
+/* non-HTML elements read as empty text and cannot be clicked, so none of them
+   may take the acknowledge button's place or abort the dialog */
+const NON_HTML_BUTTONS = [
+  {
+    name: 'an SVG button without text',
+    markup: '<svg role="button" width="24" height="24"><rect width="24" height="24"></rect></svg>'
+  },
+  {
+    name: 'an SVG button titled "Close"',
+    markup:
+      '<svg role="button" width="24" height="24"><title>Close</title><rect width="24" height="24"></rect></svg>'
+  },
+  {
+    name: 'an SVG button titled "Decline"',
+    markup:
+      '<svg role="button" width="24" height="24"><title>Decline</title><rect width="24" height="24"></rect></svg>'
+  },
+  {
+    name: 'an SVG button labelled "Close"',
+    markup:
+      '<svg role="button" aria-label="Close" width="24" height="24"><rect width="24" height="24"></rect></svg>'
+  },
+  { name: 'a MathML button reading "x"', markup: '<math><mi role="button">x</mi></math>' }
+]
+
+for (const { name, markup } of NON_HTML_BUTTONS) {
+  test(`clicks the acknowledge button next to ${name}`, async t => {
+    const browserless = await getBrowserContext(t)
+    const url = await serve(t, nonHtmlButtonDialog(markup))
+
+    const { clicked, runClicks } = await dismissOnGoto(browserless, url)
+    t.is(clicked, 'ack')
+    t.is(runClicks, 1, 'only the real click counts')
+  })
+}
+
+test('does not count unclickable SVG close buttons toward the click limit', async t => {
+  const browserless = await getBrowserContext(t)
+  const svgCloseDialog = top =>
+    `<div role="dialog" style="position:fixed;top:${top}%;left:10%;background:#fff;padding:16px">
+       <svg role="button" aria-label="Close" width="24" height="24"><rect width="24" height="24"></rect></svg>
+     </div>`
+  const url = await serve(t, [10, 20, 30].map(svgCloseDialog).join('') + DIALOG)
+
+  const { clicked, runClicks } = await dismissOnGoto(browserless, url)
+  t.is(clicked, 'ack', 'three unclickable dialogs must not exhaust the click limit')
+  t.is(runClicks, 1)
 })
 
 test('runs the DOMContentLoaded dismissal once per document', async t => {

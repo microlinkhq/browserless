@@ -36,18 +36,16 @@ const dismissOverlays = () => {
   const state = (window.__browserlessDismiss = { clicked: 0 })
 
   /* Capture the builtins up front and `.call` them: HTMLFormElement named
-     access lets a page shadow these on a `<form>` dialog (e.g.
-     `<input name="querySelectorAll">`), and reading them off the element would
+     access lets a page shadow these on a `<form>` dialog or button (e.g.
+     `<button name="querySelectorAll">`), and reading them off the element would
      throw. The isolated world's prototypes are out of the page's reach. */
   const { getClientRects, querySelector, querySelectorAll, getAttribute, closest } =
     window.Element.prototype
   const { click } = window.HTMLElement.prototype
-  const scanDocument = window.Document.prototype.querySelectorAll
   const innerText = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'innerText').get
-  /* the innerText getter throws on a non-HTMLElement (e.g. an SVG close icon
-     matched as `[role="button"]`); those never carry shadowing named access */
-  const readText = el =>
-    el instanceof window.HTMLElement ? innerText.call(el) : el.textContent || ''
+  /* non-HTML elements (SVG, MathML) have no innerText, so they read as empty
+     text, as `element.innerText` always did */
+  const readText = el => (el instanceof window.HTMLElement ? innerText.call(el) : '')
 
   const MAX_CLICKS = 3
   const WATCH_MS = 15000
@@ -120,31 +118,36 @@ const dismissOverlays = () => {
     const buttons = querySelectorAll.call(dialog, 'button, [role="button"], input[type="button"]')
 
     /* Single pass: defer the click so a reject button anywhere in the dialog
-       still aborts it (leaving the opt-out to autoconsent), while the first
-       acknowledge/close button becomes the candidate to click if none appears. */
-    let candidate = null
+       still aborts it (leaving the opt-out to autoconsent), while
+       acknowledge/close buttons are collected in order to click afterwards. */
+    const candidates = []
     for (const button of buttons) {
       if (!isVisible(button) || button.disabled) continue
       const text = normalize(readText(button) || button.value)
       const label = normalize(getAttribute.call(button, 'aria-label'))
       if (REJECT_TEXT.test(text) || REJECT_TEXT.test(label)) return false
-      if (!candidate) {
-        const isClose = CLOSE_LABEL.test(label) && !closest.call(button, 'form')
-        const isAcknowledge = !hasFields && ACK_TEXT.test(text)
-        if (isAcknowledge || isClose) candidate = button
-      }
+      const isClose = CLOSE_LABEL.test(label) && !closest.call(button, 'form')
+      const isAcknowledge = !hasFields && ACK_TEXT.test(text)
+      if (isAcknowledge || isClose) candidates.push(button)
     }
-    if (!candidate) return false
-    seen.add(dialog)
-    state.clicked++
-    click.call(candidate)
-    return true
+    /* a click only counts once it succeeds: a non-HTML candidate (an SVG close
+       icon) cannot be clicked, so the next candidate gets its turn */
+    for (const candidate of candidates) {
+      try {
+        click.call(candidate)
+      } catch {
+        continue
+      }
+      seen.add(dialog)
+      state.clicked++
+      return true
+    }
+    return false
   }
 
   const scan = () => {
     if (state.clicked >= MAX_CLICKS) return
-    const dialogs = scanDocument.call(
-      document,
+    const dialogs = document.querySelectorAll(
       'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
     )
     for (const dialog of dialogs) {
