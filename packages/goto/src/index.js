@@ -433,7 +433,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       }
 
       if (userAgent) {
-        const clientHints = getClientHints(userAgent, await chromeVersionFromBrowser(page))
+        const clientHints = getClientHints(userAgent, chromeVersionCache.get(page.browser?.()))
         prePromises.push(
           run({
             fn: page.setUserAgent({ userAgent, ...clientHints }),

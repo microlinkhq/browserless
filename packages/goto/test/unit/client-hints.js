@@ -3,6 +3,7 @@
 const test = require('ava')
 
 const { getClientHints } = require('../../src/client-hints')
+const createGoto = require('../../src')
 
 const macUserAgent = version =>
   `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${version} Safari/537.36`
@@ -138,6 +139,44 @@ test('Chromium based browsers with their own brand get no client hints', t => {
   ]
 
   for (const userAgent of userAgents) t.deepEqual(getClientHints(userAgent), {}, userAgent)
+})
+
+test('a browser version lookup that never settles does not block the user agent override', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const userAgentOverrides = []
+  const noop = () => Promise.resolve()
+  const page = {
+    setViewport: noop,
+    viewport: () => null,
+    setExtraHTTPHeaders: noop,
+    setUserAgent: options => {
+      userAgentOverrides.push(options)
+      return Promise.resolve()
+    },
+    emulateMediaFeatures: noop,
+    addStyleTag: noop,
+    goto: () => Promise.resolve(null),
+    waitForNetworkIdle: noop,
+    browser: () => ({ version: () => new Promise(() => {}) }),
+    _client: () => ({ send: noop })
+  }
+  const userAgent = macUserAgent('152.0.0.0')
+
+  const navigation = goto(page, {
+    url: 'about:blank',
+    headers: { 'user-agent': userAgent },
+    waitUntil: 'load',
+    adblock: false
+  })
+  const outcome = await Promise.race([
+    navigation.then(() => 'navigated'),
+    new Promise(resolve => setTimeout(resolve, 3000, 'blocked'))
+  ])
+
+  t.is(outcome, 'navigated')
+  t.is(userAgentOverrides.length, 1)
+  t.is(userAgentOverrides[0].userAgent, userAgent)
+  t.is(userAgentOverrides[0].userAgentMetadata.fullVersion, '152.0.0.0')
 })
 
 test('non Chrome user agents get no client hints', t => {
