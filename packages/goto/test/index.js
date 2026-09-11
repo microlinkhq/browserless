@@ -353,20 +353,12 @@ test('supports waitForSelector and waitForFunction in the same navigation', asyn
 })
 
 const readEmulation = page =>
-  page.evaluate(async () => ({
+  page.evaluate(() => ({
     screenWidth: window.screen.width,
     screenHeight: window.screen.height,
     innerWidth: window.innerWidth,
     innerHeight: window.innerHeight,
-    tabletMediaQuery: window.matchMedia('(max-device-width: 1024px)').matches,
-    userAgent: navigator.userAgent,
-    platform: navigator.platform,
-    brands: navigator.userAgentData.brands,
-    hints: await navigator.userAgentData.getHighEntropyValues([
-      'platform',
-      'platformVersion',
-      'fullVersionList'
-    ])
+    tabletMediaQuery: window.matchMedia('(max-device-width: 1024px)').matches
   }))
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -802,7 +794,6 @@ test('switching from a mobile device back to the default device restores desktop
   t.is(state.innerWidth, device.viewport.width)
   t.true(state.screenWidth >= state.innerWidth)
   t.false(state.tabletMediaQuery)
-  t.is(state.hints.platform, 'macOS')
 })
 
 test('repeat navigations do not add emulation round trips', async t => {
@@ -842,42 +833,6 @@ test('repeat navigations do not add emulation round trips', async t => {
   t.deepEqual(emulationCalls, [[], [], []], JSON.stringify(counts))
 })
 
-test('Windows and Linux user agents send matching client hints', async t => {
-  const browserless = await getBrowserContext(t)
-  const requests = []
-  const url = await emulationServer(t, requests)
-  const userAgents = {
-    Windows:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36',
-    Linux:
-      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
-  }
-
-  const run = browserless.withPage((page, goto) => async () => {
-    const states = {}
-    for (const [name, userAgent] of Object.entries(userAgents)) {
-      requests.length = 0
-      await goto(page, {
-        url,
-        headers: { 'user-agent': userAgent },
-        waitUntil: 'load',
-        adblock: false
-      })
-      states[name] = { headers: requests[0], ...(await readEmulation(page)) }
-    }
-    return states
-  })
-
-  const { Windows, Linux } = await run()
-  t.is(Windows.headers['sec-ch-ua-platform'], '"Windows"')
-  t.is(Windows.platform, 'Win32')
-  t.is(Windows.hints.platform, 'Windows')
-  t.is(Linux.headers['sec-ch-ua-platform'], '"Linux"')
-  t.is(Linux.platform, 'Linux x86_64')
-  t.is(Linux.hints.platform, 'Linux')
-  t.is(Linux.hints.platformVersion, '')
-})
-
 test('mobile screen matches the device viewport', async t => {
   const browserless = await getBrowserContext(t)
   const url = await emulationServer(t)
@@ -895,59 +850,4 @@ test('mobile screen matches the device viewport', async t => {
   const { device, state } = await run()
   t.is(state.screenWidth, device.viewport.width)
   t.is(state.screenHeight, device.viewport.height)
-})
-
-test('Chrome user agent sends matching client hints', async t => {
-  const browserless = await getBrowserContext(t)
-  const requests = []
-  const url = await emulationServer(t, requests)
-
-  const run = browserless.withPage((page, goto) => async () => {
-    await goto(page, { url, waitUntil: 'load', adblock: false })
-    return readEmulation(page)
-  })
-
-  const state = await run()
-  const major = state.userAgent.match(/Chrome\/(\d+)/)[1]
-
-  t.true(requests[0]['sec-ch-ua'].includes(`"Google Chrome";v="${major}"`))
-  t.true(state.brands.some(({ brand, version }) => brand === 'Google Chrome' && version === major))
-  t.is(state.hints.platform, 'macOS')
-  t.is(state.platform, 'MacIntel')
-})
-
-test('Android Chrome device reports mobile client hints', async t => {
-  const browserless = await getBrowserContext(t)
-  const url = await emulationServer(t)
-
-  const run = browserless.withPage((page, goto) => async () => {
-    await goto(page, { url, device: 'Galaxy S8', waitUntil: 'load', adblock: false })
-    return readEmulation(page)
-  })
-
-  const state = await run()
-  t.true(state.brands.some(({ brand }) => brand === 'Google Chrome'))
-  t.is(state.hints.platform, 'Android')
-})
-
-test('non Chrome user agents get no fabricated client hints', async t => {
-  const browserless = await getBrowserContext(t)
-  const requests = []
-  const url = await emulationServer(t, requests)
-
-  const run = browserless.withPage((page, goto) => async () => {
-    await goto(page, { url, device: 'iPhone 15', waitUntil: 'load', adblock: false })
-    const iphone = await readEmulation(page)
-    await goto(page, {
-      url,
-      headers: { 'user-agent': 'googlebot' },
-      waitUntil: 'load',
-      adblock: false
-    })
-    const googlebot = await readEmulation(page)
-    return [iphone, googlebot]
-  })
-
-  for (const state of await run()) t.deepEqual(state.brands, [])
-  t.false(requests.some(headers => (headers['sec-ch-ua'] || '').includes('Google Chrome')))
 })

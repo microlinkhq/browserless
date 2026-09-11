@@ -2,6 +2,7 @@
 
 const test = require('ava')
 const createGoto = require('../../src')
+const { getScreen } = require('../../src/screen')
 
 const METRICS_OVERRIDE = 'Emulation.setDeviceMetricsOverride'
 const DEFAULT_VIEWPORT = {
@@ -325,4 +326,16 @@ test('a default navigation keeps a desktop viewport the page already has', async
 
   t.deepEqual(page.viewport(), { width: 1024, height: 700 })
   t.deepEqual(overrides(connection, 'a'), ['1024x700 screen 1366x768'])
+})
+
+test('desktop screen is the smallest common resolution that fits the viewport', t => {
+  t.deepEqual(getScreen({ width: 1280, height: 800 }), { width: 1440, height: 900 })
+  t.deepEqual(getScreen({ width: 1366, height: 768 }), { width: 1366, height: 768 })
+  t.deepEqual(getScreen({ width: 1920, height: 1200 }), { width: 2560, height: 1440 })
+  t.deepEqual(getScreen({ width: 5000, height: 3000 }), { width: 5000, height: 3000 })
+})
+
+test('portrait desktop viewports get a portrait screen', t => {
+  t.deepEqual(getScreen({ width: 800, height: 1200 }), { width: 900, height: 1440 })
+  t.deepEqual(getScreen({ width: 768, height: 1024 }), { width: 768, height: 1366 })
 })

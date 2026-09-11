@@ -11,9 +11,9 @@ const isUrl = require('is-url-http')
 
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY, CDPSessionEvent } = require('puppeteer')
 
-const { getClientHints, getScreen } = require('./emulation')
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
+const { getScreen } = require('./screen')
 
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
@@ -528,10 +528,9 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       }
 
       if (userAgent) {
-        const clientHints = getClientHints(userAgent, await chromeVersionFromBrowser(page))
         prePromises.push(
           run({
-            fn: page.setUserAgent({ userAgent, ...clientHints }),
+            fn: page.setUserAgent(userAgent),
             timeout: actionTimeout,
             debug: { 'user-agent': userAgent }
           })
