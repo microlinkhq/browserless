@@ -481,15 +481,21 @@ test('changing the viewport right before closing the page leaves no unhandled re
   process.on('unhandledRejection', onUnhandledRejection)
   t.teardown(() => process.off('unhandledRejection', onUnhandledRejection))
 
+  const settled = []
   for (let round = 0; round < 5; round++) {
     const page = await browserless.page()
     await browserless.goto(page, { url, waitUntil: 'load', adblock: false })
-    page.setViewport({ width: 1400, height: 900 })
+    const pending = page.setViewport({ width: 1400, height: 900 }).then(
+      () => 'resolved',
+      error => error.message
+    )
     await page.close()
+    settled.push(await pending)
   }
   await sleep(500)
 
   t.deepEqual(unhandled, [])
+  t.deepEqual(settled, Array(5).fill('resolved'))
 })
 
 test('a metrics override that bypasses page.setViewport still carries the screen', async t => {

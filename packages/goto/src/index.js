@@ -96,8 +96,9 @@ const interceptMetricsOverrides = connection => {
 
 const trackScreen = page => {
   const client = page._client()
-  if (typeof client.connection !== 'function') return undefined
-  const screens = interceptMetricsOverrides(client.connection())
+  const connection = typeof client.connection === 'function' ? client.connection() : undefined
+  if (!connection) return undefined
+  const screens = interceptMetricsOverrides(connection)
   if (!screens) return undefined
   const tab = client.parentSession() ?? client
   const isFirstNavigation = !screens.has(tab.id())

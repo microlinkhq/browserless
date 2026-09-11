@@ -268,6 +268,19 @@ test('a disconnected tab stops getting the screen', async t => {
   ])
 })
 
+test('a detached session without a connection still applies the viewport', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const connection = createConnection()
+  const page = createPage(connection, 'a', { width: 800, height: 600 })
+  page.session.connection = () => undefined
+
+  const { error } = await navigate(goto, page, { viewport: { width: 1920, height: 1080 } })
+
+  t.falsy(error)
+  t.like(page.viewport(), { width: 1920, height: 1080 })
+  t.is(connection.installs, 0)
+})
+
 test('a connection that cannot be intercepted still applies the viewport', async t => {
   const goto = createGoto({ timeout: 10000 })
   const unpatchable = {
