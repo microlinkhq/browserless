@@ -213,10 +213,8 @@ test('dismiss.run fallback works when injection did not run', async t => {
 
   const run = browserless.withPage((page, goto) => async () => {
     /* simulate a document where the DOMContentLoaded dismissal never ran */
-    const client = page._client()
-    const on = client.on.bind(client)
-    client.on = (event, handler) =>
-      event === 'Page.domContentEventFired' ? client : on(event, handler)
+    const on = page.on.bind(page)
+    page.on = (event, handler) => (event === 'domcontentloaded' ? page : on(event, handler))
     await goto(page, { url })
     return waitFor(page, () => window.__clicked)
   })
@@ -503,23 +501,139 @@ test('creates the dismiss world only in the top frame', async t => {
   t.is(dismissWorlds, 1, 'child frames must not get a dismiss world')
 })
 
-test('run does not retry page exceptions that look like a stale context', async t => {
+test('dismisses a page whose element id clobbers the guard name', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(t, '<div id="__browserlessDismiss"></div>' + DIALOG)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'ack')
+})
+
+test('runs the DOMContentLoaded dismissal once per document', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    STICKY + '<iframe srcdoc="<p>one</p>"></iframe><iframe srcdoc="<p>two</p>"></iframe>'
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    for (let navigation = 0; navigation < 3; navigation++) await goto(page, { url })
+    const client = page._client()
+    const send = client.send.bind(client)
+    let dismissWorldRequests = 0
+    client.send = (method, params, ...rest) => {
+      if (method === 'Page.createIsolatedWorld' && params?.worldName === dismiss.WORLD_NAME) {
+        dismissWorldRequests++
+      }
+      return send(method, params, ...rest)
+    }
+    await page.reload()
+    await new Promise(resolve => setTimeout(resolve, 500))
+    return dismissWorldRequests
+  })
+
+  t.is(await run(), 1)
+})
+
+test('keeps dismissing after a prerender activation swaps the CDP session', async t => {
+  const browserless = await getBrowserContext(t)
+  /* a Preload.enable session disables prerendering, so the prerendered
+     document reports its own parsing through an image request instead */
+  let onPrerenderParsed
+  const prerenderParsed = new Promise(resolve => {
+    onPrerenderParsed = resolve
+  })
+  const url = await runServer(t, ({ req, res }) => {
+    if (req.url === '/prerender-parsed') {
+      onPrerenderParsed()
+      return res.end()
+    }
+    res.setHeader('content-type', 'text/html')
+    if (req.url === '/sticky?prerendered') { return res.end(page(STICKY + '<img src="/prerender-parsed">')) }
+    if (req.url.startsWith('/sticky')) return res.end(page(STICKY))
+    res.end(
+      page(
+        '<script type="speculationrules">{"prerender":[{"source":"list","urls":["/sticky?prerendered"],"eagerness":"immediate"}]}</script>'
+      )
+    )
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    await prerenderParsed
+    const clientBeforeActivation = page._client()
+    await Promise.all([
+      page.waitForNavigation(),
+      page.evaluate(() => {
+        window.location.href = '/sticky?prerendered'
+      })
+    ])
+    const activated = await page.evaluate(
+      () => performance.getEntriesByType('navigation')[0].activationStart > 0
+    )
+    await page.goto(new URL('/sticky?after-activation', url).toString())
+    return {
+      activated,
+      swapped: page._client() !== clientBeforeActivation,
+      clicks: await waitFor(page, () => window.__clicks)
+    }
+  })
+
+  const { activated, swapped, clicks } = await run()
+  t.true(activated, 'the prerendered page must be activated')
+  t.true(swapped, 'the activation must swap the CDP session')
+  t.is(clicks, 1, 'a navigation outside goto must still be dismissed')
+})
+
+const fakePage = respond => {
   const methods = []
   const client = {
     send: async method => {
       methods.push(method)
-      return method === 'Page.createIsolatedWorld'
-        ? { executionContextId: 1 }
-        : {
-            result: {},
-            exceptionDetails: {
-              text: 'Uncaught',
-              exception: { description: 'Error: Cannot find context' }
-            }
-          }
+      return respond(method, methods)
     }
   }
-  const page = { _client: () => client, mainFrame: () => ({ _id: 'main' }) }
+  return { methods, page: { _client: () => client, mainFrame: () => ({ _id: 'main' }) } }
+}
+
+test('run does not retry protocol errors other than a stale context', async t => {
+  const { methods, page } = fakePage(() => {
+    throw new Error('Protocol error (Page.createIsolatedWorld): Target closed')
+  })
+
+  await t.throwsAsync(dismiss.run(page), { message: /Target closed/ })
+  t.deepEqual(methods, ['Page.createIsolatedWorld'])
+})
+
+test('run retries a stale context up to three attempts', async t => {
+  const { methods, page } = fakePage((method, sent) => {
+    if (method === 'Page.createIsolatedWorld') return { executionContextId: sent.length }
+    if (sent.filter(name => name === 'Runtime.evaluate').length < 3) {
+      throw new Error('Protocol error (Runtime.evaluate): Cannot find context with specified id')
+    }
+    return { result: { value: 1 } }
+  })
+
+  t.is(await dismiss.run(page), 1)
+  t.is(methods.length, 6)
+})
+
+test('run does not retry page exceptions that look like a stale context', async t => {
+  const { methods, page } = fakePage(method =>
+    method === 'Page.createIsolatedWorld'
+      ? { executionContextId: 1 }
+      : {
+          result: {},
+          exceptionDetails: {
+            text: 'Uncaught',
+            exception: { description: 'Error: Cannot find context' }
+          }
+        }
+  )
 
   await t.throwsAsync(dismiss.run(page), { message: 'Error: Cannot find context' })
   t.deepEqual(methods, ['Page.createIsolatedWorld', 'Runtime.evaluate'])

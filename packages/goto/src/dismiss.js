@@ -29,8 +29,7 @@ const debug = require('debug-logfmt')('browserless:goto:dismiss')
  * catches dialogs mounted after a slow `goto`, even once the observer has stopped.
  */
 const dismissOverlays = () => {
-  if (window.self !== window.top) return 0
-  if (window.__browserlessDismiss) {
+  if (Object.prototype.hasOwnProperty.call(window, '__browserlessDismiss')) {
     window.__browserlessDismiss.rescan()
     return window.__browserlessDismiss.clicked
   }
@@ -212,7 +211,9 @@ const evaluateWithRetry = async page => {
 
 /* Runs for documents where the DOMContentLoaded dismissal did not fire;
    `Page.createIsolatedWorld` returns the same named world either way, so the
-   idempotency guard is shared with `setup`. */
+   idempotency guard is shared with `setup`. The DOMContentLoaded dismissal is
+   asynchronous: a navigation resolving at DOMContentLoaded can return before
+   it clicks, so callers that need it settled await `run` afterwards. */
 const run = async page => {
   const { result, exceptionDetails } = await evaluateWithRetry(page)
   if (exceptionDetails) throw evaluationError(exceptionDetails)
@@ -221,16 +222,15 @@ const run = async page => {
   return clicked
 }
 
-/* `Page.domContentEventFired` only fires for the main frame, so child frames
-   never get a dismiss world. */
+/* `domcontentloaded` only fires for the main frame, and Puppeteer re-binds it
+   when a prerender activation swaps the page to a new CDP session, so child
+   frames never get a dismiss world and later navigations keep dismissing. */
 const setup = async page => {
   if (pagesWithSetup.has(page)) return
   pagesWithSetup.add(page)
-  page
-    ._client()
-    .on('Page.domContentEventFired', () =>
-      run(page).catch(error => debug('error', { message: error.message }))
-    )
+  page.on('domcontentloaded', () =>
+    run(page).catch(error => debug('error', { message: error.message }))
+  )
 }
 
 module.exports = { setup, run, WORLD_NAME }
