@@ -546,6 +546,13 @@ test('connect mode clients sharing one browser keep their own screens', async t 
   const session = await owner.target().createCDPSession()
   const { screenInfos } = await session.send('Emulation.getScreenInfos')
   const primary = screenInfos.find(({ isPrimary }) => isPrimary)
+  t.teardown(() =>
+    session.send('Emulation.updateScreen', {
+      screenId: primary.id,
+      width: primary.width,
+      height: primary.height
+    })
+  )
   await session.send('Emulation.updateScreen', { screenId: primary.id, width: 800, height: 600 })
 
   const [clientA, clientB] = await Promise.all([connect(), connect()])
