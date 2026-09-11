@@ -4,6 +4,7 @@ const debug = require('debug-logfmt')('browserless:prepare')
 const pReflect = require('p-reflect')
 
 const { waitForDomStability } = require('./wait-for-dom')
+const { evaluateIsolated } = require('./evaluate-isolated')
 
 const SCROLL_STEP_MS = 50
 const OVERFLOW_MIN_PX = 200
@@ -25,14 +26,14 @@ function findTallestOverflowScroller (minPx) {
   return best
 }
 
-// page.evaluate only serializes the function it is given, so an in-page helper
+// An evaluate only serializes the function it is given, so an in-page helper
 // can't be shared across evaluates by reference. Compose the scanner source in
 // front of `fn` on the Node side (no in-page eval, so page CSP is untouched) to
 // give every caller the same scanner.
 const evaluateInPage = (page, fn, ...args) => {
   const source = `${findTallestOverflowScroller}\nreturn (${fn}).apply(null, arguments)`
   // eslint-disable-next-line no-new-func
-  return page.evaluate(new Function(source), ...args)
+  return evaluateIsolated(page, new Function(source), ...args)
 }
 
 const waitForOverflowHeight = (page, timeout = OVERFLOW_WAIT_MS) =>
@@ -91,7 +92,7 @@ const expandOverflow = (page, minPx = OVERFLOW_MIN_PX) =>
 
 const settleDom = async (page, { idle, timeout }, label) => {
   const started = Date.now()
-  const result = await page.evaluate(waitForDomStability, { idle, timeout })
+  const result = await evaluateIsolated(page, waitForDomStability, { idle, timeout })
   debug(label, { ...result, duration: Date.now() - started })
 }
 

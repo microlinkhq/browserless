@@ -7,6 +7,7 @@ const pReflect = require('p-reflect')
 
 const isTransientContextLoss = require('./is-transient-context-loss')
 const isWhiteScreenshot = require('./is-white-screenshot')
+const { evaluateIsolated } = require('./evaluate-isolated')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
@@ -21,6 +22,8 @@ const {
 } = require('./prepare-full-document')
 
 const timeSpan = require('@kikobeats/time-span')()
+
+const ELEMENT_CLIP_ATTEMPTS = 2
 
 // No pacing here on purpose: `waitUntilAuto` is a network-idle wait, which on a
 // live page costs at least its idle window (~500ms) and at most what is left of
@@ -43,7 +46,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
 }
 
 const getPageMeta = page =>
-  page.evaluate(() => ({
+  evaluateIsolated(page, () => ({
     title: document.title || '',
     bodyText: document.body ? document.body.innerText || '' : '',
     url: window.location.href || ''
@@ -63,15 +66,10 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
   return !pageReadyResult.isRejected && !!pageReadyResult.value
 }
 
-const getBoundingClientRect = element => {
-  const { top, left, height, width, x, y } = element.getBoundingClientRect()
-  return { top, left, height, width, x, y }
-}
-
 const waitForImagesOnViewport = page =>
-  page.$$eval('img[src]:not([aria-hidden="true"])', elements =>
+  evaluateIsolated(page, () =>
     Promise.all(
-      elements
+      Array.from(document.querySelectorAll('img[src]:not([aria-hidden="true"])'))
         .filter(el => {
           if (el.naturalHeight === 0 || el.naturalWidth === 0) return false
           const { top, left, bottom, right } = el.getBoundingClientRect()
@@ -86,15 +84,21 @@ const waitForImagesOnViewport = page =>
     )
   )
 
-const waitForElement = async (page, element) => {
-  const screenshotOpts = {}
-  if (element) {
-    await page.waitForSelector(element, { visible: true })
-    screenshotOpts.clip = await page.$eval(element, getBoundingClientRect)
-    screenshotOpts.fullPage = false
-    return screenshotOpts
+const readElementClip = async (page, element) => {
+  const handle = await page.waitForSelector(element, { visible: true })
+  try {
+    return await handle.boundingBox()
+  } finally {
+    await handle.dispose()
   }
-  return screenshotOpts
+}
+
+const waitForElement = async (page, element, screenshotOpts) => {
+  for (let attempt = 0; attempt < ELEMENT_CLIP_ATTEMPTS; attempt++) {
+    screenshotOpts.clip = await readElementClip(page, element)
+    if (screenshotOpts.clip !== null) break
+  }
+  screenshotOpts.fullPage = false
 }
 
 const SCREENSHOT_DEFAULT_OPTS = {
@@ -143,10 +147,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
       const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
         const timeout = goto.timeouts.action(opts.timeout)
 
-        let screenshotOpts = {}
+        const screenshotOpts = {}
         const tasks = [
           {
-            fn: () => page.evaluate('document.fonts.ready'),
+            fn: () => evaluateIsolated(page, 'document.fonts.ready'),
             debug: 'beforeScreenshot:fontsReady'
           },
           {
@@ -164,9 +168,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
 
         if (element && !fullPage) {
           tasks.push({
-            fn: async () => {
-              screenshotOpts = await waitForElement(page, element)
-            },
+            fn: () => waitForElement(page, element, screenshotOpts),
             debug: 'beforeScreenshot:waitForElement'
           })
         }
@@ -180,6 +182,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
             })
           )
         )
+
+        if (screenshotOpts.clip === null) {
+          throw new Error(`Element \`${element}\` detached before its clip could be read`)
+        }
 
         return screenshotOpts
       }
