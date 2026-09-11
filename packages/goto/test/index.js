@@ -511,31 +511,126 @@ test('a metrics override that bypasses page.setViewport still carries the screen
   }
 })
 
-test('a full page screenshot without capture beyond viewport never flips device media queries', async t => {
+test('full page screenshots never change the screen or device width media queries', async t => {
   const browserless = await getBrowserContext(t)
-  const url = await runServer(t, ({ res }) => {
+  const queries = [
+    '(max-device-width: 1024px)',
+    '(min-device-width: 1366px)',
+    '(min-device-width: 1440px)',
+    '(min-device-width: 1920px)'
+  ]
+  const url = await runServer(t, ({ req, res }) => {
     res.setHeader('content-type', 'text/html')
+    const body =
+      req.url === '/short'
+        ? '<div style="height:1000px">short</div>'
+        : `<p>${'lorem ipsum '.repeat(2500)}</p>`
     res.end(`<html><head><script>
-      window.__flips = 0
-      matchMedia('(max-device-width: 1024px)').addEventListener('change', () => window.__flips++)
-    </script></head><body><p>${'lorem ipsum '.repeat(2500)}</p></body></html>`)
+      window.__changes = []
+      window.__screens = [screen.width + 'x' + screen.height]
+      for (const query of ${JSON.stringify(queries)}) {
+        matchMedia(query).addEventListener('change', () => window.__changes.push(query))
+      }
+      addEventListener('resize', () => window.__screens.push(screen.width + 'x' + screen.height))
+    </script></head><body style="margin:0">${body}</body></html>`)
   })
 
   const run = browserless.withPage((page, goto) => async () => {
-    await goto(page, { url, waitUntil: 'load', adblock: false })
-    await page.screenshot({ fullPage: true, captureBeyondViewport: false })
-    await page.evaluate(
-      () =>
-        new Promise(resolve =>
-          window.requestAnimationFrame(() =>
-            window.requestAnimationFrame(() => setTimeout(resolve, 250))
-          )
+    const results = []
+    for (const path of ['short', 'tall']) {
+      for (const captureBeyondViewport of [false, true]) {
+        await goto(page, { url: `${url}${path}`, waitUntil: 'load', adblock: false })
+        await page.screenshot({ fullPage: true, captureBeyondViewport })
+        await page.evaluate(
+          () =>
+            new Promise(resolve =>
+              window.requestAnimationFrame(() =>
+                window.requestAnimationFrame(() => setTimeout(resolve, 250))
+              )
+            )
         )
-    )
-    return page.evaluate(() => window.__flips)
+        results.push({
+          path,
+          captureBeyondViewport,
+          ...(await page.evaluate(() => ({
+            changes: window.__changes,
+            screens: [...new Set(window.__screens)]
+          })))
+        })
+      }
+    }
+    return results
   })
 
-  t.is(await run(), 0)
+  for (const result of await run()) {
+    t.deepEqual(result.changes, [], JSON.stringify(result))
+    t.deepEqual(result.screens, ['1440x900'], JSON.stringify(result))
+  }
+})
+
+test('popups opened by a navigated page keep the screen of untouched pages', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ req, res }) => {
+    res.setHeader('content-type', 'text/html')
+    if (req.url === '/popup') return res.end('<html><body>popup</body></html>')
+    res.end(
+      '<html><body><a id="blank" href="/popup" target="_blank" rel="opener">blank</a></body></html>'
+    )
+  })
+  const context = await browserless.context()
+  const untouched = await context.newPage()
+  t.teardown(() => untouched.close())
+  await untouched.goto(`${url}popup`)
+  const expected = await readScreen(untouched)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const waitForPopup = () => new Promise(resolve => page.once('popup', resolve))
+    const [opened] = await Promise.all([
+      waitForPopup(),
+      page.evaluate(() => {
+        window.open('/popup')
+      })
+    ])
+    await page.bringToFront()
+    const [blank] = await Promise.all([waitForPopup(), page.click('#blank')])
+    const popups = [opened, blank]
+    await Promise.all(
+      popups.map(popup => popup.waitForFunction(() => document.readyState === 'complete'))
+    )
+    const screens = await Promise.all(popups.map(readScreen))
+    await Promise.all(popups.map(popup => popup.close()))
+    return screens
+  })
+
+  for (const state of await run()) t.is(state.screen, expected.screen)
+})
+
+test('a connection that cannot be intercepted still applies the viewport', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+  const browser = await puppeteer.connect({
+    browserWSEndpoint: await getBrowserWSEndpoint(),
+    defaultViewport: browserless.goto.defaultViewport
+  })
+  t.teardown(() => browser.disconnect())
+  const context = await browser.createBrowserContext()
+  t.teardown(() => context.close())
+  const page = await context.newPage()
+  const connection = page._client().connection()
+  Object.defineProperty(connection, '_rawSend', { value: connection._rawSend, writable: false })
+
+  const { error } = await browserless.goto(page, {
+    url,
+    viewport: { width: 1920, height: 1080 },
+    waitUntil: 'load',
+    adblock: false
+  })
+  const state = await readEmulation(page)
+
+  t.falsy(error)
+  t.is(state.innerWidth, 1920)
+  t.is(state.innerHeight, 1080)
 })
 
 test('a prerendered page activated by a click keeps a fitting screen', async t => {

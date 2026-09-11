@@ -43,47 +43,69 @@ const LANDSCAPE = { angle: 90, type: 'landscapePrimary' }
 
 const METRICS_OVERRIDE = 'Emulation.setDeviceMetricsOverride'
 
-const screenSessionsByConnection = new WeakMap()
+const screensByConnection = new WeakMap()
 
-const withScreen = params => {
+const screenFor = (screen, params) =>
+  screen && screen.width >= params.width ? screen : getScreen(params)
+
+const withScreen = (screens, scopeId, params) => {
   if (params.mobile || params.screenWidth || params.screenHeight) return params
-  const { width: screenWidth, height: screenHeight } = getScreen(params)
-  return { ...params, screenWidth, screenHeight }
+  const screen = screenFor(screens.get(scopeId), params)
+  screens.set(scopeId, screen)
+  return { ...params, screenWidth: screen.width, screenHeight: screen.height }
 }
 
-const forgetOnDisconnect = (sessions, session) =>
-  session.once(CDPSessionEvent.Disconnected, () => sessions.delete(session.id()))
+const screenScope = (connection, screens, sessionId) => {
+  if (screens.has(sessionId)) return sessionId
+  const parentId = connection.session(sessionId)?.parentSession()?.id()
+  return screens.has(parentId) ? parentId : undefined
+}
 
-const isScreenSession = (connection, sessions, sessionId) =>
-  sessions.has(sessionId) || sessions.has(connection.session(sessionId)?.parentSession()?.id())
-
-const interceptMetricsOverrides = connection => {
-  const existing = screenSessionsByConnection.get(connection)
-  if (existing) return existing
-  const sessions = new Set()
-  screenSessionsByConnection.set(connection, sessions)
-  const rawSend = connection._rawSend.bind(connection)
-  connection._rawSend = (callbacks, method, params, sessionId, options) =>
-    rawSend(
+const patchRawSend = connection => {
+  const rawSend = connection._rawSend
+  if (typeof rawSend !== 'function') return undefined
+  const screens = new Map()
+  const send = (callbacks, method, params, sessionId, options) => {
+    const scopeId =
+      method === METRICS_OVERRIDE && sessionId
+        ? screenScope(connection, screens, sessionId)
+        : undefined
+    return rawSend.call(
+      connection,
       callbacks,
       method,
-      method === METRICS_OVERRIDE && sessionId && isScreenSession(connection, sessions, sessionId)
-        ? withScreen(params)
-        : params,
+      scopeId === undefined ? params : withScreen(screens, scopeId, params),
       sessionId,
       options
     )
-  return sessions
+  }
+  try {
+    connection._rawSend = send
+  } catch {
+    return undefined
+  }
+  return connection._rawSend === send ? screens : undefined
+}
+
+const interceptMetricsOverrides = connection => {
+  if (!screensByConnection.has(connection)) {
+    screensByConnection.set(connection, patchRawSend(connection))
+  }
+  return screensByConnection.get(connection)
 }
 
 const trackScreen = page => {
   const client = page._client()
-  const sessions = interceptMetricsOverrides(client.connection())
+  if (typeof client.connection !== 'function') return undefined
+  const screens = interceptMetricsOverrides(client.connection())
+  if (!screens) return undefined
   const tab = client.parentSession() ?? client
-  if (sessions.has(tab.id())) return false
-  sessions.add(tab.id())
-  forgetOnDisconnect(sessions, tab)
-  return true
+  const isFirstNavigation = !screens.has(tab.id())
+  if (isFirstNavigation) {
+    screens.set(tab.id(), undefined)
+    tab.once(CDPSessionEvent.Disconnected, () => screens.delete(tab.id()))
+  }
+  return { isFirstNavigation, resetScreen: () => screens.set(tab.id(), undefined) }
 }
 
 const toMetricsOverride = viewport => ({
@@ -303,10 +325,13 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       Boolean(current?.isMobile) !== Boolean(viewport.isMobile))
 
   const applyViewport = async (page, viewport) => {
-    const isFirstNavigation = trackScreen(page)
+    const screen = trackScreen(page)
     const current = page.viewport()
-    if (needsViewport(current, viewport)) return page.setViewport(viewport)
-    if (!isFirstNavigation || !current || current.isMobile) return Promise.resolve()
+    if (needsViewport(current, viewport)) {
+      screen?.resetScreen()
+      return page.setViewport(viewport)
+    }
+    if (!screen?.isFirstNavigation || !current || current.isMobile) return
     return page._client().send(METRICS_OVERRIDE, toMetricsOverride(current))
   }
 

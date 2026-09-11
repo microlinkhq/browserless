@@ -158,3 +158,8 @@ test('desktop screen is the smallest common resolution that fits the viewport', 
   t.deepEqual(getScreen({ width: 1920, height: 1200 }), { width: 2560, height: 1440 })
   t.deepEqual(getScreen({ width: 5000, height: 3000 }), { width: 5000, height: 3000 })
 })
+
+test('portrait desktop viewports get a portrait screen', t => {
+  t.deepEqual(getScreen({ width: 800, height: 1200 }), { width: 900, height: 1440 })
+  t.deepEqual(getScreen({ width: 768, height: 1024 }), { width: 768, height: 1366 })
+})

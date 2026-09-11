@@ -158,10 +158,14 @@ const getClientHints = (userAgent, browserVersion) => {
   }
 }
 
+const PORTRAIT_DESKTOP_SCREENS = DESKTOP_SCREENS.map(({ width, height }) => ({
+  width: height,
+  height: width
+}))
+
 const getScreen = ({ width, height }) =>
-  DESKTOP_SCREENS.find(screen => screen.width >= width && screen.height >= height) ?? {
-    width,
-    height
-  }
+  (height > width ? PORTRAIT_DESKTOP_SCREENS : DESKTOP_SCREENS).find(
+    screen => screen.width >= width && screen.height >= height
+  ) ?? { width, height }
 
 module.exports = { getClientHints, getScreen }

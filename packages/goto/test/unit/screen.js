@@ -35,11 +35,13 @@ const createConnection = () => {
     },
     session: id => sessions.get(id),
     createSession: (id, parentId) => {
+      const listeners = []
       const session = {
         id: () => id,
         connection: () => connection,
         parentSession: () => sessions.get(parentId),
-        once: () => {},
+        once: (event, listener) => listeners.push(listener),
+        disconnect: () => listeners.splice(0).forEach(listener => listener()),
         send: (method, params) => connection._rawSend(undefined, method, params, id)
       }
       sessions.set(id, session)
@@ -207,6 +209,95 @@ test('mobile overrides, explicit screens and untracked pages are left untouched'
     '1280x800 screen 1600x1000'
   ])
   t.deepEqual(overrides(connection, 'untracked'), ['1280x800 screen undefinedxundefined'])
+})
+
+test('a transient full page override keeps the screen the page already has', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const connection = createConnection()
+  const page = createPage(connection, 'a')
+
+  await navigate(goto, page)
+  for (const height of [5000, 1000, 800]) {
+    await page.session.send(METRICS_OVERRIDE, {
+      mobile: false,
+      width: 1280,
+      height,
+      deviceScaleFactor: 2
+    })
+  }
+
+  t.deepEqual(overrides(connection, 'a'), [
+    '1280x800 screen 1440x900',
+    '1280x5000 screen 1440x900',
+    '1280x1000 screen 1440x900',
+    '1280x800 screen 1440x900'
+  ])
+})
+
+test('a navigation that changes the viewport picks a new screen', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const connection = createConnection()
+  const page = createPage(connection, 'a')
+
+  await navigate(goto, page, { viewport: { width: 1920, height: 1080 } })
+  await navigate(goto, page, { viewport: { width: 1366, height: 768 } })
+
+  t.deepEqual(overrides(connection, 'a'), [
+    '1920x1080 screen 1920x1080',
+    '1366x768 screen 1366x768'
+  ])
+})
+
+test('a disconnected tab stops getting the screen', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const connection = createConnection()
+  const page = createPage(connection, 'a')
+
+  await navigate(goto, page)
+  page.session.disconnect()
+  await page.session.send(METRICS_OVERRIDE, {
+    mobile: false,
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 2
+  })
+
+  t.deepEqual(overrides(connection, 'a'), [
+    '1280x800 screen 1440x900',
+    '1280x800 screen undefinedxundefined'
+  ])
+})
+
+test('a connection that cannot be intercepted still applies the viewport', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const unpatchable = {
+    missing: connection => {
+      delete connection._rawSend
+      connection._rawSend = undefined
+    },
+    readonly: connection => {
+      const rawSend = connection._rawSend
+      Object.defineProperty(connection, '_rawSend', { value: rawSend, writable: false })
+    }
+  }
+
+  for (const [name, makeUnpatchable] of Object.entries(unpatchable)) {
+    const connection = createConnection()
+    const page = createPage(connection, 'a', { width: 800, height: 600 })
+    const send = page.session.send
+    const sent = []
+    page.session.send = (method, params) => {
+      sent.push(params)
+      return name === 'missing' ? Promise.resolve() : send(method, params)
+    }
+    makeUnpatchable(connection)
+
+    const { error } = await navigate(goto, page, { viewport: { width: 1920, height: 1080 } })
+
+    t.falsy(error, name)
+    t.like(page.viewport(), { width: 1920, height: 1080 }, name)
+    t.is(sent.filter(params => params.screenWidth).length, 0, name)
+  }
 })
 
 test('a default navigation keeps a desktop viewport the page already has', async t => {
