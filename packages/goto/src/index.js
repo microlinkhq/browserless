@@ -11,6 +11,7 @@ const isUrl = require('is-url-http')
 
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
 
+const { getClientHints } = require('./client-hints')
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
 
@@ -432,9 +433,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       }
 
       if (userAgent) {
+        const clientHints = getClientHints(userAgent, await chromeVersionFromBrowser(page))
         prePromises.push(
           run({
-            fn: page.setUserAgent(userAgent),
+            fn: page.setUserAgent({ userAgent, ...clientHints }),
             timeout: actionTimeout,
             debug: { 'user-agent': userAgent }
           })
