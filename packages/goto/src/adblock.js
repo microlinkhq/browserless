@@ -100,13 +100,23 @@ const RECEIVE_MESSAGE = `function (message) {
   return window.autoconsentReceiveMessage && window.autoconsentReceiveMessage(message)
 }`
 
-/* Top frame only. autoconsent sends objects through `autoconsentSendMessage`,
-   while the CDP binding takes a string under its own name: Chrome re-installs
-   bindings on a back/forward cache restore, which must not replace the wrapper. */
-const toContentScript = autoconsentScript => `if (window.self === window.top) {
-  window.autoconsentSendMessage = message => window.${AUTOCONSENT_BINDING}(JSON.stringify(message))
-  ${autoconsentScript}
-}`
+/* autoconsent sends objects through `autoconsentSendMessage`, while the CDP
+   binding takes a string under its own name: Chrome re-installs bindings on a
+   back/forward cache restore, which must not replace the wrapper. */
+const toContentScript =
+  autoconsentScript => `window.autoconsentSendMessage = message => window.${AUTOCONSENT_BINDING}(JSON.stringify(message))
+${autoconsentScript}`
+
+const injectContentScript = async (client, frameId, contentScript) => {
+  const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+    frameId,
+    worldName: AUTOCONSENT_WORLD
+  })
+  return client.send('Runtime.evaluate', {
+    expression: contentScript,
+    contextId: executionContextId
+  })
+}
 
 const parseMessage = payload => {
   try {
@@ -180,8 +190,22 @@ const createAutoConsent = async (page, timeout) => {
     [
       'Runtime.executionContextCreated',
       ({ context }) => {
-        if (context.name !== AUTOCONSENT_WORLD) return
-        if (context.auxData?.frameId === page.mainFrame()._id) topFrameContexts.add(context.id)
+        const isTopFrame = context.auxData?.frameId === page.mainFrame()._id
+        if (context.name === AUTOCONSENT_WORLD) {
+          if (isTopFrame) topFrameContexts.add(context.id)
+        } else if (context.auxData?.isDefault && isTopFrame && page._autoconsentScript) {
+          page._autoconsentInjection = injectContentScript(
+            client,
+            context.auxData.frameId,
+            page._autoconsentScript
+          ).then(
+            ({ exceptionDetails }) => !exceptionDetails,
+            error => {
+              debug('autoconsent:inject:error', { message: error.message })
+              return false
+            }
+          )
+        }
       }
     ],
     [
@@ -189,6 +213,7 @@ const createAutoConsent = async (page, timeout) => {
       () => {
         topFrameContexts.clear()
         page._autoconsentInitDone = false
+        page._autoconsentInjection = undefined
       }
     ],
     [
@@ -207,16 +232,10 @@ const createAutoConsent = async (page, timeout) => {
 
   try {
     const contentScript = toContentScript(await getAutoconsentPlaywrightScript())
-    await Promise.all([
-      client.send('Runtime.addBinding', {
-        name: AUTOCONSENT_BINDING,
-        executionContextName: AUTOCONSENT_WORLD
-      }),
-      client.send('Page.addScriptToEvaluateOnNewDocument', {
-        source: contentScript,
-        worldName: AUTOCONSENT_WORLD
-      })
-    ])
+    await client.send('Runtime.addBinding', {
+      name: AUTOCONSENT_BINDING,
+      executionContextName: AUTOCONSENT_WORLD
+    })
     page._autoconsentScript = contentScript
   } catch (error) {
     detach()
@@ -230,20 +249,13 @@ const setupAutoConsent = (page, timeout) =>
     throw error
   }))
 
-/* Fallback for documents where the new-document injection did not run.
+/* Fallback for documents where the injection did not run or failed.
    `Page.createIsolatedWorld` returns the document's existing autoconsent world
    when there is one, where autoconsent's own guard skips a second instance. */
 const runAutoConsent = async page => {
   if (page._autoconsentInitDone || !page._autoconsentScript) return
-  const client = page._client()
-  const { executionContextId } = await client.send('Page.createIsolatedWorld', {
-    frameId: page.mainFrame()._id,
-    worldName: AUTOCONSENT_WORLD
-  })
-  return client.send('Runtime.evaluate', {
-    expression: page._autoconsentScript,
-    contextId: executionContextId
-  })
+  if (await page._autoconsentInjection) return
+  return injectContentScript(page._client(), page.mainFrame()._id, page._autoconsentScript)
 }
 
 const enableBlockingInPage = (page, run, timeout) => {

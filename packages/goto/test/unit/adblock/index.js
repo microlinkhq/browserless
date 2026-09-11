@@ -207,6 +207,64 @@ test('autoconsent leaves no globals in the main world of any frame', async t => 
   t.deepEqual(childFrame, [])
 })
 
+test('autoconsent creates its isolated world only in the top frame', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ req, res }) => {
+    res.setHeader('content-type', 'text/html')
+    if (req.url.startsWith('/leaf')) return res.end('<html><body><p>leaf</p></body></html>')
+    const iframes = Array.from(
+      { length: 5 },
+      (_, index) => `<iframe src="/leaf?i=${index}"></iframe>`
+    )
+    res.end(`<html><body><h1>top</h1>${iframes.join('')}</body></html>`)
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load' })
+    const initDone = await waitForInitDone(page)
+    const session = await page.createCDPSession()
+    const contexts = []
+    session.on('Runtime.executionContextCreated', ({ context }) => contexts.push(context))
+    await session.send('Runtime.enable')
+    await new Promise(resolve => setTimeout(resolve, 300))
+    await session.detach()
+    return {
+      initDone,
+      frames: page.frames().length,
+      autoconsentContexts: contexts.filter(context => context.name === AUTOCONSENT_WORLD).length
+    }
+  })
+
+  const { initDone, frames, autoconsentContexts } = await run()
+  t.true(initDone)
+  t.is(frames, 6)
+  t.is(autoconsentContexts, 1, 'child frames must not get an autoconsent world')
+})
+
+test('autoconsent evaluates its content script once per document', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const client = page._client()
+    let evaluations = 0
+    const send = client.send.bind(client)
+    client.send = (method, params, ...rest) => {
+      if (method === 'Runtime.evaluate' && params?.expression === page._autoconsentScript) {
+        evaluations += 1
+      }
+      return send(method, params, ...rest)
+    }
+
+    await goto(page, { url })
+    await waitForInitDone(page)
+    await new Promise(resolve => setTimeout(resolve, 500))
+    return evaluations
+  })
+
+  t.is(await run(), 1, 'the fallback must not re-evaluate a successful injection')
+})
+
 test('initResp includes rules', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)
@@ -299,19 +357,29 @@ test('initResp includes config with expected shape', async t => {
   t.is(config.enablePopupMutationObserver, true)
 })
 
+const suppressAutoconsentInjection = (client, { suppressed = true } = {}) => {
+  const state = { suppressed }
+  const on = client.on.bind(client)
+  client.on = (event, handler) => {
+    if (
+      event !== 'Runtime.executionContextCreated' ||
+      !new Error().stack.includes('/src/adblock.js')
+    ) {
+      return on(event, handler)
+    }
+    return on(event, payload => {
+      if (!(state.suppressed && payload.context.auxData?.isDefault)) handler(payload)
+    })
+  }
+  return state
+}
+
 test('runAutoConsent fallback initializes autoconsent when injection did not run', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)
 
   const run = browserless.withPage((page, goto) => async () => {
-    /* simulate a document where the new-document injection never ran */
-    const client = page._client()
-    const send = client.send.bind(client)
-    client.send = (method, params, ...rest) =>
-      method === 'Page.addScriptToEvaluateOnNewDocument' && params?.worldName === AUTOCONSENT_WORLD
-        ? Promise.resolve({ identifier: '' })
-        : send(method, params, ...rest)
-
+    suppressAutoconsentInjection(page._client())
     await goto(page, { url })
     return waitForInitDone(page)
   })
@@ -345,6 +413,7 @@ test('runAutoConsent fallback reuses the running autoconsent instance', async t 
     await waitForInitDone(page)
 
     page._autoconsentInitDone = false
+    page._autoconsentInjection = undefined
     await runAutoConsent(page)
     await new Promise(resolve => setTimeout(resolve, 500))
     return { initContextIds, fallbackContextIds }
@@ -366,28 +435,16 @@ test('runAutoConsent fallback initializes every new document on a reused page', 
   const run = browserless.withPage((page, goto) => async () => {
     const client = page._client()
     const initContextIds = []
-    let scriptIdentifier
+    const injection = suppressAutoconsentInjection(client, { suppressed: false })
 
     client.on('Runtime.bindingCalled', ({ payload, executionContextId }) => {
       if (payload.includes('"type":"init"')) initContextIds.push(executionContextId)
     })
 
-    const send = client.send.bind(client)
-    client.send = async (method, params, ...rest) => {
-      const result = await send(method, params, ...rest)
-      if (
-        method === 'Page.addScriptToEvaluateOnNewDocument' &&
-        params?.worldName === AUTOCONSENT_WORLD
-      ) {
-        scriptIdentifier = result.identifier
-      }
-      return result
-    }
-
     await goto(page, { url: `${url}one` })
     await waitForInitDone(page)
 
-    await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: scriptIdentifier })
+    injection.suppressed = true
     await goto(page, { url: `${url}two` })
     await waitForInitDone(page)
     return initContextIds.length
@@ -485,8 +542,10 @@ test('autoconsent keeps messaging after a back/forward cache restore', async t =
   })
 
   const run = browserless.withPage((page, goto) => async () => {
+    const injection = suppressAutoconsentInjection(page._client(), { suppressed: false })
     await goto(page, { url })
     await goto(page, { url: url.replace('127.0.0.1', 'localhost') })
+    injection.suppressed = true
     await page.goBack({ waitUntil: 'load' })
     await waitForAutoconsentContext(page)
     const restoredFromCache = await page.evaluate(() => window.__persisted.includes(true))
