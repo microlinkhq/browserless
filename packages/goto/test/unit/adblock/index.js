@@ -159,6 +159,57 @@ test('a failing autoconsent message handler does not raise an unhandled rejectio
   t.is(stdout.trim(), 'ok')
 })
 
+test('the content script runs a bundle that starts with a parenthesis', t => {
+  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
+  const script = `
+    const fsp = require('fs/promises')
+    const vm = require('vm')
+    const readFile = fsp.readFile
+    fsp.readFile = (...args) =>
+      String(args[0]).includes('autoconsent.playwright.js')
+        ? Promise.resolve('(() => { window.__bundleStarted = true })()')
+        : readFile(...args)
+    const adblock = require(${JSON.stringify(adblockPath)})
+    const handlers = {}
+    let expression
+    const client = {
+      on: (event, handler) => { handlers[event] = handler },
+      off: () => {},
+      send: async (method, params) => {
+        if (method === 'Page.createIsolatedWorld') return { executionContextId: 7 }
+        if (method === 'Runtime.evaluate') expression = params.expression
+        return {}
+      }
+    }
+    const page = { _client: () => client, mainFrame: () => ({ _id: 'main' }), on: () => {}, off: () => {} }
+    const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
+    adblock.enableBlockingInPage(page, run, 5000)
+    const startedAt = Date.now()
+    const poll = setInterval(() => {
+      if (!page._autoconsentScript && Date.now() - startedAt < 10000) return
+      clearInterval(poll)
+      handlers['Runtime.executionContextCreated']({
+        context: { id: 1, auxData: { isDefault: true, frameId: 'main' } }
+      })
+      setTimeout(() => {
+        const sandbox = { JSON }
+        sandbox.window = sandbox
+        vm.runInNewContext(expression || '', sandbox)
+        process.stdout.write(String(sandbox.__bundleStarted === true))
+        process.exit(0)
+      }, 50)
+    }, 20)
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8',
+    timeout: 15000
+  })
+
+  t.is(status, 0, stderr)
+  t.is(stdout.trim(), 'true', 'the bundle must execute after the wrapper assignment')
+})
+
 test('setup autoconsent when `adblock` is enabled', async t => {
   const browserless = await getBrowserContext(t)
   const url = await getUrl(t)

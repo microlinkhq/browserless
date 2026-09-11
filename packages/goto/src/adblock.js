@@ -104,7 +104,7 @@ const RECEIVE_MESSAGE = `function (message) {
    binding takes a string under its own name: Chrome re-installs bindings on a
    back/forward cache restore, which must not replace the wrapper. */
 const toContentScript =
-  autoconsentScript => `window.autoconsentSendMessage = message => window.${AUTOCONSENT_BINDING}(JSON.stringify(message))
+  autoconsentScript => `window.autoconsentSendMessage = message => window.${AUTOCONSENT_BINDING}(JSON.stringify(message));
 ${autoconsentScript}`
 
 const injectContentScript = async (client, frameId, contentScript) => {
