@@ -9,7 +9,11 @@ const debug = require('debug-logfmt')('browserless:goto:adblock')
 
 const lazy = fn => {
   let p
-  return () => (p ??= fn())
+  return () =>
+    (p ??= fn().catch(error => {
+      p = undefined
+      throw error
+    }))
 }
 
 const autoconsentDir = path.dirname(require.resolve('@duckduckgo/autoconsent'))
@@ -101,16 +105,25 @@ const RECEIVE_MESSAGE = `function (message) {
   return typeof receive === 'function' ? receive(message) : undefined
 }`
 
+const AUTOCONSENT_PENDING_INIT_RESP = 'browserlessAutoconsentPendingInitResp'
+
+const DELIVER_INIT_RESP = `function (initResp) {
+  if (!Object.prototype.hasOwnProperty.call(window, '${AUTOCONSENT_PENDING_INIT_RESP}')) return;
+  delete window.${AUTOCONSENT_PENDING_INIT_RESP};
+  return window.autoconsentReceiveMessage(initResp);
+}`
+
 /* autoconsent sends objects through `autoconsentSendMessage`, while the CDP
    binding takes a string under its own name: Chrome re-installs bindings on a
    back/forward cache restore, which must not replace the wrapper.
    The injection runs after the document exists, so `window.<id>` can already
    resolve to a page element: an own `autoconsentReceiveMessage` property keeps
    autoconsent's startup guard from reading `<div id="autoconsentReceiveMessage">`.
-   The first run in a world delivers `initResp` in the same evaluation, so
-   prehide does not wait for an init round trip; its `init` is marked
-   `preinitialized` for Node to skip the reply. */
-const toContentScript = (autoconsentScript, initResp) => `{
+   The first run in a world marks `initResp` as pending; it arrives in the
+   `Runtime.callFunctionOn` queued right behind this evaluation, so prehide does
+   not wait for an init round trip and the rules are not part of the script.
+   Its `init` is marked `preinitialized` for Node to skip the reply. */
+const toContentScript = autoconsentScript => `{
   if (!Object.prototype.hasOwnProperty.call(window, 'autoconsentReceiveMessage')) {
     Object.defineProperty(window, 'autoconsentReceiveMessage', { value: undefined, writable: true, configurable: true });
   }
@@ -122,15 +135,14 @@ const toContentScript = (autoconsentScript, initResp) => `{
   ${autoconsentScript}
   ;bootstrapping = false;
   if (firstRun && typeof window.autoconsentReceiveMessage === 'function') {
-    window.autoconsentReceiveMessage(JSON.parse(${JSON.stringify(JSON.stringify(initResp))}));
+    window.${AUTOCONSENT_PENDING_INIT_RESP} = true;
   }
 }`
 
-const getContentScript = lazy(() =>
-  Promise.all([getAutoconsentPlaywrightScript(), getAutoconsentRules()]).then(
-    ([autoconsentScript, rules]) =>
-      toContentScript(autoconsentScript, { type: 'initResp', config: autoconsentConfig, rules })
-  )
+const getContentScript = lazy(() => getAutoconsentPlaywrightScript().then(toContentScript))
+
+const getInitResp = lazy(() =>
+  getAutoconsentRules().then(rules => ({ type: 'initResp', config: autoconsentConfig, rules }))
 )
 
 const AUTOCONSENT_PREHIDE_ID = 'autoconsent-prehide'
@@ -180,20 +192,27 @@ const getPrehideScript = lazy(() =>
 )
 
 const injectContentScript = async (client, frameId, contentScript, prehideScript) => {
-  const { executionContextId } = await client.send('Page.createIsolatedWorld', {
-    frameId,
-    worldName: AUTOCONSENT_WORLD
-  })
+  const [{ executionContextId }, initResp] = await Promise.all([
+    client.send('Page.createIsolatedWorld', { frameId, worldName: AUTOCONSENT_WORLD }),
+    getInitResp()
+  ])
   const prehide =
     prehideScript &&
     client
       .send('Runtime.evaluate', { expression: prehideScript, contextId: executionContextId })
       .catch(() => {})
-  const result = await client.send('Runtime.evaluate', {
+  const evaluation = client.send('Runtime.evaluate', {
     expression: contentScript,
     contextId: executionContextId
   })
-  await prehide
+  const initialization = client
+    .send('Runtime.callFunctionOn', {
+      functionDeclaration: DELIVER_INIT_RESP,
+      executionContextId,
+      arguments: [{ value: initResp }]
+    })
+    .catch(() => {})
+  const [result] = await Promise.all([evaluation, prehide, initialization])
   return result
 }
 
@@ -319,7 +338,8 @@ const createAutoConsent = async (page, client, timeout) => {
       getContentScript(),
       getPrehideScript().catch(error => {
         debug('autoconsent:prehide:error', { message: error.message })
-      })
+      }),
+      getInitResp()
     ])
     page._autoconsentPrehideScript = prehideScript
     await client.send('Runtime.addBinding', {

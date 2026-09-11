@@ -120,6 +120,45 @@ test('pre-warm rules failure does not crash the process', t => {
   t.is(stdout.trim(), 'ok')
 })
 
+test('a failed rules read is retried by the next setup', t => {
+  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
+  const script = `
+    const fsp = require('fs/promises')
+    const readFile = fsp.readFile
+    let rulesReads = 0
+    fsp.readFile = (...args) =>
+      String(args[0]).includes('compact-rules.json') && rulesReads++ === 0
+        ? Promise.reject(new Error('simulated ENOENT'))
+        : readFile(...args)
+    const adblock = require(${JSON.stringify(adblockPath)})
+    const createPage = () => {
+      const client = { on: () => {}, off: () => {}, send: async () => ({}) }
+      return { _client: () => client, mainFrame: () => ({ _id: 'main' }), on: () => {}, off: () => {} }
+    }
+    const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
+    adblock.enableBlockingInPage(createPage(), run, 5000)
+    setTimeout(() => {
+      const page = createPage()
+      adblock.enableBlockingInPage(page, run, 5000)
+      const startedAt = Date.now()
+      const poll = setInterval(() => {
+        if (!page._autoconsentScript && Date.now() - startedAt < 10000) return
+        clearInterval(poll)
+        process.stdout.write(page._autoconsentScript ? 'ok' : 'stuck')
+        process.exit(0)
+      }, 20)
+    }, 500)
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8',
+    timeout: 20000
+  })
+
+  t.is(status, 0, stderr)
+  t.is(stdout.trim(), 'ok', 'a rejected rules read must not be cached')
+})
+
 test('a failing autoconsent message handler does not raise an unhandled rejection', t => {
   const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
   const script = `
@@ -208,6 +247,25 @@ test('the content script terminates the wrapper so future bundles starting with 
 
   t.is(status, 0, stderr)
   t.is(stdout.trim(), 'true', 'the bundle must execute after the wrapper assignment')
+})
+
+test('test servers close after the browser context that holds their connections', async t => {
+  let onPendingRequest
+  const pendingRequest = new Promise(resolve => {
+    onPendingRequest = resolve
+  })
+  const url = await runServer(t, ({ req, res }) => {
+    if (req.url === '/pending') return onPendingRequest()
+    res.setHeader('content-type', 'text/html')
+    res.end("<html><body><h1>hello</h1><script>fetch('/pending')</script></body></html>")
+  })
+  const browserless = await getBrowserContext(t)
+  const page = await browserless.page()
+
+  await browserless.goto(page, { url, waitUntil: 'load' })
+  await pendingRequest
+
+  t.is(await page.evaluate(() => document.querySelector('h1').textContent), 'hello')
 })
 
 test('setup autoconsent when `adblock` is enabled', async t => {
@@ -328,11 +386,12 @@ test('autoconsent initializes from the injected script without an initResp round
 
   const run = browserless.withPage((page, goto) => async () => {
     const client = page._client()
-    const inits = []
-    let initResps = 0
+    const events = []
 
     client.on('Runtime.bindingCalled', ({ payload }) => {
-      if (payload.includes('"type":"init"')) inits.push(JSON.parse(payload))
+      if (payload.includes('"type":"init"')) {
+        events.push({ type: 'init', preinitialized: JSON.parse(payload).preinitialized === true })
+      }
     })
 
     const send = client.send.bind(client)
@@ -341,7 +400,7 @@ test('autoconsent initializes from the injected script without an initResp round
         method === 'Runtime.callFunctionOn' &&
         params?.arguments?.[0]?.value?.type === 'initResp'
       ) {
-        initResps += 1
+        events.push({ type: 'initResp' })
       }
       return send(method, params, ...rest)
     }
@@ -350,19 +409,16 @@ test('autoconsent initializes from the injected script without an initResp round
     await waitForInitDone(page)
     const clicked = await waitForClicked(page)
     await new Promise(resolve => setTimeout(resolve, 300))
-    return {
-      clicked,
-      inits: inits.length,
-      preinitialized: inits.every(message => message.preinitialized === true),
-      initResps
-    }
+    return { clicked, events }
   })
 
-  const { clicked, inits, preinitialized, initResps } = await run()
-  t.is(clicked, 'reject', 'autoconsent must run from the embedded initResp')
-  t.is(inits, 1)
-  t.true(preinitialized, 'the bootstrap init must be marked as preinitialized')
-  t.is(initResps, 0, 'Node must not send a second initResp')
+  const { clicked, events } = await run()
+  t.is(clicked, 'reject', 'autoconsent must initialize and opt out')
+  t.deepEqual(
+    events,
+    [{ type: 'initResp' }, { type: 'init', preinitialized: true }],
+    'initResp must be queued before autoconsent sends init, and sent only once'
+  )
 })
 
 test('autoconsent prehides consent popups before its bundle runs and cleans up alone', async t => {
@@ -513,25 +569,8 @@ const suppressAutoconsentInjection = (client, { suppressed = true } = {}) => {
       if (!(state.suppressed && payload.context.auxData?.isDefault)) handler(payload)
     })
   }
-  const send = client.send.bind(client)
-  const scriptIdentifiers = []
-  client.send = async (method, params, ...rest) => {
-    if (
-      method !== 'Page.addScriptToEvaluateOnNewDocument' ||
-      params?.worldName !== AUTOCONSENT_WORLD
-    ) {
-      return send(method, params, ...rest)
-    }
-    if (state.suppressed) return { identifier: '' }
-    const result = await send(method, params, ...rest)
-    scriptIdentifiers.push(result.identifier)
-    return result
-  }
-  state.suppress = async () => {
+  state.suppress = () => {
     state.suppressed = true
-    for (const identifier of scriptIdentifiers.splice(0)) {
-      await send('Page.removeScriptToEvaluateOnNewDocument', { identifier })
-    }
   }
   return state
 }
@@ -806,34 +845,71 @@ for (const [label, handler] of Object.entries(namedElementPages)) {
   })
 }
 
-test('autoconsent keeps running after a prerendered page is activated', async t => {
-  const url = await runServer(t, ({ req, res }) => {
+const COOKIEBOT_PAGE = `<!doctype html><html><head><script>
+window.Cookiebot = { hasResponse: false, declined: false, dialog: { visible: true }, withdraw () {}, hide () { this.declined = true; this.dialog.visible = false } }
+</script></head><body><h1>cookiebot</h1>
+<div id="CybotCookiebotDialog" style="position:fixed;top:0;left:0;right:0;height:200px;background:#fff;z-index:10000"><p>Cookiebot</p>
+<a id="CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll" href="#" onclick="event.preventDefault();window.__clicked='cookiebot-decline';window.Cookiebot.declined=true;window.Cookiebot.hasResponse=true;document.getElementById('CybotCookiebotDialog').remove()">Use necessary cookies only</a></div>
+</body></html>`
+
+const runPrerenderServer = (t, prerenderedPage) => {
+  const beacons = new Set()
+  const url = runServer(t, ({ req, res }) => {
+    const { pathname, search, searchParams } = new URL(req.url, 'http://localhost')
     res.setHeader('content-type', 'text/html')
-    if (req.url.startsWith('/prerender-host')) {
+    if (pathname === '/prerender-host') {
+      const target = searchParams.get('target')
       return res.end(
-        '<!doctype html><html><head><script type="speculationrules">{"prerender":[{"source":"list","urls":["/prerendered"],"eagerness":"immediate"}]}</script></head><body><h1>host</h1></body></html>'
+        `<!doctype html><html><head><script type="speculationrules">{"prerender":[{"source":"list","urls":["${target}"],"eagerness":"immediate"}]}</script></head><body><h1>host</h1></body></html>`
+      )
+    }
+    if (pathname === '/prerender-beacon') {
+      beacons.add(search)
+      return res.end()
+    }
+    if (pathname === '/prerendered') {
+      return res.end(
+        prerenderedPage.replace(
+          '</body>',
+          "<script>fetch('/prerender-beacon' + window.location.search)</script></body>"
+        )
       )
     }
     res.end(consentBanner(REJECT_BANNER_BUTTONS))
   })
+  return url.then(url => ({ url, beacons }))
+}
+
+const activatePrerender = async ({ page, goto, url, beacons }) => {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const search = `?attempt=${attempt}`
+    await goto(page, {
+      url: `${url}prerender-host?target=${encodeURIComponent(`/prerendered${search}`)}`
+    })
+    for (let waited = 0; waited < 100 && !beacons.has(search); waited++) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    await Promise.all([
+      page.waitForNavigation({ timeout: 10000 }).catch(() => {}),
+      page.evaluate(href => {
+        window.location.href = href
+      }, `/prerendered${search}`)
+    ])
+    const activated = await page
+      .evaluate(() => window.performance.getEntriesByType('navigation')[0].activationStart > 0)
+      .catch(() => false)
+    if (activated) return true
+  }
+  return false
+}
+
+test('autoconsent keeps running after a prerendered page is activated', async t => {
+  const { url, beacons } = await runPrerenderServer(t, consentBanner(REJECT_BANNER_BUTTONS))
   const browserless = await getBrowserContext(t)
 
   const run = browserless.withPage((page, goto) => async () => {
     const firstSession = page._client()
-    let activated = false
-    for (let attempt = 0; attempt < 3 && !activated; attempt++) {
-      await goto(page, { url: `${url}prerender-host?attempt=${attempt}` })
-      await new Promise(resolve => setTimeout(resolve, 2500))
-      await Promise.all([
-        page.waitForNavigation({ timeout: 10000 }).catch(() => {}),
-        page.evaluate(() => {
-          window.location.href = '/prerendered'
-        })
-      ])
-      activated = await page
-        .evaluate(() => window.performance.getEntriesByType('navigation')[0].activationStart > 0)
-        .catch(() => false)
-    }
+    const activated = await activatePrerender({ page, goto, url, beacons })
     const sessionSwapped = page._client() !== firstSession
     await goto(page, { url: `${url}banner` })
     return { activated, sessionSwapped, clicked: await waitForClicked(page) }
@@ -845,47 +921,32 @@ test('autoconsent keeps running after a prerendered page is activated', async t 
   t.is(clicked, 'reject', 'autoconsent must run on the new CDP session')
 })
 
-test('runAutoConsent re-registers on a swapped CDP session and injects with the early prehide', t => {
-  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
-  const script = `
-    const adblock = require(${JSON.stringify(adblockPath)})
-    const createSession = () => ({
-      sent: [],
-      on: () => {},
-      off: () => {},
-      async send (method) {
-        this.sent.push(method)
-        return method === 'Page.createIsolatedWorld' ? { executionContextId: 1 } : {}
-      }
-    })
-    const hostSession = createSession()
-    const activatedSession = createSession()
-    let session = hostSession
-    const page = { _client: () => session, mainFrame: () => ({ _id: 'main' }), on: () => {}, off: () => {} }
-    const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
-    adblock.enableBlockingInPage(page, run, 5000)
-    const startedAt = Date.now()
-    const poll = setInterval(async () => {
-      if (!page._autoconsentScript && Date.now() - startedAt < 10000) return
-      clearInterval(poll)
-      page._autoconsentInitDone = true
-      session = activatedSession
-      await adblock.runAutoConsent(page)
-      process.stdout.write(JSON.stringify(activatedSession.sent))
-      process.exit(0)
-    }, 20)
-  `
+test('runAutoConsent moves autoconsent to the CDP session a prerender activation swaps in', async t => {
+  const { url, beacons } = await runPrerenderServer(t, COOKIEBOT_PAGE)
+  const browserless = await getBrowserContext(t)
 
-  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
-    encoding: 'utf8',
-    timeout: 15000
+  const run = browserless.withPage((page, goto) => async () => {
+    const hostSession = page._client()
+    const hostListeners = () =>
+      ['Runtime.executionContextCreated', 'Runtime.executionContextsCleared'].map(event =>
+        hostSession.listenerCount(event)
+      )
+    const before = hostListeners()
+    const activated = await activatePrerender({ page, goto, url, beacons })
+    const sessionSwapped = page._client() !== hostSession
+    await runAutoConsent(page)
+    const clicked = await waitForClicked(page)
+    const leftover = hostListeners().map((count, index) => count - before[index])
+    return { activated, sessionSwapped, clicked, leftover }
   })
 
-  t.is(status, 0, stderr)
-  t.deepEqual(
-    JSON.parse(stdout),
-    ['Runtime.addBinding', 'Page.createIsolatedWorld', 'Runtime.evaluate', 'Runtime.evaluate'],
-    'the swapped session needs the binding, the world, the early prehide and the content script'
+  const { activated, sessionSwapped, clicked, leftover } = await run()
+  t.true(activated, 'the page must be activated from a prerender')
+  t.true(sessionSwapped, 'activation must swap the CDP session')
+  t.is(clicked, 'cookiebot-decline', 'eval replies must reach autoconsent on the new session')
+  t.true(
+    leftover.every(count => count <= 0),
+    `adblock listeners must leave the old session: ${leftover}`
   )
 })
 
