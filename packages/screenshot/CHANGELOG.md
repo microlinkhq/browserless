@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.17](https://github.com/microlinkhq/browserless/compare/v13.9.16...v13.9.17) (2026-09-11)
+
+### Bug Fixes
+
+* **screenshot:** run page helpers in an isolated world ([#924](https://github.com/microlinkhq/browserless/issues/924)) ([c89eada](https://github.com/microlinkhq/browserless/commit/c89eada92e2231a23ee1ece09e710818a4ab7802))
+
 ## [13.9.16](https://github.com/microlinkhq/browserless/compare/v13.9.15...v13.9.16) (2026-09-11)
 
 **Note:** Version bump only for package @browserless/screenshot
