@@ -127,7 +127,7 @@ test('Android Chrome device reports mobile client hints', async t => {
   const state = await run()
   t.true(state.brands.some(({ brand }) => brand === 'Google Chrome'))
   t.is(state.hints.platform, 'Android')
-  t.is(state.platform, 'Linux armv81')
+  t.is(state.platform, 'Linux armv8l')
 })
 
 test('non Chrome user agents get no fabricated client hints', async t => {

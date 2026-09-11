@@ -50,7 +50,7 @@ const detectPlatform = userAgent => {
   if (android) {
     const mobile = /\bMobile\b/.test(userAgent)
     return {
-      navigatorPlatform: 'Linux armv81',
+      navigatorPlatform: 'Linux armv8l',
       platform: 'Android',
       platformVersion: toPlatformVersion(android[1]),
       architecture: '',

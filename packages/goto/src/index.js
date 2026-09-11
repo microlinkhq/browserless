@@ -25,13 +25,14 @@ const isEmpty = val => val == null || !(Object.keys(val) || val).length
 
 const chromeVersionCache = new WeakMap()
 
-const chromeVersionFromBrowser = async page => {
+const chromeVersionFromBrowser = async (page, timeout) => {
   try {
     const browser = page.browser()
     if (chromeVersionCache.has(browser)) return chromeVersionCache.get(browser)
-    const raw = await browser.version().catch(() => {})
+    const lookup = browser.version().catch(() => {})
+    const raw = await (timeout ? pTimeout(lookup, timeout).catch(() => {}) : lookup)
     const version = raw?.match(/^(?:Headless)?Chrome\/([\d.]+)/)?.[1]
-    if (version) chromeVersionCache.set(browser, version)
+    if (version || timeout) chromeVersionCache.set(browser, version)
     return version
   } catch {
     return undefined
@@ -436,11 +437,9 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         const versionTimeout = Math.round(actionTimeout / 2)
         prePromises.push(
           run({
-            fn: pTimeout(chromeVersionFromBrowser(page), versionTimeout)
-              .catch(() => undefined)
-              .then(browserVersion =>
-                page.setUserAgent({ userAgent, ...getClientHints(userAgent, browserVersion) })
-              ),
+            fn: chromeVersionFromBrowser(page, versionTimeout).then(browserVersion =>
+              page.setUserAgent({ userAgent, ...getClientHints(userAgent, browserVersion) })
+            ),
             timeout: actionTimeout,
             debug: { 'user-agent': userAgent }
           })

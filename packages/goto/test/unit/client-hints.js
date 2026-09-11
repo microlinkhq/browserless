@@ -82,7 +82,7 @@ test('Android user agent reports a mobile device with its model', t => {
     'Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7977.83 Mobile Safari/537.36'
   )
 
-  t.is(platform, 'Linux armv81')
+  t.is(platform, 'Linux armv8l')
   t.like(userAgentMetadata, {
     platform: 'Android',
     platformVersion: '7.0.0',
@@ -97,7 +97,7 @@ test('Android WebView user agent reports the Android WebView brand', t => {
     'Mozilla/5.0 (Linux; Android 13; Pixel 7 Build/TQ3A.230805.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.83 Mobile Safari/537.36'
   )
 
-  t.is(platform, 'Linux armv81')
+  t.is(platform, 'Linux armv8l')
   t.deepEqual(brandsOf(userAgentMetadata.brands), [
     'Chromium/152',
     'Not?A_Brand/24',
@@ -141,11 +141,11 @@ test('Chromium based browsers with their own brand get no client hints', t => {
   for (const userAgent of userAgents) t.deepEqual(getClientHints(userAgent), {}, userAgent)
 })
 
-test('a browser version lookup that never settles does not block the user agent override', async t => {
-  const goto = createGoto({ timeout: 10000 })
-  const userAgentOverrides = []
+const goto = createGoto({ timeout: 10000 })
+
+const createMockPage = ({ browser, userAgentOverrides }) => {
   const noop = () => Promise.resolve()
-  const page = {
+  return {
     setViewport: noop,
     viewport: () => null,
     setExtraHTTPHeaders: noop,
@@ -157,19 +157,27 @@ test('a browser version lookup that never settles does not block the user agent 
     addStyleTag: noop,
     goto: () => Promise.resolve(null),
     waitForNetworkIdle: noop,
-    browser: () => ({ version: () => new Promise(() => {}) }),
+    browser: () => browser,
     _client: () => ({ send: noop })
   }
-  const userAgent = macUserAgent('152.0.0.0')
+}
 
-  const navigation = goto(page, {
+const gotoWithUserAgent = (page, userAgent) =>
+  goto(page, {
     url: 'about:blank',
     headers: { 'user-agent': userAgent },
     waitUntil: 'load',
     adblock: false
   })
+
+test('a browser version lookup that never settles does not block the user agent override', async t => {
+  const userAgentOverrides = []
+  const browser = { version: () => new Promise(() => {}) }
+  const page = createMockPage({ browser, userAgentOverrides })
+  const userAgent = macUserAgent('152.0.0.0')
+
   const outcome = await Promise.race([
-    navigation.then(() => 'navigated'),
+    gotoWithUserAgent(page, userAgent).then(() => 'navigated'),
     new Promise(resolve => setTimeout(resolve, 3000, 'blocked'))
   ])
 
@@ -179,32 +187,41 @@ test('a browser version lookup that never settles does not block the user agent 
   t.is(userAgentOverrides[0].userAgentMetadata.fullVersion, '152.0.0.0')
 })
 
-test('a reduced user agent header gets the browser full version on the first navigation', async t => {
-  const goto = createGoto({ timeout: 10000 })
-  const userAgentOverrides = []
-  const noop = () => Promise.resolve()
-  const page = {
-    setViewport: noop,
-    viewport: () => null,
-    setExtraHTTPHeaders: noop,
-    setUserAgent: options => {
-      userAgentOverrides.push(options)
-      return Promise.resolve()
-    },
-    emulateMediaFeatures: noop,
-    addStyleTag: noop,
-    goto: () => Promise.resolve(null),
-    waitForNetworkIdle: noop,
-    browser: () => ({ version: () => Promise.resolve('Chrome/152.0.7977.83') }),
-    _client: () => ({ send: noop })
+test('a hung or failed browser version lookup runs once per browser', async t => {
+  const lookupResults = {
+    hung: () => new Promise(() => {}),
+    failed: () => Promise.reject(new Error('Target closed'))
   }
 
-  await goto(page, {
-    url: 'about:blank',
-    headers: { 'user-agent': macUserAgent('152.0.0.0') },
-    waitUntil: 'load',
-    adblock: false
-  })
+  for (const [name, lookupResult] of Object.entries(lookupResults)) {
+    const userAgentOverrides = []
+    let lookups = 0
+    const browser = {
+      version: () => {
+        lookups++
+        return lookupResult()
+      }
+    }
+    const page = createMockPage({ browser, userAgentOverrides })
+
+    await gotoWithUserAgent(page, macUserAgent('152.0.0.0'))
+    await gotoWithUserAgent(page, macUserAgent('152.0.0.0'))
+
+    t.is(lookups, 1, name)
+    t.deepEqual(
+      userAgentOverrides.map(({ userAgentMetadata }) => userAgentMetadata.fullVersion),
+      ['152.0.0.0', '152.0.0.0'],
+      name
+    )
+  }
+})
+
+test('a reduced user agent header gets the browser full version on the first navigation', async t => {
+  const userAgentOverrides = []
+  const browser = { version: () => Promise.resolve('Chrome/152.0.7977.83') }
+  const page = createMockPage({ browser, userAgentOverrides })
+
+  await gotoWithUserAgent(page, macUserAgent('152.0.0.0'))
 
   t.is(userAgentOverrides.length, 1)
   t.is(userAgentOverrides[0].userAgentMetadata.fullVersion, '152.0.7977.83')
