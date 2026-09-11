@@ -249,8 +249,9 @@ test('does not query the DOM from the page main world', async t => {
   const run = browserless.withPage(page => async () => {
     await dismiss.setup(page)
     await page.goto(url)
-    const clicked = await waitFor(page, () => window.__clicked)
+    /* the DOMContentLoaded dismissal is async: settle it before asserting */
     await dismiss.run(page)
+    const clicked = await waitFor(page, () => window.__clicked)
     return { clicked, queries: await page.evaluate(() => window.__queries) }
   })
 
