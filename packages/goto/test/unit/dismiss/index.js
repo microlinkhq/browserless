@@ -563,6 +563,25 @@ for (const method of HOSTILE_FORM_METHODS) {
   })
 }
 
+test('dismisses a dialog whose first button is a non-HTML (SVG) element', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div role="alertdialog" style="position:fixed;top:20%;left:20%;background:#fff;padding:16px">
+       <p>Scheduled maintenance this weekend.</p>
+       <svg role="button" width="24" height="24" style="display:inline-block"><rect width="24" height="24"></rect></svg>
+       <button onclick="window.__clicked='ack';this.closest('[role=alertdialog]').remove()">OK</button>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'ack', 'an SVG button must not stop the sibling acknowledge button')
+})
+
 test('runs the DOMContentLoaded dismissal once per document', async t => {
   const browserless = await getBrowserContext(t)
   const url = await serve(
@@ -591,20 +610,24 @@ test('runs the DOMContentLoaded dismissal once per document', async t => {
 
 test('keeps dismissing after a prerender activation swaps the CDP session', async t => {
   const browserless = await getBrowserContext(t)
-  /* a Preload.enable session disables prerendering, so the prerendered
-     document reports its own parsing through an image request instead */
-  let onPrerenderParsed
-  const prerenderParsed = new Promise(resolve => {
-    onPrerenderParsed = resolve
+  /* a Preload.enable session disables prerendering, so wait for the
+     prerendered document's own load event (beaconed via fetch) instead: it is
+     ready to activate only once fully loaded, otherwise the navigation is a
+     plain load with no session swap */
+  let onPrerenderReady
+  const prerenderReady = new Promise(resolve => {
+    onPrerenderReady = resolve
   })
   const url = await runServer(t, ({ req, res }) => {
-    if (req.url === '/prerender-parsed') {
-      onPrerenderParsed()
+    if (req.url === '/prerender-ready') {
+      onPrerenderReady()
       return res.end()
     }
     res.setHeader('content-type', 'text/html')
     if (req.url === '/sticky?prerendered') {
-      return res.end(page(STICKY + '<img src="/prerender-parsed">'))
+      return res.end(
+        page(STICKY + '<script>addEventListener("load", () => fetch("/prerender-ready"))</script>')
+      )
     }
     if (req.url.startsWith('/sticky')) return res.end(page(STICKY))
     res.end(
@@ -616,7 +639,7 @@ test('keeps dismissing after a prerender activation swaps the CDP session', asyn
 
   const run = browserless.withPage((page, goto) => async () => {
     await goto(page, { url })
-    await prerenderParsed
+    await prerenderReady
     const clientBeforeActivation = page._client()
     await Promise.all([
       page.waitForNavigation(),

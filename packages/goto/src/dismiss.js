@@ -43,10 +43,11 @@ const dismissOverlays = () => {
     window.Element.prototype
   const { click } = window.HTMLElement.prototype
   const scanDocument = window.Document.prototype.querySelectorAll
-  const readInnerText = Object.getOwnPropertyDescriptor(
-    window.HTMLElement.prototype,
-    'innerText'
-  ).get
+  const innerText = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'innerText').get
+  /* the innerText getter throws on a non-HTMLElement (e.g. an SVG close icon
+     matched as `[role="button"]`); those never carry shadowing named access */
+  const readText = el =>
+    el instanceof window.HTMLElement ? innerText.call(el) : el.textContent || ''
 
   const MAX_CLICKS = 3
   const WATCH_MS = 15000
@@ -114,7 +115,7 @@ const dismissOverlays = () => {
   const seen = new WeakSet()
 
   const dismiss = dialog => {
-    if (CONSENT_TEXT.test(readInnerText.call(dialog) || '')) return false
+    if (CONSENT_TEXT.test(readText(dialog))) return false
     const hasFields = !!querySelector.call(dialog, 'input, select, textarea')
     const buttons = querySelectorAll.call(dialog, 'button, [role="button"], input[type="button"]')
 
@@ -124,7 +125,7 @@ const dismissOverlays = () => {
     let candidate = null
     for (const button of buttons) {
       if (!isVisible(button) || button.disabled) continue
-      const text = normalize(readInnerText.call(button) || button.value)
+      const text = normalize(readText(button) || button.value)
       const label = normalize(getAttribute.call(button, 'aria-label'))
       if (REJECT_TEXT.test(text) || REJECT_TEXT.test(label)) return false
       if (!candidate) {
