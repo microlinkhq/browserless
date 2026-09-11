@@ -1,6 +1,6 @@
 'use strict'
 
-const { createBrowser } = require('@browserless/test')
+const { createBrowser, getBrowserContext, runServer } = require('@browserless/test')
 const psList = require('ps-list')
 const test = require('ava')
 const browserless = require('..')
@@ -47,6 +47,32 @@ const getChromiumPs = async () => {
 
   await browserlessFactory.close()
   t.is(await getChromiumPs(), initialPs)
+})
+
+test('default args keep standard Web APIs exposed', async t => {
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<!doctype html><title>apis</title>')
+  })
+  const browserless = await getBrowserContext(t)
+
+  const apis = await browserless.evaluate(page =>
+    page.evaluate(() => ({
+      Notification: typeof Notification,
+      speechSynthesis: typeof speechSynthesis,
+      webkitSpeechRecognition: typeof webkitSpeechRecognition,
+      PushManager: typeof PushManager,
+      PaymentRequest: typeof PaymentRequest
+    }))
+  )(url)
+
+  t.deepEqual(apis, {
+    Notification: 'function',
+    speechSynthesis: 'object',
+    webkitSpeechRecognition: 'function',
+    PushManager: 'function',
+    PaymentRequest: 'function'
+  })
 })
 
 test('.close() disconnect in connect mode', async t => {
