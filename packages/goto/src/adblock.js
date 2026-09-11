@@ -264,6 +264,8 @@ const listenUntilClose = (page, client, listeners) => {
 
 const createAutoConsent = async (page, client, timeout) => {
   const topFrameContexts = (page._autoconsentContextIds = new Set())
+  page._autoconsentInitDone = false
+  page._autoconsentInjection = undefined
 
   const detach = listenUntilClose(page, client, [
     [
@@ -335,6 +337,7 @@ const createAutoConsent = async (page, client, timeout) => {
    activated, so listeners and the binding follow the session, not the page. */
 const setupAutoConsent = (page, timeout) => {
   const client = page._client()
+  page._autoconsentTimeout = timeout
   if (page._autoconsentSession !== client) {
     page._autoconsentDetach?.()
     page._autoconsentSession = client
@@ -353,9 +356,17 @@ const setupAutoConsent = (page, timeout) => {
    `Page.createIsolatedWorld` returns the document's existing autoconsent world
    when there is one, where autoconsent's own guard skips a second instance. */
 const runAutoConsent = async page => {
+  if (page._autoconsentSetup && page._client() !== page._autoconsentSession) {
+    await setupAutoConsent(page, page._autoconsentTimeout)
+  }
   if (page._autoconsentInitDone || !page._autoconsentScript) return
   if (await page._autoconsentInjection) return
-  return injectContentScript(page._client(), page.mainFrame()._id, page._autoconsentScript)
+  return injectContentScript(
+    page._client(),
+    page.mainFrame()._id,
+    page._autoconsentScript,
+    page._autoconsentPrehideScript
+  )
 }
 
 const enableBlockingInPage = (page, run, timeout) => {

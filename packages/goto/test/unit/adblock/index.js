@@ -541,12 +541,23 @@ test('runAutoConsent fallback initializes autoconsent when injection did not run
   const browserless = await getBrowserContext(t)
 
   const run = browserless.withPage((page, goto) => async () => {
-    suppressAutoconsentInjection(page._client())
+    const client = page._client()
+    suppressAutoconsentInjection(client)
+    let prehideEvaluations = 0
+    const send = client.send.bind(client)
+    client.send = (method, params, ...rest) => {
+      if (method === 'Runtime.evaluate' && params?.expression === page._autoconsentPrehideScript) {
+        prehideEvaluations += 1
+      }
+      return send(method, params, ...rest)
+    }
     await goto(page, { url })
-    return waitForInitDone(page)
+    return { initDone: await waitForInitDone(page), prehideEvaluations }
   })
 
-  t.true(await run(), 'fallback injection must complete the init handshake')
+  const { initDone, prehideEvaluations } = await run()
+  t.true(initDone, 'fallback injection must complete the init handshake')
+  t.true(prehideEvaluations >= 1, 'fallback injection must apply the early prehide too')
 })
 
 test('runAutoConsent fallback reuses the running autoconsent instance', async t => {
@@ -832,6 +843,50 @@ test('autoconsent keeps running after a prerendered page is activated', async t 
   t.true(activated, 'the page must be activated from a prerender')
   t.true(sessionSwapped, 'activation must swap the CDP session')
   t.is(clicked, 'reject', 'autoconsent must run on the new CDP session')
+})
+
+test('runAutoConsent re-registers on a swapped CDP session and injects with the early prehide', t => {
+  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
+  const script = `
+    const adblock = require(${JSON.stringify(adblockPath)})
+    const createSession = () => ({
+      sent: [],
+      on: () => {},
+      off: () => {},
+      async send (method) {
+        this.sent.push(method)
+        return method === 'Page.createIsolatedWorld' ? { executionContextId: 1 } : {}
+      }
+    })
+    const hostSession = createSession()
+    const activatedSession = createSession()
+    let session = hostSession
+    const page = { _client: () => session, mainFrame: () => ({ _id: 'main' }), on: () => {}, off: () => {} }
+    const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
+    adblock.enableBlockingInPage(page, run, 5000)
+    const startedAt = Date.now()
+    const poll = setInterval(async () => {
+      if (!page._autoconsentScript && Date.now() - startedAt < 10000) return
+      clearInterval(poll)
+      page._autoconsentInitDone = true
+      session = activatedSession
+      await adblock.runAutoConsent(page)
+      process.stdout.write(JSON.stringify(activatedSession.sent))
+      process.exit(0)
+    }, 20)
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8',
+    timeout: 15000
+  })
+
+  t.is(status, 0, stderr)
+  t.deepEqual(
+    JSON.parse(stdout),
+    ['Runtime.addBinding', 'Page.createIsolatedWorld', 'Runtime.evaluate', 'Runtime.evaluate'],
+    'the swapped session needs the binding, the world, the early prehide and the content script'
+  )
 })
 
 test('heuristic dismisses a consent banner with only an acknowledge button', async t => {
