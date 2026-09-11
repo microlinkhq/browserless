@@ -541,6 +541,13 @@ test('connect mode clients sharing one browser keep their own screens', async t 
   }
   const opts = { url, waitUntil: 'load', adblock: false }
 
+  const owner = await puppeteer.connect({ browserWSEndpoint })
+  t.teardown(() => owner.disconnect())
+  const session = await owner.target().createCDPSession()
+  const { screenInfos } = await session.send('Emulation.getScreenInfos')
+  const primary = screenInfos.find(({ isPrimary }) => isPrimary)
+  await session.send('Emulation.updateScreen', { screenId: primary.id, width: 800, height: 600 })
+
   const [clientA, clientB] = await Promise.all([connect(), connect()])
   const pageA = await clientA.newPage()
   await browserless.goto(pageA, opts)
