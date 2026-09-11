@@ -57,6 +57,12 @@ const waitForInitDone = async page => {
   return page._autoconsentInitDone === true
 }
 
+const waitForAutoconsentContext = async page => {
+  for (let attempts = 0; attempts < 50 && !(page._autoconsentContextIds?.size > 0); attempts++) {
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+}
+
 const autoconsentGlobals = () =>
   Object.getOwnPropertyNames(window).filter(name => /autoconsent|puppeteer_/i.test(name))
 
@@ -111,6 +117,45 @@ test('pre-warm rules failure does not crash the process', t => {
   })
 
   t.is(status, 0, `process crashed: ${stderr}`)
+  t.is(stdout.trim(), 'ok')
+})
+
+test('a failing autoconsent message handler does not raise an unhandled rejection', t => {
+  const adblockPath = path.resolve(__dirname, '../../../src/adblock.js')
+  const script = `
+    const fsp = require('fs/promises')
+    const readFile = fsp.readFile
+    fsp.readFile = (...args) =>
+      String(args[0]).includes('compact-rules.json')
+        ? Promise.reject(new Error('simulated ENOENT'))
+        : readFile(...args)
+    const adblock = require(${JSON.stringify(adblockPath)})
+    const handlers = {}
+    const client = { on: (event, handler) => { handlers[event] = handler }, off: () => {}, send: async () => ({}) }
+    const page = { _client: () => client, mainFrame: () => ({ _id: 'main' }), on: () => {}, off: () => {} }
+    const run = async ({ fn }) => ({ value: await fn.catch(() => {}) })
+    process.on('unhandledRejection', error => {
+      process.stdout.write('unhandled: ' + error.message)
+      process.exit(2)
+    })
+    adblock.enableBlockingInPage(page, run, 5000)
+    handlers['Runtime.executionContextCreated']({
+      context: { id: 1, name: adblock.AUTOCONSENT_WORLD, auxData: { frameId: 'main' } }
+    })
+    handlers['Runtime.bindingCalled']({
+      name: adblock.AUTOCONSENT_BINDING,
+      executionContextId: 1,
+      payload: JSON.stringify({ type: 'init' })
+    })
+    setTimeout(() => { process.stdout.write('ok'); process.exit(0) }, 500)
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8',
+    timeout: 15000
+  })
+
+  t.is(status, 0, `${stdout} ${stderr}`)
   t.is(stdout.trim(), 'ok')
 })
 
@@ -314,6 +359,43 @@ test('runAutoConsent fallback reuses the running autoconsent instance', async t 
   )
 })
 
+test('runAutoConsent fallback initializes every new document on a reused page', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await getUrl(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const client = page._client()
+    const initContextIds = []
+    let scriptIdentifier
+
+    client.on('Runtime.bindingCalled', ({ payload, executionContextId }) => {
+      if (payload.includes('"type":"init"')) initContextIds.push(executionContextId)
+    })
+
+    const send = client.send.bind(client)
+    client.send = async (method, params, ...rest) => {
+      const result = await send(method, params, ...rest)
+      if (
+        method === 'Page.addScriptToEvaluateOnNewDocument' &&
+        params?.worldName === AUTOCONSENT_WORLD
+      ) {
+        scriptIdentifier = result.identifier
+      }
+      return result
+    }
+
+    await goto(page, { url: `${url}one` })
+    await waitForInitDone(page)
+
+    await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: scriptIdentifier })
+    await goto(page, { url: `${url}two` })
+    await waitForInitDone(page)
+    return initContextIds.length
+  })
+
+  t.is(await run(), 2, 'the fallback must initialize the second document')
+})
+
 const spyAdblockListeners = client => {
   const added = []
   const removed = new Set()
@@ -406,7 +488,7 @@ test('autoconsent keeps messaging after a back/forward cache restore', async t =
     await goto(page, { url })
     await goto(page, { url: url.replace('127.0.0.1', 'localhost') })
     await page.goBack({ waitUntil: 'load' })
-    await waitForInitDone(page)
+    await waitForAutoconsentContext(page)
     const restoredFromCache = await page.evaluate(() => window.__persisted.includes(true))
 
     const reply = await evaluateInAutoconsentWorld(page, () => {

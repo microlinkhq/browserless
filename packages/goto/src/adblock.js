@@ -184,13 +184,23 @@ const createAutoConsent = async (page, timeout) => {
         if (context.auxData?.frameId === page.mainFrame()._id) topFrameContexts.add(context.id)
       }
     ],
-    ['Runtime.executionContextsCleared', () => topFrameContexts.clear()],
+    [
+      'Runtime.executionContextsCleared',
+      () => {
+        topFrameContexts.clear()
+        page._autoconsentInitDone = false
+      }
+    ],
     [
       'Runtime.bindingCalled',
       ({ name, payload, executionContextId }) => {
         if (name !== AUTOCONSENT_BINDING || !topFrameContexts.has(executionContextId)) return
         const message = parseMessage(payload)
-        if (message) onMessage({ page, client, executionContextId, message, timeout })
+        if (message) {
+          onMessage({ page, client, executionContextId, message, timeout }).catch(error =>
+            debug('autoconsent:error', { message: error.message })
+          )
+        }
       }
     ]
   ])
