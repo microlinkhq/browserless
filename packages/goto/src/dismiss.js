@@ -35,6 +35,19 @@ const dismissOverlays = () => {
   }
   const state = (window.__browserlessDismiss = { clicked: 0 })
 
+  /* Capture the builtins up front and `.call` them: HTMLFormElement named
+     access lets a page shadow these on a `<form>` dialog (e.g.
+     `<input name="querySelectorAll">`), and reading them off the element would
+     throw. The isolated world's prototypes are out of the page's reach. */
+  const { getClientRects, querySelector, querySelectorAll, getAttribute, closest } =
+    window.Element.prototype
+  const { click } = window.HTMLElement.prototype
+  const scanDocument = window.Document.prototype.querySelectorAll
+  const readInnerText = Object.getOwnPropertyDescriptor(
+    window.HTMLElement.prototype,
+    'innerText'
+  ).get
+
   const MAX_CLICKS = 3
   const WATCH_MS = 15000
   const ACK_TEXT = /^(ok(ay)?|got it|i understand|understood|dismiss|close|continue|x|×|✕)$/
@@ -93,7 +106,7 @@ const dismissOverlays = () => {
       .toLowerCase()
 
   const isVisible = el => {
-    if (!el.getClientRects().length) return false
+    if (!getClientRects.call(el).length) return false
     const style = window.getComputedStyle(el)
     return style.visibility !== 'hidden' && style.display !== 'none' && style.opacity !== '0'
   }
@@ -101,9 +114,9 @@ const dismissOverlays = () => {
   const seen = new WeakSet()
 
   const dismiss = dialog => {
-    if (CONSENT_TEXT.test(dialog.innerText || '')) return false
-    const hasFields = !!dialog.querySelector('input, select, textarea')
-    const buttons = dialog.querySelectorAll('button, [role="button"], input[type="button"]')
+    if (CONSENT_TEXT.test(readInnerText.call(dialog) || '')) return false
+    const hasFields = !!querySelector.call(dialog, 'input, select, textarea')
+    const buttons = querySelectorAll.call(dialog, 'button, [role="button"], input[type="button"]')
 
     /* Single pass: defer the click so a reject button anywhere in the dialog
        still aborts it (leaving the opt-out to autoconsent), while the first
@@ -111,11 +124,11 @@ const dismissOverlays = () => {
     let candidate = null
     for (const button of buttons) {
       if (!isVisible(button) || button.disabled) continue
-      const text = normalize(button.innerText || button.value)
-      const label = normalize(button.getAttribute('aria-label'))
+      const text = normalize(readInnerText.call(button) || button.value)
+      const label = normalize(getAttribute.call(button, 'aria-label'))
       if (REJECT_TEXT.test(text) || REJECT_TEXT.test(label)) return false
       if (!candidate) {
-        const isClose = CLOSE_LABEL.test(label) && !button.closest('form')
+        const isClose = CLOSE_LABEL.test(label) && !closest.call(button, 'form')
         const isAcknowledge = !hasFields && ACK_TEXT.test(text)
         if (isAcknowledge || isClose) candidate = button
       }
@@ -123,18 +136,22 @@ const dismissOverlays = () => {
     if (!candidate) return false
     seen.add(dialog)
     state.clicked++
-    candidate.click()
+    click.call(candidate)
     return true
   }
 
   const scan = () => {
     if (state.clicked >= MAX_CLICKS) return
-    const dialogs = document.querySelectorAll(
+    const dialogs = scanDocument.call(
+      document,
       'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
     )
     for (const dialog of dialogs) {
-      if (seen.has(dialog) || !isVisible(dialog)) continue
-      dismiss(dialog)
+      /* one hostile dialog must not abort the scan or every later rescan */
+      try {
+        if (seen.has(dialog) || !isVisible(dialog)) continue
+        dismiss(dialog)
+      } catch {}
       if (state.clicked >= MAX_CLICKS) return
     }
   }

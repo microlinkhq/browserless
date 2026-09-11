@@ -150,7 +150,8 @@ test('does not touch a dialog without acknowledge buttons', async t => {
 
   const run = browserless.withPage((page, goto) => async () => {
     await goto(page, { url })
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    /* settle the scan deterministically instead of waiting a fixed delay */
+    await dismiss.run(page)
     return {
       clicked: await page.evaluate(() => window.__clicked || false),
       present: await stillPresent(page, '#notice')
@@ -486,6 +487,10 @@ test('creates the dismiss world only in the top frame', async t => {
   const run = browserless.withPage((page, goto) => async () => {
     await goto(page, { url })
     const clicked = await waitFor(page, () => window.__clicked)
+    /* wait for every child frame to attach before counting worlds */
+    for (let attempt = 0; attempt < 50 && page.frames().length < 4; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
     const session = await page.createCDPSession()
     const worldNames = []
     session.on('Runtime.executionContextCreated', ({ context }) => worldNames.push(context.name))
@@ -515,6 +520,48 @@ test('dismisses a page whose element id clobbers the guard name', async t => {
 
   t.is(await run(), 'ack')
 })
+
+/* an <input name="…"> makes HTMLFormElement named access shadow that builtin
+   on the <form> dialog, so reading it off the element throws */
+const HOSTILE_FORM_METHODS = ['getClientRects', 'querySelector', 'querySelectorAll']
+
+const hostileForm = method =>
+  `<form role="dialog" style="position:fixed;top:60%;left:20%;background:#fff;padding:16px">
+     <p>Newsletter</p><input name="${method}">
+     <button type="button" aria-label="Close">x</button>
+   </form>`
+
+for (const method of HOSTILE_FORM_METHODS) {
+  test(`dismisses a later dialog when a form shadows Element.prototype.${method}`, async t => {
+    const browserless = await getBrowserContext(t)
+    const url = await serve(t, hostileForm(method) + DIALOG)
+
+    const run = browserless.withPage((page, goto) => async () => {
+      await goto(page, { url })
+      return waitFor(page, () => window.__clicked)
+    })
+
+    t.is(await run(), 'ack', `a form shadowing ${method} must not stop dismissal`)
+  })
+
+  test(`dismisses a late dialog when a form shadows Element.prototype.${method}`, async t => {
+    const browserless = await getBrowserContext(t)
+    const url = await serve(
+      t,
+      hostileForm(method) +
+        `<script>setTimeout(() => document.body.insertAdjacentHTML('beforeend', ${JSON.stringify(
+          DIALOG
+        )}), 500)</script>`
+    )
+
+    const run = browserless.withPage((page, goto) => async () => {
+      await goto(page, { url })
+      return waitFor(page, () => window.__clicked)
+    })
+
+    t.is(await run(), 'ack', `a form shadowing ${method} must not stop later rescans`)
+  })
+}
 
 test('runs the DOMContentLoaded dismissal once per document', async t => {
   const browserless = await getBrowserContext(t)
@@ -614,18 +661,28 @@ test('run does not retry protocol errors other than a stale context', async t =>
   t.deepEqual(methods, ['Page.createIsolatedWorld'])
 })
 
-test('run retries a stale context up to three attempts', async t => {
-  const { methods, page } = fakePage((method, sent) => {
-    if (method === 'Page.createIsolatedWorld') return { executionContextId: sent.length }
-    if (sent.filter(name => name === 'Runtime.evaluate').length < 3) {
-      throw new Error('Protocol error (Runtime.evaluate): Cannot find context with specified id')
-    }
-    return { result: { value: 1 } }
-  })
+/* every message Chromium uses for a context lost to a mid-call navigation */
+const STALE_CONTEXT_MESSAGES = [
+  'Protocol error (Runtime.evaluate): Cannot find context with specified id',
+  'Protocol error (Runtime.evaluate): Inspected target navigated or closed',
+  'Protocol error (Runtime.evaluate): Execution context was destroyed.'
+]
 
-  t.is(await dismiss.run(page), 1)
-  t.is(methods.length, 6)
-})
+for (const message of STALE_CONTEXT_MESSAGES) {
+  test(`run retries after "${message.replace(
+    /^Protocol error \(Runtime\.evaluate\): /,
+    ''
+  )}"`, async t => {
+    const { methods, page } = fakePage((method, sent) => {
+      if (method === 'Page.createIsolatedWorld') return { executionContextId: sent.length }
+      if (sent.filter(name => name === 'Runtime.evaluate').length < 3) throw new Error(message)
+      return { result: { value: 1 } }
+    })
+
+    t.is(await dismiss.run(page), 1)
+    t.is(methods.length, 6)
+  })
+}
 
 test('run does not retry page exceptions that look like a stale context', async t => {
   const { methods, page } = fakePage(method =>
