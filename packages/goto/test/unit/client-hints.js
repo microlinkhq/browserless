@@ -179,6 +179,37 @@ test('a browser version lookup that never settles does not block the user agent 
   t.is(userAgentOverrides[0].userAgentMetadata.fullVersion, '152.0.0.0')
 })
 
+test('a reduced user agent header gets the browser full version on the first navigation', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const userAgentOverrides = []
+  const noop = () => Promise.resolve()
+  const page = {
+    setViewport: noop,
+    viewport: () => null,
+    setExtraHTTPHeaders: noop,
+    setUserAgent: options => {
+      userAgentOverrides.push(options)
+      return Promise.resolve()
+    },
+    emulateMediaFeatures: noop,
+    addStyleTag: noop,
+    goto: () => Promise.resolve(null),
+    waitForNetworkIdle: noop,
+    browser: () => ({ version: () => Promise.resolve('Chrome/152.0.7977.83') }),
+    _client: () => ({ send: noop })
+  }
+
+  await goto(page, {
+    url: 'about:blank',
+    headers: { 'user-agent': macUserAgent('152.0.0.0') },
+    waitUntil: 'load',
+    adblock: false
+  })
+
+  t.is(userAgentOverrides.length, 1)
+  t.is(userAgentOverrides[0].userAgentMetadata.fullVersion, '152.0.7977.83')
+})
+
 test('non Chrome user agents get no client hints', t => {
   const userAgents = [
     undefined,
