@@ -84,7 +84,7 @@ const patchRawSend = connection => {
   } catch {
     return undefined
   }
-  return connection._rawSend === send ? screens : undefined
+  return screens
 }
 
 const interceptMetricsOverrides = connection => {
