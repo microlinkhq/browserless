@@ -369,6 +369,8 @@ const readEmulation = page =>
     ])
   }))
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
 const readScreen = page =>
   page.evaluate(() => ({
     screen: `${window.screen.width}x${window.screen.height}`,
@@ -469,6 +471,119 @@ test('screen is re-applied as soon as puppeteer re-applies the viewport', async 
     t.true(state.fits, JSON.stringify(state))
     t.false(state.tabletMediaQuery)
   }
+})
+
+test('changing the viewport right before closing the page leaves no unhandled rejection', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+  const unhandled = []
+  const onUnhandledRejection = error => unhandled.push(error.message)
+  process.on('unhandledRejection', onUnhandledRejection)
+  t.teardown(() => process.off('unhandledRejection', onUnhandledRejection))
+
+  for (let round = 0; round < 5; round++) {
+    const page = await browserless.page()
+    await browserless.goto(page, { url, waitUntil: 'load', adblock: false })
+    page.setViewport({ width: 1400, height: 900 })
+    await page.close()
+  }
+  await sleep(500)
+
+  t.deepEqual(unhandled, [])
+})
+
+test('a metrics override that bypasses page.setViewport still carries the screen', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    await Object.getPrototypeOf(page).setViewport.call(page, page.viewport())
+    const afterBypass = await readScreen(page)
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const afterGoto = await readScreen(page)
+    return [afterBypass, afterGoto]
+  })
+
+  for (const state of await run()) {
+    t.true(state.fits, JSON.stringify(state))
+    t.false(state.tabletMediaQuery)
+  }
+})
+
+test('a full page screenshot without capture beyond viewport never flips device media queries', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`<html><head><script>
+      window.__flips = 0
+      matchMedia('(max-device-width: 1024px)').addEventListener('change', () => window.__flips++)
+    </script></head><body><p>${'lorem ipsum '.repeat(2500)}</p></body></html>`)
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    await page.screenshot({ fullPage: true, captureBeyondViewport: false })
+    await page.evaluate(
+      () =>
+        new Promise(resolve =>
+          window.requestAnimationFrame(() =>
+            window.requestAnimationFrame(() => setTimeout(resolve, 250))
+          )
+        )
+    )
+    return page.evaluate(() => window.__flips)
+  })
+
+  t.is(await run(), 0)
+})
+
+test('a prerendered page activated by a click keeps a fitting screen', async t => {
+  const browserless = await getBrowserContext(t)
+  const prerendered = []
+  const url = await runServer(t, ({ req, res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.setHeader('cache-control', 'no-store')
+    if (req.url === '/next') {
+      if (/prerender/.test(req.headers['sec-purpose'] || '')) prerendered.push(req.url)
+      return res.end('<html><body><h1>next</h1></body></html>')
+    }
+    res.end(
+      '<html><head><script type="speculationrules">{"prerender":[{"source":"list","urls":["/next"],"eagerness":"immediate"}]}</script></head><body><a id="next" href="/next">next</a></body></html>'
+    )
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    const initialSession = page._client()
+    for (let attempt = 0; attempt < 50 && prerendered.length === 0; attempt++) await sleep(100)
+    await sleep(1000)
+    await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.click('#next')])
+    return { swapped: page._client() !== initialSession, state: await readScreen(page) }
+  })
+
+  const { swapped, state } = await run()
+  t.true(prerendered.length > 0)
+  t.true(swapped)
+  t.true(state.fits, JSON.stringify(state))
+  t.false(state.tabletMediaQuery)
+})
+
+test('a default navigation keeps a desktop viewport set by the user', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    await page.setViewport({ width: 1024, height: 700 })
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    return readEmulation(page)
+  })
+
+  const state = await run()
+  t.is(state.innerWidth, 1024)
+  t.true(state.screenWidth >= state.innerWidth)
+  t.false(state.tabletMediaQuery)
 })
 
 test('a page viewport never changes the screen of other pages', async t => {

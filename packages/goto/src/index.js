@@ -9,7 +9,7 @@ const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const isUrl = require('is-url-http')
 
-const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
+const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY, CDPSessionEvent } = require('puppeteer')
 
 const { getClientHints, getScreen } = require('./emulation')
 const adblock = require('./adblock')
@@ -41,42 +41,58 @@ const chromeVersionFromBrowser = async page => {
 const PORTRAIT = { angle: 0, type: 'portraitPrimary' }
 const LANDSCAPE = { angle: 90, type: 'landscapePrimary' }
 
-const screenSessions = new WeakMap()
-const trackedPages = new WeakSet()
+const METRICS_OVERRIDE = 'Emulation.setDeviceMetricsOverride'
 
-const emulateScreen = async (page, viewport) => {
+const screenSessionsByConnection = new WeakMap()
+
+const withScreen = params => {
+  if (params.mobile || params.screenWidth || params.screenHeight) return params
+  const { width: screenWidth, height: screenHeight } = getScreen(params)
+  return { ...params, screenWidth, screenHeight }
+}
+
+const forgetOnDisconnect = (sessions, session) =>
+  session.once(CDPSessionEvent.Disconnected, () => sessions.delete(session.id()))
+
+const isScreenSession = (connection, sessions, sessionId) =>
+  sessions.has(sessionId) || sessions.has(connection.session(sessionId)?.parentSession()?.id())
+
+const interceptMetricsOverrides = connection => {
+  const existing = screenSessionsByConnection.get(connection)
+  if (existing) return existing
+  const sessions = new Set()
+  screenSessionsByConnection.set(connection, sessions)
+  const rawSend = connection._rawSend.bind(connection)
+  connection._rawSend = (callbacks, method, params, sessionId, options) =>
+    rawSend(
+      callbacks,
+      method,
+      method === METRICS_OVERRIDE && sessionId && isScreenSession(connection, sessions, sessionId)
+        ? withScreen(params)
+        : params,
+      sessionId,
+      options
+    )
+  return sessions
+}
+
+const trackScreen = page => {
   const client = page._client()
-  if (viewport && !viewport.isMobile) {
-    const { width: screenWidth, height: screenHeight } = getScreen(viewport)
-    await client.send('Emulation.setDeviceMetricsOverride', {
-      mobile: false,
-      width: viewport.width,
-      height: viewport.height,
-      deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
-      screenOrientation: viewport.isLandscape ? LANDSCAPE : PORTRAIT,
-      screenWidth,
-      screenHeight
-    })
-  }
-  screenSessions.set(page, client)
+  const sessions = interceptMetricsOverrides(client.connection())
+  const tab = client.parentSession() ?? client
+  if (sessions.has(tab.id())) return false
+  sessions.add(tab.id())
+  forgetOnDisconnect(sessions, tab)
+  return true
 }
 
-const trackViewport = page => {
-  if (trackedPages.has(page)) return
-  trackedPages.add(page)
-  const setViewport = page.setViewport.bind(page)
-  page.setViewport = async viewport => {
-    await setViewport(viewport)
-    await emulateScreen(page, viewport)
-  }
-}
-
-const applyViewport = (page, viewport) => {
-  trackViewport(page)
-  if (!shallowEqualObjects(page.viewport(), viewport)) return page.setViewport(viewport)
-  if (screenSessions.get(page) === page._client()) return Promise.resolve()
-  return emulateScreen(page, page.viewport())
-}
+const toMetricsOverride = viewport => ({
+  mobile: false,
+  width: viewport.width,
+  height: viewport.height,
+  deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
+  screenOrientation: viewport.isLandscape ? LANDSCAPE : PORTRAIT
+})
 
 const castArray = value => [].concat(value).filter(Boolean)
 
@@ -280,6 +296,19 @@ const inject = async (page, { timeout, mediaType, animations, modules, scripts, 
 module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ...deviceOpts }) => {
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
+
+  const needsViewport = (current, viewport) =>
+    !shallowEqualObjects(current, viewport) &&
+    (!shallowEqualObjects(defaultViewport, viewport) ||
+      Boolean(current?.isMobile) !== Boolean(viewport.isMobile))
+
+  const applyViewport = async (page, viewport) => {
+    const isFirstNavigation = trackScreen(page)
+    const current = page.viewport()
+    if (needsViewport(current, viewport)) return page.setViewport(viewport)
+    if (!isFirstNavigation || !current || current.isMobile) return Promise.resolve()
+    return page._client().send(METRICS_OVERRIDE, toMetricsOverride(current))
+  }
 
   const timeouts = {
     base: (milliseconds = globalTimeout) => Math.round(milliseconds * (2 / 3)),
