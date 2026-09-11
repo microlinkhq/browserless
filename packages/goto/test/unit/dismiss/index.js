@@ -383,9 +383,12 @@ test('re-scans on the post-navigation run for dialogs mounted after the initial 
   const run = browserless.withPage(page => async () => {
     await dismiss.setup(page)
     await page.goto(url)
-    /* mount a dialog after setup and re-scan right away: the observer waits
-       150ms after a mutation, so a click counted by `run` comes from its own
-       re-scan */
+    /* settle the instance first: the DOMContentLoaded dismissal can still be in
+       flight when the navigation resolves, and its initial scan would click the
+       dialog before any re-scan */
+    await dismiss.run(page)
+    /* mount a dialog and re-scan right away: the observer waits 150ms after a
+       mutation, so a click counted by `run` comes from its own re-scan */
     await page.evaluate(() => {
       document.body.insertAdjacentHTML(
         'beforeend',
@@ -553,7 +556,9 @@ test('keeps dismissing after a prerender activation swaps the CDP session', asyn
       return res.end()
     }
     res.setHeader('content-type', 'text/html')
-    if (req.url === '/sticky?prerendered') { return res.end(page(STICKY + '<img src="/prerender-parsed">')) }
+    if (req.url === '/sticky?prerendered') {
+      return res.end(page(STICKY + '<img src="/prerender-parsed">'))
+    }
     if (req.url.startsWith('/sticky')) return res.end(page(STICKY))
     res.end(
       page(
