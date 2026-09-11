@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.16](https://github.com/microlinkhq/browserless/compare/v13.9.15...v13.9.16) (2026-09-11)
+
+### Bug Fixes
+
+* **browserless:** read text() in an isolated world ([#920](https://github.com/microlinkhq/browserless/issues/920)) ([24e12f6](https://github.com/microlinkhq/browserless/commit/24e12f6c9e10d418f3cc5a6b72621fcf7d2dc791))
+* **browserless:** stop disabling standard Web APIs ([#922](https://github.com/microlinkhq/browserless/issues/922)) ([c743487](https://github.com/microlinkhq/browserless/commit/c743487d77684d9fa6ff118a6f160aaf42a6c1bd))
+* **goto:** flatten shadow DOM in an isolated world ([#921](https://github.com/microlinkhq/browserless/issues/921)) ([18d5e78](https://github.com/microlinkhq/browserless/commit/18d5e78eca5dd3b7fc232b840a2109cbac8d8ff2))
+
 ## [13.9.14](https://github.com/microlinkhq/browserless/compare/v13.9.13...v13.9.14) (2026-09-10)
 
 **Note:** Version bump only for package browserless

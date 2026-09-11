@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.16](https://github.com/microlinkhq/browserless/compare/v13.9.15...v13.9.16) (2026-09-11)
+
+### Bug Fixes
+
+* **goto:** flatten shadow DOM in an isolated world ([#921](https://github.com/microlinkhq/browserless/issues/921)) ([18d5e78](https://github.com/microlinkhq/browserless/commit/18d5e78eca5dd3b7fc232b840a2109cbac8d8ff2))
+
 ## [13.9.14](https://github.com/microlinkhq/browserless/compare/v13.9.13...v13.9.14) (2026-09-10)
 
 ### Bug Fixes
