@@ -291,8 +291,11 @@ test('a connection that cannot be intercepted still applies the viewport', async
       return name === 'missing' ? Promise.resolve() : send(method, params)
     }
     makeUnpatchable(connection)
+    const rawSend = connection._rawSend
 
     const { error } = await navigate(goto, page, { viewport: { width: 1920, height: 1080 } })
+
+    t.is(connection._rawSend, rawSend, name)
 
     t.falsy(error, name)
     t.like(page.viewport(), { width: 1920, height: 1080 }, name)
