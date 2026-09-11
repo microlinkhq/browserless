@@ -1,6 +1,7 @@
 'use strict'
 
-const { runServer, getBrowserContext } = require('@browserless/test')
+const { runServer, getBrowserContext, getBrowserWSEndpoint } = require('@browserless/test')
+const puppeteer = require('puppeteer')
 const test = require('ava')
 
 test('setup `scripts`', async t => {
@@ -361,7 +362,20 @@ const readEmulation = page =>
     userAgent: navigator.userAgent,
     platform: navigator.platform,
     brands: navigator.userAgentData.brands,
-    hints: await navigator.userAgentData.getHighEntropyValues(['platform', 'fullVersionList'])
+    hints: await navigator.userAgentData.getHighEntropyValues([
+      'platform',
+      'platformVersion',
+      'fullVersionList'
+    ])
+  }))
+
+const readScreen = page =>
+  page.evaluate(() => ({
+    screen: `${window.screen.width}x${window.screen.height}`,
+    fits: window.screen.width >= window.innerWidth && window.screen.height >= window.innerHeight,
+    tabletMediaQuery: window.matchMedia('(max-device-width: 1024px)').matches,
+    wideMediaQuery: window.matchMedia('(min-device-width: 2560px)').matches,
+    ultraWideMediaQuery: window.matchMedia('(min-device-width: 3840px)').matches
   }))
 
 const emulationServer = (t, requests = []) =>
@@ -431,6 +445,117 @@ test('screen stays fitted after puppeteer re-applies the same viewport', async t
     t.true(state.screenWidth >= state.innerWidth)
     t.false(state.tabletMediaQuery)
   }
+})
+
+test('screen is re-applied as soon as puppeteer re-applies the viewport', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, {
+      url,
+      viewport: { width: 1920, height: 1200 },
+      waitUntil: 'load',
+      adblock: false
+    })
+    await page.setViewport(page.viewport())
+    const afterSetViewport = await readScreen(page)
+    await page.screenshot({ fullPage: true, captureBeyondViewport: false })
+    const afterScreenshot = await readScreen(page)
+    return [afterSetViewport, afterScreenshot]
+  })
+
+  for (const state of await run()) {
+    t.true(state.fits, JSON.stringify(state))
+    t.false(state.tabletMediaQuery)
+  }
+})
+
+test('a page viewport never changes the screen of other pages', async t => {
+  const browserless = await getBrowserContext(t)
+  const other = await getBrowserContext(t)
+  const url = await emulationServer(t)
+  const watcher = await browserless.page()
+  t.teardown(() => watcher.close())
+
+  await browserless.goto(watcher, { url, waitUntil: 'load', adblock: false })
+  const before = await readScreen(watcher)
+
+  const run = other.withPage((page, goto) => async () => {
+    await goto(page, {
+      url,
+      viewport: { width: 1920, height: 1200 },
+      waitUntil: 'load',
+      adblock: false
+    })
+    await goto(page, {
+      url,
+      viewport: { width: 5000, height: 3000, deviceScaleFactor: 1 },
+      waitUntil: 'load',
+      adblock: false
+    })
+  })
+  await run()
+
+  t.deepEqual(await readScreen(watcher), before)
+  t.false(before.wideMediaQuery)
+})
+
+test('a large viewport elsewhere does not make later default pages report a huge screen', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, {
+      url,
+      viewport: { width: 5000, height: 3000, deviceScaleFactor: 1 },
+      waitUntil: 'load',
+      adblock: false
+    })
+  })
+  await run()
+
+  const readDefault = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load', adblock: false })
+    return readScreen(page)
+  })
+  const state = await readDefault()
+
+  t.is(state.screen, '1440x900')
+  t.false(state.ultraWideMediaQuery)
+})
+
+test('connect mode clients sharing one browser keep their own screens', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await emulationServer(t)
+  const browserWSEndpoint = await getBrowserWSEndpoint()
+  const connect = async () => {
+    const browser = await puppeteer.connect({
+      browserWSEndpoint,
+      defaultViewport: browserless.goto.defaultViewport
+    })
+    t.teardown(() => browser.disconnect())
+    const context = await browser.createBrowserContext()
+    t.teardown(() => context.close())
+    return context
+  }
+  const opts = { url, waitUntil: 'load', adblock: false }
+
+  const [clientA, clientB] = await Promise.all([connect(), connect()])
+  const pageA = await clientA.newPage()
+  await browserless.goto(pageA, opts)
+  const pageB = await clientB.newPage()
+  await browserless.goto(pageB, { ...opts, viewport: { width: 1920, height: 1200 } })
+  const pageA2 = await clientA.newPage()
+  await browserless.goto(pageA2, { ...opts, viewport: { width: 1920, height: 1080 } })
+
+  await pageB.reload()
+  const afterOtherClient = await readScreen(pageB)
+  await browserless.goto(pageB, { ...opts, viewport: { width: 1920, height: 1200 } })
+  const afterRepeatGoto = await readScreen(pageB)
+
+  t.true(afterOtherClient.fits, JSON.stringify(afterOtherClient))
+  t.true(afterRepeatGoto.fits, JSON.stringify(afterRepeatGoto))
 })
 
 test('switching from a mobile device back to the default device restores desktop metrics', async t => {
@@ -520,6 +645,7 @@ test('Windows and Linux user agents send matching client hints', async t => {
   t.is(Linux.headers['sec-ch-ua-platform'], '"Linux"')
   t.is(Linux.platform, 'Linux x86_64')
   t.is(Linux.hints.platform, 'Linux')
+  t.is(Linux.hints.platformVersion, '')
 })
 
 test('mobile screen matches the device viewport', async t => {

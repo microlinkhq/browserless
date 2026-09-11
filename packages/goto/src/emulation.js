@@ -22,10 +22,11 @@ const DESKTOP_SCREENS = [
 
 const MAC_PLATFORM_VERSION = '26.6.2'
 const MAC_ARCHITECTURE = { architecture: 'arm', bitness: '64' }
-const LINUX_PLATFORM_VERSION = '6.8.0'
+const LINUX_PLATFORM_VERSION = ''
 const WINDOWS_PLATFORM_VERSIONS = { '10.0': '19.0.0', 6.3: '0.3.0', 6.2: '0.2.0', 6.1: '0.1.0' }
 
-const CHROME_USER_AGENT = / Chrome\/((\d+)\.[\d.]+) (?:Mobile )?Safari\/[\d.]+$/
+const CHROME_USER_AGENT =
+  /\(KHTML, like Gecko\) (?:Version\/[\d.]+ )?Chrome\/((\d+)\.[\d.]+) (?:Mobile )?Safari\/[\d.]+$/
 const REDUCED_VERSION = /^\d+\.0\.0\.0$/
 const ANDROID_WEBVIEW = /; wv\)/
 

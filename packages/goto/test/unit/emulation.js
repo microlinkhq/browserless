@@ -120,6 +120,24 @@ test('Linux and Chrome OS user agents report their platform', t => {
   t.like(chromeOS.userAgentMetadata, { platform: 'Chrome OS', platformVersion: '14541.0.0' })
 })
 
+test('Linux user agent reports an empty platform version like Chromium does', t => {
+  const { userAgentMetadata } = getClientHints(
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
+  )
+
+  t.is(userAgentMetadata.platformVersion, '')
+})
+
+test('Chromium based browsers with their own brand get no client hints', t => {
+  const userAgents = [
+    'Mozilla/5.0 (Linux; Android 13; SM-S901B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/23.0 Chrome/115.0.0.0 Mobile Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 OPR/110.0.0.0',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 YaBrowser/24.1.0.0 Safari/537.36'
+  ]
+
+  for (const userAgent of userAgents) t.deepEqual(getClientHints(userAgent), {}, userAgent)
+})
+
 test('non Chrome user agents get no client hints', t => {
   const userAgents = [
     undefined,

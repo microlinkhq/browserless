@@ -3,37 +3,31 @@
 const test = require('ava')
 const createGoto = require('../../src')
 
-const PRIMARY_SCREEN = { id: 'primary', width: 800, height: 600, isPrimary: true }
-
 const createSession = () => {
-  const session = {
-    calls: [],
-    clientReady: true,
-    updateScreenError: undefined,
+  const calls = []
+  return {
+    calls,
     client: {
       send: (method, params) => {
-        session.calls.push(method)
-        if (method === 'Emulation.getScreenInfos') {
-          return Promise.resolve({ screenInfos: [PRIMARY_SCREEN] })
-        }
-        if (method === 'Emulation.updateScreen') {
-          return session.updateScreenError
-            ? Promise.reject(session.updateScreenError)
-            : Promise.resolve({ screenInfo: { ...PRIMARY_SCREEN, ...params } })
-        }
+        calls.push({ method, params })
         return Promise.resolve()
       }
     }
   }
-  return session
 }
 
-const createPage = session => {
+const createPage = () => {
+  let viewport = null
+  const sessions = [createSession()]
   const noop = () => Promise.resolve()
   const browser = { version: () => Promise.resolve('Chrome/152.0.7977.83') }
   return {
-    setViewport: noop,
-    viewport: () => null,
+    sessions,
+    swapSession: () => sessions.push(createSession()),
+    setViewport: async next => {
+      viewport = next
+    },
+    viewport: () => viewport,
     setExtraHTTPHeaders: noop,
     setUserAgent: noop,
     emulateMediaFeatures: noop,
@@ -41,66 +35,63 @@ const createPage = session => {
     goto: () => Promise.resolve(null),
     waitForNetworkIdle: noop,
     browser: () => browser,
-    _client: () => {
-      if (!session.clientReady) throw new Error('session not ready')
-      return session.client
-    }
+    _client: () => sessions[sessions.length - 1].client
   }
 }
 
-const navigate = (goto, page) =>
-  goto(page, { url: 'about:blank', waitUntil: 'load', adblock: false })
+const screenOverrides = session =>
+  session.calls
+    .filter(({ method }) => method === 'Emulation.setDeviceMetricsOverride')
+    .map(
+      ({ params }) =>
+        `${params.width}x${params.height} screen ${params.screenWidth}x${params.screenHeight}`
+    )
 
-const targetCloseError = () =>
-  Object.assign(new Error('Target closed'), { name: 'TargetCloseError' })
+const navigate = (goto, page, opts) =>
+  goto(page, { url: 'about:blank', waitUntil: 'load', adblock: false, ...opts })
 
-test('a failed screen read does not block later navigations on the same browser', async t => {
+test('a desktop page gets its screen once, not on every navigation', async t => {
   const goto = createGoto({ timeout: 10000 })
-  const session = createSession()
-  const page = createPage(session)
-
-  session.clientReady = false
-  await navigate(goto, page)
-  t.deepEqual(session.calls, [])
-
-  session.clientReady = true
-  await navigate(goto, page)
-  t.deepEqual(session.calls, ['Emulation.getScreenInfos', 'Emulation.updateScreen'])
+  const page = createPage()
 
   await navigate(goto, page)
-  t.deepEqual(session.calls, ['Emulation.getScreenInfos', 'Emulation.updateScreen'])
+  await navigate(goto, page)
+  await navigate(goto, page)
+
+  t.deepEqual(screenOverrides(page.sessions[0]), ['1280x800 screen 1440x900'])
 })
 
-test('a screen update interrupted by a closed target is retried on the next navigation', async t => {
+test('a puppeteer re-apply of the viewport re-applies the screen right away', async t => {
   const goto = createGoto({ timeout: 10000 })
-  const session = createSession()
-  const page = createPage(session)
+  const page = createPage()
 
-  session.updateScreenError = targetCloseError()
   await navigate(goto, page)
-  t.deepEqual(session.calls, ['Emulation.getScreenInfos', 'Emulation.updateScreen'])
+  await page.setViewport(page.viewport())
 
-  session.updateScreenError = undefined
-  await navigate(goto, page)
-  t.deepEqual(session.calls, [
-    'Emulation.getScreenInfos',
-    'Emulation.updateScreen',
-    'Emulation.updateScreen'
+  t.deepEqual(screenOverrides(page.sessions[0]), [
+    '1280x800 screen 1440x900',
+    '1280x800 screen 1440x900'
   ])
-
-  await navigate(goto, page)
-  t.is(session.calls.length, 3)
 })
 
-test('an unsupported screen update is not retried on every navigation', async t => {
+test('a swapped primary session gets the screen on the next navigation', async t => {
   const goto = createGoto({ timeout: 10000 })
-  const session = createSession()
-  const page = createPage(session)
+  const page = createPage()
 
-  session.updateScreenError = new Error('Screen emulation is only supported in headless mode')
   await navigate(goto, page)
+  page.swapSession()
   await navigate(goto, page)
   await navigate(goto, page)
 
-  t.deepEqual(session.calls, ['Emulation.getScreenInfos', 'Emulation.updateScreen'])
+  t.deepEqual(screenOverrides(page.sessions[1]), ['1280x800 screen 1440x900'])
+})
+
+test('mobile viewports keep the screen chrome derives from the viewport', async t => {
+  const goto = createGoto({ timeout: 10000 })
+  const page = createPage()
+
+  await navigate(goto, page, { device: 'iPhone 15' })
+  await navigate(goto, page, { device: 'iPhone 15' })
+
+  t.deepEqual(screenOverrides(page.sessions[0]), [])
 })
