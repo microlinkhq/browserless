@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.21](https://github.com/microlinkhq/browserless/compare/v13.9.20...v13.9.21) (2026-09-12)
+
+### Bug Fixes
+
+* **goto:** run overlay dismissal in an isolated world ([#925](https://github.com/microlinkhq/browserless/issues/925)) ([816f421](https://github.com/microlinkhq/browserless/commit/816f421d5b273db9e9c16bcb8478cd405ae3b626))
+
 ## [13.9.20](https://github.com/microlinkhq/browserless/compare/v13.9.19...v13.9.20) (2026-09-12)
 
 ### Bug Fixes
