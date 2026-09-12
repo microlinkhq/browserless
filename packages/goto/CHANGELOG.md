@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.20](https://github.com/microlinkhq/browserless/compare/v13.9.19...v13.9.20) (2026-09-12)
+
+### Bug Fixes
+
+* **goto:** run autoconsent in an isolated world ([#926](https://github.com/microlinkhq/browserless/issues/926)) ([38a6716](https://github.com/microlinkhq/browserless/commit/38a67163a5e9d959f7244f394fc50ff8c311edbe))
+
 ## [13.9.19](https://github.com/microlinkhq/browserless/compare/v13.9.18...v13.9.19) (2026-09-12)
 
 ### Bug Fixes
