@@ -20,17 +20,32 @@ const debug = require('debug-logfmt')('browserless:goto:dismiss')
  *    close button (`aria-label="close"`) outside a form.
  *  - only buttons, never anchors, so a click cannot navigate.
  *
- * Re-invoking is idempotent (guarded by `window.__browserlessDismiss`) and
- * triggers a fresh scan, so the post-navigation `run` fallback catches
- * dialogs mounted after a slow `goto`, even once the observer has stopped.
+ * Runs inside the `WORLD_NAME` isolated world: it shares the DOM with the page
+ * but none of its JavaScript globals, so the page cannot observe its state or
+ * its DOM queries.
+ *
+ * Re-invoking is idempotent (guarded by `window.__browserlessDismiss` inside
+ * that world) and triggers a fresh scan, so the post-navigation `run` fallback
+ * catches dialogs mounted after a slow `goto`, even once the observer has stopped.
  */
 const dismissOverlays = () => {
-  if (window.self !== window.top) return 0
-  if (window.__browserlessDismiss) {
+  if (Object.prototype.hasOwnProperty.call(window, '__browserlessDismiss')) {
     window.__browserlessDismiss.rescan()
     return window.__browserlessDismiss.clicked
   }
   const state = (window.__browserlessDismiss = { clicked: 0 })
+
+  /* Capture the builtins up front and `.call` them: HTMLFormElement named
+     access lets a page shadow these on a `<form>` dialog or button (e.g.
+     `<button name="querySelectorAll">`), and reading them off the element would
+     throw. The isolated world's prototypes are out of the page's reach. */
+  const { getClientRects, querySelector, querySelectorAll, getAttribute, closest } =
+    window.Element.prototype
+  const { click } = window.HTMLElement.prototype
+  const innerText = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'innerText').get
+  /* non-HTML elements (SVG, MathML) have no innerText, so they read as empty
+     text, as `element.innerText` always did */
+  const readText = el => (el instanceof window.HTMLElement ? innerText.call(el) : '')
 
   const MAX_CLICKS = 3
   const WATCH_MS = 15000
@@ -90,7 +105,7 @@ const dismissOverlays = () => {
       .toLowerCase()
 
   const isVisible = el => {
-    if (!el.getClientRects().length) return false
+    if (!getClientRects.call(el).length) return false
     const style = window.getComputedStyle(el)
     return style.visibility !== 'hidden' && style.display !== 'none' && style.opacity !== '0'
   }
@@ -98,30 +113,36 @@ const dismissOverlays = () => {
   const seen = new WeakSet()
 
   const dismiss = dialog => {
-    if (CONSENT_TEXT.test(dialog.innerText || '')) return false
-    const hasFields = !!dialog.querySelector('input, select, textarea')
-    const buttons = dialog.querySelectorAll('button, [role="button"], input[type="button"]')
+    if (CONSENT_TEXT.test(readText(dialog))) return false
+    const hasFields = !!querySelector.call(dialog, 'input, select, textarea')
+    const buttons = querySelectorAll.call(dialog, 'button, [role="button"], input[type="button"]')
 
     /* Single pass: defer the click so a reject button anywhere in the dialog
-       still aborts it (leaving the opt-out to autoconsent), while the first
-       acknowledge/close button becomes the candidate to click if none appears. */
-    let candidate = null
+       still aborts it (leaving the opt-out to autoconsent), while
+       acknowledge/close buttons are collected in order to click afterwards. */
+    const candidates = []
     for (const button of buttons) {
       if (!isVisible(button) || button.disabled) continue
-      const text = normalize(button.innerText || button.value)
-      const label = normalize(button.getAttribute('aria-label'))
+      const text = normalize(readText(button) || button.value)
+      const label = normalize(getAttribute.call(button, 'aria-label'))
       if (REJECT_TEXT.test(text) || REJECT_TEXT.test(label)) return false
-      if (!candidate) {
-        const isClose = CLOSE_LABEL.test(label) && !button.closest('form')
-        const isAcknowledge = !hasFields && ACK_TEXT.test(text)
-        if (isAcknowledge || isClose) candidate = button
-      }
+      const isClose = CLOSE_LABEL.test(label) && !closest.call(button, 'form')
+      const isAcknowledge = !hasFields && ACK_TEXT.test(text)
+      if (isAcknowledge || isClose) candidates.push(button)
     }
-    if (!candidate) return false
-    seen.add(dialog)
-    state.clicked++
-    candidate.click()
-    return true
+    /* a click only counts once it succeeds: a non-HTML candidate (an SVG close
+       icon) cannot be clicked, so the next candidate gets its turn */
+    for (const candidate of candidates) {
+      try {
+        click.call(candidate)
+      } catch {
+        continue
+      }
+      seen.add(dialog)
+      state.clicked++
+      return true
+    }
+    return false
   }
 
   const scan = () => {
@@ -130,8 +151,11 @@ const dismissOverlays = () => {
       'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
     )
     for (const dialog of dialogs) {
-      if (seen.has(dialog) || !isVisible(dialog)) continue
-      dismiss(dialog)
+      /* one hostile dialog must not abort the scan or every later rescan */
+      try {
+        if (seen.has(dialog) || !isVisible(dialog)) continue
+        dismiss(dialog)
+      } catch {}
       if (state.clicked >= MAX_CLICKS) return
     }
   }
@@ -168,14 +192,66 @@ const dismissOverlays = () => {
   return state.clicked
 }
 
-const setup = page => page.evaluateOnNewDocument(dismissOverlays)
+const WORLD_NAME = 'browserless_dismiss'
 
-/* Re-run for documents where the new-document injection did not fire;
-   the script is idempotent (guarded by `window.__browserlessDismiss`). */
-const run = page =>
-  page.evaluate(dismissOverlays).then(clicked => {
-    if (clicked > 0) debug('clicked', { clicked })
-    return clicked
+const source = `(${dismissOverlays})()`
+
+const STALE_CONTEXT_ERROR =
+  /Cannot find context|navigated or closed|Execution context was destroyed/
+
+const MAX_ATTEMPTS = 3
+
+const pagesWithSetup = new WeakSet()
+
+const evaluationError = ({ exception, text }) => new Error(exception?.description ?? text)
+
+const evaluateInWorld = async page => {
+  const client = page._client()
+  const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+    frameId: page.mainFrame()._id,
+    worldName: WORLD_NAME
   })
+  return client.send('Runtime.evaluate', {
+    expression: source,
+    contextId: executionContextId,
+    returnByValue: true
+  })
+}
 
-module.exports = { setup, run }
+/* A navigation between both CDP calls destroys the world, so it is resolved
+   again on the new document. */
+const evaluateWithRetry = async page => {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await evaluateInWorld(page)
+    } catch (error) {
+      if (attempt === MAX_ATTEMPTS || !STALE_CONTEXT_ERROR.test(error.message)) throw error
+    }
+  }
+}
+
+/* Runs for documents where the DOMContentLoaded dismissal did not fire;
+   `Page.createIsolatedWorld` returns the same named world either way, so the
+   idempotency guard is shared with `setup`. The DOMContentLoaded dismissal is
+   asynchronous: a navigation resolving at DOMContentLoaded can return before
+   it clicks, so callers that need it settled await `run` afterwards. */
+const run = async page => {
+  const { result, exceptionDetails } = await evaluateWithRetry(page)
+  if (exceptionDetails) throw evaluationError(exceptionDetails)
+  const clicked = result.value
+  if (clicked > 0) debug('clicked', { clicked })
+  return clicked
+}
+
+/* `domcontentloaded` only fires for the main frame, and Puppeteer re-binds it
+   when a prerender activation swaps the page to a new CDP session, so child
+   frames never get a dismiss world and later navigations keep dismissing. */
+const setup = async page => {
+  if (pagesWithSetup.has(page)) return
+  pagesWithSetup.add(page)
+  page.on('domcontentloaded', () =>
+    run(page).catch(error => debug('error', { message: error.message }))
+  )
+}
+
+module.exports = { setup, run, WORLD_NAME }
