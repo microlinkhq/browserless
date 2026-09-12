@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.19](https://github.com/microlinkhq/browserless/compare/v13.9.18...v13.9.19) (2026-09-12)
+
+### Bug Fixes
+
+* **goto:** emulate a screen consistent with the device viewport ([#923](https://github.com/microlinkhq/browserless/issues/923)) ([ea04f0b](https://github.com/microlinkhq/browserless/commit/ea04f0b928fd4d7ed5969be28be9349e648a400d))
+* **goto:** send UA Client Hints consistent with the user agent ([#929](https://github.com/microlinkhq/browserless/issues/929)) ([161e40d](https://github.com/microlinkhq/browserless/commit/161e40d328d96bb8a11064d7ced6aeb974a43c22))
+
 ## [13.9.18](https://github.com/microlinkhq/browserless/compare/v13.9.17...v13.9.18) (2026-09-11)
 
 **Note:** Version bump only for package @browserless/goto
