@@ -9,10 +9,11 @@ const pReflect = require('p-reflect')
 const pTimeout = require('p-timeout')
 const isUrl = require('is-url-http')
 
-const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } = require('puppeteer')
+const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY, CDPSessionEvent } = require('puppeteer')
 
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
+const { getScreen } = require('./screen')
 
 const debug = require('debug-logfmt')('browserless:goto')
 debug.continue = require('debug-logfmt')('browserless:goto:continue')
@@ -36,6 +37,85 @@ const chromeVersionFromBrowser = async page => {
     return undefined
   }
 }
+
+const PORTRAIT = { angle: 0, type: 'portraitPrimary' }
+const LANDSCAPE = { angle: 90, type: 'landscapePrimary' }
+
+const METRICS_OVERRIDE = 'Emulation.setDeviceMetricsOverride'
+
+const screensByConnection = new WeakMap()
+
+const screenFor = (screen, params) =>
+  screen && screen.width >= params.width ? screen : getScreen(params)
+
+const withScreen = (screens, scopeId, params) => {
+  if (params.mobile || params.screenWidth || params.screenHeight) return params
+  const screen = screenFor(screens.get(scopeId), params)
+  screens.set(scopeId, screen)
+  return { ...params, screenWidth: screen.width, screenHeight: screen.height }
+}
+
+const screenScope = (connection, screens, sessionId) => {
+  if (screens.has(sessionId)) return sessionId
+  const parentId = connection.session(sessionId)?.parentSession()?.id()
+  return screens.has(parentId) ? parentId : undefined
+}
+
+const patchRawSend = connection => {
+  const rawSend = connection._rawSend
+  if (typeof rawSend !== 'function') return undefined
+  const screens = new Map()
+  const send = (callbacks, method, params, sessionId, options) => {
+    const scopeId =
+      method === METRICS_OVERRIDE && sessionId
+        ? screenScope(connection, screens, sessionId)
+        : undefined
+    return rawSend.call(
+      connection,
+      callbacks,
+      method,
+      scopeId === undefined ? params : withScreen(screens, scopeId, params),
+      sessionId,
+      options
+    )
+  }
+  try {
+    connection._rawSend = send
+  } catch {
+    return undefined
+  }
+  return screens
+}
+
+const interceptMetricsOverrides = connection => {
+  if (!screensByConnection.has(connection)) {
+    screensByConnection.set(connection, patchRawSend(connection))
+  }
+  return screensByConnection.get(connection)
+}
+
+const trackScreen = page => {
+  const client = page._client()
+  const connection = typeof client.connection === 'function' ? client.connection() : undefined
+  if (!connection) return undefined
+  const screens = interceptMetricsOverrides(connection)
+  if (!screens) return undefined
+  const tab = client.parentSession() ?? client
+  const isFirstNavigation = !screens.has(tab.id())
+  if (isFirstNavigation) {
+    screens.set(tab.id(), undefined)
+    tab.once(CDPSessionEvent.Disconnected, () => screens.delete(tab.id()))
+  }
+  return { isFirstNavigation, resetScreen: () => screens.set(tab.id(), undefined) }
+}
+
+const toMetricsOverride = viewport => ({
+  mobile: false,
+  width: viewport.width,
+  height: viewport.height,
+  deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
+  screenOrientation: viewport.isLandscape ? LANDSCAPE : PORTRAIT
+})
 
 const castArray = value => [].concat(value).filter(Boolean)
 
@@ -240,6 +320,22 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   const getDevice = createDevices(deviceOpts)
   const { viewport: defaultViewport } = getDevice.findDevice(defaultDevice)
 
+  const needsViewport = (current, viewport) =>
+    !shallowEqualObjects(current, viewport) &&
+    (!shallowEqualObjects(defaultViewport, viewport) ||
+      Boolean(current?.isMobile) !== Boolean(viewport.isMobile))
+
+  const applyViewport = async (page, viewport) => {
+    const screen = trackScreen(page)
+    const current = page.viewport()
+    if (needsViewport(current, viewport)) {
+      screen?.resetScreen()
+      return page.setViewport(viewport)
+    }
+    if (!screen?.isFirstNavigation || !current || current.isMobile) return
+    return page._client().send(METRICS_OVERRIDE, toMetricsOverride(current))
+  }
+
   const timeouts = {
     base: (milliseconds = globalTimeout) => Math.round(milliseconds * (2 / 3)),
     action: (milliseconds = globalTimeout) => Math.round(milliseconds * (1 / 11)),
@@ -395,10 +491,10 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       )
     }
 
-    if (!isEmpty(device.viewport) && !shallowEqualObjects(defaultViewport, device.viewport)) {
+    if (!isEmpty(device.viewport)) {
       prePromises.push(
         run({
-          fn: page.setViewport(device.viewport),
+          fn: applyViewport(page, device.viewport),
           timeout: actionTimeout,
           debug: 'viewport'
         })

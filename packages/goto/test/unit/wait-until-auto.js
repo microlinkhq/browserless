@@ -50,13 +50,22 @@ test('waitUntilAuto is overridable via goto options', async t => {
   const noop = () => Promise.resolve()
   const page = {
     setViewport: noop,
+    viewport: () => null,
     setExtraHTTPHeaders: noop,
     setUserAgent: noop,
     emulateMediaFeatures: noop,
     addStyleTag: noop,
     goto: () => Promise.resolve(null),
     waitForNetworkIdle: noop,
-    _client: () => ({ send: noop })
+    browser: () => ({ version: () => Promise.resolve('Chrome/152.0.7977.83') }),
+    _client: () => ({
+      send: method =>
+        Promise.resolve(
+          method === 'Emulation.getScreenInfos'
+            ? { screenInfos: [{ id: 'primary', width: 800, height: 600, isPrimary: true }] }
+            : { screenInfo: { id: 'primary', width: 1440, height: 900, isPrimary: true } }
+        )
+    })
   }
 
   await goto(page, {
