@@ -873,6 +873,47 @@ for (const prompt of NOTIFICATION_PROMPTS) {
   })
 }
 
+test('dismisses a notification prompt whose action row is positioned', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;height:154px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div>Stay up to date with our latest stories.</div>
+       <div style="position:absolute;bottom:8px;left:8px">
+         <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+         <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+       </div>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'deny', 'a positioned action row must not hide the overlay')
+})
+
+test('does not click prompt copy that reads like a dismissive control', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div onclick="window.__clicked='copy'">Never</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'deny', 'copy must not consume the prompt')
+})
+
 test('dismisses a notification prompt through its close affordance', async t => {
   const browserless = await getBrowserContext(t)
   const url = await serve(

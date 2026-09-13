@@ -238,13 +238,16 @@ const dismissOverlays = () => {
     return position === 'fixed' || position === 'absolute' || position === 'sticky'
   }
 
-  const promptContainerOf = control => {
-    let container = control
+  /* the first positioned ancestor is often an action row rather than the
+     overlay, so every positioned ancestor is tried until one reads as a prompt */
+  const promptOf = control => {
+    let element = control
     for (let depth = 0; depth < PROMPT_DEPTH_MAX; depth++) {
-      const parent = parentElement.call(container)
+      const parent = parentElement.call(element)
       if (!parent || parent === document.body) return undefined
-      container = parent
-      if (isPositioned(container)) return container
+      element = parent
+      if (seen.has(element)) return undefined
+      if (isPositioned(element) && isPrompt(element)) return element
     }
     return undefined
   }
@@ -253,6 +256,9 @@ const dismissOverlays = () => {
     if (!isVisible(container)) return false
     if (querySelector.call(container, 'input, select, textarea')) return false
     const { width, height } = getBoundingClientRect.call(container)
+    /* a container still waiting for layout measures 0x0, which would read as
+       comfortably below the viewport ratio */
+    if (width <= 0 || height <= 0) return false
     const viewport = window.innerWidth * window.innerHeight
     if (width * height > viewport * PROMPT_VIEWPORT_RATIO_MAX) return false
     const text = normalize(readText(container))
@@ -260,16 +266,25 @@ const dismissOverlays = () => {
     return NOTIFICATION_TEXT.test(text) && !CONSENT_TEXT.test(text)
   }
 
+  /* the prompt's own copy holds words from the dismiss vocabulary ("no",
+     "later"), so a match is only a control when it is one: a real control
+     element, or something the page paints as clickable */
+  const isControl = element =>
+    !!closest.call(element, 'button, [role="button"], input[type="button"], summary') ||
+    window.getComputedStyle(element).cursor === 'pointer'
+
   const dismissPrompt = control => {
-    if (!isVisible(control) || closest.call(control, 'a[href]')) return false
-    const container = promptContainerOf(control)
-    if (!container || seen.has(container) || !isPrompt(container)) return false
+    if (!isVisible(control) || !isControl(control) || closest.call(control, 'a[href]')) return false
+    const { width, height } = getBoundingClientRect.call(control)
+    if (width <= 0 || height <= 0) return false
+    const prompt = promptOf(control)
+    if (!prompt) return false
     try {
       click.call(control)
     } catch {
       return false
     }
-    seen.add(container)
+    seen.add(prompt)
     state.clicked++
     return true
   }
