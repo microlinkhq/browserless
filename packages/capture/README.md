@@ -103,15 +103,17 @@ Each capture mode is a separate entry point, so you pull in only what you use
 const createCapture = require('@browserless/capture') // extension (default)
 const createCapture = require('@browserless/capture/screencast')
 const createCapture = require('@browserless/capture/screenshot')
+const createCapture = require('@browserless/capture/record')
 ```
 
-All three share the same factory signature — `createCapture({ goto })(page)(url, opts)`.
+All four share the same factory signature — `createCapture({ goto })(page)(url, opts)`.
 
 | Entry point | How | Notes |
 | --- | --- | --- |
 | `@browserless/capture` (`/extension`) | In-browser MediaRecorder via the bundled extension (`tabCapture`). | Default. Device-pixel (retina) output. Captures `audio`. |
 | `@browserless/capture/screencast` | CDP `Page.startScreencast` frames muxed into ffmpeg. | Video-only (`video: false` throws). CSS-pixel output. Requires `ffmpeg`. |
 | `@browserless/capture/screenshot` | Polled `page.screenshot` frames muxed into ffmpeg. | Video-only. The only mode that captures accelerated layers (WebGL/canvas/video). Device-pixel output, bounded by screenshot latency. Requires `ffmpeg`. |
+| `@browserless/capture/record` | Puppeteer `page.record()` (`Page.startScreenRecording`). | Video-only. MP4 only (`type: 'webm'` throws). CSS-pixel output. Requires Chrome M153+; no ffmpeg. |
 
 ## Exports
 
