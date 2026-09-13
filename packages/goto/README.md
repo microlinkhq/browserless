@@ -69,6 +69,7 @@ const { response, device, error } = await goto(page, {
 | `device` | `string` | `'Macbook Pro 13'` | Device to emulate |
 | `headers` | `object` | `{}` | Extra HTTP headers |
 | `javascript` | `boolean` | `true` | Enable/disable JavaScript |
+| `notifications` | `boolean` | `false` | Allow the notifications permission prompt |
 | `animations` | `boolean` | `false` | Enable CSS animations |
 | `colorScheme` | `string` | — | `'light'` or `'dark'` preference |
 | `flattenShadowDOM` | `boolean` | `false` (`true` for `html()`) | Serialize open shadow DOM into HTML (mutates the page DOM; closed shadow roots are skipped) |
@@ -117,6 +118,20 @@ page.disableAdblock()
 Cookie consent handling (opt-out) is included as part of `adblock: true` and powered by [duckduckgo/autoconsent](https://github.com/duckduckgo/autoconsent).
 
 `adblock: true` also dismisses generic announcement dialogs that autoconsent does not cover: ARIA dialogs (`role="dialog"`, `role="alertdialog"`, `aria-modal`, `<dialog open>`) with no consent language and a single acknowledge-style button ("I understand", "Got it", "OK", or an `aria-label="close"` button). Dialogs containing form fields are left untouched unless they expose an explicit close button, and only `<button>` elements are clicked so a dismissal can never navigate.
+
+### Notifications
+
+Notifications are denied by default, so sites skip the overlays they render to ask for them. `Notification.permission` and `navigator.permissions.query({ name: 'notifications' })` both read `denied`, the pair of values Chrome reports for a user who blocked notifications, and `window.Notification` stays exposed as in stock Chrome.
+
+The permission belongs to the page's browser context and is applied on every navigation, so pages sharing a context share the value, and a page driven without `goto` keeps Chrome's default.
+
+```js
+// denied (default)
+await goto(page, { url: 'https://example.com' })
+
+// Chrome's out-of-the-box state, where `Notification.permission` reads `default`
+await goto(page, { url: 'https://example.com', notifications: true })
+```
 
 ### Script and style injection
 
