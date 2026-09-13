@@ -39,9 +39,19 @@ const dismissOverlays = () => {
      access lets a page shadow these on a `<form>` dialog or button (e.g.
      `<button name="querySelectorAll">`), and reading them off the element would
      throw. The isolated world's prototypes are out of the page's reach. */
-  const { getClientRects, querySelector, querySelectorAll, getAttribute, closest } =
-    window.Element.prototype
+  const {
+    getBoundingClientRect,
+    getClientRects,
+    querySelector,
+    querySelectorAll,
+    getAttribute,
+    closest
+  } = window.Element.prototype
   const { click } = window.HTMLElement.prototype
+  const parentElement = Object.getOwnPropertyDescriptor(window.Node.prototype, 'parentElement').get
+  const nodeData = Object.getOwnPropertyDescriptor(window.CharacterData.prototype, 'data').get
+  const { createTreeWalker } = window.Document.prototype
+  const { nextNode } = window.TreeWalker.prototype
   const innerText = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'innerText').get
   /* non-HTML elements (SVG, MathML) have no innerText, so they read as empty
      text, as `element.innerText` always did */
@@ -96,6 +106,127 @@ const dismissOverlays = () => {
   /* consent copy: leave these dialogs to autoconsent's opt-out flow */
   const CONSENT_TEXT =
     /\b(cookies?|consent|gdpr|ccpa|privacy|data protection|personali[sz]ed? ads|tracking technolog)/i
+  /* notification/push opt-in prompts render as bare overlays with no dialog
+     role, so they are recognised by the prompt's own copy plus an explicit
+     dismissive control; an affirmative control is never part of the vocabulary */
+  const NOTIFICATION_TEXT =
+    /(notification|notificaci|notificaç|benachrichtigung|notifich|meldingen|powiadomie|push[- ]?(nachricht|mitteilung|meldung))/i
+  const NOTIFICATION_DISMISS_WORDS = [
+    /* English */
+    'no',
+    'no,? thanks',
+    'no,? thank you',
+    'not now',
+    'not right now',
+    'maybe later',
+    'later',
+    'don.?t allow',
+    'block',
+    'deny',
+    'never',
+    /* Spanish */
+    'no permitir',
+    'ahora no',
+    'm[aá]s tarde',
+    'quiz[aá]s m[aá]s tarde',
+    'no,? gracias',
+    'bloquear',
+    /* German */
+    'nein,? danke',
+    'nicht jetzt',
+    'nicht zulassen',
+    'sp[aä]ter',
+    'vielleicht sp[aä]ter',
+    'blockieren',
+    'ablehnen',
+    /* French */
+    'non,? merci',
+    'pas maintenant',
+    'plus tard',
+    'peut-[eê]tre plus tard',
+    'bloquer',
+    'refuser',
+    /* Italian */
+    'no,? grazie',
+    'non ora',
+    'pi[uù] tardi',
+    'forse pi[uù] tardi',
+    'blocca',
+    /* Portuguese */
+    'n[aã]o,? obrigad[oa]',
+    'agora n[aã]o',
+    'mais tarde',
+    /* Dutch */
+    'nee,? bedankt',
+    'niet nu',
+    'blokkeren',
+    /* Polish */
+    'nie,? dzi[eę]kuj[eę]',
+    'nie teraz',
+    'p[oó][zź]niej',
+    'zablokuj',
+    /* close affordances */
+    'x',
+    '×',
+    '✕',
+    '✖',
+    'close',
+    'cerrar',
+    'schlie[sß]+en',
+    'fermer',
+    'chiudi',
+    'sluiten',
+    'fechar',
+    'zamknij'
+  ]
+  const NOTIFICATION_DISMISS_TEXT = new RegExp(`^(${NOTIFICATION_DISMISS_WORDS.join('|')})$`)
+  /* an opt-in prompt offers the opt-in: without an affirmative control the
+     overlay is something else that happens to mention notifications, such as a
+     notifications menu or a news card */
+  const NOTIFICATION_ALLOW_WORDS = [
+    /* English */
+    'allow',
+    'allow notifications',
+    'yes',
+    'ok(ay)?',
+    'enable',
+    'turn on',
+    'subscribe',
+    /* Spanish */
+    'permitir',
+    'activar',
+    'suscr[ií]b(ete|irme)',
+    's[ií]',
+    /* German */
+    'erlauben',
+    'zulassen',
+    'aktivieren',
+    'ja',
+    /* French */
+    'autoriser',
+    'activer',
+    'oui',
+    /* Italian */
+    'consenti(re)?',
+    'attiva',
+    's[ìi]',
+    /* Portuguese */
+    'ativar',
+    'sim',
+    /* Dutch */
+    'toestaan',
+    'inschakelen',
+    /* Polish */
+    'zezw[oó]l',
+    'w[lł][aą]cz',
+    'tak'
+  ]
+  const NOTIFICATION_ALLOW_TEXT = new RegExp(`^(${NOTIFICATION_ALLOW_WORDS.join('|')})$`)
+  const PROMPT_LABEL_MAX = 32
+  const PROMPT_CANDIDATES_MAX = 256
+  const PROMPT_TEXT_MAX = 400
+  const PROMPT_VIEWPORT_RATIO_MAX = 0.4
+  const PROMPT_DEPTH_MAX = 6
 
   const normalize = text =>
     (text || '')
@@ -111,6 +242,8 @@ const dismissOverlays = () => {
   }
 
   const seen = new WeakSet()
+
+  let promptsExhausted = false
 
   const dismiss = dialog => {
     if (CONSENT_TEXT.test(readText(dialog))) return false
@@ -145,6 +278,132 @@ const dismissOverlays = () => {
     return false
   }
 
+  const isPositioned = element => {
+    const { position } = window.getComputedStyle(element)
+    return position === 'fixed' || position === 'absolute' || position === 'sticky'
+  }
+
+  /* the first positioned ancestor is often an action row rather than the
+     overlay, so every positioned ancestor is tried until one reads as a prompt */
+  const promptOf = control => {
+    let element = control
+    for (let depth = 0; depth < PROMPT_DEPTH_MAX; depth++) {
+      const parent = parentElement.call(element)
+      if (!parent || parent === document.body) return undefined
+      element = parent
+      if (seen.has(element)) return undefined
+      if (isPositioned(element) && isPrompt(element)) return element
+    }
+    return undefined
+  }
+
+  /* an opt-in choice is what separates a prompt from copy about notifications,
+     so the affirmative has to be a control too: static "Allow" text would
+     otherwise qualify the container and expose its dismissive control */
+  const hasAllowControl = container => {
+    const walker = createTreeWalker.call(document, container, window.NodeFilter.SHOW_TEXT)
+    for (let node = nextNode.call(walker); node; node = nextNode.call(walker)) {
+      const data = nodeData.call(node)
+      if (!data || data.length > PROMPT_LABEL_MAX) continue
+      if (!NOTIFICATION_ALLOW_TEXT.test(normalize(data))) continue
+      const element = parentElement.call(node)
+      if (element && isControl(element)) return true
+    }
+    for (const labelled of querySelectorAll.call(container, '[aria-label]')) {
+      if (
+        NOTIFICATION_ALLOW_TEXT.test(normalize(getAttribute.call(labelled, 'aria-label'))) &&
+        isControl(labelled)
+      ) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const isPrompt = container => {
+    if (!isVisible(container)) return false
+    if (querySelector.call(container, 'input, select, textarea')) return false
+    const { width, height } = getBoundingClientRect.call(container)
+    /* a container still waiting for layout measures 0x0, which would read as
+       comfortably below the viewport ratio */
+    if (width <= 0 || height <= 0) return false
+    const viewport = window.innerWidth * window.innerHeight
+    if (width * height > viewport * PROMPT_VIEWPORT_RATIO_MAX) return false
+    const text = normalize(readText(container))
+    if (text.length > PROMPT_TEXT_MAX) return false
+    if (!NOTIFICATION_TEXT.test(text) || CONSENT_TEXT.test(text)) return false
+    return hasAllowControl(container)
+  }
+
+  /* the prompt's own copy holds words from the dismiss vocabulary ("no",
+     "later"), so a match is only a control when it is one: a real control
+     element, or something the page paints as clickable */
+  const CONTROL_SELECTOR = 'button, [role="button"], input[type="button"]'
+
+  const isControl = element =>
+    !!closest.call(element, CONTROL_SELECTOR) ||
+    window.getComputedStyle(element).cursor === 'pointer'
+
+  /* the label can sit on an icon inside the control (an `aria-label` on an
+     SVG), and clicking a non-HTML element throws, so the click goes to the
+     control that owns it */
+  const dismissPrompt = matched => {
+    if (!isControl(matched)) return false
+    const control = closest.call(matched, CONTROL_SELECTOR) || matched
+    if (!isVisible(control) || closest.call(control, 'a[href]')) return false
+    const { width, height } = getBoundingClientRect.call(control)
+    if (width <= 0 || height <= 0) return false
+    const prompt = promptOf(control)
+    if (!prompt) return false
+    try {
+      click.call(control)
+    } catch {
+      return false
+    }
+    seen.add(prompt)
+    state.clicked++
+    return true
+  }
+
+  /* text nodes are walked instead of elements, and anything longer than a
+     control label is skipped before it reaches a regexp, so the pass stays
+     flat on a large DOM */
+  const scanPrompts = () => {
+    if (promptsExhausted || !document.body) return
+    let candidates = 0
+    /* a page can hold thousands of nodes reading "no": each one costs a style
+       lookup, and the observer would pay it again every 150ms, so a document
+       that blows the budget loses the pass instead of the page losing seconds */
+    const overBudget = () => {
+      if (++candidates <= PROMPT_CANDIDATES_MAX) return false
+      promptsExhausted = true
+      return true
+    }
+    const walker = createTreeWalker.call(document, document.body, window.NodeFilter.SHOW_TEXT)
+    for (let node = nextNode.call(walker); node; node = nextNode.call(walker)) {
+      /* one hostile node must not abort the scan or every later rescan */
+      try {
+        const data = nodeData.call(node)
+        if (!data || data.length > PROMPT_LABEL_MAX) continue
+        if (!NOTIFICATION_DISMISS_TEXT.test(normalize(data))) continue
+        if (overBudget()) return
+        const control = parentElement.call(node)
+        if (control) dismissPrompt(control)
+      } catch {}
+      if (state.clicked >= MAX_CLICKS) return
+    }
+    for (const labelled of querySelectorAll.call(document.body, '[aria-label]')) {
+      try {
+        if (!NOTIFICATION_DISMISS_TEXT.test(normalize(getAttribute.call(labelled, 'aria-label')))) {
+          continue
+        }
+        if (overBudget()) return
+        dismissPrompt(labelled)
+      } catch {}
+      if (state.clicked >= MAX_CLICKS) return
+    }
+  }
+
   const scan = () => {
     if (state.clicked >= MAX_CLICKS) return
     const dialogs = document.querySelectorAll(
@@ -158,6 +417,7 @@ const dismissOverlays = () => {
       } catch {}
       if (state.clicked >= MAX_CLICKS) return
     }
+    scanPrompts()
   }
   state.rescan = scan
 

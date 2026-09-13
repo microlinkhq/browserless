@@ -10,7 +10,7 @@ const page = body => `<html><body><h1>hello</h1>${body}</body></html>`
 
 const serve = (t, body) =>
   runServer(t, ({ res }) => {
-    res.setHeader('content-type', 'text/html')
+    res.setHeader('content-type', 'text/html; charset=utf-8')
     res.end(page(body))
   })
 
@@ -704,7 +704,7 @@ test('keeps dismissing after a prerender activation swaps the CDP session', asyn
       onPrerenderReady()
       return res.end()
     }
-    res.setHeader('content-type', 'text/html')
+    res.setHeader('content-type', 'text/html; charset=utf-8')
     if (req.url === '/sticky?prerendered') {
       return res.end(
         page(STICKY + '<script>addEventListener("load", () => fetch("/prerender-ready"))</script>')
@@ -787,6 +787,432 @@ for (const message of STALE_CONTEXT_MESSAGES) {
     t.is(methods.length, 6)
   })
 }
+
+/* notification opt-in prompts carry no dialog role and no button elements:
+   AliExpress renders bare `<div>`s inside an absolutely positioned overlay */
+const notificationPrompt = ({ copy, body, allow, deny }) => `
+  <div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+    <div>
+      <div>${copy}</div>
+      <div>${body}</div>
+      <div>
+        <div style="cursor:pointer" onclick="window.__clicked='allow'">${allow}</div>
+        <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">${deny}</div>
+      </div>
+    </div>
+  </div>`
+
+const NOTIFICATION_PROMPTS = [
+  {
+    name: 'Spanish',
+    copy: 'Suscríbete a las notificaciones',
+    body: 'Recibe actualizaciones de tus pedidos, consejos sobre descuentos, cupones, ¡y más!',
+    allow: 'Permitir',
+    deny: 'No permitir'
+  },
+  {
+    name: 'English',
+    copy: 'Get notifications from Example',
+    body: 'Stay up to date with our latest stories.',
+    allow: 'Allow',
+    deny: 'Not now'
+  },
+  {
+    name: 'German',
+    copy: 'Benachrichtigungen von Example erhalten',
+    body: 'Bleiben Sie über unsere neuesten Meldungen informiert.',
+    allow: 'Erlauben',
+    deny: 'Nicht jetzt'
+  },
+  {
+    name: 'French',
+    copy: 'Recevoir les notifications de Example',
+    body: 'Restez informé de nos dernières actualités.',
+    allow: 'Autoriser',
+    deny: 'Plus tard'
+  },
+  {
+    name: 'Italian',
+    copy: 'Attiva le notifiche di Example',
+    body: 'Resta aggiornato sulle ultime novità.',
+    allow: 'Attiva',
+    deny: 'Non ora'
+  },
+  {
+    name: 'Dutch',
+    copy: 'Ontvang meldingen van Example',
+    body: 'Blijf op de hoogte van ons laatste nieuws.',
+    allow: 'Toestaan',
+    deny: 'Nee bedankt'
+  },
+  {
+    name: 'Polish',
+    copy: 'Otrzymuj powiadomienia od Example',
+    body: 'Bądź na bieżąco z naszymi najnowszymi wiadomościami.',
+    allow: 'Zezwól',
+    deny: 'Nie teraz'
+  }
+]
+
+for (const prompt of NOTIFICATION_PROMPTS) {
+  test(`dismisses a ${prompt.name} notification prompt without a dialog role`, async t => {
+    const browserless = await getBrowserContext(t)
+    const url = await serve(t, notificationPrompt(prompt))
+
+    const run = browserless.withPage((page, goto) => async () => {
+      await goto(page, { url })
+      return {
+        clicked: await waitFor(page, () => window.__clicked),
+        present: await stillPresent(page, '#prompt')
+      }
+    })
+
+    const { clicked, present } = await run()
+    t.is(clicked, 'deny', `only "${prompt.deny}" may be clicked`)
+    t.is(present, false, 'the prompt must be gone')
+  })
+}
+
+test('dismisses a notification prompt whose action row is positioned', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;height:154px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div>Stay up to date with our latest stories.</div>
+       <div style="position:absolute;bottom:8px;left:8px">
+         <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+         <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+       </div>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'deny', 'a positioned action row must not hide the overlay')
+})
+
+test('does not click prompt copy that reads like a dismissive control', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div onclick="window.__clicked='copy'">Never</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'deny', 'copy must not consume the prompt')
+})
+
+test('dismisses a notification prompt through its close affordance', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:fixed;top:10px;left:80px;width:420px;background:#fff;z-index:9999">
+       <div>Turn on notifications</div>
+       <div>Be the first to know when something happens.</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <span aria-label="Close" style="cursor:pointer" onclick="window.__clicked='close';document.getElementById('prompt').remove()">✕</span>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'close')
+})
+
+test('dismisses a notification prompt whose close icon carries the label', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:fixed;top:10px;left:80px;width:420px;background:#fff;z-index:9999">
+       <div>Turn on notifications</div>
+       <div>Be the first to know when something happens.</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <button onclick="window.__clicked='close';document.getElementById('prompt').remove()">
+         <svg aria-label="Close" width="16" height="16"><rect width="16" height="16"></rect></svg>
+       </button>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'close', 'an SVG label must click the button that owns it')
+})
+
+const leftAlone =
+  (t, body, selector = '#prompt') =>
+    async () => {
+      const browserless = await getBrowserContext(t)
+      const url = await serve(t, body)
+
+      const run = browserless.withPage((page, goto) => async () => {
+        await goto(page, { url })
+        const runClicks = await dismiss.run(page)
+        return {
+          runClicks,
+          clicked: await page.evaluate(() => window.__clicked || false),
+          present: await stillPresent(page, selector)
+        }
+      })
+
+      return run()
+    }
+
+/* overlays that mention notifications, or read as "push" in ordinary copy,
+   without being an opt-in prompt: each carries a dismissive control and no
+   affirmative one */
+const NOT_A_PROMPT = [
+  {
+    name: 'a news rail whose copy reads "pushes back"',
+    selector: '#rail',
+    body: `<div id="rail" style="position:sticky;top:0;width:300px;height:120px;background:#fff">
+             <p>Senate pushes back on the bill</p>
+             <button type="button" onclick="window.__clicked='block'">Block</button>
+           </div>`
+  },
+  {
+    name: 'a notifications menu with a "No" item',
+    selector: '#menu',
+    body: `<div id="menu" style="position:absolute;top:40px;right:0;width:280px;height:200px;background:#fff">
+             <h3>Notifications</h3>
+             <div style="cursor:pointer" onclick="window.__clicked='no'">No</div>
+           </div>`
+  },
+  {
+    name: 'an activity card reading "pushed 3 commits"',
+    selector: '#card',
+    body: `<div id="card" style="position:absolute;top:10px;left:10px;width:320px;height:100px;background:#fff">
+             <p>octocat pushed 3 commits to main</p>
+             <button type="button" onclick="window.__clicked='block'">Block</button>
+           </div>`
+  },
+  {
+    name: 'a news overlay reading "push through" with a close icon',
+    selector: '#news',
+    body: `<div id="news" style="position:fixed;top:10px;left:10px;width:320px;height:120px;background:#fff">
+             <p>protesters push through the barricade</p>
+             <span aria-label="Close" style="cursor:pointer" onclick="window.__clicked='close'">✕</span>
+           </div>`
+  }
+]
+
+for (const { name, selector, body } of NOT_A_PROMPT) {
+  test(`does not click ${name}`, async t => {
+    const { clicked, runClicks, present } = await leftAlone(t, body, selector)()
+    t.is(clicked, false, 'only an opt-in prompt may be dismissed')
+    t.is(runClicks, 0)
+    t.is(present, true)
+  })
+}
+
+test('does not click a prompt whose copy runs longer than a prompt', async t => {
+  const filler = 'This is the story of how notifications reach you every single day. '.repeat(8)
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <p>${filler}</p>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'an overlay with article-length copy is not a prompt')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not click a control whose label is padded past the label cap', async t => {
+  const padding = ' '.repeat(40)
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">${padding}Not now${padding}</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'a label longer than the cap never reaches the vocabulary')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+/* the AliExpress prompt has no button and no role, so `cursor: pointer` is what
+   marks its controls; an element the page does not paint as clickable is copy */
+test('does not click a bare element the page does not paint as clickable', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:default" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'a non-clickable element is not a control')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not touch a notification prompt without a dismissive control', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div>Stay up to date with our latest stories.</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow';document.getElementById('prompt').remove()">Allow</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'an allow-only prompt must never be clicked')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not read static affirmative copy as an opt-in control', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div style="cursor:default">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'affirmative copy that is not a control is not an opt-in')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not read an affirmative aria-label on plain copy as an opt-in control', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <span aria-label="Allow notifications" style="cursor:default">Details</span>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'an aria-label on plain copy is not an opt-in control')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('leaves a cookie banner that mentions notifications to autoconsent', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:fixed;bottom:0;left:0;width:600px;background:#fff;z-index:10000">
+       <div>We use cookies and notifications to personalise your experience.</div>
+       <div style="cursor:pointer" onclick="window.__clicked='later';document.getElementById('prompt').remove()">Later</div>
+       <div style="cursor:pointer" onclick="window.__clicked='accept'">Accept</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'consent copy must keep dismiss out')
+  t.is(runClicks, 0)
+  t.is(present, true, 'the banner must remain for autoconsent')
+})
+
+test('does not click page content that merely mentions notifications', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<main id="prompt">
+       <h2>How notifications work</h2>
+       <p>Notifications keep you up to date with the stories you follow.</p>
+       <button type="button" onclick="window.__clicked='later'">Later</button>
+     </main>`
+  )()
+
+  t.is(clicked, false, 'page content is not an overlay')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not click a dismissive control that navigates', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <a href="/later" onclick="window.__clicked='later';return false">Not now</a>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'a link must never be clicked')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not click a full-page overlay that mentions notifications', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:fixed;inset:0;background:#fff;z-index:10000">
+       <div>Notifications settings</div>
+       <div style="cursor:pointer" onclick="window.__clicked='later';document.getElementById('prompt').remove()">Later</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'a viewport-sized overlay is not a prompt')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not click a notification prompt that asks for input', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <input type="email" placeholder="email">
+       <div style="cursor:pointer" onclick="window.__clicked='later';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'a prompt with form fields must be left alone')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('clicks a notification prompt once across re-scans', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicks=(window.__clicks||0)+1">Not now</div>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    await waitFor(page, () => window.__clicks)
+    await dismiss.run(page)
+    await dismiss.run(page)
+    await new Promise(resolve => setTimeout(resolve, 500))
+    return page.evaluate(() => window.__clicks)
+  })
+
+  t.is(await run(), 1, 'a prompt that survives its click must not be clicked again')
+})
 
 test('run does not retry page exceptions that look like a stale context', async t => {
   const { methods, page } = fakePage(method =>
