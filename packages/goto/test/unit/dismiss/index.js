@@ -1088,6 +1088,36 @@ test('does not touch a notification prompt without a dismissive control', async 
   t.is(present, true)
 })
 
+test('does not read static affirmative copy as an opt-in control', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div style="cursor:default">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'affirmative copy that is not a control is not an opt-in')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not read an affirmative aria-label on plain copy as an opt-in control', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <span aria-label="Allow notifications" style="cursor:default">Details</span>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'an aria-label on plain copy is not an opt-in control')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
 test('leaves a cookie banner that mentions notifications to autoconsent', async t => {
   const { clicked, runClicks, present } = await leftAlone(
     t,

@@ -297,15 +297,23 @@ const dismissOverlays = () => {
     return undefined
   }
 
+  /* an opt-in choice is what separates a prompt from copy about notifications,
+     so the affirmative has to be a control too: static "Allow" text would
+     otherwise qualify the container and expose its dismissive control */
   const hasAllowControl = container => {
     const walker = createTreeWalker.call(document, container, window.NodeFilter.SHOW_TEXT)
     for (let node = nextNode.call(walker); node; node = nextNode.call(walker)) {
       const data = nodeData.call(node)
       if (!data || data.length > PROMPT_LABEL_MAX) continue
-      if (NOTIFICATION_ALLOW_TEXT.test(normalize(data))) return true
+      if (!NOTIFICATION_ALLOW_TEXT.test(normalize(data))) continue
+      const element = parentElement.call(node)
+      if (element && isControl(element)) return true
     }
     for (const labelled of querySelectorAll.call(container, '[aria-label]')) {
-      if (NOTIFICATION_ALLOW_TEXT.test(normalize(getAttribute.call(labelled, 'aria-label')))) {
+      if (
+        NOTIFICATION_ALLOW_TEXT.test(normalize(getAttribute.call(labelled, 'aria-label'))) &&
+        isControl(labelled)
+      ) {
         return true
       }
     }
