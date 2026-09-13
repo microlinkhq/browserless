@@ -30,6 +30,20 @@ test('spawn does not add capture extension launch args by default', async t => {
   t.is(launchOptions.ignoreDefaultArgs, undefined)
 })
 
+test('spawn does not override the browser user agent', async t => {
+  let launchOptions
+  const puppeteer = createFakePuppeteer(options => {
+    launchOptions = options
+  })
+
+  await driver.spawn({ puppeteer })
+
+  // `--user-agent` blanks Chrome's high entropy client hints browser wide, and
+  // service worker scopes cannot get them back over CDP; see the worker client
+  // hints test in @browserless/goto.
+  t.false(launchOptions.args.some(arg => arg.startsWith('--user-agent=')))
+})
+
 test('spawn keeps user ignoreDefaultArgs as is', async t => {
   let launchOptions
   const puppeteer = createFakePuppeteer(options => {
