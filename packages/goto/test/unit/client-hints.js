@@ -114,6 +114,12 @@ test('Linux and Chrome OS user agents report their platform', t => {
   t.is(linux.platform, 'Linux x86_64')
   t.like(linux.userAgentMetadata, { platform: 'Linux', architecture: 'x86', bitness: '64' })
 
+  const linuxArm = getClientHints(
+    'Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
+  )
+  t.is(linuxArm.platform, 'Linux aarch64')
+  t.like(linuxArm.userAgentMetadata, { platform: 'Linux', architecture: 'arm', bitness: '64' })
+
   const chromeOS = getClientHints(
     'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
   )

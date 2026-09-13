@@ -6,8 +6,16 @@ const memoizeOne = require('memoize-one')
 
 const customDevices = require('./devices.json')
 
-const desktopUserAgent = chromeVersion =>
-  `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
+const HOST_DESKTOP_PLATFORMS = {
+  darwin: 'Macintosh; Intel Mac OS X 10_15_7',
+  win32: 'Windows NT 10.0; Win64; x64'
+}
+
+const hostDesktopPlatform = (platform = process.platform) =>
+  HOST_DESKTOP_PLATFORMS[platform] ?? 'X11; Linux x86_64'
+
+const desktopUserAgent = (chromeVersion, platform = hostDesktopPlatform()) =>
+  `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
 
 const syncChromeVersion = (userAgent, chromeVersion) =>
   chromeVersion ? userAgent.replace(/Chrome\/[\d.]+/g, `Chrome/${chromeVersion}`) : userAgent
@@ -70,5 +78,7 @@ const createGetDevice = ({
 }
 
 createGetDevice.syncChromeVersion = syncChromeVersion
+createGetDevice.desktopUserAgent = desktopUserAgent
+createGetDevice.hostDesktopPlatform = hostDesktopPlatform
 
 module.exports = createGetDevice

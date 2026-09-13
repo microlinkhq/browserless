@@ -51,6 +51,8 @@ Each device descriptor includes:
 
 This package extends [Puppeteer's KnownDevices](https://pptr.dev/api/puppeteer.knowndevices/) with additional desktop devices. Chrome user agents (including Puppeteer's Android descriptors) are rewritten at runtime to `puppeteer.PUPPETEER_REVISIONS.chrome`. Safari/iOS descriptors are left unchanged.
 
+The desktop devices below carry no user agent of their own: they supply the viewport, and the platform token inside the user agent comes from the host, `Macintosh; Intel Mac OS X 10_15_7` on macOS, `X11; Linux x86_64` on Linux, `Windows NT 10.0; Win64; x64` on Windows. Worker scopes always report the real host platform, so advertising the host is what keeps `navigator.platform` and the client hints consistent across them.
+
 | Device | Resolution | Scale |
 |--------|------------|-------|
 | `Macbook Pro 13` | 1280 × 800 | 2x |

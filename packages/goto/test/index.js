@@ -4,6 +4,8 @@ const { runServer, getBrowserContext, getBrowserWSEndpoint } = require('@browser
 const puppeteer = require('puppeteer')
 const test = require('ava')
 
+const { getClientHints } = require('../src/client-hints')
+
 test('setup `scripts`', async t => {
   const browserless = await getBrowserContext(t)
 
@@ -76,8 +78,9 @@ test('Chrome user agent sends matching client hints', async t => {
 
   t.true(requests[0]['sec-ch-ua'].includes(`"Google Chrome";v="${major}"`))
   t.true(state.brands.some(({ brand, version }) => brand === 'Google Chrome' && version === major))
-  t.is(state.hints.platform, 'macOS')
-  t.is(state.platform, 'MacIntel')
+  const { platform, userAgentMetadata } = getClientHints(state.userAgent)
+  t.is(state.hints.platform, userAgentMetadata.platform)
+  t.is(state.platform, platform)
 })
 
 test('Windows and Linux user agents send matching client hints', async t => {
