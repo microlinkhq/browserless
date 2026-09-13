@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.22](https://github.com/microlinkhq/browserless/compare/v13.9.21...v13.9.22) (2026-09-13)
+
+### Bug Fixes
+
+* **devices:** derive the default desktop identity from the host OS ([#932](https://github.com/microlinkhq/browserless/issues/932)) ([ece0f27](https://github.com/microlinkhq/browserless/commit/ece0f2761c423e7f8f1cdf6bf365db989e3ab410)), references [#929](https://github.com/microlinkhq/browserless/issues/929)
+* **goto:** deny notifications by default ([#931](https://github.com/microlinkhq/browserless/issues/931)) ([9670a9a](https://github.com/microlinkhq/browserless/commit/9670a9a17b45a33eb11f0906ec434ace6e3acfdc)), references [#922](https://github.com/microlinkhq/browserless/issues/922)
+* **goto:** dismiss notification opt-in overlays ([#933](https://github.com/microlinkhq/browserless/issues/933)) ([784b7b5](https://github.com/microlinkhq/browserless/commit/784b7b593628b4856adad4a688e500ad4ed4835b)), references [#922](https://github.com/microlinkhq/browserless/issues/922)
+
 ## [13.9.21](https://github.com/microlinkhq/browserless/compare/v13.9.20...v13.9.21) (2026-09-12)
 
 ### Bug Fixes
