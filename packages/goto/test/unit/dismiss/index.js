@@ -934,6 +934,28 @@ test('dismisses a notification prompt through its close affordance', async t => 
   t.is(await run(), 'close')
 })
 
+test('dismisses a notification prompt whose close icon carries the label', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<div id="prompt" style="position:fixed;top:10px;left:80px;width:420px;background:#fff;z-index:9999">
+       <div>Turn on notifications</div>
+       <div>Be the first to know when something happens.</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <button onclick="window.__clicked='close';document.getElementById('prompt').remove()">
+         <svg aria-label="Close" width="16" height="16"><rect width="16" height="16"></rect></svg>
+       </button>
+     </div>`
+  )
+
+  const run = browserless.withPage((page, goto) => async () => {
+    await goto(page, { url })
+    return waitFor(page, () => window.__clicked)
+  })
+
+  t.is(await run(), 'close', 'an SVG label must click the button that owns it')
+})
+
 const leftAlone =
   (t, body, selector = '#prompt') =>
     async () => {

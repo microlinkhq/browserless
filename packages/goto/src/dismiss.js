@@ -269,12 +269,19 @@ const dismissOverlays = () => {
   /* the prompt's own copy holds words from the dismiss vocabulary ("no",
      "later"), so a match is only a control when it is one: a real control
      element, or something the page paints as clickable */
+  const CONTROL_SELECTOR = 'button, [role="button"], input[type="button"], summary'
+
   const isControl = element =>
-    !!closest.call(element, 'button, [role="button"], input[type="button"], summary') ||
+    !!closest.call(element, CONTROL_SELECTOR) ||
     window.getComputedStyle(element).cursor === 'pointer'
 
-  const dismissPrompt = control => {
-    if (!isVisible(control) || !isControl(control) || closest.call(control, 'a[href]')) return false
+  /* the label can sit on an icon inside the control (an `aria-label` on an
+     SVG), and clicking a non-HTML element throws, so the click goes to the
+     control that owns it */
+  const dismissPrompt = matched => {
+    if (!isControl(matched)) return false
+    const control = closest.call(matched, CONTROL_SELECTOR) || matched
+    if (!isVisible(control) || closest.call(control, 'a[href]')) return false
     const { width, height } = getBoundingClientRect.call(control)
     if (width <= 0 || height <= 0) return false
     const prompt = promptOf(control)
