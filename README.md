@@ -170,7 +170,7 @@ The `createBrowser` method supports [puppeteer.launch#options](https://github.co
 
 ##### defaultDevice
 
-Sets your browser viewport to that of the specified device:
+Sets your browser viewport to that of the specified device. A desktop device supplies the viewport only; the platform token inside the user agent follows the host operating system.
 
 type: `string`<br/>
 default: `'Macbook Pro 13'`
@@ -483,7 +483,7 @@ Used to set a specific device type, this method sets the device properties.
 browserless.getDevice({ device: 'Macbook Pro 15' })
 
 // => {
-//   userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/<chromium> Safari/537.36',
+//   userAgent: 'Mozilla/5.0 (<host platform>) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/<chromium> Safari/537.36',
 //   viewport: {
 //     width: 1440,
 //     height: 900,
@@ -494,6 +494,8 @@ browserless.getDevice({ device: 'Macbook Pro 15' })
 //   }
 // }
 ```
+
+A desktop device supplies the viewport, while the platform token inside the user agent comes from the host: `Macintosh; Intel Mac OS X 10_15_7` on macOS, `X11; Linux x86_64` on Linux, `Windows NT 10.0; Win64; x64` on Windows. That keeps `navigator.platform` and the client hints consistent with the worker scopes, which always report the real host. Devices that carry their own user agent, such as `Galaxy S8`, are returned untouched.
 
 This method extends the [Puppeteer.KnownDevices](https://pptr.dev/api/puppeteer.knowndevices/) list by adding some missing devices.
 

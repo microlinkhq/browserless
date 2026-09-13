@@ -66,7 +66,7 @@ const { response, device, error } = await goto(page, {
 | `adblock` | `boolean` | `true` | Enable built-in ad blocker |
 | `waitUntil` | `string\|string[]` | `'auto'` | Navigation wait condition |
 | `timeout` | `number` | `30000` | Navigation timeout in ms |
-| `device` | `string` | `'Macbook Pro 13'` | Device to emulate |
+| `device` | `string` | `'Macbook Pro 13'` | Device to emulate; a desktop device supplies the viewport, while the platform token inside the user agent follows the host OS |
 | `headers` | `object` | `{}` | Extra HTTP headers |
 | `javascript` | `boolean` | `true` | Enable/disable JavaScript |
 | `animations` | `boolean` | `false` | Enable CSS animations |
