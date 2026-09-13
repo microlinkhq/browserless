@@ -10,7 +10,7 @@ const page = body => `<html><body><h1>hello</h1>${body}</body></html>`
 
 const serve = (t, body) =>
   runServer(t, ({ res }) => {
-    res.setHeader('content-type', 'text/html')
+    res.setHeader('content-type', 'text/html; charset=utf-8')
     res.end(page(body))
   })
 
@@ -704,7 +704,7 @@ test('keeps dismissing after a prerender activation swaps the CDP session', asyn
       onPrerenderReady()
       return res.end()
     }
-    res.setHeader('content-type', 'text/html')
+    res.setHeader('content-type', 'text/html; charset=utf-8')
     if (req.url === '/sticky?prerendered') {
       return res.end(
         page(STICKY + '<script>addEventListener("load", () => fetch("/prerender-ready"))</script>')
@@ -902,6 +902,7 @@ test('does not click prompt copy that reads like a dismissive control', async t 
     `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
        <div>Get notifications from Example</div>
        <div onclick="window.__clicked='copy'">Never</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
        <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
      </div>`
   )
@@ -974,6 +975,103 @@ const leftAlone =
 
       return run()
     }
+
+/* overlays that mention notifications, or read as "push" in ordinary copy,
+   without being an opt-in prompt: each carries a dismissive control and no
+   affirmative one */
+const NOT_A_PROMPT = [
+  {
+    name: 'a news rail whose copy reads "pushes back"',
+    selector: '#rail',
+    body: `<div id="rail" style="position:sticky;top:0;width:300px;height:120px;background:#fff">
+             <p>Senate pushes back on the bill</p>
+             <button type="button" onclick="window.__clicked='block'">Block</button>
+           </div>`
+  },
+  {
+    name: 'a notifications menu with a "No" item',
+    selector: '#menu',
+    body: `<div id="menu" style="position:absolute;top:40px;right:0;width:280px;height:200px;background:#fff">
+             <h3>Notifications</h3>
+             <div style="cursor:pointer" onclick="window.__clicked='no'">No</div>
+           </div>`
+  },
+  {
+    name: 'an activity card reading "pushed 3 commits"',
+    selector: '#card',
+    body: `<div id="card" style="position:absolute;top:10px;left:10px;width:320px;height:100px;background:#fff">
+             <p>octocat pushed 3 commits to main</p>
+             <button type="button" onclick="window.__clicked='block'">Block</button>
+           </div>`
+  },
+  {
+    name: 'a news overlay reading "push through" with a close icon',
+    selector: '#news',
+    body: `<div id="news" style="position:fixed;top:10px;left:10px;width:320px;height:120px;background:#fff">
+             <p>protesters push through the barricade</p>
+             <span aria-label="Close" style="cursor:pointer" onclick="window.__clicked='close'">✕</span>
+           </div>`
+  }
+]
+
+for (const { name, selector, body } of NOT_A_PROMPT) {
+  test(`does not click ${name}`, async t => {
+    const { clicked, runClicks, present } = await leftAlone(t, body, selector)()
+    t.is(clicked, false, 'only an opt-in prompt may be dismissed')
+    t.is(runClicks, 0)
+    t.is(present, true)
+  })
+}
+
+test('does not click a prompt whose copy runs longer than a prompt', async t => {
+  const filler = 'This is the story of how notifications reach you every single day. '.repeat(8)
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <p>${filler}</p>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'an overlay with article-length copy is not a prompt')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+test('does not click a control whose label is padded past the label cap', async t => {
+  const padding = ' '.repeat(40)
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:pointer" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">${padding}Not now${padding}</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'a label longer than the cap never reaches the vocabulary')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
+
+/* the AliExpress prompt has no button and no role, so `cursor: pointer` is what
+   marks its controls; an element the page does not paint as clickable is copy */
+test('does not click a bare element the page does not paint as clickable', async t => {
+  const { clicked, runClicks, present } = await leftAlone(
+    t,
+    `<div id="prompt" style="position:absolute;top:10px;left:80px;width:476px;background:#fff;z-index:10000">
+       <div>Get notifications from Example</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
+       <div style="cursor:default" onclick="window.__clicked='deny';document.getElementById('prompt').remove()">Not now</div>
+     </div>`
+  )()
+
+  t.is(clicked, false, 'a non-clickable element is not a control')
+  t.is(runClicks, 0)
+  t.is(present, true)
+})
 
 test('does not touch a notification prompt without a dismissive control', async t => {
   const { clicked, runClicks, present } = await leftAlone(
@@ -1069,6 +1167,7 @@ test('clicks a notification prompt once across re-scans', async t => {
     t,
     `<div id="prompt" style="position:absolute;top:10px;left:80px;width:420px;background:#fff;z-index:10000">
        <div>Get notifications from Example</div>
+       <div style="cursor:pointer" onclick="window.__clicked='allow'">Allow</div>
        <div style="cursor:pointer" onclick="window.__clicks=(window.__clicks||0)+1">Not now</div>
      </div>`
   )

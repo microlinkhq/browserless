@@ -110,7 +110,7 @@ const dismissOverlays = () => {
      role, so they are recognised by the prompt's own copy plus an explicit
      dismissive control; an affirmative control is never part of the vocabulary */
   const NOTIFICATION_TEXT =
-    /(notification|notificaci|notificaç|benachrichtigung|notifich|meldingen|powiadomie|push)/i
+    /(notification|notificaci|notificaç|benachrichtigung|notifich|meldingen|powiadomie|push[- ]?(nachricht|mitteilung|meldung))/i
   const NOTIFICATION_DISMISS_WORDS = [
     /* English */
     'no',
@@ -180,7 +180,50 @@ const dismissOverlays = () => {
     'zamknij'
   ]
   const NOTIFICATION_DISMISS_TEXT = new RegExp(`^(${NOTIFICATION_DISMISS_WORDS.join('|')})$`)
+  /* an opt-in prompt offers the opt-in: without an affirmative control the
+     overlay is something else that happens to mention notifications, such as a
+     notifications menu or a news card */
+  const NOTIFICATION_ALLOW_WORDS = [
+    /* English */
+    'allow',
+    'allow notifications',
+    'yes',
+    'ok(ay)?',
+    'enable',
+    'turn on',
+    'subscribe',
+    /* Spanish */
+    'permitir',
+    'activar',
+    'suscr[ií]b(ete|irme)',
+    's[ií]',
+    /* German */
+    'erlauben',
+    'zulassen',
+    'aktivieren',
+    'ja',
+    /* French */
+    'autoriser',
+    'activer',
+    'oui',
+    /* Italian */
+    'consenti(re)?',
+    'attiva',
+    's[ìi]',
+    /* Portuguese */
+    'ativar',
+    'sim',
+    /* Dutch */
+    'toestaan',
+    'inschakelen',
+    /* Polish */
+    'zezw[oó]l',
+    'w[lł][aą]cz',
+    'tak'
+  ]
+  const NOTIFICATION_ALLOW_TEXT = new RegExp(`^(${NOTIFICATION_ALLOW_WORDS.join('|')})$`)
   const PROMPT_LABEL_MAX = 32
+  const PROMPT_CANDIDATES_MAX = 256
   const PROMPT_TEXT_MAX = 400
   const PROMPT_VIEWPORT_RATIO_MAX = 0.4
   const PROMPT_DEPTH_MAX = 6
@@ -199,6 +242,8 @@ const dismissOverlays = () => {
   }
 
   const seen = new WeakSet()
+
+  let promptsExhausted = false
 
   const dismiss = dialog => {
     if (CONSENT_TEXT.test(readText(dialog))) return false
@@ -252,6 +297,21 @@ const dismissOverlays = () => {
     return undefined
   }
 
+  const hasAllowControl = container => {
+    const walker = createTreeWalker.call(document, container, window.NodeFilter.SHOW_TEXT)
+    for (let node = nextNode.call(walker); node; node = nextNode.call(walker)) {
+      const data = nodeData.call(node)
+      if (!data || data.length > PROMPT_LABEL_MAX) continue
+      if (NOTIFICATION_ALLOW_TEXT.test(normalize(data))) return true
+    }
+    for (const labelled of querySelectorAll.call(container, '[aria-label]')) {
+      if (NOTIFICATION_ALLOW_TEXT.test(normalize(getAttribute.call(labelled, 'aria-label')))) {
+        return true
+      }
+    }
+    return false
+  }
+
   const isPrompt = container => {
     if (!isVisible(container)) return false
     if (querySelector.call(container, 'input, select, textarea')) return false
@@ -263,13 +323,14 @@ const dismissOverlays = () => {
     if (width * height > viewport * PROMPT_VIEWPORT_RATIO_MAX) return false
     const text = normalize(readText(container))
     if (text.length > PROMPT_TEXT_MAX) return false
-    return NOTIFICATION_TEXT.test(text) && !CONSENT_TEXT.test(text)
+    if (!NOTIFICATION_TEXT.test(text) || CONSENT_TEXT.test(text)) return false
+    return hasAllowControl(container)
   }
 
   /* the prompt's own copy holds words from the dismiss vocabulary ("no",
      "later"), so a match is only a control when it is one: a real control
      element, or something the page paints as clickable */
-  const CONTROL_SELECTOR = 'button, [role="button"], input[type="button"], summary'
+  const CONTROL_SELECTOR = 'button, [role="button"], input[type="button"]'
 
   const isControl = element =>
     !!closest.call(element, CONTROL_SELECTOR) ||
@@ -300,7 +361,16 @@ const dismissOverlays = () => {
      control label is skipped before it reaches a regexp, so the pass stays
      flat on a large DOM */
   const scanPrompts = () => {
-    if (!document.body) return
+    if (promptsExhausted || !document.body) return
+    let candidates = 0
+    /* a page can hold thousands of nodes reading "no": each one costs a style
+       lookup, and the observer would pay it again every 150ms, so a document
+       that blows the budget loses the pass instead of the page losing seconds */
+    const overBudget = () => {
+      if (++candidates <= PROMPT_CANDIDATES_MAX) return false
+      promptsExhausted = true
+      return true
+    }
     const walker = createTreeWalker.call(document, document.body, window.NodeFilter.SHOW_TEXT)
     for (let node = nextNode.call(walker); node; node = nextNode.call(walker)) {
       /* one hostile node must not abort the scan or every later rescan */
@@ -308,6 +378,7 @@ const dismissOverlays = () => {
         const data = nodeData.call(node)
         if (!data || data.length > PROMPT_LABEL_MAX) continue
         if (!NOTIFICATION_DISMISS_TEXT.test(normalize(data))) continue
+        if (overBudget()) return
         const control = parentElement.call(node)
         if (control) dismissPrompt(control)
       } catch {}
@@ -318,6 +389,7 @@ const dismissOverlays = () => {
         if (!NOTIFICATION_DISMISS_TEXT.test(normalize(getAttribute.call(labelled, 'aria-label')))) {
           continue
         }
+        if (overBudget()) return
         dismissPrompt(labelled)
       } catch {}
       if (state.clicked >= MAX_CLICKS) return
