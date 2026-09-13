@@ -18,9 +18,9 @@ const readWebGL = (page, type) =>
     }
   }, type)
 
-test('`window.Notification` is not defined', async t => {
+test('`window.Notification` is defined', async t => {
   const page = await getPage(t)
-  t.is((await page.evaluate('typeof window.Notification'), undefined))
+  t.is(await page.evaluate('typeof window.Notification'), 'function')
 })
 
 test('`window.console` is present', async t => {

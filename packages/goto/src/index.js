@@ -14,6 +14,7 @@ const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY, CDPSessionEvent } = require('pupp
 const { getClientHints } = require('./client-hints')
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
+const permissions = require('./permissions')
 const { getScreen } = require('./screen')
 
 const debug = require('debug-logfmt')('browserless:goto')
@@ -368,6 +369,7 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
       javascript = true,
       mediaType,
       modules,
+      notifications = false,
       scripts,
       scroll,
       styles,
@@ -479,6 +481,14 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
         })
       )
     }
+
+    prePromises.push(
+      run({
+        fn: permissions.setNotifications(page, notifications),
+        timeout: actionTimeout,
+        debug: { notifications }
+      })
+    )
 
     const device = getDevice({
       headers: rawHeaders,
