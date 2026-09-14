@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.9.23](https://github.com/microlinkhq/browserless/compare/v13.9.22...v13.9.23) (2026-09-14)
+
+### Bug Fixes
+
+* **errors:** treat Connection closed as context reset ([#934](https://github.com/microlinkhq/browserless/issues/934)) ([b896195](https://github.com/microlinkhq/browserless/commit/b8961951e14d294900b450654a364b2b3924d127))
+
 ## [13.9.22](https://github.com/microlinkhq/browserless/compare/v13.9.21...v13.9.22) (2026-09-13)
 
 **Note:** Version bump only for package @browserless/screenshot
