@@ -84,6 +84,12 @@ const isContextDestroyed = rawError => {
   )
 }
 
+// CDP socket gone (browser crash, idle timeout, Target.closeTarget). This is
+// not a navigation race: the page cannot settle. Map it for withPage to retry
+// on a fresh context, but keep it out of `isContextDestroyed` so screenshot/PDF
+// do not wait in place on a dead connection.
+const isConnectionClosed = rawError => getErrorMessage(rawError).startsWith('Connection closed')
+
 // Chrome clamps a page range's end but rejects an out-of-range start.
 const isPageRangeOvershoot = rawError =>
   getErrorMessage(rawError).includes('Page range exceeds page count')
@@ -97,7 +103,7 @@ browserlessError.ensureError = rawError => {
 
   const errorMessage = isObject(error) && typeof error.message === 'string' ? error.message : ''
 
-  if (isContextDestroyed(error)) {
+  if (isConnectionClosed(error) || isContextDestroyed(error)) {
     return browserlessError.contextDisconnected()
   }
 

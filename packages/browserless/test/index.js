@@ -559,6 +559,82 @@ test('withPage retries transient context disconnections', async t => {
   t.is(contextCloseCalls, 2)
 })
 
+test('withPage retries a raw ConnectionClosedError', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let pid = 5000
+  let createBrowserContextCalls = 0
+  let contextCloseCalls = 0
+
+  driver.spawn = () => {
+    let isClosed = false
+
+    const page = {
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve().then(() => (isClosed = true)),
+      isClosed: () => isClosed
+    }
+
+    return Promise.resolve({
+      process: () => ({ pid: ++pid }),
+      connected: true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => {
+        createBrowserContextCalls += 1
+        return Promise.resolve({
+          id: `ctx-${pid}-${createBrowserContextCalls}`,
+          close: () => {
+            contextCloseCalls += 1
+            return Promise.resolve()
+          },
+          newPage: () => Promise.resolve(page)
+        })
+      },
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 3000 })
+  t.teardown(browser.close)
+  const browserless = await browser.createContext({ retry: 1 })
+
+  let attempts = 0
+  const evaluate = browserless.withPage(
+    () => async () => {
+      attempts += 1
+      if (attempts === 1) {
+        const error = new Error('Connection closed.')
+        error.name = 'ConnectionClosedError'
+        throw error
+      }
+      return 'ok'
+    },
+    { timeout: 3000 }
+  )
+
+  const result = await evaluate()
+
+  t.is(result, 'ok')
+  t.is(attempts, 2)
+  t.is(createBrowserContextCalls, 2)
+  t.is(contextCloseCalls, 1)
+
+  await browserless.destroyContext()
+  t.is(contextCloseCalls, 2)
+})
+
 test('withPage retries transient protocol errors', async t => {
   const browserlessFactory = require('..')
   const { protocolError } = require('@browserless/errors')

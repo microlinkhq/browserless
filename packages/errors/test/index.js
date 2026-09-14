@@ -120,6 +120,17 @@ test('contextDisconnected from Runtime.callFunctionOn Target closed', t => {
   t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
 })
 
+test('contextDisconnected from ConnectionClosedError', t => {
+  const error = errors.ensureError({
+    name: 'ConnectionClosedError',
+    message: 'Connection closed.'
+  })
+
+  t.true(error instanceof Error)
+  t.is(error.name, 'BrowserlessError')
+  t.is(error.code, 'EBRWSRCONTEXTCONNRESET')
+})
+
 test('contextDisconnected from "Session closed"', t => {
   const error = errors.ensureError({
     message: 'Session closed. Most likely the page has been closed.'
@@ -191,6 +202,10 @@ test('isContextDestroyed', t => {
   )
   // The inverse race: an operation ran before the main frame attached.
   t.true(errors.isContextDestroyed({ message: 'Requesting main frame too early!' }))
+  t.false(errors.isContextDestroyed({ message: 'Connection closed.' }))
+  t.false(
+    errors.isContextDestroyed({ name: 'ConnectionClosedError', message: 'Connection closed.' })
+  )
 
   t.false(errors.isContextDestroyed({ message: 'Evaluation failed: Target closed' }))
   t.false(errors.isContextDestroyed({ message: 'Evaluation failed: boom' }))
