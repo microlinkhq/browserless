@@ -80,7 +80,11 @@ const isContextDestroyed = rawError => {
     // The inverse race: an operation ran before the page's main frame attached.
     // The frame arrives once navigation commits, so a settle-and-retry resolves
     // it; a page that never navigates falls through when the retry budget ends.
-    errorMessage.includes('Requesting main frame too early')
+    errorMessage.includes('Requesting main frame too early') ||
+    // Chrome/Puppeteer tore the CDP socket down (browser crash, idle timeout
+    // close, Target.closeTarget). Retrying on a fresh page recovers; bubbling
+    // the raw ConnectionClosedError 500s the API.
+    errorMessage.startsWith('Connection closed')
   )
 }
 
