@@ -105,6 +105,39 @@ test('a detached session is terminal even while the page still reports open', as
   t.is(waits, 0)
 })
 
+test('a closed CDP connection is terminal even while the page still reports open', async t => {
+  let attempts = 0
+  let waits = 0
+
+  const connectionClosed = () => {
+    const error = new Error('Connection closed.')
+    error.name = 'ConnectionClosedError'
+    return error
+  }
+
+  const error = await t.throwsAsync(
+    captureWithNavigationRetry(
+      () => {
+        attempts++
+        throw connectionClosed()
+      },
+      {
+        page: createPage({ isClosed: false }),
+        goto: {
+          waitUntilAuto: async () => {
+            waits++
+          }
+        },
+        timeout: 5000
+      }
+    )
+  )
+
+  t.is(error.name, 'ConnectionClosedError')
+  t.is(attempts, 1, 'a torn-down socket is never retried in place')
+  t.is(waits, 0)
+})
+
 test('a wait that spends the budget does not capture again', async t => {
   let attempts = 0
   const timeout = 300

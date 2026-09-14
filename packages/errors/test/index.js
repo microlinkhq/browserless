@@ -202,8 +202,8 @@ test('isContextDestroyed', t => {
   )
   // The inverse race: an operation ran before the main frame attached.
   t.true(errors.isContextDestroyed({ message: 'Requesting main frame too early!' }))
-  t.true(errors.isContextDestroyed({ message: 'Connection closed.' }))
-  t.true(
+  t.false(errors.isContextDestroyed({ message: 'Connection closed.' }))
+  t.false(
     errors.isContextDestroyed({ name: 'ConnectionClosedError', message: 'Connection closed.' })
   )
 

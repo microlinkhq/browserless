@@ -80,13 +80,15 @@ const isContextDestroyed = rawError => {
     // The inverse race: an operation ran before the page's main frame attached.
     // The frame arrives once navigation commits, so a settle-and-retry resolves
     // it; a page that never navigates falls through when the retry budget ends.
-    errorMessage.includes('Requesting main frame too early') ||
-    // Chrome/Puppeteer tore the CDP socket down (browser crash, idle timeout
-    // close, Target.closeTarget). Retrying on a fresh page recovers; bubbling
-    // the raw ConnectionClosedError 500s the API.
-    errorMessage.startsWith('Connection closed')
+    errorMessage.includes('Requesting main frame too early')
   )
 }
+
+// CDP socket gone (browser crash, idle timeout, Target.closeTarget). This is
+// not a navigation race: the page cannot settle. Map it for withPage to retry
+// on a fresh context, but keep it out of `isContextDestroyed` so screenshot/PDF
+// do not wait in place on a dead connection.
+const isConnectionClosed = rawError => getErrorMessage(rawError).startsWith('Connection closed')
 
 // Chrome clamps a page range's end but rejects an out-of-range start.
 const isPageRangeOvershoot = rawError =>
@@ -101,7 +103,7 @@ browserlessError.ensureError = rawError => {
 
   const errorMessage = isObject(error) && typeof error.message === 'string' ? error.message : ''
 
-  if (isContextDestroyed(error)) {
+  if (isConnectionClosed(error) || isContextDestroyed(error)) {
     return browserlessError.contextDisconnected()
   }
 
