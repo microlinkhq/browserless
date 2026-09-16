@@ -487,6 +487,23 @@ test('non-page functions skip browser entirely', async t => {
   t.is(getBrowserlessCalls, 0)
 })
 
+test('access to url without spinning a browser', async t => {
+  let getBrowserlessCalls = 0
+
+  const fn = browserlessFunction(({ url }) => url, {
+    getBrowserless: async () => {
+      getBrowserlessCalls += 1
+      return {}
+    }
+  })
+
+  const result = await fn('https://example.com')
+
+  t.true(result.isFulfilled)
+  t.is(result.value, 'https://example.com')
+  t.is(getBrowserlessCalls, 0)
+})
+
 test('prefer page browser websocket endpoint when available', t => {
   const { status, stdout, stderr } = runPageFnSubprocess(`
     let browserCalls = 0
