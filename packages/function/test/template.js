@@ -95,7 +95,17 @@ test('non-page template passes url to the user function', async t => {
 test('page template includes url in function call', t => {
   const code = '({ page, url }) => url'
   const source = template(code)
-  t.true(source.includes('{ url, page, response, ...rest }'))
+  t.true(source.includes('{ page, response, ...rest, url }'))
+})
+
+test('target url wins over opts.url', async t => {
+  const code = '({ url }) => url'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, {
+    url: 'https://other.example'
+  })
+  t.is(result, 'https://example.com')
 })
 
 test('page template includes response in function call', t => {
