@@ -81,7 +81,21 @@ test('_response is not leaked to user function opts', async t => {
     _response: { status: 200 },
     query: { foo: 'bar' }
   })
-  t.deepEqual(result, ['query', 'response'])
+  t.deepEqual(result, ['query', 'response', 'url'])
+})
+
+test('non-page template passes url to the user function', async t => {
+  const code = '({ url }) => url'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, {})
+  t.is(result, 'https://example.com')
+})
+
+test('page template includes url in function call', t => {
+  const code = '({ page, url }) => url'
+  const source = template(code)
+  t.true(source.includes('{ url, page, response, ...rest }'))
 })
 
 test('page template includes response in function call', t => {

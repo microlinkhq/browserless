@@ -89,6 +89,7 @@ The sandboxed function receives these properties:
 
 | Property | Description |
 |----------|-------------|
+| `url` | Target URL passed to the function (no browser required) |
 | `page` | Puppeteer [Page](https://pptr.dev/api/puppeteer.page) object (if referenced in code) |
 | `device` | Device descriptor with `userAgent` and `viewport` |
 | `...opts` | Any custom options passed at runtime |

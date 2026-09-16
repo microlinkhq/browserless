@@ -41,7 +41,7 @@ const template = (code, usesPage = isUsingPage(code)) => {
   if (!usesPage) {
     return `async (url, _, opts) => {
     ${withResponse}
-    return (${code})({ response, ...rest })
+    return (${code})({ url, response, ...rest })
   }`
   }
   return `
@@ -64,7 +64,7 @@ const template = (code, usesPage = isUsingPage(code)) => {
       }
       if (!page) page = pages[pages.length - 1]
       try {
-        return await (${code})({ page, response, ...rest })
+        return await (${code})({ url, page, response, ...rest })
       } finally {
         await browser.disconnect()
       }
