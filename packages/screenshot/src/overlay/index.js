@@ -4,7 +4,7 @@ const svgGradient = require('svg-gradient')
 const isHttpUrl = require('is-url-http')
 const sharp = require('sharp')
 const path = require('path')
-const got = require('got')
+const got = require('@kikobeats/got')
 
 const toPx = str => `${str}px`
 
