@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.10.1](https://github.com/microlinkhq/browserless/compare/v13.10.0...v13.10.1) (2026-09-17)
+
+### Bug Fixes
+
+* use @kikobeats/got to support Node.js 24.20 ([#936](https://github.com/microlinkhq/browserless/issues/936)) ([c607fa6](https://github.com/microlinkhq/browserless/commit/c607fa6180ad8985238fa9fc5f2438fc8610afe6)), references [nodejs/node#64847](https://github.com/nodejs/node/issues/64847)
+
 ## [13.10.0](https://github.com/microlinkhq/browserless/compare/v13.9.23...v13.10.0) (2026-09-16)
 
 ### Features
