@@ -8,6 +8,9 @@ on:
     branches:
       - master
 
+env:
+  pnpm_config_dangerously_allow_all_builds: true
+
 jobs:
   matrix:
     if: github.ref != 'refs/heads/master'
@@ -39,7 +42,7 @@ jobs:
         with:
           version: latest
       - name: Install
-        run: pnpm install --dangerously-allow-all-builds
+        run: pnpm install
       - name: Install GL runtime
         # libgl1-mesa-dri ships on the ubuntu-24.04 runner; only install (and
         # refresh the index) on the off chance a future image drops it.
