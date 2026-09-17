@@ -2,7 +2,7 @@
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { promisify } = require('util')
-const got = require('got')
+const got = require('@kikobeats/got')
 const fs = require('fs')
 
 const writeFile = promisify(fs.writeFile)

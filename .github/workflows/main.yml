@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  pnpm_config_dangerously_allow_all_builds: true
   SKIP_INSTALL_SIMPLE_GIT_HOOKS: true
 
 jobs:
@@ -31,7 +32,7 @@ jobs:
         with:
           version: latest
       - name: Install
-        run: pnpm install --dangerously-allow-all-builds
+        run: pnpm install
       - name: Contributors
         run: |
           git config --global user.email ${{ secrets.GIT_EMAIL }}
@@ -66,7 +67,7 @@ jobs:
         with:
           version: latest
       - name: Install
-        run: pnpm install --dangerously-allow-all-builds
+        run: pnpm install
       - name: Lint
         run: pnpm lint
 
@@ -93,7 +94,7 @@ jobs:
         with:
           version: latest
       - name: Install
-        run: pnpm install --dangerously-allow-all-builds
+        run: pnpm install
       - name: Install GL runtime
         # libgl1-mesa-dri ships on the ubuntu-24.04 runner; only install (and
         # refresh the index) on the off chance a future image drops it.
@@ -154,7 +155,7 @@ jobs:
         with:
           version: latest
       - name: Install
-        run: pnpm install --dangerously-allow-all-builds
+        run: pnpm install
       - name: Sync master
         run: |
           git config --global user.email ${{ secrets.GIT_EMAIL }}
