@@ -132,7 +132,7 @@ await createFunction.teardown()
 
 ### extendPage
 
-Attach extra methods on `page`. JSON values become async getters. Functions are inlined onto the page (`this` is the page). If the user function only uses these methods or `page.content`, Chromium is not started and `page.content()` returns `_html`:
+Attach extra methods on `page`. JSON values become async getters. Functions are inlined onto the page (`this` is the page; use a function, not an arrow, when you need `this`). If the user function only uses these methods or `page.content`, Chromium is not started and `page.content()` returns `_html`:
 
 ```js
 const myFn = createFunction(({ page }) => page.ping(), {

@@ -125,6 +125,7 @@ test('needsBrowser is false when page is only used as content', t => {
 
 test('needsBrowser treats extendPage keys as stubs', t => {
   t.false(template.needsBrowser('({ page }) => page.ping()', { ping: 'pong' }))
+  t.false(template.needsBrowser('({ page: p }) => p.ping()', { ping: 'pong' }))
   t.true(template.needsBrowser('({ page }) => page.title()', { ping: 'pong' }))
 })
 
@@ -162,7 +163,7 @@ test('extendPage method shorthand with an arrow in the body still inlines', asyn
       }
     }
   })
-  t.true(source.includes('function echo'))
+  t.true(source.includes('function ('))
   const fn = new Function(`return (${source})`)()
   t.is(await fn('https://example.com', undefined, { _html: '<h1>ok</h1>' }), '<h1>ok</h1>')
 })
@@ -179,9 +180,54 @@ test('extendPage method shorthand is inlined as a function expression', async t 
     }
   })
   t.false(source.includes('puppeteer'))
-  t.true(source.includes('function echo'))
+  t.true(source.includes('function ('))
   const fn = new Function(`return (${source})`)()
   t.is(await fn('https://example.com', undefined, { _html: '<h1>ok</h1>' }), '<h1>ok</h1>')
+})
+
+test('extendPage quoted method keys inline as anonymous functions', async t => {
+  const code = '({ page }) => page["cache-status"]()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      'cache-status' () {
+        return 'ok'
+      }
+    }
+  })
+  t.true(source.includes('function ('))
+  t.false(source.includes("function 'cache-status'"))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, {}), 'ok')
+})
+
+test('extendPage arrows cannot use this', t => {
+  t.throws(
+    () =>
+      template('({ page }) => page.echo()', {
+        usesPage: true,
+        needsBrowser: false,
+        extendPage: {
+          echo: () => this.content()
+        }
+      }),
+    { message: /cannot use `this`/ }
+  )
+})
+
+test('extendPage arrows without this stay arrows', async t => {
+  const code = '({ page }) => page.echo()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      echo: () => 'pong'
+    }
+  })
+  t.true(source.includes('() =>'))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, {}), 'pong')
 })
 
 test('extendPage functions can read stub page.content', async t => {

@@ -37,6 +37,7 @@ const isUsingResponse = code => isUsingName(code, 'response')
 const analyzePageAccess = (code, stubs) => {
   const stubSet = new Set(stubs)
   const ast = parse(code)
+  const pageNames = new Set(['page'])
   let beyond = false
   let stub = false
 
@@ -45,25 +46,30 @@ const analyzePageAccess = (code, stubs) => {
     else stub = true
   }
 
+  const isPageBinding = (node, parent) =>
+    parent?.type === 'Property' &&
+    parent.key.name === 'page' &&
+    (parent.key === node || parent.value === node)
+
   walk.ancestor(ast, {
-    Property (node) {
-      if (node.key.name === 'page' && !node.shorthand && node.value.type === 'Identifier') {
-        beyond = true
+    ObjectPattern (node) {
+      for (const prop of node.properties) {
+        if (
+          prop.type === 'Property' &&
+          prop.key.name === 'page' &&
+          prop.value.type === 'Identifier'
+        ) {
+          pageNames.add(prop.value.name)
+        }
       }
     },
     RestElement (node) {
       if (node.argument.name === 'page') beyond = true
     },
     Identifier (node, ancestors) {
-      if (node.name !== 'page') return
+      if (!pageNames.has(node.name)) return
       const parent = ancestors[ancestors.length - 2]
-      if (
-        parent?.type === 'Property' &&
-        parent.key.name === 'page' &&
-        (parent.key === node || parent.value === node)
-      ) {
-        return
-      }
+      if (isPageBinding(node, parent)) return
       if (parent?.type === 'MemberExpression' && parent.object === node) {
         markAccess(propertyName(parent))
         return
@@ -98,8 +104,16 @@ const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
 const stringifyFn = fn => {
   const src = fn.toString().trim().replace(/;$/, '')
   if (/^(?:async\s+)?function[\s*(]/.test(src)) return src
-  if (/^(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/.test(src)) return src
-  return src.startsWith('async ') ? `async function ${src.slice(6)}` : `function ${src}`
+  if (/^(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/.test(src)) {
+    if (/\bthis\b/.test(src)) {
+      throw new TypeError('extendPage arrow functions cannot use `this`; use a function')
+    }
+    return src
+  }
+  const asyncPrefix = src.startsWith('async ') ? 'async ' : ''
+  const paren = src.indexOf('(')
+  if (paren === -1) throw new TypeError('extendPage function could not be inlined')
+  return `${asyncPrefix}function ${src.slice(paren)}`
 }
 
 const applyExtendPage = (extendPage = {}) => {
