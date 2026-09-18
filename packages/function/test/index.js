@@ -620,6 +620,7 @@ test('reuse compiled template source across invocations', t => {
           templateCalls += 1
           return template(...args)
         }
+        Object.assign(wrapped, template)
         wrapped.isUsingPage = (...args) => {
           parseCalls += 1
           return template.isUsingPage(...args)

@@ -116,6 +116,66 @@ test('page template includes response in function call', t => {
   t.true(source.includes('...rest'))
 })
 
+test('needsBrowser is false when page is only used as content', t => {
+  t.false(template.needsBrowser('({ page }) => page.content()'))
+  t.true(template.needsBrowser('({ page }) => page.title()'))
+})
+
+test('needsBrowser treats extendPage keys as stubs', t => {
+  t.false(template.needsBrowser('({ page }) => page.ping()', { ping: 'pong' }))
+  t.true(template.needsBrowser('({ page }) => page.title()', { ping: 'pong' }))
+})
+
+test('stub page template skips puppeteer and exposes content', async t => {
+  const code = '({ page }) => page.content()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false
+  })
+  t.false(source.includes('puppeteer'))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, { _html: '<p>hi</p>' }), '<p>hi</p>')
+})
+
+test('extendPage JSON values become async getters on a stub page', async t => {
+  const code = '({ page }) => page.ping()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: { ping: 'pong' }
+  })
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, { _extendPage: { ping: 'pong' } }), 'pong')
+})
+
+test('extendPage functions can read stub page.content', async t => {
+  const code = '({ page }) => page.echo()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      echo: async function echo () {
+        return this.content()
+      }
+    }
+  })
+  t.false(source.includes('puppeteer'))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, { _html: '<h1>ok</h1>' }), '<h1>ok</h1>')
+})
+
+test('_extendPage and _html are not leaked to user function opts', async t => {
+  const code = '(opts) => Object.keys(opts).sort()'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, {
+    _html: '<p>x</p>',
+    _extendPage: { ping: 'pong' },
+    query: { foo: 'bar' }
+  })
+  t.deepEqual(result, ['query', 'response', 'url'])
+})
+
 test('reuse page usage analysis to avoid parsing code twice', t => {
   const templatePath = require.resolve('../src/template')
   const script = `
