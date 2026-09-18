@@ -150,6 +150,23 @@ test('extendPage JSON values become async getters on a stub page', async t => {
   t.is(await fn('https://example.com', undefined, { _extendPage: { ping: 'pong' } }), 'pong')
 })
 
+test('extendPage method shorthand with an arrow in the body still inlines', async t => {
+  const code = '({ page }) => page.echo()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      echo () {
+        const pick = () => this.content()
+        return pick()
+      }
+    }
+  })
+  t.true(source.includes('function echo'))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, { _html: '<h1>ok</h1>' }), '<h1>ok</h1>')
+})
+
 test('extendPage method shorthand is inlined as a function expression', async t => {
   const code = '({ page }) => page.echo()'
   const source = template(code, {

@@ -97,9 +97,8 @@ const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
 
 const stringifyFn = fn => {
   const src = fn.toString().trim().replace(/;$/, '')
-  if (/^(?:async\s+)?function[\s*(]/.test(src) || src.includes('=>') || src.startsWith('(')) {
-    return src
-  }
+  if (/^(?:async\s+)?function[\s*(]/.test(src)) return src
+  if (/^(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/.test(src)) return src
   return src.startsWith('async ') ? `async function ${src.slice(6)}` : `function ${src}`
 }
 
