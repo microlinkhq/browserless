@@ -12,36 +12,38 @@ const propertyName = node => {
   return node.property.name
 }
 
-const isUsingPage = code => {
+const isUsingName = (code, name) => {
   const ast = parse(code)
-
   let result = false
 
   walk.simple(ast, {
     ObjectPattern (node) {
       node.properties.forEach(prop => {
-        if (prop.type === 'Property' && prop.key.name === 'page') {
-          result = true
-        }
-        if (prop.type === 'RestElement' && prop.argument.name === 'page') {
-          result = true
-        }
+        if (prop.type === 'Property' && prop.key.name === name) result = true
+        if (prop.type === 'RestElement' && prop.argument.name === name) result = true
       })
     },
     MemberExpression (node) {
-      if (node.property.name === 'page' || node.property.value === 'page') {
-        result = true
-      }
+      if (node.property.name === name || node.property.value === name) result = true
     }
   })
 
   return result
 }
 
-const usesPageBeyond = (code, stubs) => {
+const isUsingPage = code => isUsingName(code, 'page')
+const isUsingResponse = code => isUsingName(code, 'response')
+
+const analyzePageAccess = (code, stubs) => {
   const stubSet = new Set(stubs)
   const ast = parse(code)
   let beyond = false
+  let stub = false
+
+  const markAccess = name => {
+    if (name == null || !stubSet.has(name)) beyond = true
+    else stub = true
+  }
 
   walk.ancestor(ast, {
     Property (node) {
@@ -63,8 +65,7 @@ const usesPageBeyond = (code, stubs) => {
         return
       }
       if (parent?.type === 'MemberExpression' && parent.object === node) {
-        const name = propertyName(parent)
-        if (name == null || !stubSet.has(name)) beyond = true
+        markAccess(propertyName(parent))
         return
       }
       beyond = true
@@ -73,21 +74,26 @@ const usesPageBeyond = (code, stubs) => {
       if (propertyName(node) !== 'page') return
       const parent = ancestors[ancestors.length - 2]
       if (parent?.type === 'MemberExpression' && parent.object === node) {
-        const name = propertyName(parent)
-        if (name == null || !stubSet.has(name)) beyond = true
+        markAccess(propertyName(parent))
         return
       }
       beyond = true
     }
   })
 
-  return beyond
+  return { beyond, stub }
 }
+
+const usesPageBeyond = (code, stubs) => analyzePageAccess(code, stubs).beyond
 
 const stubNames = (extendPage = {}) => [...Object.keys(extendPage), 'content']
 
-const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) =>
-  usesPage && usesPageBeyond(code, stubNames(extendPage))
+const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
+  if (!usesPage) return false
+  if (isUsingResponse(code)) return true
+  const { beyond, stub } = analyzePageAccess(code, stubNames(extendPage))
+  return beyond || !stub
+}
 
 const stringifyFn = fn => fn.toString().trim().replace(/;$/, '')
 

@@ -119,6 +119,8 @@ test('page template includes response in function call', t => {
 test('needsBrowser is false when page is only used as content', t => {
   t.false(template.needsBrowser('({ page }) => page.content()'))
   t.true(template.needsBrowser('({ page }) => page.title()'))
+  t.true(template.needsBrowser('({ page }) => "ok"'))
+  t.true(template.needsBrowser('({ page, response }) => response.status()'))
 })
 
 test('needsBrowser treats extendPage keys as stubs', t => {
