@@ -95,7 +95,13 @@ const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
   return beyond || !stub
 }
 
-const stringifyFn = fn => fn.toString().trim().replace(/;$/, '')
+const stringifyFn = fn => {
+  const src = fn.toString().trim().replace(/;$/, '')
+  if (/^(?:async\s+)?function[\s*(]/.test(src) || src.includes('=>') || src.startsWith('(')) {
+    return src
+  }
+  return src.startsWith('async ') ? `async function ${src.slice(6)}` : `function ${src}`
+}
 
 const applyExtendPage = (extendPage = {}) => {
   const lines = []
