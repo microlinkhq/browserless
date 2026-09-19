@@ -49,10 +49,9 @@ module.exports = ({ tmpdir } = {}) => {
 
   const jsonExtendPage = extendPage => {
     if (!extendPage) return
-    const json = {}
-    for (const [name, value] of Object.entries(extendPage)) {
-      if (typeof value !== 'function') json[name] = value
-    }
+    const json = Object.fromEntries(
+      Object.entries(extendPage).filter(([, value]) => typeof value !== 'function')
+    )
     return Object.keys(json).length ? json : undefined
   }
 

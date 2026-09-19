@@ -18,10 +18,10 @@ const isUsingName = (code, name) => {
 
   walk.simple(ast, {
     ObjectPattern (node) {
-      node.properties.forEach(prop => {
+      for (const prop of node.properties) {
         if (prop.type === 'Property' && prop.key.name === name) result = true
         if (prop.type === 'RestElement' && prop.argument.name === name) result = true
-      })
+      }
     },
     MemberExpression (node) {
       if (node.property.name === name || node.property.value === name) result = true
@@ -90,18 +90,14 @@ const analyzePageAccess = (code, stubs) => {
   return { beyond, stub }
 }
 
-const usesPageBeyond = (code, stubs) => analyzePageAccess(code, stubs).beyond
-
-const stubNames = (extendPage = {}) => Object.keys(extendPage)
-
 const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
   if (!usesPage) return false
   if (isUsingResponse(code)) return true
-  const { beyond, stub } = analyzePageAccess(code, stubNames(extendPage))
+  const { beyond, stub } = analyzePageAccess(code, Object.keys(extendPage || {}))
   return beyond || !stub
 }
 
-const asAsyncExpr = src => (/^(?:async\s)/.test(src) ? src : `async ${src}`)
+const asAsyncExpr = src => (/^async\s/.test(src) ? src : `async ${src}`)
 
 const stringifyFn = fn => {
   const src = fn.toString().trim().replace(/;$/, '')
@@ -118,21 +114,23 @@ const stringifyFn = fn => {
 }
 
 const applyExtendPage = (extendPage = {}) => {
-  const lines = []
   const jsonKeys = []
+  const fnLines = []
   for (const [name, value] of Object.entries(extendPage)) {
     if (typeof value === 'function') {
-      lines.push(`page[${JSON.stringify(name)}] = ${stringifyFn(value)}`)
+      fnLines.push(`page[${JSON.stringify(name)}] = ${stringifyFn(value)}`)
     } else {
       jsonKeys.push(name)
     }
   }
+  const lines = []
   if (jsonKeys.length) {
-    lines.unshift(`for (const name of ${JSON.stringify(jsonKeys)}) {
+    lines.push(`for (const name of ${JSON.stringify(jsonKeys)}) {
         const value = _extendPage[name]
         page[name] = async () => value
       }`)
   }
+  lines.push(...fnLines)
   return lines.join('\n      ')
 }
 
@@ -209,4 +207,3 @@ const template = (code, usesPageOrOpts) => {
 module.exports = template
 module.exports.isUsingPage = isUsingPage
 module.exports.needsBrowser = needsBrowser
-module.exports.usesPageBeyond = usesPageBeyond
