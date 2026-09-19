@@ -37,22 +37,44 @@ test('needsBrowser true starts the browser even with only extendPage keys', asyn
   await t.throwsAsync(() => myFn('https://example.com'))
 })
 
-test('extendPage functions read stub page.content', async t => {
+test('extendPage functions read stub page.html', async t => {
   const code = ({ page }) => page.echo()
   const myFn = browserlessFunction(code, {
     ...noBrowser,
     extendPage: {
+      html: '<h1>stub</h1>',
       echo: async function echo () {
-        return this.content()
+        return this.html()
       }
     }
   })
 
-  const { profiling, logging, ...result } = await myFn('https://example.com', {
-    _html: '<h1>stub</h1>'
-  })
+  const { profiling, logging, ...result } = await myFn('https://example.com')
 
   t.deepEqual(result, { isFulfilled: true, value: '<h1>stub</h1>' })
+  t.true(!!profiling)
+  t.true(!!logging)
+})
+
+test('extendPage url and html skip the browser', async t => {
+  const code = async ({ page }) => ({
+    url: await page.url(),
+    html: await page.html()
+  })
+  const myFn = browserlessFunction(code, {
+    ...noBrowser,
+    extendPage: {
+      url: 'https://example.com',
+      html: '<h1>stub</h1>'
+    }
+  })
+
+  const { profiling, logging, ...result } = await myFn('https://other.example')
+
+  t.deepEqual(result, {
+    isFulfilled: true,
+    value: { url: 'https://example.com', html: '<h1>stub</h1>' }
+  })
   t.true(!!profiling)
   t.true(!!logging)
 })

@@ -132,15 +132,15 @@ await createFunction.teardown()
 
 ### extendPage
 
-Attach extra methods on `page`. JSON values become async getters. Functions are inlined onto the page (`this` is the page; use a function, not an arrow, when you need `this`). If the user function only uses these methods or `page.content`, Chromium is not started and `page.content()` returns `_html`:
+Attach extra methods on `page`. JSON values become async getters. Functions are inlined as async methods (`this` is the page; use a function, not an arrow, when you need `this`). If the user function only uses these methods, Chromium is not started:
 
 ```js
-const myFn = createFunction(({ page }) => page.ping(), {
-  extendPage: { ping: 'pong' }
+const myFn = createFunction(({ page }) => page.html(), {
+  extendPage: { url, html }
 })
 
 const result = await myFn('https://example.com')
-// => { isFulfilled: true, value: 'pong', ... }
+// => { isFulfilled: true, value: html, ... }
 ```
 
 ### Options
@@ -157,11 +157,11 @@ const myFn = createFunction(code, {
   timeout: 30000,
   
   // Extra methods on `page`. JSON values become async getters; functions
-  // are inlined onto the page. If the function only uses these methods
-  // (or `page.content`), Chromium is not started and `page.content`
-  // returns `_html`.
+  // are inlined as async methods. If the function only uses these methods,
+  // Chromium is not started.
   extendPage: {
-    ping: 'pong'
+    url,
+    html
   },
 
   // Options passed to browserless.goto()

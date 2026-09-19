@@ -92,7 +92,7 @@ const analyzePageAccess = (code, stubs) => {
 
 const usesPageBeyond = (code, stubs) => analyzePageAccess(code, stubs).beyond
 
-const stubNames = (extendPage = {}) => [...Object.keys(extendPage), 'content']
+const stubNames = (extendPage = {}) => Object.keys(extendPage)
 
 const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
   if (!usesPage) return false
@@ -101,19 +101,20 @@ const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
   return beyond || !stub
 }
 
+const asAsyncExpr = src => (/^(?:async\s)/.test(src) ? src : `async ${src}`)
+
 const stringifyFn = fn => {
   const src = fn.toString().trim().replace(/;$/, '')
-  if (/^(?:async\s+)?function[\s*(]/.test(src)) return src
+  if (/^(?:async\s+)?function[\s*(]/.test(src)) return asAsyncExpr(src)
   if (/^(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/.test(src)) {
     if (/\bthis\b/.test(src)) {
       throw new TypeError('extendPage arrow functions cannot use `this`; use a function')
     }
-    return src
+    return asAsyncExpr(src)
   }
-  const asyncPrefix = src.startsWith('async ') ? 'async ' : ''
   const paren = src.indexOf('(')
   if (paren === -1) throw new TypeError('extendPage function could not be inlined')
-  return `${asyncPrefix}function ${src.slice(paren)}`
+  return asAsyncExpr(`function ${src.slice(paren)}`)
 }
 
 const applyExtendPage = (extendPage = {}) => {
@@ -138,7 +139,7 @@ const applyExtendPage = (extendPage = {}) => {
 // _response is a plain JSON object serialized via isolated-function;
 // wrap each value as a method to match Puppeteer's HTTPResponse API
 const withResponse = `
-  const { _response: _r, _extendPage, _html, ...rest } = opts
+  const { _response: _r, _extendPage, ...rest } = opts
   const response = _r
     ? Object.fromEntries(Object.entries(_r).map(([k, v]) => [k, () => v]))
     : undefined`
@@ -172,10 +173,8 @@ const template = (code, usesPageOrOpts) => {
     return `async (url, _, opts) => {
     ${withResponse}
     const page = {}
-    page.content = async () => _html
-    page.url = () => url
     ${extensions}
-    return (${code})({ page, response, ...rest, url })
+    return (${code})({ page, response, ...rest })
   }`
   }
 

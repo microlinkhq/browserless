@@ -116,8 +116,9 @@ test('page template includes response in function call', t => {
   t.true(source.includes('...rest'))
 })
 
-test('needsBrowser is false when page is only used as content', t => {
-  t.false(template.needsBrowser('({ page }) => page.content()'))
+test('needsBrowser is true when page access is not a stub', t => {
+  t.true(template.needsBrowser('({ page }) => page.content()'))
+  t.true(template.needsBrowser('({ page }) => page.url()'))
   t.true(template.needsBrowser('({ page }) => page.title()'))
   t.true(template.needsBrowser('({ page }) => "ok"'))
   t.true(template.needsBrowser('({ page, response }) => response.status()'))
@@ -126,18 +127,9 @@ test('needsBrowser is false when page is only used as content', t => {
 test('needsBrowser treats extendPage keys as stubs', t => {
   t.false(template.needsBrowser('({ page }) => page.ping()', { ping: 'pong' }))
   t.false(template.needsBrowser('({ page: p }) => p.ping()', { ping: 'pong' }))
+  t.false(template.needsBrowser('({ page }) => page.html()', { html: '<p>hi</p>' }))
+  t.false(template.needsBrowser('({ page }) => page.url()', { url: 'https://example.com' }))
   t.true(template.needsBrowser('({ page }) => page.title()', { ping: 'pong' }))
-})
-
-test('stub page template skips puppeteer and exposes content', async t => {
-  const code = '({ page }) => page.content()'
-  const source = template(code, {
-    usesPage: true,
-    needsBrowser: false
-  })
-  t.false(source.includes('puppeteer'))
-  const fn = new Function(`return (${source})`)()
-  t.is(await fn('https://example.com', undefined, { _html: '<p>hi</p>' }), '<p>hi</p>')
 })
 
 test('extendPage JSON values become async getters on a stub page', async t => {
@@ -147,8 +139,25 @@ test('extendPage JSON values become async getters on a stub page', async t => {
     needsBrowser: false,
     extendPage: { ping: 'pong' }
   })
+  t.false(source.includes('puppeteer'))
   const fn = new Function(`return (${source})`)()
   t.is(await fn('https://example.com', undefined, { _extendPage: { ping: 'pong' } }), 'pong')
+})
+
+test('extendPage url and html are stub methods', async t => {
+  const code = 'async ({ page }) => ({ url: await page.url(), html: await page.html() })'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: { url: 'https://example.com', html: '<p>hi</p>' }
+  })
+  const fn = new Function(`return (${source})`)()
+  t.deepEqual(
+    await fn('https://other.example', undefined, {
+      _extendPage: { url: 'https://example.com', html: '<p>hi</p>' }
+    }),
+    { url: 'https://example.com', html: '<p>hi</p>' }
+  )
 })
 
 test('extendPage method shorthand with an arrow in the body still inlines', async t => {
@@ -157,15 +166,19 @@ test('extendPage method shorthand with an arrow in the body still inlines', asyn
     usesPage: true,
     needsBrowser: false,
     extendPage: {
+      html: '<h1>ok</h1>',
       echo () {
-        const pick = () => this.content()
+        const pick = () => this.html()
         return pick()
       }
     }
   })
-  t.true(source.includes('function ('))
+  t.true(source.includes('async function ('))
   const fn = new Function(`return (${source})`)()
-  t.is(await fn('https://example.com', undefined, { _html: '<h1>ok</h1>' }), '<h1>ok</h1>')
+  t.is(
+    await fn('https://example.com', undefined, { _extendPage: { html: '<h1>ok</h1>' } }),
+    '<h1>ok</h1>'
+  )
 })
 
 test('extendPage method shorthand is inlined as a function expression', async t => {
@@ -174,15 +187,19 @@ test('extendPage method shorthand is inlined as a function expression', async t 
     usesPage: true,
     needsBrowser: false,
     extendPage: {
+      html: '<h1>ok</h1>',
       echo () {
-        return this.content()
+        return this.html()
       }
     }
   })
   t.false(source.includes('puppeteer'))
-  t.true(source.includes('function ('))
+  t.true(source.includes('async function ('))
   const fn = new Function(`return (${source})`)()
-  t.is(await fn('https://example.com', undefined, { _html: '<h1>ok</h1>' }), '<h1>ok</h1>')
+  t.is(
+    await fn('https://example.com', undefined, { _extendPage: { html: '<h1>ok</h1>' } }),
+    '<h1>ok</h1>'
+  )
 })
 
 test('extendPage quoted method keys inline as anonymous functions', async t => {
@@ -196,7 +213,7 @@ test('extendPage quoted method keys inline as anonymous functions', async t => {
       }
     }
   })
-  t.true(source.includes('function ('))
+  t.true(source.includes('async function ('))
   t.false(source.includes("function 'cache-status'"))
   const fn = new Function(`return (${source})`)()
   t.is(await fn('https://example.com', undefined, {}), 'ok')
@@ -209,7 +226,7 @@ test('extendPage arrows cannot use this', t => {
         usesPage: true,
         needsBrowser: false,
         extendPage: {
-          echo: () => this.content()
+          echo: () => this.html()
         }
       }),
     { message: /cannot use `this`/ }
@@ -225,33 +242,53 @@ test('extendPage arrows without this stay arrows', async t => {
       echo: () => 'pong'
     }
   })
-  t.true(source.includes('() =>'))
+  t.true(source.includes('async () =>'))
   const fn = new Function(`return (${source})`)()
   t.is(await fn('https://example.com', undefined, {}), 'pong')
 })
 
-test('extendPage functions can read stub page.content', async t => {
+test('extendPage methods can await', async t => {
+  const code = '({ page }) => page.delay(1)'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      delay: async (...args) => {
+        await new Promise(resolve => setTimeout(resolve, ...args))
+        return args[0]
+      }
+    }
+  })
+  t.true(source.includes('async ('))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, {}), 1)
+})
+
+test('extendPage functions can read stub page.html', async t => {
   const code = '({ page }) => page.echo()'
   const source = template(code, {
     usesPage: true,
     needsBrowser: false,
     extendPage: {
+      html: '<h1>ok</h1>',
       echo: async function echo () {
-        return this.content()
+        return this.html()
       }
     }
   })
   t.false(source.includes('puppeteer'))
   const fn = new Function(`return (${source})`)()
-  t.is(await fn('https://example.com', undefined, { _html: '<h1>ok</h1>' }), '<h1>ok</h1>')
+  t.is(
+    await fn('https://example.com', undefined, { _extendPage: { html: '<h1>ok</h1>' } }),
+    '<h1>ok</h1>'
+  )
 })
 
-test('_extendPage and _html are not leaked to user function opts', async t => {
+test('_extendPage is not leaked to user function opts', async t => {
   const code = '(opts) => Object.keys(opts).sort()'
   const source = template(code)
   const fn = new Function(`return (${source})`)()
   const result = await fn('https://example.com', undefined, {
-    _html: '<p>x</p>',
     _extendPage: { ping: 'pong' },
     query: { foo: 'bar' }
   })
