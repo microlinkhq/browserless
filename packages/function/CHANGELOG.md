@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.11.0](https://github.com/microlinkhq/browserless/compare/v13.10.1...v13.11.0) (2026-09-19)
+
+### Features
+
+* **function:** add extendPage ([#937](https://github.com/microlinkhq/browserless/issues/937)) ([8dbd970](https://github.com/microlinkhq/browserless/commit/8dbd970637412366f3c868a55ee0cde73741e823))
+
 ## [13.10.0](https://github.com/microlinkhq/browserless/compare/v13.9.23...v13.10.0) (2026-09-16)
 
 ### Features
