@@ -141,7 +141,7 @@ test('extendPage JSON values become async getters on a stub page', async t => {
   })
   t.false(source.includes('puppeteer'))
   const fn = new Function(`return (${source})`)()
-  t.is(await fn('https://example.com', undefined, { _extendPage: { ping: 'pong' } }), 'pong')
+  t.is(await fn('https://example.com', undefined, { pageValues: { ping: 'pong' } }), 'pong')
 })
 
 test('extendPage url and html are stub methods', async t => {
@@ -154,7 +154,7 @@ test('extendPage url and html are stub methods', async t => {
   const fn = new Function(`return (${source})`)()
   t.deepEqual(
     await fn('https://other.example', undefined, {
-      _extendPage: { url: 'https://example.com', html: '<p>hi</p>' }
+      pageValues: { url: 'https://example.com', html: '<p>hi</p>' }
     }),
     { url: 'https://example.com', html: '<p>hi</p>' }
   )
@@ -176,7 +176,7 @@ test('extendPage method shorthand with an arrow in the body still inlines', asyn
   t.true(source.includes('async function ('))
   const fn = new Function(`return (${source})`)()
   t.is(
-    await fn('https://example.com', undefined, { _extendPage: { html: '<h1>ok</h1>' } }),
+    await fn('https://example.com', undefined, { pageValues: { html: '<h1>ok</h1>' } }),
     '<h1>ok</h1>'
   )
 })
@@ -197,7 +197,7 @@ test('extendPage method shorthand is inlined as a function expression', async t 
   t.true(source.includes('async function ('))
   const fn = new Function(`return (${source})`)()
   t.is(
-    await fn('https://example.com', undefined, { _extendPage: { html: '<h1>ok</h1>' } }),
+    await fn('https://example.com', undefined, { pageValues: { html: '<h1>ok</h1>' } }),
     '<h1>ok</h1>'
   )
 })
@@ -279,17 +279,17 @@ test('extendPage functions can read stub page.html', async t => {
   t.false(source.includes('puppeteer'))
   const fn = new Function(`return (${source})`)()
   t.is(
-    await fn('https://example.com', undefined, { _extendPage: { html: '<h1>ok</h1>' } }),
+    await fn('https://example.com', undefined, { pageValues: { html: '<h1>ok</h1>' } }),
     '<h1>ok</h1>'
   )
 })
 
-test('_extendPage is not leaked to user function opts', async t => {
+test('pageValues is not leaked to user function opts', async t => {
   const code = '(opts) => Object.keys(opts).sort()'
   const source = template(code)
   const fn = new Function(`return (${source})`)()
   const result = await fn('https://example.com', undefined, {
-    _extendPage: { ping: 'pong' },
+    pageValues: { ping: 'pong' },
     query: { foo: 'bar' }
   })
   t.deepEqual(result, ['query', 'response', 'url'])

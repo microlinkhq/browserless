@@ -126,7 +126,7 @@ const applyExtendPage = (extendPage = {}) => {
   const lines = []
   if (jsonKeys.length) {
     lines.push(`for (const name of ${JSON.stringify(jsonKeys)}) {
-        const value = _extendPage[name]
+        const value = pageValues[name]
         page[name] = async () => value
       }`)
   }
@@ -137,7 +137,7 @@ const applyExtendPage = (extendPage = {}) => {
 // _response is a plain JSON object serialized via isolated-function;
 // wrap each value as a method to match Puppeteer's HTTPResponse API
 const withResponse = `
-  const { _response: _r, _extendPage, ...rest } = opts
+  const { _response: _r, pageValues, ...rest } = opts
   const response = _r
     ? Object.fromEntries(Object.entries(_r).map(([k, v]) => [k, () => v]))
     : undefined`
