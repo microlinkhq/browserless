@@ -130,6 +130,19 @@ const createFunction = require('@browserless/function')({ tmpdir: '/tmp/function
 await createFunction.teardown()
 ```
 
+### extendPage
+
+Attach extra methods on `page`. JSON values become async getters. Functions are inlined as async methods (`this` is the page; use a function, not an arrow, when you need `this`). If the user function only uses these methods, Chromium is not started:
+
+```js
+const myFn = createFunction(({ page }) => page.html(), {
+  extendPage: { url, html }
+})
+
+const result = await myFn('https://example.com')
+// => { isFulfilled: true, value: html, ... }
+```
+
 ### Options
 
 ```js
@@ -143,6 +156,14 @@ const myFn = createFunction(code, {
   // Execution timeout in milliseconds
   timeout: 30000,
   
+  // Extra methods on `page`. JSON values become async getters; functions
+  // are inlined as async methods. If the function only uses these methods,
+  // Chromium is not started.
+  extendPage: {
+    url,
+    html
+  },
+
   // Options passed to browserless.goto()
   gotoOpts: {
     scripts: ['https://cdn.example.com/library.js'],

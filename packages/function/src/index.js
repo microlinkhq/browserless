@@ -47,6 +47,14 @@ module.exports = ({ tmpdir } = {}) => {
   const isolatedFunction = createIsolatedFunction({ tmpdir, nodePaths })
   const runFunction = createRunFunction(isolatedFunction)
 
+  const toPageValues = extendPage => {
+    if (!extendPage) return
+    const values = Object.fromEntries(
+      Object.entries(extendPage).filter(([, value]) => typeof value !== 'function')
+    )
+    return Object.keys(values).length ? values : undefined
+  }
+
   const createFunction = (
     fn,
     {
@@ -54,12 +62,21 @@ module.exports = ({ tmpdir } = {}) => {
       retry = 2,
       timeout = 30000,
       gotoOpts,
+      extendPage,
+      needsBrowser: needsBrowserOverride,
       ...opts
     } = {}
   ) => {
     const code = stringify(fn)
-    const needsNetwork = createRunFunction.isUsingPage(code)
-    const source = createRunFunction.buildTemplate(code, needsNetwork)
+    const usesPage = createRunFunction.isUsingPage(code)
+    const needsNetwork =
+      needsBrowserOverride === true || createRunFunction.needsBrowser(code, extendPage, usesPage)
+    const source = createRunFunction.buildTemplate(code, {
+      usesPage,
+      needsBrowser: needsNetwork,
+      extendPage
+    })
+    const pageValues = toPageValues(extendPage)
     let browserPromise
 
     const getBrowser = async () => {
@@ -86,8 +103,10 @@ module.exports = ({ tmpdir } = {}) => {
             url,
             code,
             device,
+            extendPage,
             ...opts,
             ...fnOpts,
+            ...(pageValues && { pageValues }),
             ...(isHttpResponse(response) && { _response: serializeResponse(response) })
           }
 
@@ -120,8 +139,10 @@ module.exports = ({ tmpdir } = {}) => {
       const runFunctionOpts = {
         url,
         code,
+        extendPage,
         ...opts,
-        ...fnOpts
+        ...fnOpts,
+        ...(pageValues && { pageValues })
       }
 
       if (runFunctionOpts.code === code) {

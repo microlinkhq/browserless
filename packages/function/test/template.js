@@ -116,6 +116,185 @@ test('page template includes response in function call', t => {
   t.true(source.includes('...rest'))
 })
 
+test('needsBrowser is true when page access is not a stub', t => {
+  t.true(template.needsBrowser('({ page }) => page.content()'))
+  t.true(template.needsBrowser('({ page }) => page.url()'))
+  t.true(template.needsBrowser('({ page }) => page.title()'))
+  t.true(template.needsBrowser('({ page }) => "ok"'))
+  t.true(template.needsBrowser('({ page, response }) => response.status()'))
+})
+
+test('needsBrowser treats extendPage keys as stubs', t => {
+  t.false(template.needsBrowser('({ page }) => page.ping()', { ping: 'pong' }))
+  t.false(template.needsBrowser('({ page: p }) => p.ping()', { ping: 'pong' }))
+  t.false(template.needsBrowser('({ page }) => page.html()', { html: '<p>hi</p>' }))
+  t.false(template.needsBrowser('({ page }) => page.url()', { url: 'https://example.com' }))
+  t.true(template.needsBrowser('({ page }) => page.title()', { ping: 'pong' }))
+})
+
+test('extendPage JSON values become async getters on a stub page', async t => {
+  const code = '({ page }) => page.ping()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: { ping: 'pong' }
+  })
+  t.false(source.includes('puppeteer'))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, { pageValues: { ping: 'pong' } }), 'pong')
+})
+
+test('extendPage url and html are stub methods', async t => {
+  const code = 'async ({ page }) => ({ url: await page.url(), html: await page.html() })'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: { url: 'https://example.com', html: '<p>hi</p>' }
+  })
+  const fn = new Function(`return (${source})`)()
+  t.deepEqual(
+    await fn('https://other.example', undefined, {
+      pageValues: { url: 'https://example.com', html: '<p>hi</p>' }
+    }),
+    { url: 'https://example.com', html: '<p>hi</p>' }
+  )
+})
+
+test('extendPage method shorthand with an arrow in the body still inlines', async t => {
+  const code = '({ page }) => page.echo()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      html: '<h1>ok</h1>',
+      echo () {
+        const pick = () => this.html()
+        return pick()
+      }
+    }
+  })
+  t.true(source.includes('async function ('))
+  const fn = new Function(`return (${source})`)()
+  t.is(
+    await fn('https://example.com', undefined, { pageValues: { html: '<h1>ok</h1>' } }),
+    '<h1>ok</h1>'
+  )
+})
+
+test('extendPage method shorthand is inlined as a function expression', async t => {
+  const code = '({ page }) => page.echo()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      html: '<h1>ok</h1>',
+      echo () {
+        return this.html()
+      }
+    }
+  })
+  t.false(source.includes('puppeteer'))
+  t.true(source.includes('async function ('))
+  const fn = new Function(`return (${source})`)()
+  t.is(
+    await fn('https://example.com', undefined, { pageValues: { html: '<h1>ok</h1>' } }),
+    '<h1>ok</h1>'
+  )
+})
+
+test('extendPage quoted method keys inline as anonymous functions', async t => {
+  const code = '({ page }) => page["cache-status"]()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      'cache-status' () {
+        return 'ok'
+      }
+    }
+  })
+  t.true(source.includes('async function ('))
+  t.false(source.includes("function 'cache-status'"))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, {}), 'ok')
+})
+
+test('extendPage arrows cannot use this', t => {
+  t.throws(
+    () =>
+      template('({ page }) => page.echo()', {
+        usesPage: true,
+        needsBrowser: false,
+        extendPage: {
+          echo: () => this.html()
+        }
+      }),
+    { message: /cannot use `this`/ }
+  )
+})
+
+test('extendPage arrows without this stay arrows', async t => {
+  const code = '({ page }) => page.echo()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      echo: () => 'pong'
+    }
+  })
+  t.true(source.includes('async () =>'))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, {}), 'pong')
+})
+
+test('extendPage methods can await', async t => {
+  const code = '({ page }) => page.delay(1)'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      delay: async (...args) => {
+        await new Promise(resolve => setTimeout(resolve, ...args))
+        return args[0]
+      }
+    }
+  })
+  t.true(source.includes('async ('))
+  const fn = new Function(`return (${source})`)()
+  t.is(await fn('https://example.com', undefined, {}), 1)
+})
+
+test('extendPage functions can read stub page.html', async t => {
+  const code = '({ page }) => page.echo()'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: {
+      html: '<h1>ok</h1>',
+      echo: async function echo () {
+        return this.html()
+      }
+    }
+  })
+  t.false(source.includes('puppeteer'))
+  const fn = new Function(`return (${source})`)()
+  t.is(
+    await fn('https://example.com', undefined, { pageValues: { html: '<h1>ok</h1>' } }),
+    '<h1>ok</h1>'
+  )
+})
+
+test('pageValues is not leaked to user function opts', async t => {
+  const code = '(opts) => Object.keys(opts).sort()'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, {
+    pageValues: { ping: 'pong' },
+    query: { foo: 'bar' }
+  })
+  t.deepEqual(result, ['query', 'response', 'url'])
+})
+
 test('reuse page usage analysis to avoid parsing code twice', t => {
   const templatePath = require.resolve('../src/template')
   const script = `

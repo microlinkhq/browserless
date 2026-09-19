@@ -11,8 +11,13 @@ module.exports =
       code,
       vmOpts,
       browserWSEndpoint,
-      needsNetwork = template.isUsingPage(code),
-      source = template(code, needsNetwork),
+      extendPage,
+      needsNetwork = template.needsBrowser(code, extendPage),
+      source = template(code, {
+        usesPage: template.isUsingPage(code),
+        needsBrowser: needsNetwork,
+        extendPage
+      }),
       ...opts
     }) => {
       const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
@@ -29,4 +34,5 @@ module.exports =
     }
 
 module.exports.isUsingPage = template.isUsingPage
+module.exports.needsBrowser = template.needsBrowser
 module.exports.buildTemplate = template
