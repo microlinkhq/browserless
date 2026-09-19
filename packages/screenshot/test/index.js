@@ -106,6 +106,39 @@ test('a quality asked for without a lossy type still captures', async t => {
   t.deepEqual(jpeg.subarray(0, 3), JPEG_MAGIC, 'an explicit jpeg still honours quality')
 })
 
+// `encoding: 'base64'` makes puppeteer return a string, and the blank-page
+// check under `waitUntil: 'auto'` handed it to sharp as if it were image bytes:
+// "Input buffer contains unsupported image format".
+test('`encoding: base64` returns the capture as base64', async t => {
+  const browserless = await getBrowserContext(t)
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<html><body style="background:#c84"><h1>ok</h1></body></html>')
+  })
+
+  const run = browserless.withPage((page, goto) => async () => {
+    const screenshot = createScreenshot({ goto })(page)
+    const opts = { adblock: false, timeout: 10000, type: 'jpeg', encoding: 'base64' }
+    return {
+      auto: await screenshot(url, opts),
+      load: await screenshot(url, { ...opts, waitUntil: 'load' }),
+      fullPage: await screenshot(url, { ...opts, fullPage: true }),
+      overlay: await screenshot(url, { ...opts, overlay: { background: '#fff' } }),
+      binary: await screenshot(url, { ...opts, encoding: 'binary' })
+    }
+  })
+
+  const { binary, overlay, ...captures } = await run()
+  for (const [name, value] of Object.entries(captures)) {
+    t.is(typeof value, 'string', name)
+    t.deepEqual(Buffer.from(value, 'base64').subarray(0, 3), JPEG_MAGIC, name)
+  }
+  t.is(typeof overlay, 'string', 'overlay')
+  t.deepEqual(Buffer.from(overlay, 'base64').subarray(0, 4), PNG_MAGIC, 'overlay composites a png')
+  t.deepEqual(binary.subarray(0, 3), JPEG_MAGIC, 'binary stays binary')
+})
+
 // puppeteer settles the encoder from the `path` extension when `type` is absent,
 // and validates `quality` only after that — so `{ path: 'out.jpg', quality }` is
 // a capture it accepts. A guard that reads `type` alone would strip the quality
