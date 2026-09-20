@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.12.2](https://github.com/microlinkhq/browserless/compare/v13.12.1...v13.12.2) (2026-09-20)
+
+### Performance Improvements
+
+* **goto:** credit the network idle window already served ([#941](https://github.com/microlinkhq/browserless/issues/941)) ([96a3d3d](https://github.com/microlinkhq/browserless/commit/96a3d3d18adaf5f68e0fa7a27aa6b21b19303911))
+
 ## [13.12.1](https://github.com/microlinkhq/browserless/compare/v13.12.0...v13.12.1) (2026-09-20)
 
 ### Bug Fixes
