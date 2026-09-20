@@ -366,6 +366,12 @@ test('reuse page usage analysis to avoid parsing code twice', t => {
   t.is(stdout.trim(), '1')
 })
 
+test('parse errors do not reuse a previous AST', t => {
+  t.true(template.isUsingPage('({ page }) => page.title()'))
+  t.throws(() => template.isUsingPage('not valid !!!'), { instanceOf: SyntaxError })
+  t.throws(() => template.isUsingPage('not valid !!!'), { instanceOf: SyntaxError })
+})
+
 test('inspect is exported from the package', t => {
   t.is(require('..').inspect, template.inspect)
 })
@@ -377,6 +383,7 @@ test('inspect collects page.extract methods and nested keys', t => {
   t.deepEqual([...methods], ['extract'])
   t.is(calls.length, 1)
   t.is(calls[0].method, 'extract')
+  t.false('arguments' in calls[0])
   t.true(calls[0].keys.has('version'))
   t.true(calls[0].keys.has('evaluate'))
 })

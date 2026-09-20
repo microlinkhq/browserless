@@ -7,9 +7,10 @@ let cachedCode
 let cachedAst
 const parse = code => {
   if (code === cachedCode) return cachedAst
+  const ast = acorn.parse(code, { ecmaVersion: 2023, sourceType: 'module' })
   cachedCode = code
-  cachedAst = acorn.parse(code, { ecmaVersion: 2023, sourceType: 'module' })
-  return cachedAst
+  cachedAst = ast
+  return ast
 }
 
 const propertyName = node => {
@@ -123,11 +124,7 @@ const collectKeys = (node, keys = new Set()) => {
       continue
     }
     if (prop.type !== 'Property') continue
-    const name = prop.computed
-      ? prop.key.type === 'Literal'
-        ? prop.key.value
-        : undefined
-      : literalName(prop.key)
+    const name = !prop.computed || prop.key.type === 'Literal' ? literalName(prop.key) : undefined
     if (name != null) keys.add(name)
     collectKeys(prop.value, keys)
   }
@@ -170,7 +167,7 @@ const inspect = code => {
       methods.add(method)
       const keys = new Set()
       for (const arg of node.arguments) collectKeys(arg, keys)
-      calls.push({ method, arguments: node.arguments, keys })
+      calls.push({ method, keys })
     },
     MemberExpression (node, ancestors) {
       const parent = ancestors[ancestors.length - 2]
