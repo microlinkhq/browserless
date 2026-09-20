@@ -78,3 +78,23 @@ test('extendPage url and html skip the browser', async t => {
   t.true(!!profiling)
   t.true(!!logging)
 })
+
+test('extendPage stub still receives the target url', async t => {
+  const code = async ({ page, url }) => ({
+    url,
+    html: await page.html()
+  })
+  const myFn = browserlessFunction(code, {
+    ...noBrowser,
+    extendPage: { html: '<h1>stub</h1>' }
+  })
+
+  const { profiling, logging, ...result } = await myFn('https://example.com')
+
+  t.deepEqual(result, {
+    isFulfilled: true,
+    value: { url: 'https://example.com', html: '<h1>stub</h1>' }
+  })
+  t.true(!!profiling)
+  t.true(!!logging)
+})

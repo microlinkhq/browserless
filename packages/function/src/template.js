@@ -172,7 +172,7 @@ const template = (code, usesPageOrOpts) => {
     ${withResponse}
     const page = {}
     ${extensions}
-    return (${code})({ page, response, ...rest })
+    return (${code})({ page, response, ...rest, url })
   }`
   }
 
