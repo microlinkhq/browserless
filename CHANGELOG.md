@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.11.2](https://github.com/microlinkhq/browserless/compare/v13.11.1...v13.11.2) (2026-09-20)
+
+### Bug Fixes
+
+* **screenshot:** keep the capture binary until it is returned ([#938](https://github.com/microlinkhq/browserless/issues/938)) ([352757e](https://github.com/microlinkhq/browserless/commit/352757ea59337118ebcf8dbcbe4b60a4740abc34))
+
 ## [13.11.1](https://github.com/microlinkhq/browserless/compare/v13.11.0...v13.11.1) (2026-09-20)
 
 ### Bug Fixes
