@@ -94,6 +94,40 @@ test('waitUntilAuto never asks for a negative window', async t => {
   t.is(calls[0].idleTime, 0)
 })
 
+test('waitUntilAuto re-asks after activity during a credited wait', async t => {
+  const calls = []
+  let release
+  const page = createTrackablePage(opts => {
+    calls.push(opts)
+    if (calls.length === 1) {
+      return new Promise(resolve => {
+        release = resolve
+      })
+    }
+    return Promise.resolve()
+  })
+
+  networkIdle.track(page, { concurrency: 2 })
+  await wait(120)
+
+  const goto = createGoto({ timeout: 10000 })
+  const pending = goto.waitUntilAuto(page, { timeout: 5000 })
+
+  while (calls.length === 0) await wait(5)
+
+  t.true(calls[0].idleTime < 500, `expected a credited window, got ${calls[0].idleTime}`)
+
+  for (let i = 0; i < 3; i++) page.emit('request')
+  page.emit('requestfinished')
+  release()
+
+  await pending
+
+  t.is(calls.length, 2)
+  t.true(calls[1].idleTime > calls[0].idleTime)
+  t.true(calls[1].idleTime >= 450)
+})
+
 test('waitUntilAuto respects timeout', async t => {
   const page = {
     waitForNetworkIdle: () => new Promise(resolve => setTimeout(resolve, 10000))

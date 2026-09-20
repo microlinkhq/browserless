@@ -33,6 +33,8 @@ const track = (page, { concurrency }) => {
   page.on('requestfinished', onSettled)
   page.on('requestfailed', onSettled)
 
+  // Intentionally unused in production: a reused page keeps one tracker
+  // and its quiet history across gotos.
   state.detach = () => {
     page.off('request', onRequest)
     page.off('requestfinished', onSettled)

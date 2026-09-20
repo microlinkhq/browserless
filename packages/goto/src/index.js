@@ -355,7 +355,21 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
     const remaining = Math.max(0, NETWORK_IDLE_TIME - served)
 
     return run({
-      fn: page.waitForNetworkIdle({ idleTime: remaining, concurrency: NETWORK_IDLE_CONCURRENCY }),
+      fn: (async () => {
+        // Puppeteer restarts its timer with the same idleTime after inflight
+        // exceeds concurrency. If the tracker reset while that call was
+        // pending, the leftover remainder is not a full window — ask again.
+        let left = remaining
+        while (true) {
+          const since = page[networkIdle.STATE]?.quietSince
+          await page.waitForNetworkIdle({
+            idleTime: left,
+            concurrency: NETWORK_IDLE_CONCURRENCY
+          })
+          if (page[networkIdle.STATE]?.quietSince === since) return
+          left = Math.max(0, NETWORK_IDLE_TIME - networkIdle.quietFor(page))
+        }
+      })(),
       debug: { fn: 'waitUntilAuto:networkIdle', served, remaining },
       timeout
     })
