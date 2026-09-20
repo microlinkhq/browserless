@@ -365,3 +365,65 @@ test('reuse page usage analysis to avoid parsing code twice', t => {
   t.is(status, 0, stderr)
   t.is(stdout.trim(), '1')
 })
+
+test('inspect is exported from the package', t => {
+  t.is(require('..').inspect, template.inspect)
+})
+
+test('inspect collects page.extract methods and nested keys', t => {
+  const { methods, calls } = template.inspect(
+    "({ page }) => page.extract({ version: { evaluate: 'window.next.version' } })"
+  )
+  t.deepEqual([...methods], ['extract'])
+  t.is(calls.length, 1)
+  t.is(calls[0].method, 'extract')
+  t.true(calls[0].keys.has('version'))
+  t.true(calls[0].keys.has('evaluate'))
+})
+
+test('inspect follows renamed page and quoted access', t => {
+  t.true(
+    template
+      .inspect("({ page: p }) => p.extract({ version: { evaluate: 'x' } })")
+      .methods.has('extract')
+  )
+  t.true(
+    template
+      .inspect("({ page }) => page['extract']({ version: { evaluate: 'x' } })")
+      .methods.has('extract')
+  )
+  t.true(
+    template
+      .inspect('({ page }) => page["extract"]({ version: { evaluate: "x" } })')
+      .methods.has('extract')
+  )
+  t.true(
+    template
+      .inspect('obj => obj.page.extract({ title: { selector: "h1" } })')
+      .methods.has('extract')
+  )
+})
+
+test('inspect does not treat a later evaluate key as part of extract', t => {
+  const { calls } = template.inspect(
+    '({ page }) => page.extract({ title: { selector: "h1" } }) && ({ evaluate: 1 })'
+  )
+  t.is(calls[0].method, 'extract')
+  t.false(calls[0].keys.has('evaluate'))
+  t.true(calls[0].keys.has('title'))
+})
+
+test('inspect does not see evaluate on a rules identifier', t => {
+  const { calls } = template.inspect(
+    "({ page }) => { const rules = { evaluate: 'x' }; return page.extract(rules) }"
+  )
+  t.is(calls[0].method, 'extract')
+  t.false(calls[0].keys.has('evaluate'))
+})
+
+test('inspect records page.metadata without a call argument', t => {
+  const { methods, calls } = template.inspect('({ page }) => page.metadata()')
+  t.true(methods.has('metadata'))
+  t.is(calls[0].method, 'metadata')
+  t.is(calls[0].keys.size, 0)
+})

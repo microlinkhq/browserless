@@ -36,3 +36,4 @@ module.exports =
 module.exports.isUsingPage = template.isUsingPage
 module.exports.needsBrowser = template.needsBrowser
 module.exports.buildTemplate = template
+module.exports.inspect = template.inspect
