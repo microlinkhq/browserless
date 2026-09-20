@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.11.1](https://github.com/microlinkhq/browserless/compare/v13.11.0...v13.11.1) (2026-09-20)
+
+### Bug Fixes
+
+* **function:** pass url into stub-page templates ([#939](https://github.com/microlinkhq/browserless/issues/939)) ([5c04d07](https://github.com/microlinkhq/browserless/commit/5c04d07f7889ddb7e384898e0426fb2931b52000))
+
 ## [13.11.0](https://github.com/microlinkhq/browserless/compare/v13.10.1...v13.11.0) (2026-09-19)
 
 ### Features
