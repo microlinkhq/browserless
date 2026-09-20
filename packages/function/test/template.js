@@ -98,6 +98,41 @@ test('page template includes url in function call', t => {
   t.true(source.includes('{ page, response, ...rest, url }'))
 })
 
+test('stub-page template passes url to the user function', async t => {
+  const code = 'async ({ page, url }) => ({ url, html: await page.html() })'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: { html: '<p>hi</p>' }
+  })
+  t.true(source.includes('{ page, response, ...rest, url }'))
+  t.false(source.includes('puppeteer'))
+  const fn = new Function(`return (${source})`)()
+  t.deepEqual(
+    await fn('https://example.com', undefined, {
+      pageValues: { html: '<p>hi</p>' }
+    }),
+    { url: 'https://example.com', html: '<p>hi</p>' }
+  )
+})
+
+test('stub-page target url wins over opts.url', async t => {
+  const code = '({ page, url }) => url'
+  const source = template(code, {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: { html: '<p>hi</p>' }
+  })
+  const fn = new Function(`return (${source})`)()
+  t.is(
+    await fn('https://example.com', undefined, {
+      url: 'https://other.example',
+      pageValues: { html: '<p>hi</p>' }
+    }),
+    'https://example.com'
+  )
+})
+
 test('target url wins over opts.url', async t => {
   const code = '({ url }) => url'
   const source = template(code)
