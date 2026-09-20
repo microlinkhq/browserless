@@ -3,7 +3,15 @@
 const walk = require('acorn-walk')
 const acorn = require('acorn')
 
-const parse = code => acorn.parse(code, { ecmaVersion: 2023, sourceType: 'module' })
+let cachedCode
+let cachedAst
+const parse = code => {
+  if (code === cachedCode) return cachedAst
+  const ast = acorn.parse(code, { ecmaVersion: 2023, sourceType: 'module' })
+  cachedCode = code
+  cachedAst = ast
+  return ast
+}
 
 const propertyName = node => {
   if (node.computed) {
@@ -95,6 +103,82 @@ const needsBrowser = (code, extendPage, usesPage = isUsingPage(code)) => {
   if (isUsingResponse(code)) return true
   const { beyond, stub } = analyzePageAccess(code, Object.keys(extendPage || {}))
   return beyond || !stub
+}
+
+const literalName = node => {
+  if (!node) return
+  if (node.type === 'Identifier') return node.name
+  if (node.type === 'Literal') return node.value
+}
+
+const collectKeys = (node, keys = new Set()) => {
+  if (!node) return keys
+  if (node.type === 'ArrayExpression') {
+    for (const el of node.elements) collectKeys(el, keys)
+    return keys
+  }
+  if (node.type !== 'ObjectExpression') return keys
+  for (const prop of node.properties) {
+    if (prop.type === 'SpreadElement') {
+      collectKeys(prop.argument, keys)
+      continue
+    }
+    if (prop.type !== 'Property') continue
+    const name = !prop.computed || prop.key.type === 'Literal' ? literalName(prop.key) : undefined
+    if (name != null) keys.add(name)
+    collectKeys(prop.value, keys)
+  }
+  return keys
+}
+
+const isPageObject = (node, pageNames) => {
+  if (node.type === 'Identifier') return pageNames.has(node.name)
+  return node.type === 'MemberExpression' && propertyName(node) === 'page'
+}
+
+/**
+ * Page method names and calls in `code`. Includes renamed bindings
+ * (`{ page: p } => p.extract(...)`) and `obj.page.extract(...)`.
+ * `keys` are nested object-literal keys on the call arguments.
+ */
+const inspect = code => {
+  const ast = parse(code)
+  const pageNames = new Set(['page'])
+  const methods = new Set()
+  const calls = []
+
+  walk.ancestor(ast, {
+    ObjectPattern (node) {
+      for (const prop of node.properties) {
+        if (
+          prop.type === 'Property' &&
+          prop.key.name === 'page' &&
+          prop.value.type === 'Identifier'
+        ) {
+          pageNames.add(prop.value.name)
+        }
+      }
+    },
+    CallExpression (node) {
+      const callee = node.callee
+      if (callee.type !== 'MemberExpression' || !isPageObject(callee.object, pageNames)) return
+      const method = propertyName(callee)
+      if (method == null) return
+      methods.add(method)
+      const keys = new Set()
+      for (const arg of node.arguments) collectKeys(arg, keys)
+      calls.push({ method, keys })
+    },
+    MemberExpression (node, ancestors) {
+      const parent = ancestors[ancestors.length - 2]
+      if (parent?.type === 'CallExpression' && parent.callee === node) return
+      if (!isPageObject(node.object, pageNames)) return
+      const method = propertyName(node)
+      if (method != null) methods.add(method)
+    }
+  })
+
+  return { methods, calls }
 }
 
 const asAsyncExpr = src => (/^async\s/.test(src) ? src : `async ${src}`)
@@ -207,3 +291,4 @@ const template = (code, usesPageOrOpts) => {
 module.exports = template
 module.exports.isUsingPage = isUsingPage
 module.exports.needsBrowser = needsBrowser
+module.exports.inspect = inspect

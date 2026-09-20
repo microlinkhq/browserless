@@ -169,3 +169,4 @@ module.exports = ({ tmpdir } = {}) => {
 
 module.exports.isHttpResponse = isHttpResponse
 module.exports.serializeResponse = serializeResponse
+module.exports.inspect = createRunFunction.inspect
