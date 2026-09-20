@@ -12,6 +12,7 @@ const isUrl = require('is-url-http')
 const { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY, CDPSessionEvent } = require('puppeteer')
 
 const { getClientHints } = require('./client-hints')
+const networkIdle = require('./network-idle')
 const adblock = require('./adblock')
 const dismiss = require('./dismiss')
 const permissions = require('./permissions')
@@ -45,6 +46,9 @@ const PORTRAIT = { angle: 0, type: 'portraitPrimary' }
 const LANDSCAPE = { angle: 90, type: 'landscapePrimary' }
 
 const METRICS_OVERRIDE = 'Emulation.setDeviceMetricsOverride'
+
+const NETWORK_IDLE_TIME = 500
+const NETWORK_IDLE_CONCURRENCY = 2
 
 const screensByConnection = new WeakMap()
 
@@ -347,9 +351,12 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
   // related https://github.com/puppeteer/puppeteer/issues/1353
   const _waitUntilAuto = (page, { timeout }) => {
+    const served = networkIdle.quietFor(page)
+    const remaining = Math.max(0, NETWORK_IDLE_TIME - served)
+
     return run({
-      fn: page.waitForNetworkIdle({ idleTime: 500, concurrency: 2 }),
-      debug: 'waitUntilAuto:networkIdle',
+      fn: page.waitForNetworkIdle({ idleTime: remaining, concurrency: NETWORK_IDLE_CONCURRENCY }),
+      debug: { fn: 'waitUntilAuto:networkIdle', served, remaining },
       timeout
     })
   }
@@ -391,6 +398,11 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
 
     const isWaitUntilAuto = waitUntil === 'auto'
     if (isWaitUntilAuto) waitUntil = 'load'
+
+    // Attached before navigation so the idle window is measured from when the
+    // page actually went quiet, rather than from whenever `waitUntilAuto` is
+    // reached. Idempotent, so a reused page keeps one tracker and its history.
+    if (isWaitUntilAuto) networkIdle.track(page, { concurrency: NETWORK_IDLE_CONCURRENCY })
 
     const prePromises = []
 
