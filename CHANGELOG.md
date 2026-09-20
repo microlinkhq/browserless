@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.12.1](https://github.com/microlinkhq/browserless/compare/v13.12.0...v13.12.1) (2026-09-20)
+
+### Bug Fixes
+
+* **function:** bump isolated-function to 0.2.7 ([cb08f0a](https://github.com/microlinkhq/browserless/commit/cb08f0a8fc0092bd255378f72762f6185d26c551))
+
 ## [13.12.0](https://github.com/microlinkhq/browserless/compare/v13.11.2...v13.12.0) (2026-09-20)
 
 ### Features
