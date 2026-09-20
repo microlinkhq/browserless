@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.12.0](https://github.com/microlinkhq/browserless/compare/v13.11.2...v13.12.0) (2026-09-20)
+
+### Features
+
+* **function:** export inspect for page calls ([#940](https://github.com/microlinkhq/browserless/issues/940)) ([378cd06](https://github.com/microlinkhq/browserless/commit/378cd064ef34d60cab559459fc8594fd52884a44))
+
 ## [13.11.1](https://github.com/microlinkhq/browserless/compare/v13.11.0...v13.11.1) (2026-09-20)
 
 ### Bug Fixes
