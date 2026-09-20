@@ -116,6 +116,13 @@ const isLossy = ({ type, path }) =>
     ? LOSSY_TYPES.has(type)
     : LOSSY_EXTENSIONS.has(extname(path ?? '').toLowerCase())
 
+// Captures stay binary until returned: the blank-page check and the overlay
+// decode them with sharp, which reads a base64 string as raw bytes.
+const encodeScreenshot = (image, encoding) =>
+  encoding === 'base64' && ArrayBuffer.isView(image)
+    ? Buffer.from(image.buffer, image.byteOffset, image.byteLength).toString('base64')
+    : image
+
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
 
@@ -127,6 +134,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         overlay: overlayOpts = SCREENSHOT_DEFAULT_OPTS.overlay,
         waitUntil = SCREENSHOT_DEFAULT_OPTS.waitUntil,
         isPageReady = SCREENSHOT_DEFAULT_OPTS.isPageReady,
+        encoding,
         ...opts
       } = {}
     ) => {
@@ -287,9 +295,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
           }
         }
 
-        return Object.keys(overlayOpts).length === 0
-          ? screenshot
-          : overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
+        const image =
+          Object.keys(overlayOpts).length === 0
+            ? screenshot
+            : await overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
+        return encodeScreenshot(image, encoding)
       } finally {
         page.off('dialog', onDialog)
       }
