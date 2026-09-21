@@ -33,7 +33,7 @@ const isolatedFunctionMock = `
                       SCOPE.map(name => "'" + name + "'").join(', ') +
                       ', ' +
                       body +
-                      ').call(' +
+                      ').call(exports, ' +
                       SCOPE.join(', ') +
                       '))'
                     )
