@@ -29,9 +29,21 @@ module.exports =
     }) => {
       const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
       const vmOptsAllow = vmOpts?.allow || {}
-      const fn = isolatedFunction(source, {
+      // `isolated-function` rejects `slot` unless the sentinel appears once.
+      // A second copy means an extendPage method mentioned it; inline the user
+      // code and take a full build so that call still runs.
+      const copies = source.split(SLOT).length - 1
+      const program =
+      copies > 1
+        ? template(code, {
+          usesPage: template.isUsingPage(code),
+          needsBrowser: needsNetwork,
+          extendPage
+        })
+        : source
+      const fn = isolatedFunction(program, {
         ...vmOpts,
-        ...(source.includes(SLOT) && { slot: code }),
+        ...(copies === 1 && { slot: code }),
         allow: {
           ...vmOptsAllow,
           permissions: [...(vmOptsAllow.permissions || []), ...permissions]

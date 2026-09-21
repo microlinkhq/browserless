@@ -16,6 +16,49 @@ const opts = {
 
 const fileUrl = `file://${path.join(__dirname, './fixtures/example.html')}`
 
+// Fills the slot the way isolated-function does: user code is compiled with
+// `new Function` at global scope, with the CommonJS bindings passed in.
+const isolatedFunctionMock = `
+        const SLOT = '__ISOLATED_FUNCTION_SLOT__'
+        const SCOPE = ['exports', 'require', 'module', '__filename', '__dirname']
+        const create = ({ tmpdir } = {}) => {
+          const instance = (source, { slot } = {}) => {
+            const filled =
+              slot === undefined
+                ? source
+                : source.replace(SLOT, () => {
+                    const body = JSON.stringify('return (' + slot + '\\n)')
+                    return (
+                      '(new Function(' +
+                      SCOPE.map(name => "'" + name + "'").join(', ') +
+                      ', ' +
+                      body +
+                      ').call(' +
+                      SCOPE.join(', ') +
+                      '))'
+                    )
+                  })
+            const fn = new Function(...SCOPE, 'return (' + filled + ')')(
+              exports,
+              require,
+              module,
+              __filename,
+              __dirname
+            )
+            return async (...args) => {
+              try {
+                return { isFulfilled: true, value: await fn(...args) }
+              } catch (error) {
+                return { isFulfilled: false, value: { message: error.message } }
+              }
+            }
+          }
+          instance.teardown = async () => {}
+          return instance
+        }
+        create.SLOT = SLOT
+        return create`
+
 const runPageFnSubprocess = body => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `
@@ -147,6 +190,21 @@ test('functions with the same shape share one built program', async t => {
   t.is(first.value, 42)
   t.is(second.value, 22)
   t.is(createFunction.shells.size, 1, 'both functions should be served by one built program')
+})
+
+test('an extendPage method may mention the slot sentinel', async t => {
+  const createFunction = require('..')()
+  const result = await createFunction(({ page }) => page.marker(), {
+    ...opts,
+    extendPage: {
+      marker () {
+        return '__ISOLATED_FUNCTION_SLOT__'
+      }
+    }
+  })(fileUrl)
+
+  t.true(result.isFulfilled)
+  t.is(result.value, '__ISOLATED_FUNCTION_SLOT__')
 })
 
 test('device is undefined for non-page functions', async t => {
@@ -333,24 +391,7 @@ test('response is serialized and reconstructed with callable methods (page funct
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        const SLOT = '__ISOLATED_FUNCTION_SLOT__'
-        const create = ({ tmpdir } = {}) => {
-          const instance = (source, { slot } = {}) => {
-            const filled = slot === undefined ? source : source.replace(SLOT, () => '(' + slot + ')')
-            const fn = new Function('return (' + filled + ')')()
-            return async (...args) => {
-              try {
-                return { isFulfilled: true, value: await fn(...args) }
-              } catch (error) {
-                return { isFulfilled: false, value: { message: error.message } }
-              }
-            }
-          }
-          instance.teardown = async () => {}
-          return instance
-        }
-        create.SLOT = SLOT
-        return create
+        ${isolatedFunctionMock}
       }
       if (request === '@cloudflare/puppeteer') {
         return { connect: async () => ({
@@ -433,24 +474,7 @@ test('response is undefined for non-page functions (subprocess)', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        const SLOT = '__ISOLATED_FUNCTION_SLOT__'
-        const create = ({ tmpdir } = {}) => {
-          const instance = (source, { slot } = {}) => {
-            const filled = slot === undefined ? source : source.replace(SLOT, () => '(' + slot + ')')
-            const fn = new Function('return (' + filled + ')')()
-            return async (...args) => {
-              try {
-                return { isFulfilled: true, value: await fn(...args) }
-              } catch (error) {
-                return { isFulfilled: false, value: { message: error.message } }
-              }
-            }
-          }
-          instance.teardown = async () => {}
-          return instance
-        }
-        create.SLOT = SLOT
-        return create
+        ${isolatedFunctionMock}
       }
       return originalLoad(request, parent, isMain)
     }
