@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.12.4](https://github.com/microlinkhq/browserless/compare/v13.12.3...v13.12.4) (2026-09-21)
+
+### Performance Improvements
+
+* **function:** build the template once and fill the user code per call ([#943](https://github.com/microlinkhq/browserless/issues/943)) ([7cbc5be](https://github.com/microlinkhq/browserless/commit/7cbc5be4a35f0ce9bb0b4ad31d22867fcdd23326))
+
 ## [13.12.3](https://github.com/microlinkhq/browserless/compare/v13.12.2...v13.12.3) (2026-09-21)
 
 **Note:** Version bump only for package browserless
