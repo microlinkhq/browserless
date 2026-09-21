@@ -3,6 +3,8 @@
 const { isBrowserlessError, ensureError } = require('@browserless/errors')
 const createIsolatedFunction = require('isolated-function')
 const requireOneOf = require('require-one-of')
+
+const { SLOT } = createIsolatedFunction
 const createRunFunction = require('./function')
 const path = require('path')
 
@@ -71,7 +73,7 @@ module.exports = ({ tmpdir } = {}) => {
     const usesPage = createRunFunction.isUsingPage(code)
     const needsNetwork =
       needsBrowserOverride === true || createRunFunction.needsBrowser(code, extendPage, usesPage)
-    const source = createRunFunction.buildTemplate(code, {
+    const source = createRunFunction.buildTemplate(SLOT, {
       usesPage,
       needsBrowser: needsNetwork,
       extendPage
@@ -163,6 +165,7 @@ module.exports = ({ tmpdir } = {}) => {
   }
 
   createFunction.teardown = () => isolatedFunction.teardown()
+  createFunction.shells = isolatedFunction.shells
 
   return createFunction
 }

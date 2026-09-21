@@ -16,6 +16,49 @@ const opts = {
 
 const fileUrl = `file://${path.join(__dirname, './fixtures/example.html')}`
 
+// Fills the slot the way isolated-function does: user code is compiled with
+// `new Function` at global scope, with the CommonJS bindings passed in.
+const isolatedFunctionMock = `
+        const SLOT = '__ISOLATED_FUNCTION_SLOT__'
+        const SCOPE = ['exports', 'require', 'module', '__filename', '__dirname']
+        const create = ({ tmpdir } = {}) => {
+          const instance = (source, { slot } = {}) => {
+            const filled =
+              slot === undefined
+                ? source
+                : source.replace(SLOT, () => {
+                    const body = JSON.stringify('return (' + slot + '\\n)')
+                    return (
+                      '(new Function(' +
+                      SCOPE.map(name => "'" + name + "'").join(', ') +
+                      ', ' +
+                      body +
+                      ').call(exports, ' +
+                      SCOPE.join(', ') +
+                      '))'
+                    )
+                  })
+            const fn = new Function(...SCOPE, 'return (' + filled + ')')(
+              exports,
+              require,
+              module,
+              __filename,
+              __dirname
+            )
+            return async (...args) => {
+              try {
+                return { isFulfilled: true, value: await fn(...args) }
+              } catch (error) {
+                return { isFulfilled: false, value: { message: error.message } }
+              }
+            }
+          }
+          instance.teardown = async () => {}
+          return instance
+        }
+        create.SLOT = SLOT
+        return create`
+
 const runPageFnSubprocess = body => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `
@@ -130,6 +173,38 @@ test('collect logs ', async t => {
   })
 
   t.true(!!profiling)
+})
+
+test('functions with the same shape share one built program', async t => {
+  // A fresh instance, so no other test has warmed its shell cache. No
+  // teardown: it deletes the shared tmpdir other tests install into.
+  const createFunction = require('..')()
+
+  const first = await createFunction(({ query }) => query.n * 2, opts)(fileUrl, {
+    query: { n: 21 }
+  })
+  const second = await createFunction(({ query }) => query.n + 1, opts)(fileUrl, {
+    query: { n: 21 }
+  })
+
+  t.is(first.value, 42)
+  t.is(second.value, 22)
+  t.is(createFunction.shells.size, 1, 'both functions should be served by one built program')
+})
+
+test('an extendPage method may mention the slot sentinel', async t => {
+  const createFunction = require('..')()
+  const result = await createFunction(({ page }) => page.marker(), {
+    ...opts,
+    extendPage: {
+      marker () {
+        return '__ISOLATED_FUNCTION_SLOT__'
+      }
+    }
+  })(fileUrl)
+
+  t.true(result.isFulfilled)
+  t.is(result.value, '__ISOLATED_FUNCTION_SLOT__')
 })
 
 test('device is undefined for non-page functions', async t => {
@@ -316,20 +391,7 @@ test('response is serialized and reconstructed with callable methods (page funct
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = (source) => {
-            const fn = new Function('return (' + source + ')')()
-            return async (...args) => {
-              try {
-                return { isFulfilled: true, value: await fn(...args) }
-              } catch (error) {
-                return { isFulfilled: false, value: { message: error.message } }
-              }
-            }
-          }
-          instance.teardown = async () => {}
-          return instance
-        }
+        ${isolatedFunctionMock}
       }
       if (request === '@cloudflare/puppeteer') {
         return { connect: async () => ({
@@ -412,20 +474,7 @@ test('response is undefined for non-page functions (subprocess)', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = (source) => {
-            const fn = new Function('return (' + source + ')')()
-            return async (...args) => {
-              try {
-                return { isFulfilled: true, value: await fn(...args) }
-              } catch (error) {
-                return { isFulfilled: false, value: { message: error.message } }
-              }
-            }
-          }
-          instance.teardown = async () => {}
-          return instance
-        }
+        ${isolatedFunctionMock}
       }
       return originalLoad(request, parent, isMain)
     }
