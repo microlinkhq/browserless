@@ -1,9 +1,16 @@
 'use strict'
 
+const { SLOT } = require('isolated-function')
+
 const template = require('./template')
 
 const [nodeMajor] = process.version.slice(1).split('.').map(Number)
 
+/**
+ * The template is built around `SLOT` rather than the user code, so every
+ * function with the same page shape shares one bundled program and only the
+ * slot is filled per call, instead of re-bundling the whole program.
+ */
 module.exports =
   isolatedFunction =>
     async ({
@@ -13,7 +20,7 @@ module.exports =
       browserWSEndpoint,
       extendPage,
       needsNetwork = template.needsBrowser(code, extendPage),
-      source = template(code, {
+      source = template(SLOT, {
         usesPage: template.isUsingPage(code),
         needsBrowser: needsNetwork,
         extendPage
@@ -24,6 +31,7 @@ module.exports =
       const vmOptsAllow = vmOpts?.allow || {}
       const fn = isolatedFunction(source, {
         ...vmOpts,
+        ...(source.includes(SLOT) && { slot: code }),
         allow: {
           ...vmOptsAllow,
           permissions: [...(vmOptsAllow.permissions || []), ...permissions]

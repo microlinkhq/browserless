@@ -132,6 +132,23 @@ test('collect logs ', async t => {
   t.true(!!profiling)
 })
 
+test('functions with the same shape share one built program', async t => {
+  // A fresh instance, so no other test has warmed its shell cache. No
+  // teardown: it deletes the shared tmpdir other tests install into.
+  const createFunction = require('..')()
+
+  const first = await createFunction(({ query }) => query.n * 2, opts)(fileUrl, {
+    query: { n: 21 }
+  })
+  const second = await createFunction(({ query }) => query.n + 1, opts)(fileUrl, {
+    query: { n: 21 }
+  })
+
+  t.is(first.value, 42)
+  t.is(second.value, 22)
+  t.is(createFunction.shells.size, 1, 'both functions should be served by one built program')
+})
+
 test('device is undefined for non-page functions', async t => {
   const code = ({ device }) => device === undefined
   const myFn = browserlessFunction(code, opts)
@@ -316,9 +333,11 @@ test('response is serialized and reconstructed with callable methods (page funct
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = (source) => {
-            const fn = new Function('return (' + source + ')')()
+        const SLOT = '__ISOLATED_FUNCTION_SLOT__'
+        const create = ({ tmpdir } = {}) => {
+          const instance = (source, { slot } = {}) => {
+            const filled = slot === undefined ? source : source.replace(SLOT, () => '(' + slot + ')')
+            const fn = new Function('return (' + filled + ')')()
             return async (...args) => {
               try {
                 return { isFulfilled: true, value: await fn(...args) }
@@ -330,6 +349,8 @@ test('response is serialized and reconstructed with callable methods (page funct
           instance.teardown = async () => {}
           return instance
         }
+        create.SLOT = SLOT
+        return create
       }
       if (request === '@cloudflare/puppeteer') {
         return { connect: async () => ({
@@ -412,9 +433,11 @@ test('response is undefined for non-page functions (subprocess)', t => {
 
     Module._load = function (request, parent, isMain) {
       if (request === 'isolated-function') {
-        return ({ tmpdir } = {}) => {
-          const instance = (source) => {
-            const fn = new Function('return (' + source + ')')()
+        const SLOT = '__ISOLATED_FUNCTION_SLOT__'
+        const create = ({ tmpdir } = {}) => {
+          const instance = (source, { slot } = {}) => {
+            const filled = slot === undefined ? source : source.replace(SLOT, () => '(' + slot + ')')
+            const fn = new Function('return (' + filled + ')')()
             return async (...args) => {
               try {
                 return { isFulfilled: true, value: await fn(...args) }
@@ -426,6 +449,8 @@ test('response is undefined for non-page functions (subprocess)', t => {
           instance.teardown = async () => {}
           return instance
         }
+        create.SLOT = SLOT
+        return create
       }
       return originalLoad(request, parent, isMain)
     }
