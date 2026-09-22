@@ -33,7 +33,7 @@
   ],
   "dependencies": {
     "@browserless/errors": "workspace:*",
-    "lighthouse": "~13.4.1"
+    "lighthouse": "~13.5.0"
   },
   "devDependencies": {
     "ava": "5"
