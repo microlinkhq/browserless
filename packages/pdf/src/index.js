@@ -147,7 +147,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             debug('ready:hydrateScroll', { remaining, hydrated, ...info })
           }
 
-          if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout })
+          if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout, credit: false })
           debug('retry', {
             waitUntil,
             isReady,

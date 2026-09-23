@@ -78,6 +78,22 @@ test('waitUntilAuto waits the full window again once the page goes busy', async 
   t.deepEqual(calls[0], { idleTime: 500, concurrency: 2 })
 })
 
+test('waitUntilAuto can disable idle-window credit', async t => {
+  const calls = []
+  const page = createTrackablePage(opts => {
+    calls.push(opts)
+    return Promise.resolve()
+  })
+
+  networkIdle.track(page, { concurrency: 2 })
+  await wait(600)
+
+  const goto = createGoto({ timeout: 10000 })
+  await goto.waitUntilAuto(page, { timeout: 5000, credit: false })
+
+  t.deepEqual(calls[0], { idleTime: 500, concurrency: 2 })
+})
+
 test('waitUntilAuto never asks for a negative window', async t => {
   const calls = []
   const page = createTrackablePage(opts => {
