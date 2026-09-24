@@ -235,7 +235,10 @@ module.exports = ({ goto, ...gotoOpts }) => {
           }
 
           retry += 1
-          await goto.waitUntilAuto(page, { timeout, credit: false })
+          await goto.waitUntilAuto(page, {
+            timeout: Math.max(0, timeout - elapsed()),
+            credit: false
+          })
         } while (!isReady)
 
         if (opts.fullPage) {

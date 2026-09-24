@@ -116,6 +116,7 @@ test('retries capture when navigation destroys the execution context', async t =
   t.deepEqual(result, Buffer.from('shot-ok'))
   t.is(calls, 2)
   t.is(goto.getWaitUntilAutoCalls(), 1)
+  t.true(goto.getWaitUntilAutoOpts().every(opts => opts.credit === false))
 })
 
 test('does not retry capture on a non-navigation error', async t => {
