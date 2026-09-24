@@ -234,11 +234,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
             debug('screenshot:hydrateScroll', { remaining, hydrated, ...info })
           }
 
+          const idleTimeout = timeout - elapsed()
+          if (idleTimeout <= 0) break
+
           retry += 1
-          await goto.waitUntilAuto(page, {
-            timeout: Math.max(0, timeout - elapsed()),
-            credit: false
-          })
+          await goto.waitUntilAuto(page, { timeout: idleTimeout, credit: false })
         } while (!isReady)
 
         if (opts.fullPage) {

@@ -169,6 +169,7 @@ test('stops white screenshot retries after timeout', async t => {
 
   t.true(Buffer.isBuffer(result))
   t.true(goto.getWaitUntilAutoCalls() >= 1)
+  t.true(goto.getWaitUntilAutoOpts().every(opts => opts.timeout > 0))
   t.is(page.getScreenshotCalls(), goto.getWaitUntilAutoCalls() + 1)
 })
 
