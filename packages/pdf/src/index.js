@@ -147,7 +147,10 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
             debug('ready:hydrateScroll', { remaining, hydrated, ...info })
           }
 
-          if (!isReady) await goto.waitUntilAuto(page, { timeout: rest.timeout })
+          const idleTimeout = pollTimeout - elapsed()
+          if (!isReady && idleTimeout > 0) {
+            await goto.waitUntilAuto(page, { timeout: idleTimeout, credit: false })
+          }
           debug('retry', {
             waitUntil,
             isReady,

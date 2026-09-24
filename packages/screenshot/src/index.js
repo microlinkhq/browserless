@@ -39,7 +39,7 @@ const captureWithNavigationRetry = async (capture, { page, goto, timeout }) => {
     } catch (error) {
       if (!isTransientContextLoss(page, error) || remaining() <= 0) throw error
       debug('captureWithNavigationRetry', { error: error.message })
-      await goto.waitUntilAuto(page, { timeout: remaining() })
+      await goto.waitUntilAuto(page, { timeout: remaining(), credit: false })
       if (remaining() <= 0) throw error
     }
   }
@@ -234,8 +234,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
             debug('screenshot:hydrateScroll', { remaining, hydrated, ...info })
           }
 
+          const idleTimeout = timeout - elapsed()
+          if (idleTimeout <= 0) break
+
           retry += 1
-          await goto.waitUntilAuto(page, { timeout })
+          await goto.waitUntilAuto(page, { timeout: idleTimeout, credit: false })
         } while (!isReady)
 
         if (opts.fullPage) {

@@ -38,6 +38,7 @@ const loadCreateScreenshot = isWhiteScreenshotMock => {
 
 const createGoto = ({ timeout = 1000, waitUntilAutoDelay = 0 } = {}) => {
   let waitUntilAutoCalls = 0
+  const waitUntilAutoOpts = []
 
   const goto = async (_page, { waitUntilAuto } = {}) => {
     if (waitUntilAuto) await waitUntilAuto(_page, { response: { headers: () => ({}) } })
@@ -46,11 +47,13 @@ const createGoto = ({ timeout = 1000, waitUntilAutoDelay = 0 } = {}) => {
 
   goto.run = async ({ fn }) => ({ isRejected: false, value: await fn })
   goto.timeouts = { action: () => timeout, goto: () => timeout }
-  goto.waitUntilAuto = async () => {
+  goto.waitUntilAuto = async (_page, opts = {}) => {
     waitUntilAutoCalls += 1
+    waitUntilAutoOpts.push(opts)
     if (waitUntilAutoDelay) await delay(waitUntilAutoDelay)
   }
   goto.getWaitUntilAutoCalls = () => waitUntilAutoCalls
+  goto.getWaitUntilAutoOpts = () => waitUntilAutoOpts
 
   return goto
 }
@@ -113,6 +116,7 @@ test('retries capture when navigation destroys the execution context', async t =
   t.deepEqual(result, Buffer.from('shot-ok'))
   t.is(calls, 2)
   t.is(goto.getWaitUntilAutoCalls(), 1)
+  t.true(goto.getWaitUntilAutoOpts().every(opts => opts.credit === false))
 })
 
 test('does not retry capture on a non-navigation error', async t => {
@@ -148,6 +152,7 @@ test('retries white screenshots until non-white image', async t => {
 
   t.deepEqual(result, screenshots[2])
   t.is(goto.getWaitUntilAutoCalls(), 2)
+  t.true(goto.getWaitUntilAutoOpts().every(opts => opts.credit === false))
 })
 
 test('stops white screenshot retries after timeout', async t => {
@@ -164,6 +169,7 @@ test('stops white screenshot retries after timeout', async t => {
 
   t.true(Buffer.isBuffer(result))
   t.true(goto.getWaitUntilAutoCalls() >= 1)
+  t.true(goto.getWaitUntilAutoOpts().every(opts => opts.timeout > 0))
   t.is(page.getScreenshotCalls(), goto.getWaitUntilAutoCalls() + 1)
 })
 
@@ -252,6 +258,7 @@ test('waits for verification interstitial to resolve before screenshot', async t
   t.deepEqual(result, screenshots[2])
   t.is(goto.getWaitUntilAutoCalls(), 2)
   t.is(page.getScreenshotCalls(), 3)
+  t.true(goto.getWaitUntilAutoOpts().every(opts => opts.credit === false))
 })
 
 // #852's fullPage readiness probe clears `path` so it does not write during the

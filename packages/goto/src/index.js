@@ -350,8 +350,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   }
 
   // related https://github.com/puppeteer/puppeteer/issues/1353
-  const _waitUntilAuto = (page, { timeout }) => {
-    const served = networkIdle.quietFor(page)
+  const _waitUntilAuto = (page, { timeout, credit = true }) => {
+    const served = credit ? networkIdle.quietFor(page) : 0
     const remaining = Math.max(0, NETWORK_IDLE_TIME - served)
 
     return run({
