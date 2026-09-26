@@ -69,46 +69,50 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
 // One pass over on-screen images. A bitmap that is already fully inside the
 // viewport is decoded so the shot does not land mid-decode. A visible image
 // that intersects the viewport and has not loaded is pending: the auto retry
-// treats that as not ready. Hidden slides and a finished broken image are not
-// pending — waiting will not load them. Callers that only need the decode
-// ignore the flag.
-const waitForViewportImages = page =>
-  evaluateIsolated(page, async () => {
-    const viewH = window.innerHeight || document.documentElement.clientHeight
-    const viewW = window.innerWidth || document.documentElement.clientWidth
-    const decodes = []
-    let pending = false
+// treats that as not ready. `visibility: hidden` slides and a finished broken
+// image are not pending — waiting will not load them. Opacity is ignored so a
+// fade-in hero still counts. Callers that only need the decode ignore the flag.
+const waitForViewportImages = (page, { decode = true } = {}) =>
+  evaluateIsolated(
+    page,
+    async shouldDecode => {
+      const viewH = window.innerHeight || document.documentElement.clientHeight
+      const viewW = window.innerWidth || document.documentElement.clientWidth
+      const decodes = []
+      let pending = false
 
-    for (const el of document.querySelectorAll('img:not([aria-hidden="true"])')) {
-      const { top, left, bottom, right, width, height } = el.getBoundingClientRect()
-      const hasPixels = el.naturalWidth > 0 && el.naturalHeight > 0
+      for (const el of document.querySelectorAll('img:not([aria-hidden="true"])')) {
+        const { top, left, bottom, right, width, height } = el.getBoundingClientRect()
+        const hasPixels = el.naturalWidth > 0 && el.naturalHeight > 0
 
-      if (hasPixels && top >= 0 && left >= 0 && bottom <= viewH && right <= viewW) {
-        decodes.push(el.decode())
+        if (hasPixels && top >= 0 && left >= 0 && bottom <= viewH && right <= viewW) {
+          decodes.push(el.decode())
+        }
+
+        if (pending || width < 32 || height < 32) continue
+        if (bottom <= 0 || right <= 0 || top >= viewH || left >= viewW) continue
+        if (
+          typeof el.checkVisibility === 'function' &&
+          !el.checkVisibility({ visibilityProperty: true })
+        ) {
+          continue
+        }
+
+        const src = el.currentSrc || el.getAttribute('src') || ''
+        const lazy =
+          el.getAttribute('data-src') ||
+          el.getAttribute('data-srcset') ||
+          el.getAttribute('data-lazy-src')
+        if ((src === '' || src.startsWith('data:')) && lazy) pending = true
+        else if (!hasPixels && !el.complete) pending = true
       }
 
-      if (pending || width < 32 || height < 32) continue
-      if (bottom <= 0 || right <= 0 || top >= viewH || left >= viewW) continue
-      if (
-        typeof el.checkVisibility === 'function' &&
-        !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })
-      ) {
-        continue
-      }
-
-      const src = el.currentSrc || el.getAttribute('src') || ''
-      const lazy =
-        el.getAttribute('data-src') ||
-        el.getAttribute('data-srcset') ||
-        el.getAttribute('data-lazy-src')
-      if ((src === '' || src.startsWith('data:')) && lazy) pending = true
-      else if (!hasPixels && !el.complete) pending = true
-    }
-
-    // A rejected decode must not hide a sibling that is still pending.
-    await Promise.all(decodes).catch(() => {})
-    return pending
-  })
+      // A rejected decode must not hide a sibling that is still pending.
+      if (shouldDecode) await Promise.all(decodes).catch(() => {})
+      return pending
+    },
+    decode
+  )
 
 // Two frames is enough for the scroll listeners. A hidden page can stop
 // delivering frames entirely, so the gesture must still restore and resolve.
@@ -298,7 +302,12 @@ module.exports = ({ goto, ...gotoOpts }) => {
               timeout: imageBudget,
               debug: 'screenshot:waitForViewportImages'
             })
-            pending = !images.isRejected && !!images.value
+            // A timed-out decode rejects the whole call. Re-read the flag
+            // without waiting, so a skeleton is still not ready.
+            const probe = images.isRejected
+              ? await pReflect(waitForViewportImages(page, { decode: false }))
+              : images
+            pending = !probe.isRejected && !!probe.value
           }
 
           screenshot = await captureWithNavigationRetry(

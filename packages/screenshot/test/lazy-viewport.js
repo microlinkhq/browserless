@@ -106,6 +106,26 @@ test('a hidden lazy image does not hold the capture', async t => {
   t.true(elapsed < 4000, `hidden image held the shot for ${elapsed}ms`)
 })
 
+test('an opacity-zero lazy image still holds the capture until it loads', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    page({
+      arm: "window.addEventListener('scroll', start, { once: true })"
+    }).replace('style="display:block;background:#ccc"', 'style="display:block;opacity:0"')
+  )
+
+  const started = Date.now()
+  const png = await browserless.withPage(
+    (browserPage, goto) => async () =>
+      createScreenshot({ goto })(browserPage)(url, { adblock: false, timeout: 33000 })
+  )()
+
+  t.deepEqual([...png.subarray(0, 4)], [...PNG_MAGIC])
+  t.true(isGreen(await heroPixel(png)), 'the capture waited until the fade-in hero decoded')
+  t.true(Date.now() - started < 20000, 'the wait stayed inside the action budget')
+})
+
 test('waitUntil auto restores the viewport when scroll-behavior is smooth', async t => {
   const browserless = await getBrowserContext(t)
   const url = await serve(
