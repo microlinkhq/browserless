@@ -1,6 +1,7 @@
 'use strict'
 
-const { runServer, getBrowserContext, getInternalBrowser } = require('@browserless/test')
+const { runServer, getBrowserContext } = require('@browserless/test')
+const puppeteer = require('puppeteer')
 const test = require('ava')
 
 const FIXTURE = `<!doctype html>
@@ -86,9 +87,12 @@ test('the setting follows the last navigation on a shared context', async t => {
 test('a page of the default browser context is denied too', async t => {
   const url = await serve(t)
   const browserless = await getBrowserContext(t)
-  const browser = await getInternalBrowser()
+  // The shared browser is started with `--no-startup-window`. Its default
+  // context then has no window, and opening the first page there never
+  // finishes on the CI display. A caller passes a page from a normal browser.
+  const browser = await puppeteer.launch({ headless: true })
+  t.teardown(() => browser.close())
   const page = await browser.newPage()
-  t.teardown(() => page.close())
 
   t.is(page.browserContext().id, undefined)
   await browserless.goto(page, { url })
