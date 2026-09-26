@@ -183,7 +183,9 @@ const myFn = createFunction(code, {
   ownsContext: true,
 
   // Run against a page that is already navigated, instead of creating a
-  // context and navigating. No `goto` happens and the page is never closed:
+  // context and navigating. It replaces that path, so `getBrowserless` and
+  // `ownsContext` are not consulted when it is set.
+  // No `goto` happens and the page is never closed:
   // whoever supplied it owns its lifetime. Pass `response` when you have it,
   // so the function still sees `_response`. `timeout` bounds how long the
   // caller waits. It leaves the page open, and the snippet plus its isolate
@@ -196,28 +198,38 @@ const myFn = createFunction(code, {
 ```
 
 Reusing a page the caller already loaded, so the target is fetched once.
-`getBrowserless` is the adapter that hands over a shared context: it is asked
-for a browser, not a context, so `createContext` is where yours is returned.
+`getPage` replaces the context-and-navigate path, so `getBrowserless` and
+`ownsContext` are not consulted on this call:
 
 ```js
-const context = await pool.create(id)
-const { page, response } = await somethingThatAlreadyNavigated(context, url)
+const { page, response } = await somethingThatAlreadyNavigated(url)
 
 const result = await createFunction(code, {
-  getBrowserless: () => ({ createContext: async () => context }),
-  getPage: async () => ({ page, response }),
-  ownsContext: false
+  getPage: async () => ({ page, response })
 })(url)
 
 await page.close()
 ```
 
+Navigating inside a context you own, which is the path that calls
+`createContext()`. `getBrowserless` is asked for a browser, not a context, so
+yours is returned from its `createContext`:
+
+```js
+const context = await pool.create(id)
+
+const result = await createFunction(code, {
+  getBrowserless: () => ({ createContext: async () => context }),
+  ownsContext: false
+})(url)
+```
+
 The snippet runs in an isolate connected over `browserWSEndpoint`, so
-`page.browser()` reaches every page on that browser, not only the supplied one.
-`strictTarget` decides which page the snippet is handed, not what it can reach.
-That was already true of the navigating path, and it matters more once one
-context is shared across tasks: treat sharing as a trust boundary this package
-cannot enforce for you.
+`page.browser()` reaches every page on that browser, not only the one it was
+handed. `strictTarget` decides which page that is, not what it can reach. This
+was already true of the navigating path, and it matters more once one context is
+shared across tasks: treat sharing as a trust boundary this package cannot
+enforce for you.
 
 `timeout` rejects the call and leaves the page open. The snippet and its
 isolate subprocess keep running, so treat the page as busy: leave it alone
