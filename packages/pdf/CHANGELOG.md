@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.12.5](https://github.com/microlinkhq/browserless/compare/v13.12.4...v13.12.5) (2026-09-26)
+
+### Bug Fixes
+
+* **goto:** keep a full idle window on screenshot and PDF retries ([#945](https://github.com/microlinkhq/browserless/issues/945)) ([56b046a](https://github.com/microlinkhq/browserless/commit/56b046acc55c9315d068580929b9e00a033d5f63)), references [#941](https://github.com/microlinkhq/browserless/issues/941)
+
 ## [13.12.3](https://github.com/microlinkhq/browserless/compare/v13.12.2...v13.12.3) (2026-09-21)
 
 **Note:** Version bump only for package @browserless/pdf
