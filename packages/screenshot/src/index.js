@@ -66,51 +66,41 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
   return !pageReadyResult.isRejected && !!pageReadyResult.value
 }
 
-const waitForImagesOnViewport = page =>
-  evaluateIsolated(page, () =>
-    Promise.all(
-      Array.from(document.querySelectorAll('img[src]:not([aria-hidden="true"])'))
-        .filter(el => {
-          if (el.naturalHeight === 0 || el.naturalWidth === 0) return false
-          const { top, left, bottom, right } = el.getBoundingClientRect()
-          return (
-            top >= 0 &&
-            left >= 0 &&
-            bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            right <= (window.innerWidth || document.documentElement.clientWidth)
-          )
-        })
-        .map(el => el.decode())
-    )
-  )
-
-/**
- * In-viewport image that has a layout box but has not decoded yet: a skeleton,
- * or a lazy `src` that an intersection observer has not assigned. A finished
- * broken image (`complete` with no pixels) is not pending — waiting will not
- * load it.
- *
- * @param {import('puppeteer').Page} page
- * @returns {Promise<boolean>}
- */
-const pendingViewportImages = page =>
-  evaluateIsolated(page, () => {
+// One pass over on-screen images. A bitmap that is already fully inside the
+// viewport is decoded so the shot does not land mid-decode. A large image that
+// merely intersects the viewport and has not loaded is pending: the auto retry
+// treats that as not ready. A finished broken image is not pending — waiting
+// will not load it. Callers that only need the decode ignore the flag.
+const waitForViewportImages = page =>
+  evaluateIsolated(page, async () => {
     const viewH = window.innerHeight || document.documentElement.clientHeight
     const viewW = window.innerWidth || document.documentElement.clientWidth
+    const decodes = []
+    let pending = false
+
     for (const el of document.querySelectorAll('img:not([aria-hidden="true"])')) {
       const { top, left, bottom, right, width, height } = el.getBoundingClientRect()
-      if (width < 32 || height < 32) continue
+      const hasPixels = el.naturalWidth > 0 && el.naturalHeight > 0
+
+      if (hasPixels && top >= 0 && left >= 0 && bottom <= viewH && right <= viewW) {
+        decodes.push(el.decode())
+      }
+
+      if (pending || width < 32 || height < 32) continue
       if (bottom <= 0 || right <= 0 || top >= viewH || left >= viewW) continue
+
       const src = el.currentSrc || el.getAttribute('src') || ''
       const lazy =
         el.getAttribute('data-src') ||
         el.getAttribute('data-srcset') ||
         el.getAttribute('data-lazy-src')
-      const placeholder = src === '' || src.startsWith('data:')
-      if (placeholder && lazy) return true
-      if ((el.naturalWidth === 0 || el.naturalHeight === 0) && !el.complete) return true
+      if ((src === '' || src.startsWith('data:')) && lazy) pending = true
+      else if (!hasPixels && !el.complete) pending = true
     }
-    return false
+
+    // A rejected decode must not hide a sibling that is still pending.
+    await Promise.all(decodes).catch(() => {})
+    return pending
   })
 
 /**
@@ -219,8 +209,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
             debug: 'beforeScreenshot:fontsReady'
           },
           {
-            fn: () => waitForImagesOnViewport(page),
-            debug: 'beforeScreenshot:waitForImagesOnViewport'
+            fn: () => waitForViewportImages(page),
+            debug: 'beforeScreenshot:waitForViewportImages'
           }
         ]
 
@@ -267,6 +257,17 @@ module.exports = ({ goto, ...gotoOpts }) => {
         await pReflect(nudgeViewport(page))
 
         do {
+          const imageBudget = timeout - elapsed()
+          let pending = false
+          if (imageBudget > 0) {
+            const images = await goto.run({
+              fn: waitForViewportImages(page),
+              timeout: imageBudget,
+              debug: 'screenshot:waitForViewportImages'
+            })
+            pending = !images.isRejected && !!images.value
+          }
+
           screenshot = await captureWithNavigationRetry(
             () => {
               if (!opts.fullPage) return page.screenshot(opts)
@@ -283,10 +284,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
             isWhite
           })
 
-          if (isReady) {
-            const pending = await pReflect(pendingViewportImages(page))
-            if (!pending.isRejected && pending.value) isReady = false
-          }
+          if (isReady && pending) isReady = false
 
           if (isReady || elapsed() >= timeout) break
 
