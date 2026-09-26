@@ -139,23 +139,18 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             page = await createPage(name)
             closePageTimeout = startCloseTimeout()
             const value = await fn(page, goto)(...args)
-            if (keepPage) {
-              // Navigation already spent part of the original window. Restart
-              // it so a slow load does not close the page under its new owner.
-              // A retry closed its own page in `catch`, so only the last
-              // attempt retains.
-              clearTimeout(closePageTimeout)
-              closePageTimeout = startCloseTimeout()
-              isRetained = true
-            } else {
-              await closePage(page, `${name}:success`)
-            }
+            if (keepPage) isRetained = true
+            else await closePage(page, `${name}:success`)
             return value
           } catch (error) {
             await closePage(page, `${name}:error`)
             if (!isRejected) throw ensureError(error)
           } finally {
-            if (closePageTimeout && !isRetained) clearTimeout(closePageTimeout)
+            // The in-call watchdog ends with the call. A retained page gets a
+            // fresh window so navigation time is not charged to its new owner.
+            // Failed attempts already closed their page, so only the last one retains.
+            if (closePageTimeout) clearTimeout(closePageTimeout)
+            if (isRetained) startCloseTimeout()
           }
         }
 
