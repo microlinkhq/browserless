@@ -158,25 +158,27 @@ test('preserveContext retries in place instead of surfacing the fault', async t 
   t.is(await context.context(), contextBefore)
 })
 
-test('preserveContext surfaces a context fault instead of retrying it', async t => {
+test('preserveContext retries a page-level fault reported as a context reset', async t => {
   const context = await browserless.createContext()
   t.teardown(() => context.destroyContext())
 
+  const contextBefore = await context.context()
   let attempts = 0
-  await t.throwsAsync(
-    context.evaluate(
-      () => {
-        attempts++
-        const error = new Error('context connection reset')
-        error.code = 'EBRWSRCONTEXTCONNRESET'
-        throw error
-      },
-      { preserveContext: true }
-    )(fileUrl),
-    { message: /context connection reset/ }
-  )
 
-  // Recovering needs the context replaced, which preserveContext forbids, so a
-  // retry would fail identically after the backoff.
-  t.is(attempts, 1)
+  // `ensureError` maps a destroyed execution context to EBRWSRCONTEXTCONNRESET
+  // even though a fresh page recovers from it, so the code alone cannot decide
+  // whether the context has to be replaced.
+  const title = await context.evaluate(
+    page => {
+      if (attempts++ === 0) {
+        throw new Error('Execution context was destroyed, most likely because of a navigation.')
+      }
+      return page.title()
+    },
+    { preserveContext: true }
+  )(fileUrl)
+
+  t.is(attempts, 2)
+  t.is(typeof title, 'string')
+  t.is(await context.context(), contextBefore)
 })

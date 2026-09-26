@@ -165,17 +165,17 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
               if (isRejected || isDestroyedForced) throw new AbortError()
-              const isContextFault = error.code === 'EBRWSRCONTEXTCONNRESET'
-              const isRetryable = isContextFault || error.code === 'EPROTOCOL'
+              const isRetryable =
+                error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
               const { message, attemptNumber, retriesLeft } = error
-              // Every attempt builds its own page, so a page-level fault is
-              // retryable inside the existing context. A context fault is not:
-              // recovering means replacing the context, which closes every page
-              // in it, including the ones a caller that owns the context holds.
-              // So retry the page, and hand a dead context back to its owner.
+              // Every attempt builds its own page, so both codes are retryable
+              // inside the existing context: `EBRWSRCONTEXTCONNRESET` covers a
+              // closed page, a detached frame and a destroyed execution context,
+              // which a fresh page recovers from. Replacing the context is the
+              // only part a caller that owns it cannot afford, since that closes
+              // the pages it still holds. Skip that, not the retry.
               if (preserveContext) {
-                if (isContextFault) throw error
                 debug('retry', { attemptNumber, retriesLeft, message, preserveContext })
                 return
               }
