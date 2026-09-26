@@ -54,6 +54,15 @@ const readDevice = async page => {
 
 const isHttpResponse = response => response != null && typeof response.status === 'function'
 
+const isPageNotFound = error => error?.message === createRunFunction.PAGE_NOT_FOUND
+
+// A supplied page need not be a full Puppeteer page, so neither accessor is
+// assumed: the isolate connects over this endpoint and cannot run without it.
+const wsEndpointOf = page => {
+  const browser = typeof page.browser === 'function' ? page.browser() : undefined
+  return typeof browser?.wsEndpoint === 'function' ? browser.wsEndpoint() : undefined
+}
+
 const serializeResponse = response => ({
   status: response.status(),
   statusText: response.statusText(),
@@ -117,14 +126,13 @@ module.exports = ({ tmpdir } = {}) => {
       return browserPromise
     }
 
-    // A per-call `code` override is bundled on its own. The template built
-    // above only matches the snippet this function was created with.
-    const usePrebuiltSource = (runFunctionOpts, network) => {
-      if (runFunctionOpts.code !== code) return runFunctionOpts
-      runFunctionOpts.needsNetwork = network
-      runFunctionOpts.source = source
-      return runFunctionOpts
-    }
+    // A per-call `code` override is bundled on its own, so this reads the merged
+    // options rather than `code`: the template built above only matches the
+    // snippet this function was created with.
+    const withPrebuiltSource = (runFunctionOpts, network) =>
+      runFunctionOpts.code === code
+        ? { ...runFunctionOpts, needsNetwork: network, source }
+        : runFunctionOpts
 
     const buildRunOpts = async ({ page, device, response, url, fnOpts, strictTarget = false }) => {
       if (!page) throw new Error(createRunFunction.PAGE_NOT_FOUND)
@@ -133,15 +141,10 @@ module.exports = ({ tmpdir } = {}) => {
 
       const resolvedDevice = device ?? (await readDevice(page))
 
-      const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
-      const browserWSEndpoint =
-        browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
-          ? browserFromPage.wsEndpoint()
-          : undefined
-
+      const browserWSEndpoint = wsEndpointOf(page)
       if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
 
-      return usePrebuiltSource(
+      return withPrebuiltSource(
         {
           url,
           code,
@@ -195,10 +198,7 @@ module.exports = ({ tmpdir } = {}) => {
         )
         // A miss inside the isolate comes back as a rejected result. It is not
         // a user-code failure: the supplied page was never found.
-        if (
-          !result.isFulfilled &&
-          ensureError(result.value).message === createRunFunction.PAGE_NOT_FOUND
-        ) {
+        if (!result.isFulfilled && isPageNotFound(ensureError(result.value))) {
           throw new Error(createRunFunction.PAGE_NOT_FOUND)
         }
         return settle(result)
@@ -218,7 +218,7 @@ module.exports = ({ tmpdir } = {}) => {
             const isRetryable =
               error.code === 'EBRWSRCONTEXTCONNRESET' ||
               error.code === 'EPROTOCOL' ||
-              error.message === createRunFunction.PAGE_NOT_FOUND
+              isPageNotFound(error)
             if (!isRetryable) throw error
           }
         })
@@ -250,7 +250,7 @@ module.exports = ({ tmpdir } = {}) => {
 
     const runWithoutBrowser = async (url, fnOpts) => {
       const result = await runFunction(
-        usePrebuiltSource(
+        withPrebuiltSource(
           {
             url,
             code,
