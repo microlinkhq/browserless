@@ -63,6 +63,47 @@ test('keepPage still closes the page when the function throws', async t => {
   t.is(await countPages(context), before)
 })
 
+test('keepPage closes the page when the call times out', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  // The close watchdog is armed once the page exists, so it fires slightly
+  // later than the call timeout. Hold the function until the call has
+  // rejected, then let it return inside that gap. Retaining here would keep
+  // the page open for another full timeout, with no caller holding it.
+  const timeout = 2000
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
+  t.teardown(() => release())
+
+  let retained
+  const before = await countPages(context)
+
+  const error = await t.throwsAsync(
+    context.evaluate(
+      async page => {
+        retained = page
+        await gate
+        return page
+      },
+      { keepPage: true, timeout }
+    )(fileUrl)
+  )
+
+  t.is(error.code, 'EBRWSRTIMEOUT')
+  release()
+
+  const deadline = Date.now() + 1000
+  while (!retained.isClosed() && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+
+  t.true(retained.isClosed())
+  t.is(await countPages(context), before)
+})
+
 test('keepPage restarts the close watchdog at handover', async t => {
   const context = await browserless.createContext()
   t.teardown(() => context.destroyContext())
