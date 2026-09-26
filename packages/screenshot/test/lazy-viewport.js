@@ -126,6 +126,26 @@ test('an opacity-zero lazy image still holds the capture until it loads', async 
   t.true(Date.now() - started < 20000, 'the wait stayed inside the action budget')
 })
 
+test('the nudge restores a scroll position below its temporary page height', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<!doctype html>
+<html style="height:8000px;background:#888;background-image:linear-gradient(#0c0,#0c0);background-repeat:no-repeat;background-position:0 5000px;background-size:100% 400px">
+  <body style="margin:0;height:100%"></body>
+  <script>window.scrollTo(0, 5000)</script>
+</html>`
+  )
+
+  const png = await browserless.withPage(
+    (browserPage, goto) => async () =>
+      createScreenshot({ goto })(browserPage)(url, { adblock: false, timeout: 33000 })
+  )()
+
+  t.deepEqual([...png.subarray(0, 4)], [...PNG_MAGIC])
+  t.true(isGreen(await heroPixel(png)), 'the capture is back at the pre-nudge scroll position')
+})
+
 test('waitUntil auto restores the viewport when scroll-behavior is smooth', async t => {
   const browserless = await getBrowserContext(t)
   const url = await serve(

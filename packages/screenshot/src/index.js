@@ -85,7 +85,14 @@ const waitForViewportImages = (page, { decode = true } = {}) =>
         const { top, left, bottom, right, width, height } = el.getBoundingClientRect()
         const hasPixels = el.naturalWidth > 0 && el.naturalHeight > 0
 
-        if (hasPixels && top >= 0 && left >= 0 && bottom <= viewH && right <= viewW) {
+        if (
+          shouldDecode &&
+          hasPixels &&
+          top >= 0 &&
+          left >= 0 &&
+          bottom <= viewH &&
+          right <= viewW
+        ) {
           decodes.push(el.decode())
         }
 
@@ -159,8 +166,10 @@ const nudgeViewport = page =>
         const finish = () => {
           if (settled) return
           settled = true
-          scrollTo(x, y)
+          // Height first: scrolling while the root is still the temporary
+          // three-viewport height clamps a saved position below that range.
           root.style.height = previousHeight
+          scrollTo(x, y)
           behaviorNode.style.scrollBehavior = previousBehavior
           resolve()
         }
