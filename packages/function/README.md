@@ -186,6 +186,9 @@ const myFn = createFunction(code, {
   // so the function still sees `_response`. `timeout` bounds how long the
   // caller waits. It leaves the page open, and the snippet plus its isolate
   // subprocess keep running until the snippet returns or the page is closed.
+  // `device` and `response` are optional. Without a device, the `{ userAgent,
+  // viewport }` a snippet sees is read off the page, so it matches what the
+  // default path reports; pass your own to override it.
   getPage: async () => ({ page, device, response })
 })
 ```

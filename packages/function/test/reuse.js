@@ -377,3 +377,22 @@ test('a supplied page without a device still reports one', async t => {
   t.is(userAgentType, 'string')
   t.is(Number(width), page.viewport().width)
 })
+
+test('an unreadable device is omitted rather than half reported', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const page = await context.page('device-unreadable')
+  await page.goto(fileUrl)
+  page.evaluate = async () => {
+    throw new Error('evaluate unavailable')
+  }
+
+  const result = await browserlessFunction(KEYS_FN, {
+    getPage: async () => ({ page }),
+    timeout: 120000
+  })(fileUrl)
+
+  t.true(result.isFulfilled)
+  t.is(result.value, 'response,url')
+})

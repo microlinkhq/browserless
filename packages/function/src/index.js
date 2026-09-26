@@ -46,7 +46,10 @@ const getTargetId = async page => {
 const readDevice = async page => {
   if (typeof page?.evaluate !== 'function' || typeof page.viewport !== 'function') return undefined
   const { value: userAgent } = await pReflect(page.evaluate(() => navigator.userAgent))
-  return { userAgent, viewport: page.viewport() }
+  const viewport = page.viewport()
+  // All of it or none: a descriptor missing half its fields still reads as a
+  // descriptor, so a snippet gets `undefined` from a field instead of a value.
+  return userAgent && viewport ? { userAgent, viewport } : undefined
 }
 
 const isHttpResponse = response => response != null && typeof response.status === 'function'
