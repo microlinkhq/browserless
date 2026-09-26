@@ -175,12 +175,18 @@ module.exports = ({ tmpdir } = {}) => {
     const runWithGivenPage = async (url, fnOpts) => {
       let isRejected = false
 
-      const run = async () => {
-        // p-retry waits its backoff before calling this again, and the call can
-        // time out inside that gap. Checking only after an attempt fails is too
-        // late: this one would ask for a page and start an isolate for a caller
-        // that already has its rejection.
+      // The caller holds its rejection, so nothing further should start. Called
+      // from `run`, which is what enforces it: p-retry waits its backoff before
+      // calling `run` again and the timeout can land inside that gap. Called
+      // again from `onFailedAttempt` only to end the loop there and then, rather
+      // than leaving a backoff timer to expire first — no attempt can get past
+      // the check in `run` either way.
+      const abortIfTimedOut = () => {
         if (isRejected) throw new AbortError()
+      }
+
+      const run = async () => {
+        abortIfTimedOut()
         // Asked again per attempt: the supplied page may have died with the
         // fault being retried, so the caller gets to hand over a live one.
         const { page, device, response } = await getPage()
@@ -208,9 +214,7 @@ module.exports = ({ tmpdir } = {}) => {
           retries: retry,
           onFailedAttempt: error => {
             if (error.name === 'AbortError') throw error
-            // The caller already has the timeout. Another attempt would ask
-            // for the page again and start a new isolate on it.
-            if (isRejected) throw new AbortError()
+            abortIfTimedOut()
             const isRetryable =
               error.code === 'EBRWSRCONTEXTCONNRESET' ||
               error.code === 'EPROTOCOL' ||
