@@ -150,7 +150,9 @@ const myFn = createFunction(code, {
   // Browserless instance factory
   getBrowserless: () => require('browserless')(),
   
-  // Number of retries on failure
+  // Attempts on the `getPage` path, where there is no context to replace and
+  // this is the only retry. The default path takes its retry count from the
+  // browserless context instead.
   retry: 2,
   
   // Execution timeout in milliseconds
@@ -171,9 +173,88 @@ const myFn = createFunction(code, {
   },
   
   // VM sandbox options (passed to isolated-function)
-  vmOpts: { /* ... */ }
+  vmOpts: { /* ... */ },
+
+  // Set false only with a `getBrowserless` whose `createContext()` returns a
+  // context you already own, as shown below. This call then neither destroys it
+  // nor replaces it on a retryable browser error, so a sibling task sharing it
+  // keeps its pages. Against the default factory the flag leaks a context per
+  // call, since `createContext()` builds a fresh one nothing then destroys.
+  ownsContext: true,
+
+  // Run against a page that is already navigated, instead of creating a
+  // context and navigating. It replaces that path, so `getBrowserless` and
+  // `ownsContext` are not consulted when it is set.
+  // No `goto` happens and the page is never closed:
+  // whoever supplied it owns its lifetime. Pass `response` when you have it,
+  // so the function still sees `_response`. `timeout` bounds how long the
+  // caller waits. It leaves the page open, and the snippet plus its isolate
+  // subprocess keep running until the snippet returns or the page is closed.
+  // `device` and `response` are optional. Without a device, the `{ userAgent,
+  // viewport }` a snippet sees is read off the page, so it matches what the
+  // default path reports; pass your own to override it.
+  getPage: async () => ({ page, device, response })
 })
 ```
+
+Reusing a page the caller already loaded, so the target is fetched once.
+`getPage` replaces the context-and-navigate path, so `getBrowserless` and
+`ownsContext` are not consulted on this call:
+
+```js
+const { page, response } = await somethingThatAlreadyNavigated(url)
+
+const result = await createFunction(code, {
+  getPage: async () => ({ page, response })
+})(url)
+
+await page.close()
+```
+
+Navigating inside a context you own, which is the path that calls
+`createContext()`. `getBrowserless` is asked for a browser, not a context, so
+yours is returned from its `createContext`:
+
+```js
+const context = await pool.create(id)
+
+const result = await createFunction(code, {
+  getBrowserless: () => ({ createContext: async () => context }),
+  ownsContext: false
+})(url)
+```
+
+The snippet runs in an isolate connected over `browserWSEndpoint`, so
+`page.browser()` reaches every page on that browser, not only the one it was
+handed. `strictTarget` decides which page that is, not what it can reach. This
+was already true of the navigating path, and it matters more once one context is
+shared across tasks: treat sharing as a trust boundary this package cannot
+enforce for you.
+
+`timeout` rejects the call and leaves the page open. The snippet and its
+isolate subprocess keep running, so treat the page as busy: leave it alone
+until that work finishes, or close it. Closing the page ends the snippet.
+
+Retaining a page from `browserless` requires `keepPage`, since `evaluate`
+closes its page as soon as it resolves:
+
+```js
+let page
+await context.evaluate(
+  currentPage => {
+    page = currentPage
+    return currentPage.content()
+  },
+  { keepPage: true }
+)(url)
+```
+
+Retaining a page restarts its close watchdog. The new window is the
+`evaluate` / `withPage` timeout, measured from handover. Finish or close the
+page before that window ends. A later `getPage` call has its own timeout; the
+watchdog still closes the page when the evaluate window ends, including while
+that call is in progress. Set the evaluate timeout long enough to cover the
+follow-up work.
 
 ### Examples
 
