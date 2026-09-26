@@ -114,6 +114,21 @@ const waitForViewportImages = (page, { decode = true } = {}) =>
     decode
   )
 
+// A timed-out decode rejects the whole call. Re-read the flag without waiting,
+// so a skeleton is still not ready.
+const pendingViewportImages = async (page, goto, timeout) => {
+  if (timeout <= 0) return false
+  const settled = await goto.run({
+    fn: waitForViewportImages(page),
+    timeout,
+    debug: 'screenshot:waitForViewportImages'
+  })
+  const probe = settled.isRejected
+    ? await pReflect(waitForViewportImages(page, { decode: false }))
+    : settled
+  return !probe.isRejected && !!probe.value
+}
+
 // Two frames is enough for the scroll listeners. A hidden page can stop
 // delivering frames entirely, so the gesture must still restore and resolve.
 const NUDGE_FRAME_MS = 100
@@ -139,11 +154,12 @@ const nudgeViewport = page =>
         const x = window.scrollX
         const y = window.scrollY
         let settled = false
+        const scrollTo = (left, top) => window.scrollTo({ left, top, behavior: 'instant' })
 
         const finish = () => {
           if (settled) return
           settled = true
-          window.scrollTo({ left: x, top: y, behavior: 'instant' })
+          scrollTo(x, y)
           root.style.height = previousHeight
           behaviorNode.style.scrollBehavior = previousBehavior
           resolve()
@@ -152,10 +168,10 @@ const nudgeViewport = page =>
         try {
           behaviorNode.style.scrollBehavior = 'auto'
           root.style.height = `${(window.innerHeight || 800) * 3}px`
-          window.scrollTo({ left: 0, top: window.innerHeight || 800, behavior: 'instant' })
+          scrollTo(0, window.innerHeight || 800)
           const timer = window.setTimeout(finish, timeoutMs)
           window.requestAnimationFrame(() => {
-            window.scrollTo({ left: x, top: y, behavior: 'instant' })
+            scrollTo(x, y)
             window.requestAnimationFrame(() => {
               window.clearTimeout(timer)
               finish()
@@ -294,21 +310,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         await pReflect(nudgeViewport(page))
 
         do {
-          const imageBudget = timeout - elapsed()
-          let pending = false
-          if (imageBudget > 0) {
-            const images = await goto.run({
-              fn: waitForViewportImages(page),
-              timeout: imageBudget,
-              debug: 'screenshot:waitForViewportImages'
-            })
-            // A timed-out decode rejects the whole call. Re-read the flag
-            // without waiting, so a skeleton is still not ready.
-            const probe = images.isRejected
-              ? await pReflect(waitForViewportImages(page, { decode: false }))
-              : images
-            pending = !probe.isRejected && !!probe.value
-          }
+          const pending = await pendingViewportImages(page, goto, timeout - elapsed())
 
           screenshot = await captureWithNavigationRetry(
             () => {
