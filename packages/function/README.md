@@ -175,9 +175,11 @@ const myFn = createFunction(code, {
   // VM sandbox options (passed to isolated-function)
   vmOpts: { /* ... */ },
 
-  // Set false when `getBrowserless` hands back a context you own and keep
-  // using. This call neither destroys it nor replaces it on a retryable
-  // browser error, so a sibling task sharing it does not lose its pages.
+  // Set false only with a `getBrowserless` whose `createContext()` returns a
+  // context you already own, as shown below. This call then neither destroys it
+  // nor replaces it on a retryable browser error, so a sibling task sharing it
+  // keeps its pages. Against the default factory the flag leaks a context per
+  // call, since `createContext()` builds a fresh one nothing then destroys.
   ownsContext: true,
 
   // Run against a page that is already navigated, instead of creating a
@@ -193,17 +195,29 @@ const myFn = createFunction(code, {
 })
 ```
 
-Reusing a page the caller already loaded, so the target is fetched once:
+Reusing a page the caller already loaded, so the target is fetched once.
+`getBrowserless` is the adapter that hands over a shared context: it is asked
+for a browser, not a context, so `createContext` is where yours is returned.
 
 ```js
-const { page, response } = await somethingThatAlreadyNavigated(url)
+const context = await pool.create(id)
+const { page, response } = await somethingThatAlreadyNavigated(context, url)
 
 const result = await createFunction(code, {
-  getPage: async () => ({ page, response })
+  getBrowserless: () => ({ createContext: async () => context }),
+  getPage: async () => ({ page, response }),
+  ownsContext: false
 })(url)
 
 await page.close()
 ```
+
+The snippet runs in an isolate connected over `browserWSEndpoint`, so
+`page.browser()` reaches every page on that browser, not only the supplied one.
+`strictTarget` decides which page the snippet is handed, not what it can reach.
+That was already true of the navigating path, and it matters more once one
+context is shared across tasks: treat sharing as a trust boundary this package
+cannot enforce for you.
 
 `timeout` rejects the call and leaves the page open. The snippet and its
 isolate subprocess keep running, so treat the page as busy: leave it alone

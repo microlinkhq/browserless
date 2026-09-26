@@ -396,3 +396,30 @@ test('an unreadable device is omitted rather than half reported', async t => {
   t.true(result.isFulfilled)
   t.is(result.value, 'response,url')
 })
+
+test('a timeout during the retry backoff does not start another attempt', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const dead = await context.page('backoff-timeout')
+  await dead.goto(fileUrl)
+  await dead.close()
+
+  let calls = 0
+  // The first attempt fails at once, so p-retry waits its ~1s backoff before
+  // asking again. The call times out inside that gap.
+  const error = await t.throwsAsync(
+    browserlessFunction(TITLE_FN, {
+      getPage: async () => {
+        calls++
+        return { page: dead }
+      },
+      retry: 2,
+      timeout: 400
+    })(fileUrl)
+  )
+
+  t.is(error.code, 'EBRWSRTIMEOUT')
+  await new Promise(resolve => setTimeout(resolve, 1500))
+  t.is(calls, 1)
+})

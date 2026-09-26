@@ -176,6 +176,11 @@ module.exports = ({ tmpdir } = {}) => {
       let isRejected = false
 
       const run = async () => {
+        // p-retry waits its backoff before calling this again, and the call can
+        // time out inside that gap. Checking only after an attempt fails is too
+        // late: this one would ask for a page and start an isolate for a caller
+        // that already has its rejection.
+        if (isRejected) throw new AbortError()
         // Asked again per attempt: the supplied page may have died with the
         // fault being retried, so the caller gets to hand over a live one.
         const { page, device, response } = await getPage()
