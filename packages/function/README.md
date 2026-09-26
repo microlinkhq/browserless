@@ -150,7 +150,9 @@ const myFn = createFunction(code, {
   // Browserless instance factory
   getBrowserless: () => require('browserless')(),
   
-  // Number of retries on failure
+  // Attempts on the `getPage` path, where there is no context to replace and
+  // this is the only retry. The default path takes its retry count from the
+  // browserless context instead.
   retry: 2,
   
   // Execution timeout in milliseconds
@@ -171,9 +173,62 @@ const myFn = createFunction(code, {
   },
   
   // VM sandbox options (passed to isolated-function)
-  vmOpts: { /* ... */ }
+  vmOpts: { /* ... */ },
+
+  // Set false when `getBrowserless` hands back a context you own and keep
+  // using. This call neither destroys it nor replaces it on a retryable
+  // browser error, so a sibling task sharing it does not lose its pages.
+  ownsContext: true,
+
+  // Run against a page that is already navigated, instead of creating a
+  // context and navigating. No `goto` happens and the page is never closed:
+  // whoever supplied it owns its lifetime. Pass `response` when you have it,
+  // so the function still sees `_response`. `timeout` bounds how long the
+  // caller waits. It leaves the page open, and the snippet plus its isolate
+  // subprocess keep running until the snippet returns or the page is closed.
+  // `device` and `response` are optional. Without a device, the `{ userAgent,
+  // viewport }` a snippet sees is read off the page, so it matches what the
+  // default path reports; pass your own to override it.
+  getPage: async () => ({ page, device, response })
 })
 ```
+
+Reusing a page the caller already loaded, so the target is fetched once:
+
+```js
+const { page, response } = await somethingThatAlreadyNavigated(url)
+
+const result = await createFunction(code, {
+  getPage: async () => ({ page, response })
+})(url)
+
+await page.close()
+```
+
+`timeout` rejects the call and leaves the page open. The snippet and its
+isolate subprocess keep running, so treat the page as busy: leave it alone
+until that work finishes, or close it. Closing the page ends the snippet.
+
+Retaining a page from `browserless` requires `keepPage`, since `evaluate`
+closes its page as soon as it resolves:
+
+```js
+let page
+await context.evaluate(
+  currentPage => {
+    page = currentPage
+    return currentPage.content()
+  },
+  { keepPage: true }
+)(url)
+```
+
+Retaining a page restarts its close watchdog. The new window is the
+`evaluate` / `withPage` timeout, measured from handover. Finish or close the
+page before that window ends. A later `getPage` call has its own timeout; the
+watchdog still closes the page when the evaluate window ends, including while
+that call is in progress. Set the evaluate timeout long enough to cover the
+follow-up work.
 
 ### Examples
 

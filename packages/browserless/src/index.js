@@ -110,7 +110,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage = (fn, { timeout: evaluateTimeout } = {}) => {
+    const withPage = (
+      fn,
+      { timeout: evaluateTimeout, keepPage = false, preserveContext = false } = {}
+    ) => {
       const name = fn.name || 'anonymous'
 
       return async (...args) => {
@@ -119,24 +122,39 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         async function run () {
           let page
           let closePageTimeout
+          let isRetained = false
 
-          try {
-            page = await createPage(name)
-            closePageTimeout = setTimeout(() => {
+          const startCloseTimeout = () => {
+            const timer = setTimeout(() => {
               closePage(page, name).catch(error => {
                 const { message, code, name } = ensureError(error)
                 debug('closePage:timeout:error', { message, code, name })
               })
             }, timeout)
-            if (typeof closePageTimeout.unref === 'function') closePageTimeout.unref()
+            if (typeof timer.unref === 'function') timer.unref()
+            return timer
+          }
+
+          try {
+            page = await createPage(name)
+            closePageTimeout = startCloseTimeout()
             const value = await fn(page, goto)(...args)
-            await closePage(page, `${name}:success`)
+            // A timeout already rejected the caller, who never received this
+            // page. Retaining it would clear the in-call watchdog and arm a
+            // new one with nobody holding the page.
+            if (keepPage && !isRejected) isRetained = true
+            else await closePage(page, `${name}:success`)
             return value
           } catch (error) {
             await closePage(page, `${name}:error`)
             if (!isRejected) throw ensureError(error)
           } finally {
+            // The in-call watchdog ends with the call. A retained page gets a
+            // fresh window of this same timeout, measured from handover.
+            // The owner has to finish or close the page inside that window.
+            // Failed attempts already closed their page, so only the last one retains.
             if (closePageTimeout) clearTimeout(closePageTimeout)
+            if (isRetained) startCloseTimeout()
           }
         }
 
@@ -147,13 +165,23 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
               if (isRejected || isDestroyedForced) throw new AbortError()
-              const isRetryable =
-                error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
+              const isContextFault = error.code === 'EBRWSRCONTEXTCONNRESET'
+              const isRetryable = isContextFault || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
+              const { message, attemptNumber, retriesLeft } = error
+              // Every attempt builds its own page, so a page-level fault is
+              // retryable inside the existing context. A context fault is not:
+              // recovering means replacing the context, which closes every page
+              // in it, including the ones a caller that owns the context holds.
+              // So retry the page, and hand a dead context back to its owner.
+              if (preserveContext) {
+                if (isContextFault) throw error
+                debug('retry', { attemptNumber, retriesLeft, message, preserveContext })
+                return
+              }
               const previousContextPromise = _contextPromise
               _contextPromise = createBrowserContext(contextOpts)
               await pReflect(previousContextPromise.then(ctx => ctx.close()))
-              const { message, attemptNumber, retriesLeft } = error
               debug('retry', { attemptNumber, retriesLeft, message })
             }
           })
@@ -167,11 +195,15 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const evaluate = (fn, gotoOpts) =>
-      withPage(
+    const evaluate = (fn, gotoOpts) => {
+      // Both belong to withPage, so they are pulled out rather than spread into
+      // the navigation options.
+      const { keepPage, preserveContext, ...navigateOpts } = gotoOpts ?? {}
+
+      return withPage(
         Object.defineProperty(
           (page, goto) => async (url, opts) => {
-            const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
+            const { response, error } = await goto(page, { url, ...navigateOpts, ...opts })
             return fn(page, response, error)
           },
           'name',
@@ -180,8 +212,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             writable: false
           }
         ),
-        gotoOpts
+        { ...navigateOpts, keepPage, preserveContext }
       )
+    }
 
     const destroyContext = async ({ force = false } = {}) => {
       if (force) isDestroyedForced = true
