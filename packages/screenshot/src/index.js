@@ -66,22 +66,131 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
   return !pageReadyResult.isRejected && !!pageReadyResult.value
 }
 
-const waitForImagesOnViewport = page =>
-  evaluateIsolated(page, () =>
-    Promise.all(
-      Array.from(document.querySelectorAll('img[src]:not([aria-hidden="true"])'))
-        .filter(el => {
-          if (el.naturalHeight === 0 || el.naturalWidth === 0) return false
-          const { top, left, bottom, right } = el.getBoundingClientRect()
-          return (
-            top >= 0 &&
-            left >= 0 &&
-            bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            right <= (window.innerWidth || document.documentElement.clientWidth)
-          )
-        })
-        .map(el => el.decode())
-    )
+// One pass over on-screen images. A bitmap that is already fully inside the
+// viewport is decoded so the shot does not land mid-decode. A visible image
+// that intersects the viewport and has not loaded is pending: the auto retry
+// treats that as not ready. `visibility: hidden` slides and a finished broken
+// image are not pending — waiting will not load them. Opacity is ignored so a
+// fade-in hero still counts. Callers that only need the decode ignore the flag.
+const waitForViewportImages = (page, { decode = true } = {}) =>
+  evaluateIsolated(
+    page,
+    async shouldDecode => {
+      const viewH = window.innerHeight || document.documentElement.clientHeight
+      const viewW = window.innerWidth || document.documentElement.clientWidth
+      const decodes = []
+      let pending = false
+
+      for (const el of document.querySelectorAll('img:not([aria-hidden="true"])')) {
+        const { top, left, bottom, right, width, height } = el.getBoundingClientRect()
+        const hasPixels = el.naturalWidth > 0 && el.naturalHeight > 0
+
+        if (
+          shouldDecode &&
+          hasPixels &&
+          top >= 0 &&
+          left >= 0 &&
+          bottom <= viewH &&
+          right <= viewW
+        ) {
+          decodes.push(el.decode())
+        }
+
+        if (pending || width < 32 || height < 32) continue
+        if (bottom <= 0 || right <= 0 || top >= viewH || left >= viewW) continue
+        if (
+          typeof el.checkVisibility === 'function' &&
+          !el.checkVisibility({ visibilityProperty: true })
+        ) {
+          continue
+        }
+
+        const src = el.currentSrc || el.getAttribute('src') || ''
+        const lazy =
+          el.getAttribute('data-src') ||
+          el.getAttribute('data-srcset') ||
+          el.getAttribute('data-lazy-src')
+        if ((src === '' || src.startsWith('data:')) && lazy) pending = true
+        else if (!hasPixels && !el.complete) pending = true
+      }
+
+      // A rejected decode must not hide a sibling that is still pending.
+      if (shouldDecode) await Promise.all(decodes).catch(() => {})
+      return pending
+    },
+    decode
+  )
+
+// A timed-out decode rejects the whole call. Re-read the flag without waiting,
+// so a skeleton is still not ready.
+const pendingViewportImages = async (page, goto, timeout) => {
+  if (timeout <= 0) return false
+  const settled = await goto.run({
+    fn: waitForViewportImages(page),
+    timeout,
+    debug: 'screenshot:waitForViewportImages'
+  })
+  const probe = settled.isRejected
+    ? await pReflect(waitForViewportImages(page, { decode: false }))
+    : settled
+  return !probe.isRejected && !!probe.value
+}
+
+// Two frames is enough for the scroll listeners. A hidden page can stop
+// delivering frames entirely, so the gesture must still restore and resolve.
+const NUDGE_FRAME_MS = 100
+
+/**
+ * One viewport of scroll and back, so an intersection observer on a hero
+ * requests its asset before the readiness check. The document is stretched
+ * for the gesture when the page itself does not overflow. The scroll is
+ * instant: `scroll-behavior: smooth` must not leave the shot mid-animation.
+ *
+ * @param {import('puppeteer').Page} page
+ * @returns {Promise<void>}
+ */
+const nudgeViewport = page =>
+  evaluateIsolated(
+    page,
+    timeoutMs =>
+      new Promise(resolve => {
+        const root = document.scrollingElement || document.documentElement
+        const behaviorNode = document.documentElement
+        const previousHeight = root.style.height
+        const previousBehavior = behaviorNode.style.scrollBehavior
+        const x = window.scrollX
+        const y = window.scrollY
+        let settled = false
+        const scrollTo = (left, top) => window.scrollTo({ left, top, behavior: 'instant' })
+
+        const finish = () => {
+          if (settled) return
+          settled = true
+          // Height first: scrolling while the root is still the temporary
+          // three-viewport height clamps a saved position below that range.
+          root.style.height = previousHeight
+          scrollTo(x, y)
+          behaviorNode.style.scrollBehavior = previousBehavior
+          resolve()
+        }
+
+        try {
+          behaviorNode.style.scrollBehavior = 'auto'
+          root.style.height = `${(window.innerHeight || 800) * 3}px`
+          scrollTo(0, window.innerHeight || 800)
+          const timer = window.setTimeout(finish, timeoutMs)
+          window.requestAnimationFrame(() => {
+            scrollTo(x, y)
+            window.requestAnimationFrame(() => {
+              window.clearTimeout(timer)
+              finish()
+            })
+          })
+        } catch {
+          finish()
+        }
+      }),
+    NUDGE_FRAME_MS
   )
 
 const readElementClip = async (page, element) => {
@@ -162,8 +271,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
             debug: 'beforeScreenshot:fontsReady'
           },
           {
-            fn: () => waitForImagesOnViewport(page),
-            debug: 'beforeScreenshot:waitForImagesOnViewport'
+            fn: () => waitForViewportImages(page),
+            debug: 'beforeScreenshot:waitForViewportImages'
           }
         ]
 
@@ -207,7 +316,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let didHydrateScroll = false
         let didHydrateAttempt = false
 
+        await pReflect(nudgeViewport(page))
+
         do {
+          const pending = await pendingViewportImages(page, goto, timeout - elapsed())
+
           screenshot = await captureWithNavigationRetry(
             () => {
               if (!opts.fullPage) return page.screenshot(opts)
@@ -223,6 +336,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
             screenshot,
             isWhite
           })
+
+          if (isReady && pending) isReady = false
 
           if (isReady || elapsed() >= timeout) break
 
