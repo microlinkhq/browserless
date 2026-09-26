@@ -66,6 +66,11 @@ module.exports = ({ tmpdir } = {}) => {
       gotoOpts,
       extendPage,
       needsBrowser: needsBrowserOverride,
+      // A caller that passes its own context or page owns the teardown: this
+      // function is one of several running against a shared context, so
+      // destroying it here would close pages the others still hold.
+      ownsContext = true,
+      getPage,
       ...opts
     } = {}
   ) => {
@@ -91,6 +96,51 @@ module.exports = ({ tmpdir } = {}) => {
       return browserPromise
     }
 
+    const buildRunOpts = async ({ page, device, response, url, fnOpts }) => {
+      const targetId = await getTargetId(page)
+
+      const runFunctionOpts = {
+        url,
+        code,
+        device,
+        extendPage,
+        ...opts,
+        ...fnOpts,
+        ...(pageValues && { pageValues }),
+        ...(isHttpResponse(response) && { _response: serializeResponse(response) })
+      }
+
+      if (runFunctionOpts.code === code) {
+        runFunctionOpts.needsNetwork = needsNetwork
+        runFunctionOpts.source = source
+      }
+
+      const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
+      const browserWSEndpoint =
+        browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
+          ? browserFromPage.wsEndpoint()
+          : undefined
+
+      if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
+      runFunctionOpts.browserWSEndpoint = browserWSEndpoint
+      runFunctionOpts.targetId = targetId
+      return runFunctionOpts
+    }
+
+    const settle = async result => {
+      if (result.isFulfilled) return result
+      const error = ensureError(result.value)
+      if (isBrowserlessError(error)) throw error
+      return result
+    }
+
+    // The page was navigated by whoever handed it over, so there is no `goto`
+    // and no page to close: its owner decides when it dies.
+    const runWithGivenPage = async (url, fnOpts) => {
+      const { page, device, response } = await getPage()
+      return settle(await runFunction(await buildRunOpts({ page, device, response, url, fnOpts })))
+    }
+
     const runWithBrowser = async (url, fnOpts) => {
       const browser = await getBrowser()
       const browserless = await browser.createContext()
@@ -98,43 +148,11 @@ module.exports = ({ tmpdir } = {}) => {
       return browserless
         .withPage((page, goto) => async () => {
           const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
-
-          const targetId = await getTargetId(page)
-
-          const runFunctionOpts = {
-            url,
-            code,
-            device,
-            extendPage,
-            ...opts,
-            ...fnOpts,
-            ...(pageValues && { pageValues }),
-            ...(isHttpResponse(response) && { _response: serializeResponse(response) })
-          }
-
-          if (runFunctionOpts.code === code) {
-            runFunctionOpts.needsNetwork = needsNetwork
-            runFunctionOpts.source = source
-          }
-
-          const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
-          const browserWSEndpoint =
-            browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
-              ? browserFromPage.wsEndpoint()
-              : undefined
-
-          if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
-          runFunctionOpts.browserWSEndpoint = browserWSEndpoint
-          runFunctionOpts.targetId = targetId
-
-          const result = await runFunction(runFunctionOpts)
-
-          if (result.isFulfilled) return result
-          const error = ensureError(result.value)
-          if (isBrowserlessError(error)) throw error
-          return result
+          return settle(
+            await runFunction(await buildRunOpts({ page, device, response, url, fnOpts }))
+          )
         })()
-        .finally(() => browserless.destroyContext())
+        .finally(() => ownsContext && browserless.destroyContext())
     }
 
     const runWithoutBrowser = async (url, fnOpts) => {
@@ -160,8 +178,10 @@ module.exports = ({ tmpdir } = {}) => {
       return result
     }
 
-    return async (url, fnOpts = {}) =>
-      needsNetwork ? runWithBrowser(url, fnOpts) : runWithoutBrowser(url, fnOpts)
+    return async (url, fnOpts = {}) => {
+      if (!needsNetwork) return runWithoutBrowser(url, fnOpts)
+      return getPage ? runWithGivenPage(url, fnOpts) : runWithBrowser(url, fnOpts)
+    }
   }
 
   createFunction.teardown = () => isolatedFunction.teardown()

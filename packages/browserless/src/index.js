@@ -110,7 +110,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage = (fn, { timeout: evaluateTimeout } = {}) => {
+    const withPage = (fn, { timeout: evaluateTimeout, keepPage = false } = {}) => {
       const name = fn.name || 'anonymous'
 
       return async (...args) => {
@@ -119,6 +119,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         async function run () {
           let page
           let closePageTimeout
+          let isRetained = false
 
           try {
             page = await createPage(name)
@@ -130,13 +131,17 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             }, timeout)
             if (typeof closePageTimeout.unref === 'function') closePageTimeout.unref()
             const value = await fn(page, goto)(...args)
-            await closePage(page, `${name}:success`)
+            if (keepPage) isRetained = true
+            else await closePage(page, `${name}:success`)
             return value
           } catch (error) {
             await closePage(page, `${name}:error`)
             if (!isRejected) throw ensureError(error)
           } finally {
-            if (closePageTimeout) clearTimeout(closePageTimeout)
+            // A retained page outlives this call, so this timer stops being a
+            // safety net and becomes its only bound: leave it armed. A retry
+            // closed its own page in `catch`, so only the last attempt retains.
+            if (closePageTimeout && !isRetained) clearTimeout(closePageTimeout)
           }
         }
 
@@ -167,11 +172,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const evaluate = (fn, gotoOpts) =>
-      withPage(
+    const evaluate = (fn, gotoOpts) => {
+      const { keepPage, ...navigateOpts } = gotoOpts ?? {}
+
+      return withPage(
         Object.defineProperty(
           (page, goto) => async (url, opts) => {
-            const { response, error } = await goto(page, { url, ...gotoOpts, ...opts })
+            const { response, error } = await goto(page, { url, ...navigateOpts, ...opts })
             return fn(page, response, error)
           },
           'name',
@@ -180,8 +187,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             writable: false
           }
         ),
-        gotoOpts
+        { ...navigateOpts, keepPage }
       )
+    }
 
     const destroyContext = async ({ force = false } = {}) => {
       if (force) isDestroyedForced = true

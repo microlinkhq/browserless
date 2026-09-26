@@ -171,9 +171,50 @@ const myFn = createFunction(code, {
   },
   
   // VM sandbox options (passed to isolated-function)
-  vmOpts: { /* ... */ }
+  vmOpts: { /* ... */ },
+
+  // Set false when `getBrowserless` hands back a context you own and keep
+  // using. The context is then never destroyed here, so a sibling task
+  // sharing it does not lose its pages when this function finishes.
+  ownsContext: true,
+
+  // Run against a page that is already navigated, instead of creating a
+  // context and navigating. No `goto` happens and the page is never closed:
+  // whoever supplied it owns its lifetime. Pass `response` when you have it,
+  // so the function still sees `_response`.
+  getPage: async () => ({ page, device, response })
 })
 ```
+
+Reusing a page the caller already loaded, so the target is fetched once:
+
+```js
+const { page, response } = await somethingThatAlreadyNavigated(url)
+
+const result = await createFunction(code, {
+  getPage: async () => ({ page, response }),
+  ownsContext: false
+})(url)
+
+await page.close()
+```
+
+Retaining a page from `browserless` requires `keepPage`, since `evaluate`
+closes its page as soon as it resolves:
+
+```js
+let page
+await context.evaluate(
+  currentPage => {
+    page = currentPage
+    return currentPage.content()
+  },
+  { keepPage: true }
+)(url)
+```
+
+The page-close watchdog stays armed for a retained page, so it is still bounded
+by the context timeout if its new owner never closes it.
 
 ### Examples
 
