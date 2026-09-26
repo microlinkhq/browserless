@@ -262,3 +262,39 @@ test('retry is bounded by the retry option', async t => {
 
   t.is(calls, 2)
 })
+
+test('a supplied-page timeout does not start another attempt', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const dead = await context.page('timed-out')
+  await dead.goto(fileUrl)
+  await dead.close()
+
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
+  t.teardown(() => release())
+
+  let calls = 0
+  const error = await t.throwsAsync(
+    browserlessFunction(TITLE_FN, {
+      getPage: async () => {
+        calls++
+        if (calls === 1) await gate
+        return { page: dead }
+      },
+      retry: 2,
+      timeout: 500
+    })(fileUrl)
+  )
+
+  t.is(error.code, 'EBRWSRTIMEOUT')
+  release()
+
+  // The first attempt fails as soon as the gate opens. Without the timeout
+  // stop, the retry asks for the page again inside this window.
+  await new Promise(resolve => setTimeout(resolve, 500))
+  t.is(calls, 1)
+})

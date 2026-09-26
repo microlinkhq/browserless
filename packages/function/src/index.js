@@ -6,6 +6,8 @@ const requireOneOf = require('require-one-of')
 const pTimeout = require('p-timeout')
 const pRetry = require('p-retry')
 
+const { AbortError } = pRetry
+
 const { SLOT } = createIsolatedFunction
 const createRunFunction = require('./function')
 const path = require('path')
@@ -150,8 +152,10 @@ module.exports = ({ tmpdir } = {}) => {
     // forwarded to `runFunction`, so this path has to apply it itself. A
     // timeout rejects the call and leaves the page open. The snippet and its
     // isolate subprocess keep running until the snippet returns or the page
-    // is closed.
+    // is closed. The retry loop stops, so no later attempt starts.
     const runWithGivenPage = async (url, fnOpts) => {
+      let isRejected = false
+
       const run = async () => {
         // Asked again per attempt: the supplied page may have died with the
         // fault being retried, so the caller gets to hand over a live one.
@@ -180,6 +184,9 @@ module.exports = ({ tmpdir } = {}) => {
           retries: retry,
           onFailedAttempt: error => {
             if (error.name === 'AbortError') throw error
+            // The caller already has the timeout. Another attempt would ask
+            // for the page again and start a new isolate on it.
+            if (isRejected) throw new AbortError()
             const isRetryable =
               error.code === 'EBRWSRCONTEXTCONNRESET' ||
               error.code === 'EPROTOCOL' ||
@@ -189,6 +196,7 @@ module.exports = ({ tmpdir } = {}) => {
         })
 
       return pTimeout(task(), timeout, () => {
+        isRejected = true
         throw browserTimeout({ timeout })
       })
     }

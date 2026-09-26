@@ -138,7 +138,7 @@ test('preserveContext retries in place instead of surfacing the fault', async t 
   const context = await browserless.createContext()
   t.teardown(() => context.destroyContext())
 
-  const browserBefore = await context.browser()
+  const contextBefore = await context.context()
   let attempts = 0
 
   const title = await context.evaluate(
@@ -155,5 +155,5 @@ test('preserveContext retries in place instead of surfacing the fault', async t 
 
   t.is(attempts, 2)
   t.is(typeof title, 'string')
-  t.is(await context.browser(), browserBefore)
+  t.is(await context.context(), contextBefore)
 })
