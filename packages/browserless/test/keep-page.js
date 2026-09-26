@@ -133,3 +133,27 @@ test('keepPage restarts the close watchdog at handover', async t => {
   }
   t.true(retained.isClosed())
 })
+
+test('preserveContext retries in place instead of surfacing the fault', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const browserBefore = await context.browser()
+  let attempts = 0
+
+  const title = await context.evaluate(
+    page => {
+      if (attempts++ === 0) {
+        const error = new Error('protocol hiccup')
+        error.code = 'EPROTOCOL'
+        throw error
+      }
+      return page.title()
+    },
+    { preserveContext: true }
+  )(fileUrl)
+
+  t.is(attempts, 2)
+  t.is(typeof title, 'string')
+  t.is(await context.browser(), browserBefore)
+})

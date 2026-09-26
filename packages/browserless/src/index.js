@@ -167,13 +167,19 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               if (isRejected || isDestroyedForced) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
-              // Replacing the context closes every page in it. A caller that
-              // owns the context has to see the error instead.
-              if (!isRetryable || preserveContext) throw error
+              if (!isRetryable) throw error
+              const { message, attemptNumber, retriesLeft } = error
+              // Every attempt creates its own page, so a page-level fault is
+              // retryable inside the existing context. Replacing the context is
+              // the part that closes every page in it, including the ones a
+              // caller that owns the context still holds: skip that, not the retry.
+              if (preserveContext) {
+                debug('retry', { attemptNumber, retriesLeft, message, preserveContext })
+                return
+              }
               const previousContextPromise = _contextPromise
               _contextPromise = createBrowserContext(contextOpts)
               await pReflect(previousContextPromise.then(ctx => ctx.close()))
-              const { message, attemptNumber, retriesLeft } = error
               debug('retry', { attemptNumber, retriesLeft, message })
             }
           })

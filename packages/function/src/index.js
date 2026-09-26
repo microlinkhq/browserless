@@ -4,6 +4,7 @@ const { isBrowserlessError, ensureError, browserTimeout } = require('@browserles
 const createIsolatedFunction = require('isolated-function')
 const requireOneOf = require('require-one-of')
 const pTimeout = require('p-timeout')
+const pRetry = require('p-retry')
 
 const { SLOT } = createIsolatedFunction
 const createRunFunction = require('./function')
@@ -152,6 +153,8 @@ module.exports = ({ tmpdir } = {}) => {
     // is closed.
     const runWithGivenPage = async (url, fnOpts) => {
       const run = async () => {
+        // Asked again per attempt: the supplied page may have died with the
+        // fault being retried, so the caller gets to hand over a live one.
         const { page, device, response } = await getPage()
         const result = await runFunction(
           await buildRunOpts({ page, device, response, url, fnOpts, strictTarget: true })
@@ -167,7 +170,25 @@ module.exports = ({ tmpdir } = {}) => {
         return settle(result)
       }
 
-      return pTimeout(run(), timeout, () => {
+      // There is no context to replace here, so this is the only retry the
+      // supplied-page path gets. Attaching to the page is what fails
+      // transiently: `buildRunOpts` opens a CDP session and the isolate
+      // connects over the websocket endpoint, and both can lose a race the
+      // next attempt wins.
+      const task = () =>
+        pRetry(run, {
+          retries: retry,
+          onFailedAttempt: error => {
+            if (error.name === 'AbortError') throw error
+            const isRetryable =
+              error.code === 'EBRWSRCONTEXTCONNRESET' ||
+              error.code === 'EPROTOCOL' ||
+              error.message === createRunFunction.PAGE_NOT_FOUND
+            if (!isRetryable) throw error
+          }
+        })
+
+      return pTimeout(task(), timeout, () => {
         throw browserTimeout({ timeout })
       })
     }

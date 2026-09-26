@@ -212,3 +212,53 @@ test('getPage rejects on timeout and leaves the page open', async t => {
   t.is(error.code, 'EBRWSRTIMEOUT')
   t.false(page.isClosed())
 })
+
+test('a supplied page that has gone is asked for again, and the retry succeeds', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const dead = await context.page('dead')
+  await dead.goto(fileUrl)
+  await dead.close()
+
+  const live = await context.page('live')
+  await live.goto(fileUrl)
+  await live.evaluate(() => {
+    document.title = 'SECOND-ATTEMPT'
+  })
+
+  let calls = 0
+  const result = await browserlessFunction(TITLE_FN, {
+    getPage: async () => ({ page: calls++ === 0 ? dead : live }),
+    retry: 2,
+    timeout: 120000
+  })(fileUrl)
+
+  t.is(calls, 2)
+  t.true(result.isFulfilled)
+  t.is(result.value, 'SECOND-ATTEMPT')
+  t.false(live.isClosed())
+})
+
+test('retry is bounded by the retry option', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const dead = await context.page('always-dead')
+  await dead.goto(fileUrl)
+  await dead.close()
+
+  let calls = 0
+  await t.throwsAsync(
+    browserlessFunction(TITLE_FN, {
+      getPage: async () => {
+        calls++
+        return { page: dead }
+      },
+      retry: 1,
+      timeout: 120000
+    })(fileUrl)
+  )
+
+  t.is(calls, 2)
+})
