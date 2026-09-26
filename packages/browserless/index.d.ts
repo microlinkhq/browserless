@@ -31,7 +31,7 @@ export interface Context {
   respawn: () => void
   context: () => Promise<BrowserContext>
   browser: () => Promise<Browser>
-  evaluate: <T>(fn: (page: Page, response?: HTTPResponse | undefined, error?: Error) => T | Promise<T>, gotoOpts?: GotoOptions & { keepPage?: boolean }) => Promise<T>
+  evaluate: <T>(fn: (page: Page, response?: HTTPResponse | undefined, error?: Error) => T | Promise<T>, gotoOpts?: GotoOptions & { keepPage?: boolean, preserveContext?: boolean }) => Promise<T>
   goto: (page: Page, opts: GotoOptions & { url: string }) => Promise<GotoResult>
   html: (url: string, opts?: GotoOptions) => Promise<string>
   page: (name?: string) => Promise<Page>

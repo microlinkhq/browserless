@@ -4,6 +4,7 @@ const { isBrowserlessError, ensureError, browserTimeout } = require('@browserles
 const createIsolatedFunction = require('isolated-function')
 const requireOneOf = require('require-one-of')
 const pTimeout = require('p-timeout')
+const pReflect = require('p-reflect')
 const pRetry = require('p-retry')
 
 const { AbortError } = pRetry
@@ -25,13 +26,17 @@ const nodePaths = [...new Set([path.resolve(cloudflareDir, '..', '..'), ...modul
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
 const getTargetId = async page => {
+  let session
   try {
-    const session = await page.createCDPSession()
+    session = await page.createCDPSession()
     const { targetInfo } = await session.send('Target.getTargetInfo')
-    await session.detach()
     return targetInfo.targetId
   } catch {
     return undefined
+  } finally {
+    // The lookup failing is retryable, and a supplied page outlives the call,
+    // so a session left attached here accumulates on someone else's page.
+    if (session) await pReflect(session.detach())
   }
 }
 

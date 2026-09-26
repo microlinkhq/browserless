@@ -300,3 +300,37 @@ test('a supplied-page timeout does not start another attempt', async t => {
   await new Promise(resolve => setTimeout(resolve, 2500))
   t.is(calls, 1)
 })
+
+test('a failed target lookup does not strand a CDP session on a supplied page', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const page = await context.page('session-leak')
+  await page.goto(fileUrl)
+
+  const sessions = []
+  const realCreateCDPSession = page.createCDPSession.bind(page)
+  page.createCDPSession = async () => {
+    const session = await realCreateCDPSession()
+    sessions.push(session)
+    const realSend = session.send.bind(session)
+    session.send = async (...args) =>
+      args[0] === 'Target.getTargetInfo'
+        ? Promise.reject(new Error('lookup unavailable'))
+        : realSend(...args)
+    return session
+  }
+
+  await t.throwsAsync(
+    browserlessFunction(TITLE_FN, {
+      getPage: async () => ({ page }),
+      retry: 1,
+      timeout: 120000
+    })(fileUrl)
+  )
+
+  t.true(sessions.length >= 1)
+  // `detached` is the signal: `connection()` stays truthy after a detach.
+  for (const session of sessions) t.true(session.detached)
+  t.false(page.isClosed())
+})

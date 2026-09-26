@@ -194,7 +194,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const evaluate = (fn, gotoOpts) => {
-      const { keepPage, ...navigateOpts } = gotoOpts ?? {}
+      // Both belong to withPage, so they are pulled out rather than spread into
+      // the navigation options.
+      const { keepPage, preserveContext, ...navigateOpts } = gotoOpts ?? {}
 
       return withPage(
         Object.defineProperty(
@@ -208,7 +210,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             writable: false
           }
         ),
-        { ...navigateOpts, keepPage }
+        { ...navigateOpts, keepPage, preserveContext }
       )
     }
 

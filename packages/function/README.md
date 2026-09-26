@@ -150,7 +150,9 @@ const myFn = createFunction(code, {
   // Browserless instance factory
   getBrowserless: () => require('browserless')(),
   
-  // Number of retries on failure
+  // Attempts on the `getPage` path, where there is no context to replace and
+  // this is the only retry. The default path takes its retry count from the
+  // browserless context instead.
   retry: 2,
   
   // Execution timeout in milliseconds
