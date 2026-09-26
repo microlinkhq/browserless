@@ -84,6 +84,63 @@ const waitForImagesOnViewport = page =>
     )
   )
 
+/**
+ * In-viewport image that has a layout box but has not decoded yet: a skeleton,
+ * or a lazy `src` that an intersection observer has not assigned. A finished
+ * broken image (`complete` with no pixels) is not pending — waiting will not
+ * load it.
+ *
+ * @param {import('puppeteer').Page} page
+ * @returns {Promise<boolean>}
+ */
+const pendingViewportImages = page =>
+  evaluateIsolated(page, () => {
+    const viewH = window.innerHeight || document.documentElement.clientHeight
+    const viewW = window.innerWidth || document.documentElement.clientWidth
+    for (const el of document.querySelectorAll('img:not([aria-hidden="true"])')) {
+      const { top, left, bottom, right, width, height } = el.getBoundingClientRect()
+      if (width < 32 || height < 32) continue
+      if (bottom <= 0 || right <= 0 || top >= viewH || left >= viewW) continue
+      const src = el.currentSrc || el.getAttribute('src') || ''
+      const lazy =
+        el.getAttribute('data-src') ||
+        el.getAttribute('data-srcset') ||
+        el.getAttribute('data-lazy-src')
+      const placeholder = src === '' || src.startsWith('data:')
+      if (placeholder && lazy) return true
+      if ((el.naturalWidth === 0 || el.naturalHeight === 0) && !el.complete) return true
+    }
+    return false
+  })
+
+/**
+ * One viewport of scroll and back, so an intersection observer on a hero
+ * requests its asset before the readiness check. The document is stretched
+ * for the gesture when the page itself does not overflow.
+ *
+ * @param {import('puppeteer').Page} page
+ * @returns {Promise<void>}
+ */
+const nudgeViewport = page =>
+  evaluateIsolated(
+    page,
+    () =>
+      new Promise(resolve => {
+        const root = document.scrollingElement || document.documentElement
+        const previous = root.style.height
+        const y = window.scrollY
+        root.style.height = `${(window.innerHeight || 800) * 3}px`
+        window.scrollTo(0, window.innerHeight || 800)
+        window.requestAnimationFrame(() => {
+          window.scrollTo(0, y)
+          window.requestAnimationFrame(() => {
+            root.style.height = previous
+            resolve()
+          })
+        })
+      })
+  )
+
 const readElementClip = async (page, element) => {
   const handle = await page.waitForSelector(element, { visible: true })
   try {
@@ -207,6 +264,8 @@ module.exports = ({ goto, ...gotoOpts }) => {
         let didHydrateScroll = false
         let didHydrateAttempt = false
 
+        await pReflect(nudgeViewport(page))
+
         do {
           screenshot = await captureWithNavigationRetry(
             () => {
@@ -223,6 +282,11 @@ module.exports = ({ goto, ...gotoOpts }) => {
             screenshot,
             isWhite
           })
+
+          if (isReady) {
+            const pending = await pReflect(pendingViewportImages(page))
+            if (!pending.isRejected && pending.value) isReady = false
+          }
 
           if (isReady || elapsed() >= timeout) break
 
