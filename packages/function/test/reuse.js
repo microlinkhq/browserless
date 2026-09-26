@@ -294,7 +294,9 @@ test('a supplied-page timeout does not start another attempt', async t => {
   release()
 
   // The first attempt fails as soon as the gate opens. Without the timeout
-  // stop, the retry asks for the page again inside this window.
-  await new Promise(resolve => setTimeout(resolve, 500))
+  // stop, the retry asks for the page again inside this window, which has to
+  // outlast p-retry's backoff before the second attempt is observable: at 500ms
+  // this passed with the stop removed, because the retry had not fired yet.
+  await new Promise(resolve => setTimeout(resolve, 2500))
   t.is(calls, 1)
 })
