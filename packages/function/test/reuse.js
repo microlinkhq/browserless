@@ -334,3 +334,46 @@ test('a failed target lookup does not strand a CDP session on a supplied page', 
   for (const session of sessions) t.true(session.detached)
   t.false(page.isClosed())
 })
+
+const KEYS_FN = '({ page, ...args }) => page && Object.keys(args).sort().join(",")'
+
+test('a snippet sees the same arguments on either path', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const page = await context.page('arg-surface')
+  await page.goto(fileUrl)
+
+  const supplied = await browserlessFunction(KEYS_FN, {
+    getPage: async () => ({ page }),
+    timeout: 120000
+  })(fileUrl)
+
+  const navigated = await browserlessFunction(KEYS_FN, {
+    getBrowserless: () => browserless,
+    timeout: 120000
+  })(fileUrl)
+
+  // Internals stay internal: `targetId` and `strictTarget` are how the isolate
+  // finds the page, not part of what a snippet is handed.
+  t.is(supplied.value, 'device,response,url')
+  t.is(supplied.value, navigated.value)
+})
+
+test('a supplied page without a device still reports one', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const page = await context.page('device-derived')
+  await page.goto(fileUrl)
+
+  const result = await browserlessFunction(
+    '({ page, device }) => page && [typeof device.userAgent, device.viewport.width].join(",")',
+    { getPage: async () => ({ page }), timeout: 120000 }
+  )(fileUrl)
+
+  t.true(result.isFulfilled)
+  const [userAgentType, width] = result.value.split(',')
+  t.is(userAgentType, 'string')
+  t.is(Number(width), page.viewport().width)
+})

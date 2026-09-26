@@ -40,6 +40,15 @@ const getTargetId = async page => {
   }
 }
 
+// `goto` hands the normal path a `{ userAgent, viewport }` descriptor, which a
+// snippet can read. A supplied page has no `goto`, so read the same two facts off
+// the page itself rather than letting the snippet see `device` on one path only.
+const readDevice = async page => {
+  if (typeof page?.evaluate !== 'function' || typeof page.viewport !== 'function') return undefined
+  const { value: userAgent } = await pReflect(page.evaluate(() => navigator.userAgent))
+  return { userAgent, viewport: page.viewport() }
+}
+
 const isHttpResponse = response => response != null && typeof response.status === 'function'
 
 const serializeResponse = response => ({
@@ -119,6 +128,8 @@ module.exports = ({ tmpdir } = {}) => {
       const targetId = await getTargetId(page)
       if (strictTarget && !targetId) throw new Error(createRunFunction.PAGE_NOT_FOUND)
 
+      const resolvedDevice = device ?? (await readDevice(page))
+
       const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
       const browserWSEndpoint =
         browserFromPage && typeof browserFromPage.wsEndpoint === 'function'
@@ -131,7 +142,7 @@ module.exports = ({ tmpdir } = {}) => {
         {
           url,
           code,
-          device,
+          device: resolvedDevice,
           extendPage,
           ...opts,
           ...fnOpts,
