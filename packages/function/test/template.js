@@ -28,6 +28,14 @@ test('use a simplified template if page is not used', t => {
   }
 })
 
+test('a strict target miss disconnects the browser', t => {
+  const source = template('({ page }) => page.title()')
+  const tryAt = source.indexOf('try {')
+  const throwAt = source.indexOf('if (strictTarget) throw')
+  const finallyAt = source.lastIndexOf('finally')
+  t.true(tryAt !== -1 && tryAt < throwAt && throwAt < finallyAt)
+})
+
 test('require puppeteer if page is used', t => {
   {
     const code = ({ page }) => page.title()

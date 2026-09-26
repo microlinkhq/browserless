@@ -267,25 +267,25 @@ const template = (code, usesPageOrOpts) => {
       ${withResponse}
       const puppeteer = require('@cloudflare/puppeteer')
       const browser = await puppeteer.connect({ browserWSEndpoint })
-      const pages = await browser.pages()
-      const { targetId, strictTarget } = opts
-      let page
-      if (targetId && (strictTarget || pages.length > 1)) {
-        for (const p of pages) {
-          try {
-            const session = await p.createCDPSession()
-            const { targetInfo } = await session.send('Target.getTargetInfo')
-            await session.detach()
-            if (targetInfo.targetId === targetId) { page = p; break }
-          } catch {}
-        }
-      }
-      if (!page) {
-        if (strictTarget) throw new Error(${JSON.stringify(PAGE_NOT_FOUND)})
-        page = pages[pages.length - 1]
-      }
-      ${extensions}
       try {
+        const pages = await browser.pages()
+        const { targetId, strictTarget } = opts
+        let page
+        if (targetId && (strictTarget || pages.length > 1)) {
+          for (const p of pages) {
+            try {
+              const session = await p.createCDPSession()
+              const { targetInfo } = await session.send('Target.getTargetInfo')
+              await session.detach()
+              if (targetInfo.targetId === targetId) { page = p; break }
+            } catch {}
+          }
+        }
+        if (!page) {
+          if (strictTarget) throw new Error(${JSON.stringify(PAGE_NOT_FOUND)})
+          page = pages[pages.length - 1]
+        }
+        ${extensions}
         return await (${code})({ page, response, ...rest, url })
       } finally {
         await browser.disconnect()
