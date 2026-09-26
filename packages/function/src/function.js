@@ -57,3 +57,4 @@ module.exports.isUsingPage = template.isUsingPage
 module.exports.needsBrowser = template.needsBrowser
 module.exports.buildTemplate = template
 module.exports.inspect = template.inspect
+module.exports.PAGE_NOT_FOUND = template.PAGE_NOT_FOUND

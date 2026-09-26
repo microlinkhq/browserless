@@ -240,6 +240,8 @@ const normalizeOpts = (code, usesPageOrOpts) => {
   return { usesPage, needsBrowser: usesPage, extendPage: {} }
 }
 
+const PAGE_NOT_FOUND = 'Could not resolve the supplied page'
+
 const template = (code, usesPageOrOpts) => {
   const { usesPage, needsBrowser: withBrowser, extendPage } = normalizeOpts(code, usesPageOrOpts)
   const extensions = applyExtendPage(extendPage)
@@ -266,9 +268,9 @@ const template = (code, usesPageOrOpts) => {
       const puppeteer = require('@cloudflare/puppeteer')
       const browser = await puppeteer.connect({ browserWSEndpoint })
       const pages = await browser.pages()
-      const { targetId } = opts
+      const { targetId, strictTarget } = opts
       let page
-      if (targetId && pages.length > 1) {
+      if (targetId && (strictTarget || pages.length > 1)) {
         for (const p of pages) {
           try {
             const session = await p.createCDPSession()
@@ -278,7 +280,10 @@ const template = (code, usesPageOrOpts) => {
           } catch {}
         }
       }
-      if (!page) page = pages[pages.length - 1]
+      if (!page) {
+        if (strictTarget) throw new Error(${JSON.stringify(PAGE_NOT_FOUND)})
+        page = pages[pages.length - 1]
+      }
       ${extensions}
       try {
         return await (${code})({ page, response, ...rest, url })
@@ -292,3 +297,4 @@ module.exports = template
 module.exports.isUsingPage = isUsingPage
 module.exports.needsBrowser = needsBrowser
 module.exports.inspect = inspect
+module.exports.PAGE_NOT_FOUND = PAGE_NOT_FOUND

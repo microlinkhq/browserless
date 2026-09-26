@@ -181,7 +181,9 @@ const myFn = createFunction(code, {
   // Run against a page that is already navigated, instead of creating a
   // context and navigating. No `goto` happens and the page is never closed:
   // whoever supplied it owns its lifetime. Pass `response` when you have it,
-  // so the function still sees `_response`.
+  // so the function still sees `_response`. `timeout` still bounds the call.
+  // A timeout does not cancel the snippet: it can keep using the page until
+  // it returns.
   getPage: async () => ({ page, device, response })
 })
 ```
@@ -192,12 +194,14 @@ Reusing a page the caller already loaded, so the target is fetched once:
 const { page, response } = await somethingThatAlreadyNavigated(url)
 
 const result = await createFunction(code, {
-  getPage: async () => ({ page, response }),
-  ownsContext: false
+  getPage: async () => ({ page, response })
 })(url)
 
 await page.close()
 ```
+
+`timeout` rejects the call and leaves the page open. The snippet is not
+cancelled, so leave the page alone until that work finishes or you close it.
 
 Retaining a page from `browserless` requires `keepPage`, since `evaluate`
 closes its page as soon as it resolves:
@@ -213,8 +217,9 @@ await context.evaluate(
 )(url)
 ```
 
-The page-close watchdog stays armed for a retained page, so it is still bounded
-by the context timeout if its new owner never closes it.
+Retaining a page restarts its close watchdog, so the new owner has a full
+timeout to finish or close it. If they do neither, the page is closed when
+that window ends.
 
 ### Examples
 

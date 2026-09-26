@@ -51,7 +51,8 @@ test('ownsContext false leaves the context to its owner', async t => {
 
   t.true(result.isFulfilled)
   t.is(spy.calls(), 0)
-  t.false((await real.browser()).connected === false)
+  const page = await real.page('still-open')
+  t.false(page.isClosed())
 })
 
 test('getPage runs on the handed-over page without navigating or closing it', async t => {
@@ -81,5 +82,82 @@ test('getPage runs on the handed-over page without navigating or closing it', as
   t.true(result.isFulfilled)
   t.is(result.value, 'HANDOVER-MARKER')
   t.is(gotoCalls, 0)
+  t.false(page.isClosed())
+})
+
+test('getPage uses the supplied page when another page is open', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const marked = await context.page('marked')
+  await marked.goto(fileUrl)
+  await marked.evaluate(() => {
+    document.title = 'HANDOVER-MARKER'
+  })
+
+  const other = await context.page('other')
+  await other.goto(fileUrl)
+  await other.evaluate(() => {
+    document.title = 'OTHER-PAGE'
+  })
+
+  const result = await browserlessFunction(TITLE_FN, {
+    getPage: async () => ({ page: marked }),
+    timeout: 120000
+  })(fileUrl)
+
+  t.true(result.isFulfilled)
+  t.is(result.value, 'HANDOVER-MARKER')
+  t.false(marked.isClosed())
+  t.false(other.isClosed())
+})
+
+test('getPage throws when the supplied page cannot be identified', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const marked = await context.page('marked')
+  await marked.goto(fileUrl)
+  await marked.evaluate(() => {
+    document.title = 'HANDOVER-MARKER'
+  })
+
+  const other = await context.page('other')
+  await other.goto(fileUrl)
+  await other.evaluate(() => {
+    document.title = 'OTHER-PAGE'
+  })
+
+  marked.createCDPSession = async () => {
+    throw new Error('cdp down')
+  }
+
+  const error = await t.throwsAsync(
+    browserlessFunction(TITLE_FN, {
+      getPage: async () => ({ page: marked }),
+      timeout: 120000
+    })(fileUrl)
+  )
+
+  t.is(error.message, 'Could not resolve the supplied page')
+  t.false(marked.isClosed())
+  t.false(other.isClosed())
+})
+
+test('getPage rejects on timeout and leaves the page open', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const page = await context.page('hang')
+  await page.goto(fileUrl)
+
+  const error = await t.throwsAsync(
+    browserlessFunction('({ page }) => page.waitForSelector("#never-matches", { timeout: 0 })', {
+      getPage: async () => ({ page }),
+      timeout: 500
+    })(fileUrl)
+  )
+
+  t.is(error.code, 'EBRWSRTIMEOUT')
   t.false(page.isClosed())
 })

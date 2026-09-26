@@ -55,10 +55,40 @@ test('keepPage still closes the page when the function throws', async t => {
         retained = page
         throw new Error('boom')
       },
-      { keepPage: true, retry: 0 }
+      { keepPage: true }
     )(fileUrl)
   )
 
   t.true(retained.isClosed())
   t.is(await countPages(context), before)
+})
+
+test('keepPage restarts the close watchdog at handover', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  // The watchdog and the evaluate timeout share one budget, measured from
+  // page creation. Spend most of it here, then wait past that original
+  // deadline but less than a full new window.
+  const timeout = 8000
+  const spent = 2000
+  const afterHandover = 7000
+
+  const retained = await context.evaluate(
+    async page => {
+      await new Promise(resolve => setTimeout(resolve, spent))
+      return page
+    },
+    { keepPage: true, timeout }
+  )(fileUrl)
+
+  t.false(retained.isClosed())
+  await new Promise(resolve => setTimeout(resolve, afterHandover))
+  t.false(retained.isClosed())
+
+  const deadline = Date.now() + timeout
+  while (!retained.isClosed() && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 50))
+  }
+  t.true(retained.isClosed())
 })

@@ -1,8 +1,9 @@
 'use strict'
 
-const { isBrowserlessError, ensureError } = require('@browserless/errors')
+const { isBrowserlessError, ensureError, browserTimeout } = require('@browserless/errors')
 const createIsolatedFunction = require('isolated-function')
 const requireOneOf = require('require-one-of')
+const pTimeout = require('p-timeout')
 
 const { SLOT } = createIsolatedFunction
 const createRunFunction = require('./function')
@@ -66,9 +67,9 @@ module.exports = ({ tmpdir } = {}) => {
       gotoOpts,
       extendPage,
       needsBrowser: needsBrowserOverride,
-      // A caller that passes its own context or page owns the teardown: this
-      // function is one of several running against a shared context, so
-      // destroying it here would close pages the others still hold.
+      // False when the caller keeps the context `getBrowserless` created.
+      // Destroying it here would close pages another task still holds.
+      // `getPage` does not create a context, so this flag does not apply there.
       ownsContext = true,
       getPage,
       ...opts
@@ -96,8 +97,10 @@ module.exports = ({ tmpdir } = {}) => {
       return browserPromise
     }
 
-    const buildRunOpts = async ({ page, device, response, url, fnOpts }) => {
+    const buildRunOpts = async ({ page, device, response, url, fnOpts, strictTarget = false }) => {
+      if (!page) throw new Error(createRunFunction.PAGE_NOT_FOUND)
       const targetId = await getTargetId(page)
+      if (strictTarget && !targetId) throw new Error(createRunFunction.PAGE_NOT_FOUND)
 
       const runFunctionOpts = {
         url,
@@ -124,6 +127,7 @@ module.exports = ({ tmpdir } = {}) => {
       if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
       runFunctionOpts.browserWSEndpoint = browserWSEndpoint
       runFunctionOpts.targetId = targetId
+      if (strictTarget) runFunctionOpts.strictTarget = true
       return runFunctionOpts
     }
 
@@ -135,10 +139,31 @@ module.exports = ({ tmpdir } = {}) => {
     }
 
     // The page was navigated by whoever handed it over, so there is no `goto`
-    // and no page to close: its owner decides when it dies.
+    // and no page to close: its owner decides when it dies. `timeout` is not
+    // forwarded to `runFunction`, so this path has to apply it itself.
     const runWithGivenPage = async (url, fnOpts) => {
-      const { page, device, response } = await getPage()
-      return settle(await runFunction(await buildRunOpts({ page, device, response, url, fnOpts })))
+      const run = async () => {
+        const { page, device, response } = await getPage()
+        const result = await runFunction(
+          await buildRunOpts({ page, device, response, url, fnOpts, strictTarget: true })
+        )
+        // A miss inside the isolate comes back as a rejected result. It is not
+        // a user-code failure: the supplied page was never found.
+        if (
+          !result.isFulfilled &&
+          ensureError(result.value).message === createRunFunction.PAGE_NOT_FOUND
+        ) {
+          throw new Error(createRunFunction.PAGE_NOT_FOUND)
+        }
+        return settle(result)
+      }
+      // A timeout does not cancel the snippet or close the page. Swallow a
+      // late settlement so it does not surface as an unhandled rejection.
+      const pending = run()
+      pending.catch(() => {})
+      return pTimeout(pending, timeout, () => {
+        throw browserTimeout({ timeout })
+      })
     }
 
     const runWithBrowser = async (url, fnOpts) => {

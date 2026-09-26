@@ -121,26 +121,35 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           let closePageTimeout
           let isRetained = false
 
-          try {
-            page = await createPage(name)
-            closePageTimeout = setTimeout(() => {
+          const armCloseWatchdog = () => {
+            const timer = setTimeout(() => {
               closePage(page, name).catch(error => {
                 const { message, code, name } = ensureError(error)
                 debug('closePage:timeout:error', { message, code, name })
               })
             }, timeout)
-            if (typeof closePageTimeout.unref === 'function') closePageTimeout.unref()
+            if (typeof timer.unref === 'function') timer.unref()
+            return timer
+          }
+
+          try {
+            page = await createPage(name)
+            closePageTimeout = armCloseWatchdog()
             const value = await fn(page, goto)(...args)
-            if (keepPage) isRetained = true
-            else await closePage(page, `${name}:success`)
+            if (keepPage) {
+              // Navigation already spent part of the original window. Restart
+              // it so a slow load does not close the page under its new owner.
+              // A retry closed its own page in `catch`, so only the last
+              // attempt retains.
+              clearTimeout(closePageTimeout)
+              closePageTimeout = armCloseWatchdog()
+              isRetained = true
+            } else await closePage(page, `${name}:success`)
             return value
           } catch (error) {
             await closePage(page, `${name}:error`)
             if (!isRejected) throw ensureError(error)
           } finally {
-            // A retained page outlives this call, so this timer stops being a
-            // safety net and becomes its only bound: leave it armed. A retry
-            // closed its own page in `catch`, so only the last attempt retains.
             if (closePageTimeout && !isRetained) clearTimeout(closePageTimeout)
           }
         }
