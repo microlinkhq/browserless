@@ -29,13 +29,17 @@ const page = ({ arm }) => `<!doctype html>
   </body>
 </html>`
 
-const heroPixel = async png => {
+const pixelAt = async (png, x, y) => {
   const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true })
-  const offset = (12 * info.width + 12) * info.channels
+  const offset = (y * info.width + x) * info.channels
   return [data[offset], data[offset + 1], data[offset + 2]]
 }
 
+const heroPixel = png => pixelAt(png, 12, 12)
+
 const isGreen = ([r, g, b]) => r < 40 && g > 150 && b < 40
+
+const isRed = ([r, g, b]) => r > 200 && g < 40 && b < 40
 
 const serve = (t, html) =>
   runServer(t, ({ req, res }) => {
@@ -80,6 +84,70 @@ test('waitUntil auto still captures when a lazy image never arrives', async t =>
   t.deepEqual([...png.subarray(0, 4)], [...PNG_MAGIC])
   t.false(isGreen(await heroPixel(png)))
   t.true(elapsed < 15000, `gave up inside the action budget (${elapsed}ms)`)
+})
+
+test('a hidden lazy image does not hold the capture', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    page({ arm: '' }).replace('style="display:block;background:#ccc"', 'style="visibility:hidden"')
+  )
+
+  const started = Date.now()
+  const png = await browserless.withPage(
+    (browserPage, goto) => async () =>
+      createScreenshot({ goto })(browserPage)(url, { adblock: false, timeout: 55000 })
+  )()
+  const elapsed = Date.now() - started
+
+  t.deepEqual([...png.subarray(0, 4)], [...PNG_MAGIC])
+  t.false(isGreen(await heroPixel(png)))
+  // Action budget for this timeout is 5s. A hidden slide must not spend it.
+  t.true(elapsed < 4000, `hidden image held the shot for ${elapsed}ms`)
+})
+
+test('waitUntil auto restores the viewport when scroll-behavior is smooth', async t => {
+  const browserless = await getBrowserContext(t)
+  const url = await serve(
+    t,
+    `<!doctype html>
+<html style="scroll-behavior:smooth">
+  <body style="margin:0;background:#888">
+    <div style="height:64px;background:#f00"></div>
+    <img id="hero" width="320" height="200" data-src="/pixel.png" style="display:block">
+    <div style="height:4000px"></div>
+    <script>
+      const img = document.getElementById('hero')
+      window.addEventListener('scroll', () => {
+        img.src = img.getAttribute('data-src')
+      }, { once: true })
+    </script>
+  </body>
+</html>`
+  )
+
+  const png = await browserless.withPage(
+    (browserPage, goto) => async () =>
+      createScreenshot({ goto })(browserPage)(url, { adblock: false, timeout: 33000 })
+  )()
+
+  const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true })
+  const rgbAt = y => {
+    const offset = (y * info.width + 12) * info.channels
+    return [data[offset], data[offset + 1], data[offset + 2]]
+  }
+  let belowBar = [0, 0, 0]
+  for (let y = 0; y < info.height; y++) {
+    const rgb = rgbAt(y)
+    if (!isRed(rgb)) {
+      belowBar = rgb
+      break
+    }
+  }
+
+  t.deepEqual([...png.subarray(0, 4)], [...PNG_MAGIC])
+  t.true(isRed(rgbAt(0)), 'the capture is back at the top')
+  t.true(isGreen(belowBar), 'the hero loaded after the nudge')
 })
 
 test('an explicit waitUntil does not wait on a lazy image', async t => {

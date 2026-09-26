@@ -67,10 +67,11 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
 }
 
 // One pass over on-screen images. A bitmap that is already fully inside the
-// viewport is decoded so the shot does not land mid-decode. A large image that
-// merely intersects the viewport and has not loaded is pending: the auto retry
-// treats that as not ready. A finished broken image is not pending — waiting
-// will not load it. Callers that only need the decode ignore the flag.
+// viewport is decoded so the shot does not land mid-decode. A visible image
+// that intersects the viewport and has not loaded is pending: the auto retry
+// treats that as not ready. Hidden slides and a finished broken image are not
+// pending — waiting will not load them. Callers that only need the decode
+// ignore the flag.
 const waitForViewportImages = page =>
   evaluateIsolated(page, async () => {
     const viewH = window.innerHeight || document.documentElement.clientHeight
@@ -88,6 +89,12 @@ const waitForViewportImages = page =>
 
       if (pending || width < 32 || height < 32) continue
       if (bottom <= 0 || right <= 0 || top >= viewH || left >= viewW) continue
+      if (
+        typeof el.checkVisibility === 'function' &&
+        !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })
+      ) {
+        continue
+      }
 
       const src = el.currentSrc || el.getAttribute('src') || ''
       const lazy =
@@ -103,10 +110,15 @@ const waitForViewportImages = page =>
     return pending
   })
 
+// Two frames is enough for the scroll listeners. A hidden page can stop
+// delivering frames entirely, so the gesture must still restore and resolve.
+const NUDGE_FRAME_MS = 100
+
 /**
  * One viewport of scroll and back, so an intersection observer on a hero
  * requests its asset before the readiness check. The document is stretched
- * for the gesture when the page itself does not overflow.
+ * for the gesture when the page itself does not overflow. The scroll is
+ * instant: `scroll-behavior: smooth` must not leave the shot mid-animation.
  *
  * @param {import('puppeteer').Page} page
  * @returns {Promise<void>}
@@ -114,21 +126,42 @@ const waitForViewportImages = page =>
 const nudgeViewport = page =>
   evaluateIsolated(
     page,
-    () =>
+    timeoutMs =>
       new Promise(resolve => {
         const root = document.scrollingElement || document.documentElement
-        const previous = root.style.height
+        const behaviorNode = document.documentElement
+        const previousHeight = root.style.height
+        const previousBehavior = behaviorNode.style.scrollBehavior
+        const x = window.scrollX
         const y = window.scrollY
-        root.style.height = `${(window.innerHeight || 800) * 3}px`
-        window.scrollTo(0, window.innerHeight || 800)
-        window.requestAnimationFrame(() => {
-          window.scrollTo(0, y)
+        let settled = false
+
+        const finish = () => {
+          if (settled) return
+          settled = true
+          window.scrollTo({ left: x, top: y, behavior: 'instant' })
+          root.style.height = previousHeight
+          behaviorNode.style.scrollBehavior = previousBehavior
+          resolve()
+        }
+
+        try {
+          behaviorNode.style.scrollBehavior = 'auto'
+          root.style.height = `${(window.innerHeight || 800) * 3}px`
+          window.scrollTo({ left: 0, top: window.innerHeight || 800, behavior: 'instant' })
+          const timer = window.setTimeout(finish, timeoutMs)
           window.requestAnimationFrame(() => {
-            root.style.height = previous
-            resolve()
+            window.scrollTo({ left: x, top: y, behavior: 'instant' })
+            window.requestAnimationFrame(() => {
+              window.clearTimeout(timer)
+              finish()
+            })
           })
-        })
-      })
+        } catch {
+          finish()
+        }
+      }),
+    NUDGE_FRAME_MS
   )
 
 const readElementClip = async (page, element) => {
