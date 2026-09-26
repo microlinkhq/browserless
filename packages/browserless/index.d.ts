@@ -41,7 +41,7 @@ export interface Context {
   getDevice: (deviceName: string) => Viewport | undefined
   report: (opts?: { benchmark?: boolean }) => Promise<HardwareInfo>
   destroyContext: (opts?: { force?: boolean }) => Promise<void>
-  withPage: <T>(fn: (page: Page, goto: unknown) => Promise<T>, opts?: { timeout?: number, keepPage?: boolean }) => Promise<T>
+  withPage: <T>(fn: (page: Page, goto: unknown) => Promise<T>, opts?: { timeout?: number, keepPage?: boolean, preserveContext?: boolean }) => Promise<T>
 }
 
 export interface GotoOptions {

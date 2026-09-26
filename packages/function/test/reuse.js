@@ -16,12 +16,13 @@ const spyContext = context => {
   let destroyed = 0
   return {
     calls: () => destroyed,
-    context: Object.assign(Object.create(Object.getPrototypeOf(context)), context, {
+    context: {
+      ...context,
       destroyContext: (...args) => {
         destroyed++
         return context.destroyContext(...args)
       }
-    })
+    }
   }
 }
 
@@ -53,6 +54,28 @@ test('ownsContext false leaves the context to its owner', async t => {
   t.is(spy.calls(), 0)
   const page = await real.page('still-open')
   t.false(page.isClosed())
+})
+
+test('ownsContext false leaves sibling pages open when the run hits a protocol error', async t => {
+  const real = await browserless.createContext()
+  t.teardown(() => real.destroyContext())
+
+  const sibling = await real.page('sibling')
+  await sibling.goto(fileUrl)
+
+  const error = await t.throwsAsync(
+    browserlessFunction(
+      '({ page }) => { throw new Error("Protocol error (Page.navigate): forced") }',
+      {
+        getBrowserless: () => ({ createContext: async () => real }),
+        ownsContext: false,
+        timeout: 120000
+      }
+    )(fileUrl)
+  )
+
+  t.is(error.code, 'EPROTOCOL')
+  t.false(sibling.isClosed())
 })
 
 test('getPage runs on the handed-over page without navigating or closing it', async t => {

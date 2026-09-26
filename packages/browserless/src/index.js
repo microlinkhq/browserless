@@ -110,7 +110,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage = (fn, { timeout: evaluateTimeout, keepPage = false } = {}) => {
+    const withPage = (
+      fn,
+      { timeout: evaluateTimeout, keepPage = false, preserveContext = false } = {}
+    ) => {
       const name = fn.name || 'anonymous'
 
       return async (...args) => {
@@ -121,7 +124,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           let closePageTimeout
           let isRetained = false
 
-          const armCloseWatchdog = () => {
+          const startCloseTimeout = () => {
             const timer = setTimeout(() => {
               closePage(page, name).catch(error => {
                 const { message, code, name } = ensureError(error)
@@ -134,7 +137,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
           try {
             page = await createPage(name)
-            closePageTimeout = armCloseWatchdog()
+            closePageTimeout = startCloseTimeout()
             const value = await fn(page, goto)(...args)
             if (keepPage) {
               // Navigation already spent part of the original window. Restart
@@ -142,9 +145,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               // A retry closed its own page in `catch`, so only the last
               // attempt retains.
               clearTimeout(closePageTimeout)
-              closePageTimeout = armCloseWatchdog()
+              closePageTimeout = startCloseTimeout()
               isRetained = true
-            } else await closePage(page, `${name}:success`)
+            } else {
+              await closePage(page, `${name}:success`)
+            }
             return value
           } catch (error) {
             await closePage(page, `${name}:error`)
@@ -163,7 +168,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               if (isRejected || isDestroyedForced) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
-              if (!isRetryable) throw error
+              // Replacing the context closes every page in it. A caller that
+              // owns the context has to see the error instead.
+              if (!isRetryable || preserveContext) throw error
               const previousContextPromise = _contextPromise
               _contextPromise = createBrowserContext(contextOpts)
               await pReflect(previousContextPromise.then(ctx => ctx.close()))

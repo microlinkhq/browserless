@@ -174,8 +174,8 @@ const myFn = createFunction(code, {
   vmOpts: { /* ... */ },
 
   // Set false when `getBrowserless` hands back a context you own and keep
-  // using. The context is then never destroyed here, so a sibling task
-  // sharing it does not lose its pages when this function finishes.
+  // using. This call neither destroys it nor replaces it on a retryable
+  // browser error, so a sibling task sharing it does not lose its pages.
   ownsContext: true,
 
   // Run against a page that is already navigated, instead of creating a

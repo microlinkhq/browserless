@@ -34,6 +34,7 @@ test('a strict target miss disconnects the browser', t => {
   const throwAt = source.indexOf('if (strictTarget) throw')
   const finallyAt = source.lastIndexOf('finally')
   t.true(tryAt !== -1 && tryAt < throwAt && throwAt < finallyAt)
+  t.regex(source.slice(finallyAt), /finally\s*\{\s*await browser\.disconnect\(\)/)
 })
 
 test('require puppeteer if page is used', t => {

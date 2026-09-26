@@ -68,7 +68,7 @@ module.exports = ({ tmpdir } = {}) => {
       extendPage,
       needsBrowser: needsBrowserOverride,
       // False when the caller keeps the context `getBrowserless` created.
-      // Destroying it here would close pages another task still holds.
+      // Destroying or replacing it here would close pages another task still holds.
       // `getPage` does not create a context, so this flag does not apply there.
       ownsContext = true,
       getPage,
@@ -97,26 +97,19 @@ module.exports = ({ tmpdir } = {}) => {
       return browserPromise
     }
 
+    // A per-call `code` override is bundled on its own. The template built
+    // above only matches the snippet this function was created with.
+    const usePrebuiltSource = (runFunctionOpts, network) => {
+      if (runFunctionOpts.code !== code) return runFunctionOpts
+      runFunctionOpts.needsNetwork = network
+      runFunctionOpts.source = source
+      return runFunctionOpts
+    }
+
     const buildRunOpts = async ({ page, device, response, url, fnOpts, strictTarget = false }) => {
       if (!page) throw new Error(createRunFunction.PAGE_NOT_FOUND)
       const targetId = await getTargetId(page)
       if (strictTarget && !targetId) throw new Error(createRunFunction.PAGE_NOT_FOUND)
-
-      const runFunctionOpts = {
-        url,
-        code,
-        device,
-        extendPage,
-        ...opts,
-        ...fnOpts,
-        ...(pageValues && { pageValues }),
-        ...(isHttpResponse(response) && { _response: serializeResponse(response) })
-      }
-
-      if (runFunctionOpts.code === code) {
-        runFunctionOpts.needsNetwork = needsNetwork
-        runFunctionOpts.source = source
-      }
 
       const browserFromPage = typeof page.browser === 'function' ? page.browser() : undefined
       const browserWSEndpoint =
@@ -125,13 +118,26 @@ module.exports = ({ tmpdir } = {}) => {
           : undefined
 
       if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
-      runFunctionOpts.browserWSEndpoint = browserWSEndpoint
-      runFunctionOpts.targetId = targetId
-      if (strictTarget) runFunctionOpts.strictTarget = true
-      return runFunctionOpts
+
+      return usePrebuiltSource(
+        {
+          url,
+          code,
+          device,
+          extendPage,
+          ...opts,
+          ...fnOpts,
+          ...(pageValues && { pageValues }),
+          ...(isHttpResponse(response) && { _response: serializeResponse(response) }),
+          browserWSEndpoint,
+          targetId,
+          ...(strictTarget && { strictTarget: true })
+        },
+        needsNetwork
+      )
     }
 
-    const settle = async result => {
+    const settle = result => {
       if (result.isFulfilled) return result
       const error = ensureError(result.value)
       if (isBrowserlessError(error)) throw error
@@ -140,7 +146,9 @@ module.exports = ({ tmpdir } = {}) => {
 
     // The page was navigated by whoever handed it over, so there is no `goto`
     // and no page to close: its owner decides when it dies. `timeout` is not
-    // forwarded to `runFunction`, so this path has to apply it itself.
+    // forwarded to `runFunction`, so this path has to apply it itself. A
+    // timeout rejects the call and leaves the page open; it does not cancel
+    // the snippet.
     const runWithGivenPage = async (url, fnOpts) => {
       const run = async () => {
         const { page, device, response } = await getPage()
@@ -157,11 +165,8 @@ module.exports = ({ tmpdir } = {}) => {
         }
         return settle(result)
       }
-      // A timeout does not cancel the snippet or close the page. Swallow a
-      // late settlement so it does not surface as an unhandled rejection.
-      const pending = run()
-      pending.catch(() => {})
-      return pTimeout(pending, timeout, () => {
+
+      return pTimeout(run(), timeout, () => {
         throw browserTimeout({ timeout })
       })
     }
@@ -171,36 +176,35 @@ module.exports = ({ tmpdir } = {}) => {
       const browserless = await browser.createContext()
 
       return browserless
-        .withPage((page, goto) => async () => {
-          const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
-          return settle(
-            await runFunction(await buildRunOpts({ page, device, response, url, fnOpts }))
-          )
-        })()
-        .finally(() => ownsContext && browserless.destroyContext())
+        .withPage(
+          (page, goto) => async () => {
+            const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
+            return settle(
+              await runFunction(await buildRunOpts({ page, device, response, url, fnOpts }))
+            )
+          },
+          { preserveContext: !ownsContext }
+        )()
+        .finally(() => {
+          if (ownsContext) return browserless.destroyContext()
+        })
     }
 
     const runWithoutBrowser = async (url, fnOpts) => {
-      const runFunctionOpts = {
-        url,
-        code,
-        extendPage,
-        ...opts,
-        ...fnOpts,
-        ...(pageValues && { pageValues })
-      }
-
-      if (runFunctionOpts.code === code) {
-        runFunctionOpts.needsNetwork = false
-        runFunctionOpts.source = source
-      }
-
-      const result = await runFunction(runFunctionOpts)
-
-      if (result.isFulfilled) return result
-      const error = ensureError(result.value)
-      if (isBrowserlessError(error)) throw error
-      return result
+      const result = await runFunction(
+        usePrebuiltSource(
+          {
+            url,
+            code,
+            extendPage,
+            ...opts,
+            ...fnOpts,
+            ...(pageValues && { pageValues })
+          },
+          false
+        )
+      )
+      return settle(result)
     }
 
     return async (url, fnOpts = {}) => {
