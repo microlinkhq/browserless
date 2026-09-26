@@ -147,8 +147,9 @@ module.exports = ({ tmpdir } = {}) => {
     // The page was navigated by whoever handed it over, so there is no `goto`
     // and no page to close: its owner decides when it dies. `timeout` is not
     // forwarded to `runFunction`, so this path has to apply it itself. A
-    // timeout rejects the call and leaves the page open; it does not cancel
-    // the snippet.
+    // timeout rejects the call and leaves the page open. The snippet and its
+    // isolate subprocess keep running until the snippet returns or the page
+    // is closed.
     const runWithGivenPage = async (url, fnOpts) => {
       const run = async () => {
         const { page, device, response } = await getPage()

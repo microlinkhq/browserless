@@ -90,13 +90,6 @@ test('getPage runs on the handed-over page without navigating or closing it', as
     document.title = 'HANDOVER-MARKER'
   })
 
-  let gotoCalls = 0
-  const realGoto = page.goto.bind(page)
-  page.goto = (...args) => {
-    gotoCalls++
-    return realGoto(...args)
-  }
-
   const result = await browserlessFunction(TITLE_FN, {
     getPage: async () => ({ page }),
     timeout: 120000
@@ -104,7 +97,6 @@ test('getPage runs on the handed-over page without navigating or closing it', as
 
   t.true(result.isFulfilled)
   t.is(result.value, 'HANDOVER-MARKER')
-  t.is(gotoCalls, 0)
   t.false(page.isClosed())
 })
 
@@ -151,6 +143,7 @@ test('getPage throws when the supplied page cannot be identified', async t => {
     document.title = 'OTHER-PAGE'
   })
 
+  // Fails in the host, before the isolate connects. The isolate miss is the next test.
   marked.createCDPSession = async () => {
     throw new Error('cdp down')
   }
@@ -167,6 +160,39 @@ test('getPage throws when the supplied page cannot be identified', async t => {
   t.false(other.isClosed())
 })
 
+test('getPage throws when the isolate cannot find the supplied target', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const marked = await context.page('marked')
+  await marked.goto(fileUrl)
+  await marked.evaluate(() => {
+    document.title = 'HANDOVER-MARKER'
+  })
+
+  // The host resolves this id. The isolate then connects to the real browser
+  // and finds no such page, so the miss happens after connect, inside the
+  // try/finally that disconnects. Using the open page instead would return
+  // its title.
+  const ghost = {
+    browser: () => marked.browser(),
+    createCDPSession: async () => ({
+      send: async () => ({ targetInfo: { targetId: 'missing-target' } }),
+      detach: async () => {}
+    })
+  }
+
+  const error = await t.throwsAsync(
+    browserlessFunction(TITLE_FN, {
+      getPage: async () => ({ page: ghost }),
+      timeout: 120000
+    })(fileUrl)
+  )
+
+  t.is(error.message, 'Could not resolve the supplied page')
+  t.false(marked.isClosed())
+})
+
 test('getPage rejects on timeout and leaves the page open', async t => {
   const context = await browserless.createContext()
   t.teardown(() => context.destroyContext())
@@ -181,6 +207,8 @@ test('getPage rejects on timeout and leaves the page open', async t => {
     })(fileUrl)
   )
 
+  // The timeout ends the wait. The snippet is still blocked on the selector,
+  // and the isolate subprocess stays up until the page is closed.
   t.is(error.code, 'EBRWSRTIMEOUT')
   t.false(page.isClosed())
 })

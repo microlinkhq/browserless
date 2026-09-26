@@ -181,9 +181,9 @@ const myFn = createFunction(code, {
   // Run against a page that is already navigated, instead of creating a
   // context and navigating. No `goto` happens and the page is never closed:
   // whoever supplied it owns its lifetime. Pass `response` when you have it,
-  // so the function still sees `_response`. `timeout` still bounds the call.
-  // A timeout does not cancel the snippet: it can keep using the page until
-  // it returns.
+  // so the function still sees `_response`. `timeout` bounds how long the
+  // caller waits. It leaves the page open, and the snippet plus its isolate
+  // subprocess keep running until the snippet returns or the page is closed.
   getPage: async () => ({ page, device, response })
 })
 ```
@@ -200,8 +200,9 @@ const result = await createFunction(code, {
 await page.close()
 ```
 
-`timeout` rejects the call and leaves the page open. The snippet is not
-cancelled, so leave the page alone until that work finishes or you close it.
+`timeout` rejects the call and leaves the page open. The snippet and its
+isolate subprocess keep running, so treat the page as busy: leave it alone
+until that work finishes, or close it. Closing the page ends the snippet.
 
 Retaining a page from `browserless` requires `keepPage`, since `evaluate`
 closes its page as soon as it resolves:
@@ -217,9 +218,12 @@ await context.evaluate(
 )(url)
 ```
 
-Retaining a page restarts its close watchdog, so the new owner has a full
-timeout to finish or close it. If they do neither, the page is closed when
-that window ends.
+Retaining a page restarts its close watchdog. The new window is the
+`evaluate` / `withPage` timeout, measured from handover. Finish or close the
+page before that window ends. A later `getPage` call has its own timeout; the
+watchdog still closes the page when the evaluate window ends, including while
+that call is in progress. Set the evaluate timeout long enough to cover the
+follow-up work.
 
 ### Examples
 

@@ -150,7 +150,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             if (!isRejected) throw ensureError(error)
           } finally {
             // The in-call watchdog ends with the call. A retained page gets a
-            // fresh window so navigation time is not charged to its new owner.
+            // fresh window of this same timeout, measured from handover.
+            // The owner has to finish or close the page inside that window.
             // Failed attempts already closed their page, so only the last one retains.
             if (closePageTimeout) clearTimeout(closePageTimeout)
             if (isRetained) startCloseTimeout()
