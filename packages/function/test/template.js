@@ -443,3 +443,46 @@ test('inspect records page.metadata without a call argument', t => {
   t.is(calls[0].method, 'metadata')
   t.is(calls[0].keys.size, 0)
 })
+
+const loadResolvePage = () => new Function(`${template.RESOLVE_PAGE}; return resolvePage`)()
+
+const fakePage = ({ targetId, sendFails = false } = {}) => {
+  const page = { detached: 0 }
+  page.createCDPSession = async () => ({
+    send: async () => {
+      if (sendFails) throw new Error('lookup unavailable')
+      return { targetInfo: { targetId } }
+    },
+    detach: async () => {
+      page.detached++
+    }
+  })
+  return page
+}
+
+test('resolvePage returns the page whose target matches', async t => {
+  const resolvePage = loadResolvePage()
+  const other = fakePage({ targetId: 'other' })
+  const wanted = fakePage({ targetId: 'wanted' })
+
+  t.is(await resolvePage([other, wanted], 'wanted'), wanted)
+  t.is(other.detached, 1)
+  t.is(wanted.detached, 1)
+})
+
+test('resolvePage detaches the session when the lookup throws', async t => {
+  const resolvePage = loadResolvePage()
+  const broken = fakePage({ sendFails: true })
+  const wanted = fakePage({ targetId: 'wanted' })
+
+  t.is(await resolvePage([broken, wanted], 'wanted'), wanted)
+  t.is(broken.detached, 1)
+})
+
+test('resolvePage returns undefined when nothing matches', async t => {
+  const resolvePage = loadResolvePage()
+  const page = fakePage({ targetId: 'other' })
+
+  t.is(await resolvePage([page], 'wanted'), undefined)
+  t.is(page.detached, 1)
+})

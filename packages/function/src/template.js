@@ -242,6 +242,25 @@ const normalizeOpts = (code, usesPageOrOpts) => {
 
 const PAGE_NOT_FOUND = 'Could not resolve the supplied page'
 
+// Runs inside the isolate. A page supplied by the caller outlives this call, so
+// a session left attached by a failed lookup accumulates on someone else's page:
+// detach in `finally`, not after the comparison.
+const RESOLVE_PAGE = `
+        const resolvePage = async (pages, targetId) => {
+          for (const candidate of pages) {
+            let session
+            try {
+              session = await candidate.createCDPSession()
+              const { targetInfo } = await session.send('Target.getTargetInfo')
+              if (targetInfo.targetId === targetId) return candidate
+            } catch {
+              continue
+            } finally {
+              if (session) { try { await session.detach() } catch {} }
+            }
+          }
+        }`
+
 const template = (code, usesPageOrOpts) => {
   const { usesPage, needsBrowser: withBrowser, extendPage } = normalizeOpts(code, usesPageOrOpts)
   const extensions = applyExtendPage(extendPage)
@@ -267,19 +286,13 @@ const template = (code, usesPageOrOpts) => {
       ${withResponse}
       const puppeteer = require('@cloudflare/puppeteer')
       const browser = await puppeteer.connect({ browserWSEndpoint })
+      ${RESOLVE_PAGE}
       try {
         const pages = await browser.pages()
         const { targetId, strictTarget } = opts
         let page
         if (targetId && (strictTarget || pages.length > 1)) {
-          for (const p of pages) {
-            try {
-              const session = await p.createCDPSession()
-              const { targetInfo } = await session.send('Target.getTargetInfo')
-              await session.detach()
-              if (targetInfo.targetId === targetId) { page = p; break }
-            } catch {}
-          }
+          page = await resolvePage(pages, targetId)
         }
         if (!page) {
           if (strictTarget) throw new Error(${JSON.stringify(PAGE_NOT_FOUND)})
@@ -298,3 +311,4 @@ module.exports.isUsingPage = isUsingPage
 module.exports.needsBrowser = needsBrowser
 module.exports.inspect = inspect
 module.exports.PAGE_NOT_FOUND = PAGE_NOT_FOUND
+module.exports.RESOLVE_PAGE = RESOLVE_PAGE
