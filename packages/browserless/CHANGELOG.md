@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.13.0](https://github.com/microlinkhq/browserless/compare/v13.12.5...v13.13.0) (2026-09-26)
+
+### Features
+
+* **function:** let a caller supply the page and keep the context ([#948](https://github.com/microlinkhq/browserless/issues/948)) ([ed1578a](https://github.com/microlinkhq/browserless/commit/ed1578a924b7b3a719c8724cc26b02e73f502d43))
+
 ## [13.12.5](https://github.com/microlinkhq/browserless/compare/v13.12.4...v13.12.5) (2026-09-26)
 
 **Note:** Version bump only for package browserless
