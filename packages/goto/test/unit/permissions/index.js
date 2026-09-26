@@ -1,7 +1,7 @@
 'use strict'
 
 const { runServer, getBrowserContext } = require('@browserless/test')
-const puppeteer = require('puppeteer')
+const { driver } = require('browserless')
 const test = require('ava')
 
 const FIXTURE = `<!doctype html>
@@ -87,12 +87,16 @@ test('the setting follows the last navigation on a shared context', async t => {
 test('a page of the default browser context is denied too', async t => {
   const url = await serve(t)
   const browserless = await getBrowserContext(t)
-  // The shared browser is started with `--no-startup-window`. Its default
-  // context then has no window, and opening the first page there never
-  // finishes on the CI display. A caller passes a page from a normal browser.
-  const browser = await puppeteer.launch({ headless: true })
-  t.teardown(() => browser.close())
-  const page = await browser.newPage()
+  // The shared browser starts with `--no-startup-window`, and a page in that
+  // default context does not come up under Xvfb. Callers pass a page from a
+  // browser that has a window, which is what this launch is.
+  const browser = await driver.spawn({
+    args: driver.defaultArgs.filter(arg => arg !== '--no-startup-window'),
+    waitForInitialPage: true
+  })
+  t.teardown(() => driver.close(browser))
+  const [existing] = await browser.pages()
+  const page = existing || (await browser.newPage())
 
   t.is(page.browserContext().id, undefined)
   await browserless.goto(page, { url })
