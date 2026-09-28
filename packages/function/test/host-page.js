@@ -87,6 +87,87 @@ test('host page methods are not serialized into the isolate', t => {
   t.false(source.includes('pageValues["content"]'))
 })
 
+test('arguments reach the host method', async t => {
+  let seen
+  const { result, calls } = await run('async ({ page }) => page.content("utf8")', {
+    content: async encoding => {
+      seen = encoding
+      return `<html>${encoding}</html>`
+    }
+  })
+  t.true(result.isFulfilled)
+  t.is(result.value, '<html>utf8</html>')
+  t.is(seen, 'utf8')
+  t.deepEqual(calls, ['content'])
+})
+
+test('the same method and arguments resolve once', async t => {
+  const { result, calls } = await run(
+    'async ({ page }) => [await page.content("utf8"), await page.content("utf8")].join("|")',
+    { content: async () => 'once' }
+  )
+  t.true(result.isFulfilled)
+  t.is(result.value, 'once|once')
+  t.deepEqual(calls, ['content'])
+})
+
+test('different arguments resolve separately', async t => {
+  const { result, calls } = await run(
+    'async ({ page }) => [await page.content("a"), await page.content("b")].join("|")',
+    { content: async value => value }
+  )
+  t.true(result.isFulfilled)
+  t.is(result.value, 'a|b')
+  t.deepEqual(calls, ['content', 'content'])
+})
+
+test('a hostPage value must be a function', t => {
+  t.throws(
+    () => createFunction('({ page }) => page.content()', { hostPage: { content: '<html>' } }),
+    {
+      message: 'Expected hostPage.content to be a function'
+    }
+  )
+})
+
+test('extendPage wins and the host method is not called', async t => {
+  const { calls, counted } = withCounts({
+    content: async () => 'from host',
+    metadata: async () => 'meta'
+  })
+  const result = await createFunction(
+    'async ({ page }) => [await page.content(), await page.metadata()].join("|")',
+    {
+      hostPage: counted,
+      extendPage: { content: 'from extend' },
+      getBrowserless: noBrowser,
+      timeout: 25000
+    }
+  )('https://example.com')
+  t.true(result.isFulfilled)
+  t.is(result.value, 'from extend|meta')
+  t.deepEqual(calls, ['metadata'])
+})
+
+test('a shadowed host method is not reachable on the channel', async t => {
+  const { calls, counted } = withCounts({
+    content: async () => 'from host',
+    metadata: async () => 'meta'
+  })
+  const result = await createFunction(
+    'async ({ page }) => { await page.metadata(); return globalThis.__isolated_host("content", []) }',
+    {
+      hostPage: counted,
+      extendPage: { content: 'from extend' },
+      getBrowserless: noBrowser,
+      timeout: 25000
+    }
+  )('https://example.com')
+  t.false(result.isFulfilled)
+  t.is(result.value.message, 'the host does not expose this method')
+  t.deepEqual(calls, ['metadata'])
+})
+
 test('eager and host-backed methods coexist on one page', async t => {
   const { calls, counted } = withCounts({ content: async () => '<html>lazy</html>' })
   const result = await createFunction(

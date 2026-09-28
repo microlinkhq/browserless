@@ -44,10 +44,11 @@ module.exports =
           hostPage
         })
         : source
+      const host = template.exposedHost(hostPage, extendPage)
       const fn = isolatedFunction(program, {
         ...vmOpts,
         ...(copies === 1 && { slot: code }),
-        ...(hostPage && Object.keys(hostPage).length > 0 && { host: hostPage }),
+        ...(host && { host }),
         allow: {
           ...vmOptsAllow,
           permissions: [...(vmOptsAllow.permissions || []), ...permissions]

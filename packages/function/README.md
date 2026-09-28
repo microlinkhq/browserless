@@ -169,9 +169,9 @@ const result = await myFn('https://example.com')
 
 Unlike `extendPage`, the method itself stays on the host rather than being serialized into the isolate; the call travels over the channel at the moment it is made. Its arguments and its result still cross that channel, so both have to be values the channel can carry: a `BigInt`, for instance, rejects the call rather than resolving it.
 
-Both kinds can sit on the same page, and either counts as satisfying that method, so a function using only these does not start Chromium.
+Both kinds can sit on the same page, and either counts as satisfying that method, so a function using only these does not start Chromium. A name present on both is the `extendPage` value, and that host method is not reachable.
 
-The same method and arguments resolve once per run. The isolate runs untrusted code and can reach the channel directly, so treat every argument as untrusted input.
+The same method and arguments resolve once per run. 32 distinct calls are allowed per run; `vmOpts.maxHostCalls` changes the cap. The isolate runs untrusted code and can reach the channel directly, so treat every argument as untrusted input. Every `hostPage` value has to be a function.
 
 ### Options
 

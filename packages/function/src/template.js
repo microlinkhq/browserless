@@ -218,15 +218,36 @@ const applyExtendPage = (extendPage = {}) => {
   return lines.join('\n      ')
 }
 
-// _response is a plain JSON object serialized via isolated-function;
-// wrap each value as a method to match Puppeteer's HTTPResponse API
+/**
+ * Host methods the channel will expose. A value that is not a function is
+ * rejected here, because a key still counts as satisfying that method and
+ * would otherwise skip Chromium and fail inside the snippet. A name
+ * `extendPage` also defines is left out: the eager value wins, and the host
+ * method is not reachable even through the channel.
+ */
+const exposedHost = (hostPage, extendPage) => {
+  if (!hostPage) return
+  if (typeof hostPage !== 'object' || Array.isArray(hostPage)) {
+    throw new TypeError('Expected `hostPage` to be an object of functions')
+  }
+  const covered = new Set(Object.keys(extendPage || {}))
+  const host = {}
+  for (const [name, value] of Object.entries(hostPage)) {
+    if (typeof value !== 'function') {
+      throw new TypeError(`Expected hostPage.${name} to be a function`)
+    }
+    if (!covered.has(name)) host[name] = value
+  }
+  return Object.keys(host).length ? host : undefined
+}
+
 /**
  * A host method is not serialized into the isolate at all: the call travels
- * over the channel when the snippet makes it, so a page the snippet never
- * reads is never resolved.
+ * over the channel when the snippet makes it, so a method the snippet never
+ * reaches is never resolved.
  */
-const applyHostPage = (hostPage = {}) =>
-  Object.keys(hostPage)
+const applyHostPage = (hostPage, extendPage) =>
+  Object.keys(exposedHost(hostPage, extendPage) || {})
     .map(
       name =>
         `page[${JSON.stringify(name)}] = (...args) => globalThis.__isolated_host(${JSON.stringify(
@@ -235,6 +256,8 @@ const applyHostPage = (hostPage = {}) =>
     )
     .join('\n      ')
 
+// _response is a plain JSON object serialized via isolated-function;
+// wrap each value as a method to match Puppeteer's HTTPResponse API
 const withResponse = `
   const { _response: _r, pageValues, targetId: _t, strictTarget: _s, ...rest } = opts
   const response = _r
@@ -286,7 +309,7 @@ const template = (code, usesPageOrOpts) => {
     extendPage,
     hostPage
   } = normalizeOpts(code, usesPageOrOpts)
-  const extensions = [applyHostPage(hostPage), applyExtendPage(extendPage)]
+  const extensions = [applyHostPage(hostPage, extendPage), applyExtendPage(extendPage)]
     .filter(Boolean)
     .join('\n      ')
 
@@ -334,6 +357,7 @@ const template = (code, usesPageOrOpts) => {
 module.exports = template
 module.exports.isUsingPage = isUsingPage
 module.exports.needsBrowser = needsBrowser
+module.exports.exposedHost = exposedHost
 module.exports.inspect = inspect
 module.exports.PAGE_NOT_FOUND = PAGE_NOT_FOUND
 module.exports.RESOLVE_PAGE = RESOLVE_PAGE
