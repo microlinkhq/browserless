@@ -143,6 +143,29 @@ const result = await myFn('https://example.com')
 // => { isFulfilled: true, value: html, ... }
 ```
 
+### hostPage
+
+Attach methods on `page` that the host resolves when the user function calls them, rather than values decided before it runs. Work the function never reaches costs nothing:
+
+```js
+const myFn = createFunction(({ page }) => page.content(), {
+  hostPage: { content: () => fetchThePage(url) }
+})
+```
+
+`fetchThePage` runs because the function awaited `content`. A function returning `420` without touching `page` never triggers it, and neither does a branch it does not take:
+
+```js
+createFunction('async ({ page }) => (false ? await page.content() : "skipped")', {
+  hostPage: { content: () => fetchThePage(url) }
+})
+// => "skipped", and fetchThePage was never called
+```
+
+Unlike `extendPage`, nothing is serialized into the isolate: the call travels over the channel at the moment it is made. Both kinds can sit on the same page, and either counts as satisfying that method, so a function using only these does not start Chromium.
+
+The same method and arguments resolve once per run. The isolate runs untrusted code and can reach the channel directly, so treat every argument as untrusted input.
+
 ### Options
 
 ```js
@@ -164,6 +187,13 @@ const myFn = createFunction(code, {
   extendPage: {
     url,
     html
+  },
+
+  // Methods on `page` the host resolves when the function calls them. Nothing
+  // is serialized into the isolate and a method the function never reaches is
+  // never resolved. Counts as satisfying that method, like extendPage.
+  hostPage: {
+    content: () => fetchThePage(url)
   },
 
   // Options passed to browserless.goto()

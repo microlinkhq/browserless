@@ -220,6 +220,21 @@ const applyExtendPage = (extendPage = {}) => {
 
 // _response is a plain JSON object serialized via isolated-function;
 // wrap each value as a method to match Puppeteer's HTTPResponse API
+/**
+ * A host method is not serialized into the isolate at all: the call travels
+ * over the channel when the snippet makes it, so a page the snippet never
+ * reads is never resolved.
+ */
+const applyHostPage = (hostPage = {}) =>
+  Object.keys(hostPage)
+    .map(
+      name =>
+        `page[${JSON.stringify(name)}] = (...args) => globalThis.__isolated_host(${JSON.stringify(
+          name
+        )}, args)`
+    )
+    .join('\n      ')
+
 const withResponse = `
   const { _response: _r, pageValues, targetId: _t, strictTarget: _s, ...rest } = opts
   const response = _r
@@ -229,15 +244,18 @@ const withResponse = `
 const normalizeOpts = (code, usesPageOrOpts) => {
   if (usesPageOrOpts && typeof usesPageOrOpts === 'object') {
     const extendPage = usesPageOrOpts.extendPage || {}
+    const hostPage = usesPageOrOpts.hostPage || {}
     const usesPage = usesPageOrOpts.usesPage ?? isUsingPage(code)
     return {
       usesPage,
-      needsBrowser: usesPageOrOpts.needsBrowser ?? needsBrowser(code, extendPage, usesPage),
-      extendPage
+      needsBrowser:
+        usesPageOrOpts.needsBrowser ?? needsBrowser(code, { ...extendPage, ...hostPage }, usesPage),
+      extendPage,
+      hostPage
     }
   }
   const usesPage = usesPageOrOpts ?? isUsingPage(code)
-  return { usesPage, needsBrowser: usesPage, extendPage: {} }
+  return { usesPage, needsBrowser: usesPage, extendPage: {}, hostPage: {} }
 }
 
 const PAGE_NOT_FOUND = 'Could not resolve the supplied page'
@@ -262,8 +280,15 @@ const RESOLVE_PAGE = `
         }`
 
 const template = (code, usesPageOrOpts) => {
-  const { usesPage, needsBrowser: withBrowser, extendPage } = normalizeOpts(code, usesPageOrOpts)
-  const extensions = applyExtendPage(extendPage)
+  const {
+    usesPage,
+    needsBrowser: withBrowser,
+    extendPage,
+    hostPage
+  } = normalizeOpts(code, usesPageOrOpts)
+  const extensions = [applyHostPage(hostPage), applyExtendPage(extendPage)]
+    .filter(Boolean)
+    .join('\n      ')
 
   if (!usesPage) {
     return `async (url, _, opts) => {

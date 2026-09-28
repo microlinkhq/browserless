@@ -95,6 +95,7 @@ module.exports = ({ tmpdir } = {}) => {
       timeout = 30000,
       gotoOpts,
       extendPage,
+      hostPage,
       needsBrowser: needsBrowserOverride,
       // False when the caller keeps the context `getBrowserless` created.
       // Destroying or replacing it here would close pages another task still holds.
@@ -107,11 +108,13 @@ module.exports = ({ tmpdir } = {}) => {
     const code = stringify(fn)
     const usesPage = createRunFunction.isUsingPage(code)
     const needsNetwork =
-      needsBrowserOverride === true || createRunFunction.needsBrowser(code, extendPage, usesPage)
+      needsBrowserOverride === true ||
+      createRunFunction.needsBrowser(code, { ...extendPage, ...hostPage }, usesPage)
     const source = createRunFunction.buildTemplate(SLOT, {
       usesPage,
       needsBrowser: needsNetwork,
-      extendPage
+      extendPage,
+      hostPage
     })
     const pageValues = toPageValues(extendPage)
     let browserPromise
@@ -150,6 +153,7 @@ module.exports = ({ tmpdir } = {}) => {
           code,
           device: resolvedDevice,
           extendPage,
+          hostPage,
           ...opts,
           ...fnOpts,
           ...(pageValues && { pageValues }),
@@ -255,6 +259,7 @@ module.exports = ({ tmpdir } = {}) => {
             url,
             code,
             extendPage,
+            hostPage,
             ...opts,
             ...fnOpts,
             ...(pageValues && { pageValues })
