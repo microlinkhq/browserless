@@ -19,11 +19,13 @@ module.exports =
       vmOpts,
       browserWSEndpoint,
       extendPage,
-      needsNetwork = template.needsBrowser(code, extendPage),
+      hostPage,
+      needsNetwork = template.needsBrowser(code, { ...extendPage, ...hostPage }),
       source = template(SLOT, {
         usesPage: template.isUsingPage(code),
         needsBrowser: needsNetwork,
-        extendPage
+        extendPage,
+        hostPage
       }),
       ...opts
     }) => {
@@ -38,12 +40,15 @@ module.exports =
         ? template(code, {
           usesPage: template.isUsingPage(code),
           needsBrowser: needsNetwork,
-          extendPage
+          extendPage,
+          hostPage
         })
         : source
+      const host = template.exposedHost(hostPage, extendPage)
       const fn = isolatedFunction(program, {
         ...vmOpts,
         ...(copies === 1 && { slot: code }),
+        ...(host && { host }),
         allow: {
           ...vmOptsAllow,
           permissions: [...(vmOptsAllow.permissions || []), ...permissions]

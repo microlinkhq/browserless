@@ -143,6 +143,36 @@ const result = await myFn('https://example.com')
 // => { isFulfilled: true, value: html, ... }
 ```
 
+### hostPage
+
+Attach methods on `page` that the host resolves when the user function calls them, rather than values decided before it runs. Work the function never reaches costs nothing:
+
+```js
+const myFn = createFunction(({ page }) => page.content(), {
+  hostPage: { content: () => fetchThePage(url) }
+})
+
+const result = await myFn('https://example.com')
+// => { isFulfilled: true, value: html, ... }, and fetchThePage ran once
+```
+
+`fetchThePage` runs because the function awaited `content`. A function returning `420` without touching `page` never triggers it, and neither does a branch it does not take:
+
+```js
+const myFn = createFunction('async ({ page }) => (false ? await page.content() : "skipped")', {
+  hostPage: { content: () => fetchThePage(url) }
+})
+
+const result = await myFn('https://example.com')
+// => { isFulfilled: true, value: 'skipped', ... }, and fetchThePage never ran
+```
+
+Unlike `extendPage`, the method itself stays on the host rather than being serialized into the isolate; the call travels over the channel at the moment it is made. Its arguments and its result still cross that channel, so both have to be values the channel can carry: a `BigInt`, for instance, rejects the call rather than resolving it.
+
+Both kinds can sit on the same page, and either counts as satisfying that method, so a function using only these does not start Chromium. A name present on both is the `extendPage` value, and that host method is not reachable.
+
+The same method and arguments resolve once per run. 32 distinct calls are allowed per run; `vmOpts.maxHostCalls` changes the cap. The isolate runs untrusted code and can reach the channel directly, so treat every argument as untrusted input. Every `hostPage` value has to be a function.
+
 ### Options
 
 ```js
@@ -164,6 +194,14 @@ const myFn = createFunction(code, {
   extendPage: {
     url,
     html
+  },
+
+  // Methods on `page` the host resolves when the function calls them. The
+  // method stays on the host and one the function never reaches is never
+  // resolved, though arguments and results still cross the channel and must
+  // be values it can carry. Counts as satisfying that method, like extendPage.
+  hostPage: {
+    content: () => fetchThePage(url)
   },
 
   // Options passed to browserless.goto()
