@@ -130,6 +130,17 @@ test('a hostPage value must be a function', t => {
   )
 })
 
+test('a hostPage __proto__ key is rejected', t => {
+  const hostPage = {}
+  Object.defineProperty(hostPage, '__proto__', {
+    value: () => 'nope',
+    enumerable: true
+  })
+  t.throws(() => createFunction('({ page }) => 420', { hostPage }), {
+    message: 'Expected hostPage.__proto__ not to be a method name'
+  })
+})
+
 test('extendPage wins and the host method is not called', async t => {
   const { calls, counted } = withCounts({
     content: async () => 'from host',

@@ -236,6 +236,10 @@ const exposedHost = (hostPage, extendPage) => {
     if (typeof value !== 'function') {
       throw new TypeError(`Expected hostPage.${name} to be a function`)
     }
+    // Assignment through this name sets [[Prototype]] instead of an own method.
+    if (name === '__proto__') {
+      throw new TypeError('Expected hostPage.__proto__ not to be a method name')
+    }
     if (!covered.has(name)) host[name] = value
   }
   return Object.keys(host).length ? host : undefined
