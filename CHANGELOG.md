@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.14.0](https://github.com/microlinkhq/browserless/compare/v13.13.1...v13.14.0) (2026-09-29)
+
+### Features
+
+* **function:** resolve page methods when the snippet asks for them ([#950](https://github.com/microlinkhq/browserless/issues/950)) ([50bf036](https://github.com/microlinkhq/browserless/commit/50bf0368813985c35d6a3a6477223c35859bd88f))
+
 ## [13.13.1](https://github.com/microlinkhq/browserless/compare/v13.13.0...v13.13.1) (2026-09-28)
 
 **Note:** Version bump only for package browserless
