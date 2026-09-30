@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.14.2](https://github.com/microlinkhq/browserless/compare/v13.14.1...v13.14.2) (2026-09-30)
+
+### Bug Fixes
+
+* **function:** resolve the supplied page without a CDP round trip ([#952](https://github.com/microlinkhq/browserless/issues/952)) ([089dee5](https://github.com/microlinkhq/browserless/commit/089dee53e14f6c1ce20ca69ce8715fbb17dfb2f7))
+
 ## [13.14.1](https://github.com/microlinkhq/browserless/compare/v13.14.0...v13.14.1) (2026-09-30)
 
 **Note:** Version bump only for package browserless
