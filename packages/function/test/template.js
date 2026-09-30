@@ -446,6 +446,21 @@ test('inspect records page.metadata without a call argument', t => {
 
 const loadResolvePage = () => new Function(`${template.RESOLVE_PAGE}; return resolvePage`)()
 
+const knownPage = ({ targetId, sessionFails = false } = {}) => {
+  const page = { sessions: 0 }
+  page.target = () => ({ _targetId: targetId })
+  page.mainFrame = () => ({ _id: targetId })
+  page.createCDPSession = async () => {
+    page.sessions++
+    if (sessionFails) throw new Error('session refused')
+    return {
+      send: async () => ({ targetInfo: { targetId } }),
+      detach: async () => {}
+    }
+  }
+  return page
+}
+
 const fakePage = ({ targetId, sendFails = false } = {}) => {
   const page = { detached: 0 }
   page.createCDPSession = async () => ({
@@ -485,4 +500,32 @@ test('resolvePage returns undefined when nothing matches', async t => {
 
   t.is(await resolvePage([page], 'wanted'), undefined)
   t.is(page.detached, 1)
+})
+
+test('resolvePage matches a page that carries its target id, without a session', async t => {
+  const resolvePage = loadResolvePage()
+  const other = knownPage({ targetId: 'other' })
+  const wanted = knownPage({ targetId: 'wanted' })
+
+  t.is(await resolvePage([other, wanted], 'wanted'), wanted)
+  t.is(other.sessions, 0)
+  t.is(wanted.sessions, 0)
+})
+
+test('resolvePage is unaffected by a neighbour that refuses a session', async t => {
+  const resolvePage = loadResolvePage()
+  const hostile = knownPage({ targetId: 'other', sessionFails: true })
+  const wanted = knownPage({ targetId: 'wanted' })
+
+  t.is(await resolvePage([hostile, wanted], 'wanted'), wanted)
+  t.is(hostile.sessions, 0)
+})
+
+test('resolvePage asks over the session when the id is not carried', async t => {
+  const resolvePage = loadResolvePage()
+  const carried = knownPage({ targetId: 'other' })
+  const wanted = fakePage({ targetId: 'wanted' })
+
+  t.is(await resolvePage([carried, wanted], 'wanted'), wanted)
+  t.is(wanted.detached, 1)
 })
