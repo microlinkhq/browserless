@@ -291,18 +291,31 @@ const PAGE_NOT_FOUND = 'Could not resolve the supplied page'
 // a session left attached by a failed lookup accumulates on someone else's page:
 // detach in `finally`, not after the comparison.
 const RESOLVE_PAGE = `
+        const knownTargetId = candidate => {
+          try {
+            return candidate.target()._targetId ?? candidate.mainFrame()._id
+          } catch {
+            return undefined
+          }
+        }
+        const askTargetId = async candidate => {
+          let session
+          try {
+            session = await candidate.createCDPSession()
+            const { targetInfo } = await session.send('Target.getTargetInfo')
+            return targetInfo.targetId
+          } catch {
+            return undefined
+          } finally {
+            if (session) { try { await session.detach() } catch {} }
+          }
+        }
         const resolvePage = async (pages, targetId) => {
           for (const candidate of pages) {
-            let session
-            try {
-              session = await candidate.createCDPSession()
-              const { targetInfo } = await session.send('Target.getTargetInfo')
-              if (targetInfo.targetId === targetId) return candidate
-            } catch {
-              continue
-            } finally {
-              if (session) { try { await session.detach() } catch {} }
-            }
+            if (knownTargetId(candidate) === targetId) return candidate
+          }
+          for (const candidate of pages) {
+            if (await askTargetId(candidate) === targetId) return candidate
           }
         }`
 
