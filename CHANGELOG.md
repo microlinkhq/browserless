@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.15.0](https://github.com/microlinkhq/browserless/compare/v13.14.2...v13.15.0) (2026-10-01)
+
+### Features
+
+* **function:** name the spans spent reaching the page ([#953](https://github.com/microlinkhq/browserless/issues/953)) ([090dc13](https://github.com/microlinkhq/browserless/commit/090dc13ab8e6666b02ca9c3dcdd874c4b26a7964))
+
 ## [13.14.2](https://github.com/microlinkhq/browserless/compare/v13.14.1...v13.14.2) (2026-09-30)
 
 ### Bug Fixes
