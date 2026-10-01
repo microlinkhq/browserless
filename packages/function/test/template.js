@@ -583,3 +583,62 @@ test('a stub page never reaches the spans', t => {
 
   t.false(source.includes("timed('connect'"))
 })
+
+const loadPageOfTarget = () => new Function(`${template.PAGE_OF_TARGET}; return pageOfTarget`)()
+
+const fakeTarget = ({ targetId, type = 'page', page = {} }) => ({
+  _targetId: targetId,
+  type: () => type,
+  page: async () => page
+})
+
+test('pageOfTarget returns the page the id names, without enumerating', async t => {
+  const pageOfTarget = loadPageOfTarget()
+  const wanted = { marker: 'wanted' }
+  const browser = {
+    targets: () => [
+      fakeTarget({ targetId: 'other' }),
+      fakeTarget({ targetId: 'ours', page: wanted })
+    ],
+    pages: () => t.fail('pages() must not be called')
+  }
+
+  t.is(await pageOfTarget(browser, 'ours'), wanted)
+})
+
+test('pageOfTarget ignores a target of another type carrying the id', async t => {
+  const pageOfTarget = loadPageOfTarget()
+  const browser = {
+    targets: () => [fakeTarget({ targetId: 'ours', type: 'service_worker' })]
+  }
+
+  t.is(await pageOfTarget(browser, 'ours'), undefined)
+})
+
+test('pageOfTarget gives up quietly when the registry has no such id', async t => {
+  const pageOfTarget = loadPageOfTarget()
+  const browser = { targets: () => [fakeTarget({ targetId: 'other' })] }
+
+  t.is(await pageOfTarget(browser, 'ours'), undefined)
+})
+
+test('pageOfTarget gives up quietly when the registry is unavailable', async t => {
+  const pageOfTarget = loadPageOfTarget()
+  const browser = {
+    targets () {
+      throw new Error('no registry here')
+    }
+  }
+
+  t.is(await pageOfTarget(browser, 'ours'), undefined)
+})
+
+test('the browser path tries the target before enumerating', t => {
+  const source = template('CODE', { usesPage: true, needsBrowser: true })
+  const targetAt = source.indexOf("timed('target'")
+  const pagesAt = source.indexOf("timed('pages'")
+
+  t.true(targetAt !== -1 && pagesAt !== -1)
+  t.true(targetAt < pagesAt, 'the lookup must come first')
+  t.true(source.includes("timed('resolve'"), 'the scan stays as a fallback')
+})
