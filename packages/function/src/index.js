@@ -97,10 +97,6 @@ module.exports = ({ tmpdir } = {}) => {
       extendPage,
       hostPage,
       needsBrowser: needsBrowserOverride,
-      // False when the caller keeps the context `getBrowserless` created.
-      // Destroying or replacing it here would close pages another task still holds.
-      // `getPage` does not create a context, so this flag does not apply there.
-      ownsContext = true,
       getPage,
       ...opts
     } = {}
@@ -238,18 +234,13 @@ module.exports = ({ tmpdir } = {}) => {
       const browserless = await browser.createContext()
 
       return browserless
-        .withPage(
-          (page, goto) => async () => {
-            const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
-            return settle(
-              await runFunction(await buildRunOpts({ page, device, response, url, fnOpts }))
-            )
-          },
-          { preserveContext: !ownsContext }
-        )()
-        .finally(() => {
-          if (ownsContext) return browserless.destroyContext()
-        })
+        .withPage((page, goto) => async () => {
+          const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
+          return settle(
+            await runFunction(await buildRunOpts({ page, device, response, url, fnOpts }))
+          )
+        })()
+        .finally(() => browserless.destroyContext())
     }
 
     const runWithoutBrowser = async (url, fnOpts) => {

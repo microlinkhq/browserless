@@ -213,17 +213,10 @@ const myFn = createFunction(code, {
   // VM sandbox options (passed to isolated-function)
   vmOpts: { /* ... */ },
 
-  // Set false only with a `getBrowserless` whose `createContext()` returns a
-  // context you already own, as shown below. This call then neither destroys it
-  // nor replaces it on a retryable browser error, so a sibling task sharing it
-  // keeps its pages. Against the default factory the flag leaks a context per
-  // call, since `createContext()` builds a fresh one nothing then destroys.
-  ownsContext: true,
 
   // Run against a page that is already navigated, instead of creating a
-  // context and navigating. It replaces that path, so `getBrowserless` and
-  // `ownsContext` are not consulted when it is set.
-  // No `goto` happens and the page is never closed:
+  // context and navigating. It replaces that path, so `getBrowserless` is not
+  // consulted when it is set. No `goto` happens and the page is never closed:
   // whoever supplied it owns its lifetime. Pass `response` when you have it,
   // so the function still sees `_response`. `timeout` bounds how long the
   // caller waits. It leaves the page open, and the snippet plus its isolate
@@ -236,8 +229,8 @@ const myFn = createFunction(code, {
 ```
 
 Reusing a page the caller already loaded, so the target is fetched once.
-`getPage` replaces the context-and-navigate path, so `getBrowserless` and
-`ownsContext` are not consulted on this call:
+`getPage` replaces the context-and-navigate path, so `getBrowserless` is not
+consulted on this call:
 
 ```js
 const { page, response } = await somethingThatAlreadyNavigated(url)
@@ -247,19 +240,6 @@ const result = await createFunction(code, {
 })(url)
 
 await page.close()
-```
-
-Navigating inside a context you own, which is the path that calls
-`createContext()`. `getBrowserless` is asked for a browser, not a context, so
-yours is returned from its `createContext`:
-
-```js
-const context = await pool.create(id)
-
-const result = await createFunction(code, {
-  getBrowserless: () => ({ createContext: async () => context }),
-  ownsContext: false
-})(url)
 ```
 
 The snippet runs in an isolate connected over `browserWSEndpoint`, so

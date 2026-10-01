@@ -110,10 +110,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       }
     }
 
-    const withPage = (
-      fn,
-      { timeout: evaluateTimeout, keepPage = false, preserveContext = false } = {}
-    ) => {
+    const withPage = (fn, { timeout: evaluateTimeout, keepPage = false } = {}) => {
       const name = fn.name || 'anonymous'
 
       return async (...args) => {
@@ -172,13 +169,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               // Every attempt builds its own page, so both codes are retryable
               // inside the existing context: `EBRWSRCONTEXTCONNRESET` covers a
               // closed page, a detached frame and a destroyed execution context,
-              // which a fresh page recovers from. Replacing the context is the
-              // only part a caller that owns it cannot afford, since that closes
-              // the pages it still holds. Skip that, not the retry.
-              if (preserveContext) {
-                debug('retry', { attemptNumber, retriesLeft, message, preserveContext })
-                return
-              }
+              // which a fresh page recovers from.
               const previousContextPromise = _contextPromise
               _contextPromise = createBrowserContext(contextOpts)
               await pReflect(previousContextPromise.then(ctx => ctx.close()))
@@ -198,7 +189,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const evaluate = (fn, gotoOpts) => {
       // Both belong to withPage, so they are pulled out rather than spread into
       // the navigation options.
-      const { keepPage, preserveContext, ...navigateOpts } = gotoOpts ?? {}
+      const { keepPage, ...navigateOpts } = gotoOpts ?? {}
 
       return withPage(
         Object.defineProperty(
@@ -212,7 +203,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             writable: false
           }
         ),
-        { ...navigateOpts, keepPage, preserveContext }
+        { ...navigateOpts, keepPage }
       )
     }
 

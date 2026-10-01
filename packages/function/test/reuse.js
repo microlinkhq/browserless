@@ -39,45 +39,6 @@ test('by default the context it created is destroyed', async t => {
   t.is(spy.calls(), 1)
 })
 
-test('ownsContext false leaves the context to its owner', async t => {
-  const real = await browserless.createContext()
-  const spy = spyContext(real)
-  t.teardown(() => real.destroyContext())
-
-  const result = await browserlessFunction(TITLE_FN, {
-    getBrowserless: () => ({ createContext: async () => spy.context }),
-    ownsContext: false,
-    timeout: 120000
-  })(fileUrl)
-
-  t.true(result.isFulfilled)
-  t.is(spy.calls(), 0)
-  const page = await real.page('still-open')
-  t.false(page.isClosed())
-})
-
-test('ownsContext false leaves sibling pages open when the run hits a protocol error', async t => {
-  const real = await browserless.createContext()
-  t.teardown(() => real.destroyContext())
-
-  const sibling = await real.page('sibling')
-  await sibling.goto(fileUrl)
-
-  const error = await t.throwsAsync(
-    browserlessFunction(
-      '({ page }) => { throw new Error("Protocol error (Page.navigate): forced") }',
-      {
-        getBrowserless: () => ({ createContext: async () => real }),
-        ownsContext: false,
-        timeout: 120000
-      }
-    )(fileUrl)
-  )
-
-  t.is(error.code, 'EPROTOCOL')
-  t.false(sibling.isClosed())
-})
-
 test('getPage runs on the handed-over page without navigating or closing it', async t => {
   const context = await browserless.createContext()
   t.teardown(() => context.destroyContext())
