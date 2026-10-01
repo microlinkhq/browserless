@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [13.16.0](https://github.com/microlinkhq/browserless/compare/v13.15.0...v13.16.0) (2026-10-01)
+
+### Features
+
+* **function:** take the page from the target instead of enumerating ([#954](https://github.com/microlinkhq/browserless/issues/954)) ([ed5131d](https://github.com/microlinkhq/browserless/commit/ed5131d2773dba02966e897265a726c59cfe20ae)), references [#952](https://github.com/microlinkhq/browserless/issues/952)
+
 ## [13.15.0](https://github.com/microlinkhq/browserless/compare/v13.14.2...v13.15.0) (2026-10-01)
 
 ### Features
