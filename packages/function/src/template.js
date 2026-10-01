@@ -288,7 +288,8 @@ const normalizeOpts = (code, usesPageOrOpts) => {
 /**
  * Reaching the page is the runner's work, not the snippet's, so it lands in
  * `run` with no way to tell the parts apart. Naming the spans needs
- * `isolated-function` 0.2.11; an older one simply reports nothing.
+ * `isolated-function` 0.2.12, which also takes them back out of `run` so the
+ * phases add up; an older one simply reports nothing.
  */
 const TIMED_SPAN = `
       const timed = globalThis.__isolated_time ?? ((name, thunk) => thunk())`
