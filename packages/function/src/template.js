@@ -285,6 +285,15 @@ const normalizeOpts = (code, usesPageOrOpts) => {
   return { usesPage, needsBrowser: usesPage, extendPage: {}, hostPage: {} }
 }
 
+/**
+ * Reaching the page is the runner's work, not the snippet's, so it lands in
+ * `run` with no way to tell the parts apart. Naming the spans needs
+ * `isolated-function` 0.2.12, which also takes them back out of `run` so the
+ * phases add up; an older one simply reports nothing.
+ */
+const TIMED_SPAN = `
+      const timed = globalThis.__isolated_time ?? ((name, thunk) => thunk())`
+
 const PAGE_NOT_FOUND = 'Could not resolve the supplied page'
 
 // Runs inside the isolate. A page supplied by the caller outlives this call, so
@@ -349,15 +358,16 @@ const template = (code, usesPageOrOpts) => {
   return `
     async (url, browserWSEndpoint, opts) => {
       ${withResponse}
-      const puppeteer = require('@cloudflare/puppeteer')
-      const browser = await puppeteer.connect({ browserWSEndpoint })
+      ${TIMED_SPAN}
+      const puppeteer = await timed('require', () => require('@cloudflare/puppeteer'))
+      const browser = await timed('connect', () => puppeteer.connect({ browserWSEndpoint }))
       ${RESOLVE_PAGE}
       try {
-        const pages = await browser.pages()
+        const pages = await timed('pages', () => browser.pages())
         const { targetId, strictTarget } = opts
         let page
         if (targetId && (strictTarget || pages.length > 1)) {
-          page = await resolvePage(pages, targetId)
+          page = await timed('resolve', () => resolvePage(pages, targetId))
         }
         if (!page) {
           if (strictTarget) throw new Error(${JSON.stringify(PAGE_NOT_FOUND)})
@@ -366,7 +376,7 @@ const template = (code, usesPageOrOpts) => {
         ${extensions}
         return await (${code})({ page, response, ...rest, url })
       } finally {
-        await browser.disconnect()
+        await timed('disconnect', () => browser.disconnect())
       }
     }`
 }
@@ -378,3 +388,4 @@ module.exports.exposedHost = exposedHost
 module.exports.inspect = inspect
 module.exports.PAGE_NOT_FOUND = PAGE_NOT_FOUND
 module.exports.RESOLVE_PAGE = RESOLVE_PAGE
+module.exports.TIMED_SPAN = TIMED_SPAN
