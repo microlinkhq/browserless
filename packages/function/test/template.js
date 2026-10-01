@@ -34,7 +34,10 @@ test('a strict target miss disconnects the browser', t => {
   const throwAt = source.indexOf('if (strictTarget) throw')
   const finallyAt = source.lastIndexOf('finally')
   t.true(tryAt !== -1 && tryAt < throwAt && throwAt < finallyAt)
-  t.regex(source.slice(finallyAt), /finally\s*\{\s*await browser\.disconnect\(\)/)
+  t.regex(
+    source.slice(finallyAt),
+    /finally\s*\{\s*await timed\('disconnect', \(\) => browser\.disconnect\(\)\)/
+  )
 })
 
 test('require puppeteer if page is used', t => {
@@ -530,12 +533,22 @@ test('resolvePage asks over the session when the id is not carried', async t => 
   t.is(wanted.detached, 1)
 })
 
-test('the browser path names the spans it spends time in', t => {
+test('the browser path names every span but the snippet', t => {
   const source = template('CODE', { usesPage: true, needsBrowser: true })
 
-  t.true(source.includes("timed('connect'"))
-  t.true(source.includes("timed('pages'"))
-  t.true(source.includes("timed('resolve'"))
+  for (const name of ['require', 'connect', 'pages', 'resolve', 'disconnect']) {
+    t.true(source.includes(`timed('${name}'`), name)
+  }
+})
+
+test('nothing on the browser path is left untimed', t => {
+  const source = template('CODE', { usesPage: true, needsBrowser: true })
+  const body = source.slice(source.indexOf('browserWSEndpoint, opts) => {'))
+
+  t.false(/\n\s+(const \w+ = )?await (?!timed\()/.test(body), 'an await outside a span')
+  t.false(
+    /require\('@cloudflare\/puppeteer'\)(?!\))/.test(body.replace(/timed\('require'[^\n]*/, ''))
+  )
 })
 
 test('the spans fall back to plain calls without a runner that records them', async t => {

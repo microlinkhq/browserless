@@ -359,7 +359,7 @@ const template = (code, usesPageOrOpts) => {
     async (url, browserWSEndpoint, opts) => {
       ${withResponse}
       ${TIMED_SPAN}
-      const puppeteer = require('@cloudflare/puppeteer')
+      const puppeteer = await timed('require', () => require('@cloudflare/puppeteer'))
       const browser = await timed('connect', () => puppeteer.connect({ browserWSEndpoint }))
       ${RESOLVE_PAGE}
       try {
@@ -376,7 +376,7 @@ const template = (code, usesPageOrOpts) => {
         ${extensions}
         return await (${code})({ page, response, ...rest, url })
       } finally {
-        await browser.disconnect()
+        await timed('disconnect', () => browser.disconnect())
       }
     }`
 }
