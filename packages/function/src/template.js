@@ -286,6 +286,25 @@ const normalizeOpts = (code, usesPageOrOpts) => {
 }
 
 /**
+ * `browser.pages()` builds a `Page` for every target on the browser, one CDP
+ * session each, including pages other contexts own and may be navigating. The
+ * target registry is local state, so a caller that already knows which page it
+ * wants pays for that one alone. Falls through to the scan when the id is not
+ * carried, so an unexpected shape degrades rather than failing to resolve.
+ */
+const PAGE_OF_TARGET = `
+        const pageOfTarget = async (browser, targetId) => {
+          try {
+            const target = browser
+              .targets()
+              .find(candidate => candidate._targetId === targetId && candidate.type() === 'page')
+            return target ? await target.page() : undefined
+          } catch {
+            return undefined
+          }
+        }`
+
+/**
  * Reaching the page is the runner's work, not the snippet's, so it lands in
  * `run` with no way to tell the parts apart. Naming the spans needs
  * `isolated-function` 0.2.12, which also takes them back out of `run` so the
@@ -362,16 +381,21 @@ const template = (code, usesPageOrOpts) => {
       const puppeteer = await timed('require', () => require('@cloudflare/puppeteer'))
       const browser = await timed('connect', () => puppeteer.connect({ browserWSEndpoint }))
       ${RESOLVE_PAGE}
+      ${PAGE_OF_TARGET}
       try {
-        const pages = await timed('pages', () => browser.pages())
         const { targetId, strictTarget } = opts
-        let page
-        if (targetId && (strictTarget || pages.length > 1)) {
-          page = await timed('resolve', () => resolvePage(pages, targetId))
-        }
+        let page = targetId
+          ? await timed('target', () => pageOfTarget(browser, targetId))
+          : undefined
         if (!page) {
-          if (strictTarget) throw new Error(${JSON.stringify(PAGE_NOT_FOUND)})
-          page = pages[pages.length - 1]
+          const pages = await timed('pages', () => browser.pages())
+          if (targetId && (strictTarget || pages.length > 1)) {
+            page = await timed('resolve', () => resolvePage(pages, targetId))
+          }
+          if (!page) {
+            if (strictTarget) throw new Error(${JSON.stringify(PAGE_NOT_FOUND)})
+            page = pages[pages.length - 1]
+          }
         }
         ${extensions}
         return await (${code})({ page, response, ...rest, url })
@@ -388,4 +412,5 @@ module.exports.exposedHost = exposedHost
 module.exports.inspect = inspect
 module.exports.PAGE_NOT_FOUND = PAGE_NOT_FOUND
 module.exports.RESOLVE_PAGE = RESOLVE_PAGE
+module.exports.PAGE_OF_TARGET = PAGE_OF_TARGET
 module.exports.TIMED_SPAN = TIMED_SPAN
