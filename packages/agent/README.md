@@ -28,11 +28,35 @@ await page.screenshot({ path: 'wallapop.png' });
 await browser.close();
 ```
 
-`examples/wallapop.js` is the same acceptance candidate using the monorepo's
-CommonJS example style, with cleanup in `finally`. It requires decision-provider
-credentials and, for any text entry, separate chat-helper configuration. It has
-not been run live. Import compatibility is CommonJS plus the Node ESM default
-import, with TypeScript declarations.
+Import compatibility is CommonJS plus the Node ESM default import, with
+TypeScript declarations.
+
+### From the browserless CLI
+
+`browserless exec <file>` from `@browserless/cli` opens a page and passes it to
+the function the file exports, so the script does not manage the browser:
+
+```js
+const agent = require('@browserless/agent')
+
+module.exports = async ({ page, browserless }) => {
+  await browserless.goto(page, { url: 'https://wallapop.com' })
+  const result = await agent(page, 'busca el bmw x3 más barato')
+  await page.screenshot({ path: 'wallapop.png' })
+  return result
+}
+```
+
+```sh
+browserless exec agent-example.js
+```
+
+The CLI prints the returned trace as JSON and exits with code 1 when the agent
+throws, including a `BlockedError`. `examples/wallapop.js` is this script; in
+this repository `npm start` runs it. It requires decision-provider credentials
+and, for any text entry, separate chat-helper configuration. It has been run
+without credentials only: navigation works and the run stops at
+`Provider requires apiKey.`
 
 ## API
 
