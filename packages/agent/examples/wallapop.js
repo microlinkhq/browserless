@@ -1,20 +1,12 @@
 'use strict'
 
 // Untested live acceptance candidate. Requires decision and text-helper keys.
-const puppeteer = require('puppeteer')
-const agent = require('@browserless/agent')
+// Run it with: browserless exec examples/wallapop.js
+const agent = require('..')
 
-;(async () => {
-  const browser = await puppeteer.launch()
-  try {
-    const page = await browser.newPage()
-    await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' })
-    await agent(page, 'busca el bmw x3 más barato')
-    await page.screenshot({ path: 'wallapop.png' })
-  } finally {
-    await browser.close()
-  }
-})().catch(error => {
-  console.error(error)
-  process.exitCode = 1
-})
+module.exports = async ({ page, browserless }) => {
+  await browserless.goto(page, { url: 'https://wallapop.com' })
+  const result = await agent(page, 'busca el bmw x3 más barato')
+  await page.screenshot({ path: 'wallapop.png' })
+  return result
+}

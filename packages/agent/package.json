@@ -25,6 +25,7 @@
   ],
   "dependencies": {},
   "devDependencies": {
+    "@browserless/cli": "workspace:*",
     "ava": "5",
     "puppeteer": "25",
     "jsdom": "26"
@@ -40,7 +41,7 @@
   ],
   "scripts": {
     "test": "ava",
-    "start": "node examples/wallapop.js"
+    "start": "browserless exec examples/wallapop.js"
   },
   "license": "MIT",
   "ava": {
