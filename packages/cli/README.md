@@ -76,8 +76,10 @@ browserless exec title.js --url=https://example.com
 ```
 
 The file path resolves from the current directory. A returned string is printed
-as is and any other value as indented JSON. `undefined` and buffers print
-nothing, so write binary output to a file from the script. A thrown error is
+as is and any other value as indented JSON. `undefined` and binary values
+(buffers and typed arrays, such as the result of `page.screenshot()`) print
+nothing, so write binary output to a file from the script. The file is checked
+before the browser starts. A thrown error is
 printed and the process exits with code 1.
 
 ### Capture examples
