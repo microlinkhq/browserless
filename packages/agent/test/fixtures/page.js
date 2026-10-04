@@ -2,6 +2,7 @@
 
 const { EventEmitter } = require('node:events')
 const { StaleDecisionError } = require('../../src/errors')
+const { selectContents } = require('../../src/browser')
 
 const state = (text = 'Search cars') => ({
   url: 'https://example.com',
@@ -29,12 +30,7 @@ class Page extends EventEmitter {
     this.guards = []
     this.disposals = 0
     this.mouse = { move: async () => {}, wheel: async value => this.inputs.push(value) }
-    this.keyboard = {
-      down: async key => this.inputs.push({ down: key }),
-      up: async key => this.inputs.push({ up: key }),
-      press: async key => this.inputs.push({ key }),
-      insertText: async text => this.inputs.push({ text })
-    }
+    this.keyboard = { sendCharacter: async text => this.inputs.push({ text }) }
   }
 
   async evaluate () {
@@ -45,12 +41,10 @@ class Page extends EventEmitter {
   async evaluateHandle () {
     const page = this
     const element = {
-      evaluate: async fn =>
-        fn.toString().includes('navigator.platform')
-          ? 'Control'
-          : page.guards.length
-            ? page.guards.shift()
-            : true,
+      evaluate: async fn => {
+        if (fn === selectContents) return page.inputs.push({ selectContents: true })
+        return page.guards.length ? page.guards.shift() : true
+      },
       focus: async () => {
         if (page.onFocus) page.onFocus()
       },
@@ -77,7 +71,9 @@ const mockFetch = (operations, { targets = {}, text = '{"text":"bmw x3"}', onReq
     const body = JSON.parse(request.body)
     calls.push({ url, body })
     if (onRequest) onRequest(body)
-    if (url.endsWith('/chat/completions')) { return { ok: true, json: async () => ({ choices: [{ message: { content: text } }] }) } }
+    if (url.endsWith('/chat/completions')) {
+      return { ok: true, json: async () => ({ choices: [{ message: { content: text } }] }) }
+    }
     const operation = operations.shift()
     const answers = { operation: answer(operation, Object.keys(body.questions.operation.criteria)) }
     for (const [key, question] of Object.entries(body.questions)) {

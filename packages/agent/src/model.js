@@ -101,10 +101,11 @@ const buildRequest = (state, goal, history, model) => {
         elements: space.elements,
         recent_actions: history
           .slice(-10)
-          .map(({ operation, action, text, pageChanged }) => ({
+          .map(({ operation, action, text, stale, pageChanged }) => ({
             operation,
             action,
             text,
+            stale,
             page_changed: pageChanged
           }))
       },
@@ -116,11 +117,21 @@ const buildRequest = (state, goal, history, model) => {
 const provider = (input, defaults = {}) => {
   const config = { ...defaults, ...input }
   for (const key of ['apiKey', 'baseUrl', 'model']) {
-    if (typeof config[key] !== 'string' || !config[key].trim()) { throw new TypeError(`Provider requires ${key}.`) }
+    if (typeof config[key] !== 'string' || !config[key].trim()) {
+      throw new TypeError(`Provider requires ${key}.`)
+    }
   }
   const url = new URL(config.baseUrl)
-  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) { throw new TypeError('Provider baseUrl must be a clean HTTPS URL.') }
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) {
+    throw new TypeError('Provider baseUrl must be a clean HTTPS URL.')
+  }
   return { ...config, baseUrl: config.baseUrl.replace(/\/$/, '') }
+}
+
+const releaseBody = async response => {
+  try {
+    await response.body?.cancel?.()
+  } catch {}
 }
 
 const post = async (config, path, body, options) => {
@@ -133,7 +144,10 @@ const post = async (config, path, body, options) => {
       ? AbortSignal.any([options.signal, AbortSignal.timeout(options.timeout)])
       : AbortSignal.timeout(options.timeout)
   })
-  if (!response.ok) { throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`) }
+  if (!response.ok) {
+    await releaseBody(response)
+    throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`)
+  }
   return response.json()
 }
 
@@ -194,7 +208,9 @@ const fieldText = async (goal, action, state, history, config, options) => {
     typeof output.text !== 'string' ||
     !output.text.trim() ||
     output.text.length > 2000
-  ) { throw new TypeError('Text helper returned no valid field value; nothing typed.') }
+  ) {
+    throw new TypeError('Text helper returned no valid field value; nothing typed.')
+  }
   return output.text
 }
 

@@ -36,12 +36,7 @@ test('TYPE_TEXT alone invokes chat helper, replaces text, revalidates focus', as
   const page = new Page([state(), state('bmw x3')])
   const fetch = mockFetch(['TYPE_TEXT', 'DONE'])
   await run(page, [], { fetch })
-  t.deepEqual(page.inputs, [
-    { down: 'Control' },
-    { key: 'A' },
-    { up: 'Control' },
-    { text: 'bmw x3' }
-  ])
+  t.deepEqual(page.inputs, [{ selectContents: true }, { text: 'bmw x3' }])
   t.deepEqual(
     fetch.calls.map(c => c.url.split('/').pop()),
     ['systemone', 'completions', 'systemone']
@@ -194,4 +189,32 @@ test('concurrent runs on one page are rejected and the first can finish', async 
   await t.throwsAsync(run(page, ['DONE']), { message: /already running/ })
   release()
   t.is((await first).status, 'done')
+})
+
+test('a discarded stale decision is reported to the next decision request', async t => {
+  const page = new Page([state(), state('Changed')])
+  page.guards = [false]
+  const fetch = mockFetch(['CLICK', 'DONE'])
+  await run(page, [], { fetch })
+  t.deepEqual(fetch.calls[1].body.state.recent_actions, [
+    { operation: 'CLICK', action: 'e2', stale: true }
+  ])
+})
+
+test('typing requires keyboard focus on every check after focusing', async t => {
+  const page = new Page([state(), state('bmw x3')])
+  const requirements = []
+  const evaluateHandle = page.evaluateHandle.bind(page)
+  page.evaluateHandle = async () => {
+    const handle = await evaluateHandle()
+    const element = handle.asElement()
+    const evaluate = element.evaluate
+    element.evaluate = async (fn, ...args) => {
+      if (args.length) requirements.push(args[2])
+      return evaluate(fn)
+    }
+    return handle
+  }
+  await run(page, ['TYPE_TEXT', 'DONE'])
+  t.deepEqual(requirements, [{}, { focused: true }, { focused: true }])
 })

@@ -66,15 +66,17 @@ module.exports = function snapshot () {
       'spinbutton'
     ]
     const selector =
-      'a[href],button,input,textarea,select,summary,[contenteditable="true"],' +
+      'a[href],button,input,textarea,select,summary,[contenteditable]:not([contenteditable="false"]),' +
       roles.map(role => '[role="' + role + '"]').join(',')
+    const editingHost = e => e.isContentEditable && !e.parentElement?.isContentEditable
+    const typeable = e => ['INPUT', 'TEXTAREA'].includes(e.tagName) || editingHost(e)
     const role = e => {
       const explicit = e.getAttribute('role')
       if (roles.includes(explicit)) return explicit
       if (e.tagName === 'BUTTON' || e.tagName === 'SUMMARY') return 'button'
       if (e.tagName === 'A') return 'link'
       if (e.tagName === 'SELECT') return 'combobox'
-      if (e.tagName === 'TEXTAREA' || e.isContentEditable) return 'textbox'
+      if (e.tagName === 'TEXTAREA' || editingHost(e)) return 'textbox'
       if (e.tagName === 'INPUT') {
         if (['checkbox', 'radio'].includes(e.type)) return e.type
         if (['button', 'submit', 'reset', 'image'].includes(e.type)) return 'button'
@@ -136,7 +138,14 @@ module.exports = function snapshot () {
     }
     const actions = []
     for (const e of document.querySelectorAll(selector)) {
-      if (!safe(e) || !visible(e) || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) { continue }
+      if (
+        !safe(e) ||
+        !visible(e) ||
+        e.matches(':disabled') ||
+        e.closest('[aria-disabled="true"]')
+      ) {
+        continue
+      }
       const r = e.getBoundingClientRect()
       const x = r.x + r.width / 2
       const y = r.y + r.height / 2
@@ -149,7 +158,9 @@ module.exports = function snapshot () {
         y < 0 ||
         x >= innerWidth ||
         y >= innerHeight
-      ) { continue }
+      ) {
+        continue
+      }
       if (rname === 'gridcell' && e.querySelector('button,[role="button"]')) continue
       const base = {
         node: identity(e),
@@ -176,6 +187,7 @@ module.exports = function snapshot () {
         }
       } else {
         const editable =
+          typeable(e) &&
           !e.readOnly &&
           e.getAttribute('aria-readonly') !== 'true' &&
           (['textbox', 'searchbox', 'spinbutton'].includes(rname) ||
@@ -198,7 +210,14 @@ module.exports = function snapshot () {
     while ((node = walker.nextNode()) && length < 6000) {
       const value = node.textContent.trim()
       const parent = node.parentElement
-      if (!value || !parent || parent.closest('script,style,noscript,template') || !visible(parent)) { continue }
+      if (
+        !value ||
+        !parent ||
+        parent.closest('script,style,noscript,template') ||
+        !visible(parent)
+      ) {
+        continue
+      }
       range.selectNodeContents(node)
       const r = range.getBoundingClientRect()
       if (
@@ -219,12 +238,19 @@ module.exports = function snapshot () {
     )) {
       if (visible(e)) unsupported.push(e.tagName === 'INPUT' ? e.type : e.tagName.toLowerCase())
     }
-    for (const e of document.querySelectorAll('*')) { if (e.shadowRoot && visible(e)) unsupported.push('shadow_dom') }
+    for (const e of document.querySelectorAll('*')) {
+      if (e.shadowRoot && visible(e)) {
+        unsupported.push('shadow_dom')
+        break
+      }
+    }
     const text = words.join('\n').slice(0, 6000)
     const height = document.documentElement.scrollHeight
     const pageKey = cache.pageKey()
     const guards = {}
-    for (const a of actions) { if (!(a.node in guards)) guards[a.node] = cache.guard(cache.nodes.get(a.node)) }
+    for (const a of actions) {
+      if (!(a.node in guards)) guards[a.node] = cache.guard(cache.nodes.get(a.node))
+    }
     // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
     const semantics = actions.map(({ rect, ...action }) => action)
     const marker = [
@@ -244,8 +270,12 @@ module.exports = function snapshot () {
     actions.forEach((a, i) => {
       a.id = 'e' + (i + 1)
     })
-    if (scrollY + innerHeight < height - 2) { actions.push({ id: 'scroll_down', kind: 'scroll', label: 'Scroll down', delta: 560 }) }
-    if (scrollY > 0) { actions.push({ id: 'scroll_up', kind: 'scroll', label: 'Scroll up', delta: -560 }) }
+    if (scrollY + innerHeight < height - 2) {
+      actions.push({ id: 'scroll_down', kind: 'scroll', label: 'Scroll down', delta: 560 })
+    }
+    if (scrollY > 0) {
+      actions.push({ id: 'scroll_up', kind: 'scroll', label: 'Scroll up', delta: -560 })
+    }
     actions.push({ id: 'wait', kind: 'wait', label: 'Wait for the page to update' })
     return {
       url: location.href,

@@ -4,6 +4,7 @@ const test = require('ava')
 const {
   validateChoice,
   actionSpace,
+  buildRequest,
   decide,
   fieldText,
   provider: validateProvider
@@ -133,4 +134,47 @@ test('HTTP failure never produces a decision', async t => {
     ),
     { message: /HTTP 503/ }
   )
+})
+
+test('HTTP failure releases the response body', async t => {
+  let cancelled = 0
+  const bodies = [
+    {
+      cancel: async () => {
+        cancelled++
+        throw new Error('already closed')
+      }
+    },
+    {
+      cancel: () => {
+        cancelled++
+        throw new Error('locked')
+      }
+    },
+    { pipe: () => {} }
+  ]
+  for (const body of bodies) {
+    await t.throwsAsync(
+      decide(
+        state(),
+        'cars',
+        [],
+        provider,
+        http(async () => ({ ok: false, status: 503, body }))
+      ),
+      { message: /HTTP 503/ }
+    )
+  }
+  t.is(cancelled, 2)
+})
+
+test('recent actions tell the model which decisions were discarded as stale', t => {
+  const history = [
+    { operation: 'TYPE_TEXT', action: 'e1', text: 'bmw x3', stale: true },
+    { operation: 'CLICK', action: 'e2', pageChanged: true }
+  ]
+  t.deepEqual(buildRequest(state(), 'cars', history, 'fixture').body.state.recent_actions, [
+    { operation: 'TYPE_TEXT', action: 'e1', text: 'bmw x3', stale: true, page_changed: undefined },
+    { operation: 'CLICK', action: 'e2', text: undefined, stale: undefined, page_changed: true }
+  ])
 })
