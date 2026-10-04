@@ -20,11 +20,40 @@ const open = async (t, html) => {
   return page
 }
 
-const fill = async (page, label) => {
+const fill = async (page, label, text = GENERATED_TEXT) => {
   const state = await observe(page)
   const action = state.actions.find(a => a.kind === 'fill' && a.label === label)
-  return execute(page, state, action, GENERATED_TEXT, 0)
+  return execute(page, state, action, text, 0)
 }
+
+const REPLACEMENTS_BY_INPUT_TYPE = {
+  text: ['old', 'new'],
+  search: ['old', 'new'],
+  number: ['12', '345'],
+  email: ['old@example.com', 'new@example.com'],
+  url: ['https://old.example', 'https://new.example'],
+  tel: ['111', '222']
+}
+
+for (const [type, [previous, next]] of Object.entries(REPLACEMENTS_BY_INPUT_TYPE)) {
+  test(`typing replaces the existing value of input type=${type}`, async t => {
+    const page = await open(t, `<input type="${type}" aria-label="Field" value="${previous}">`)
+    await fill(page, 'Field', next)
+    t.is(await page.$eval('input', e => e.value), next)
+  })
+}
+
+test('input types that cannot take inserted text are never fill targets', async t => {
+  const page = await open(
+    t,
+    ['date', 'time', 'range', 'color'].map(type => `<input type="${type}">`).join('')
+  )
+  const { actions } = await observe(page)
+  t.deepEqual(
+    actions.filter(a => a.kind === 'fill'),
+    []
+  )
+})
 
 test('typing replaces the existing value of an input', async t => {
   const page = await open(t, '<input aria-label="Search" value="old">')
