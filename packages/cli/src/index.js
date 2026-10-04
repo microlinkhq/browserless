@@ -15,6 +15,8 @@ const fs = require('fs')
 
 const noop = () => {}
 
+const FILE_COMMANDS = ['exec']
+
 const commands = fs.readdirSync(path.resolve(__dirname, 'commands'))
 
 const { _, ...flags } = mri(process.argv.slice(2), {
@@ -62,8 +64,8 @@ const isPageReady = ({ title = '', bodyText = '', url = '', isWhite = false } = 
 const run = async () => {
   if (cli.input.length === 0) return cli.showHelp()
   spinner.start()
-  const [command, rawUrl] = cli.input
-  const url = new URL(rawUrl).toString()
+  const [command, input] = cli.input
+  const url = FILE_COMMANDS.includes(command) ? undefined : new URL(input).toString()
   const fn = require(`./commands/${command}`)
   const launchOpts = { headless }
 
@@ -87,7 +89,7 @@ const run = async () => {
   const browserless = await browser.createContext(
     launchOpts.timeout != null ? { timeout: launchOpts.timeout } : undefined
   )
-  return fn({ url, browserless, opts: parsedOpts, isPageReady })
+  return fn({ url, input, browserless, opts: parsedOpts, isPageReady })
 }
 
 run()

@@ -51,6 +51,34 @@ The `@browserless/cli` package allows you to:
 | `ping <url>` | Get response info: status code, redirects, headers |
 | `status <url>` | Get the HTTP status code |
 | `goto <url>` | Navigate to a URL and return page/response info |
+| `exec <file>` | Run a script file against a new page and print what it returns |
+
+### Exec examples
+
+`exec` takes a file instead of a URL. The file exports a function (CommonJS
+`module.exports` or ES module `export default`). The CLI opens a page and calls
+the function with `{ page, browserless, opts }`:
+
+- `page`: a new Puppeteer page in a fresh browser context.
+- `browserless`: the browserless context, for `browserless.goto(page, { url })` and the rest of the API.
+- `opts`: the command-line flags, plus the CLI default `codeScheme`. `--headless` and `--verbose` are consumed by the CLI and not passed. `--timeout` is passed and also sets the browser timeout.
+
+```js
+// title.js
+module.exports = async ({ page, browserless, opts }) => {
+  await browserless.goto(page, { url: opts.url })
+  return { title: await page.title() }
+}
+```
+
+```sh
+browserless exec title.js --url=https://example.com
+```
+
+The file path resolves from the current directory. A returned string is printed
+as is and any other value as indented JSON. `undefined` and buffers print
+nothing, so write binary output to a file from the script. A thrown error is
+printed and the process exits with code 1.
 
 ### Capture examples
 
