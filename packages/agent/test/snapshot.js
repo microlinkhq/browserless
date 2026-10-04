@@ -27,12 +27,15 @@ const dom = html => {
     left: 10
   })
   const observe = () => window.eval(`(${snapshot.toString()})()`)
-  const fresh = (element, state, action) => {
+  const fresh = (element, state, action, requirements = {}) => {
     window.target = element
     window.observed = state
     window.action = action
+    window.requirements = requirements
     window.document.elementFromPoint = () => element
-    return window.eval(`(${targetFresh.toString()})(window.target, window.observed, window.action)`)
+    return window.eval(
+      `(${targetFresh.toString()})(window.target, window.observed, window.action, window.requirements)`
+    )
   }
   return { window, observe, fresh }
 }
@@ -141,4 +144,46 @@ test('select option mutation invalidates a previously observed value', t => {
   t.true(fresh(element, current, action))
   element.options[1].textContent = 'Different meaning'
   t.false(fresh(element, current, action))
+})
+
+test('fill target must hold keyboard focus when focus is required', t => {
+  const { window, observe, fresh } = dom(
+    '<body><input id="target" aria-label="Search"><input id="other" aria-label="Other"></body>'
+  )
+  const current = observe()
+  const element = window.document.getElementById('target')
+  const action = current.actions.find(a => a.kind === 'fill' && a.label === 'Search')
+  t.true(fresh(element, current, action))
+  t.false(fresh(element, current, action, { focused: true }))
+  element.focus()
+  t.true(fresh(element, current, action, { focused: true }))
+  window.document.getElementById('other').focus()
+  t.false(fresh(element, current, action, { focused: true }))
+})
+
+test('only typeable editing hosts are indexed as fill targets', t => {
+  const { window, observe } = dom(
+    '<body><div contenteditable aria-label="Bare"><b contenteditable="bogus" aria-label="Nested">x</b></div><div contenteditable="true" aria-label="Explicit"></div><div contenteditable="plaintext-only" aria-label="Plain"></div><div contenteditable="false" aria-label="Locked"></div><div role="textbox" aria-label="Fake"></div></body>'
+  )
+  Object.defineProperty(window.HTMLElement.prototype, 'isContentEditable', {
+    get () {
+      const host = this.closest('[contenteditable]')
+      return !!host && host.getAttribute('contenteditable') !== 'false'
+    }
+  })
+  const { actions } = observe()
+  t.deepEqual(
+    actions.filter(a => a.kind === 'fill').map(a => a.label),
+    ['Bare', 'Explicit', 'Plain']
+  )
+  t.deepEqual(
+    actions.filter(a => a.kind === 'click').map(a => a.label),
+    ['Open Bare', 'Open Explicit', 'Open Plain', 'Fake']
+  )
+})
+
+test('several shadow hosts are reported once', t => {
+  const { window, observe } = dom('<body><div id="a"></div><div id="b"></div></body>')
+  for (const id of ['a', 'b']) window.document.getElementById(id).attachShadow({ mode: 'open' })
+  t.deepEqual(observe().unsupported, ['shadow_dom'])
 })

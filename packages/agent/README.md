@@ -139,7 +139,9 @@ these providers. Use only pages you may disclose to them.
    same-form values, document identity, current visibility and hit-testing.
    Unrelated changes outside the target context/form are tolerated. Moving
    targets are re-resolved, not clicked at old coordinates. Text entry checks
-   again after focus and before inserting text.
+   again after focus and before inserting text, and requires the target to
+   still hold keyboard focus. A discarded stale decision is reported to the
+   next decision request as `stale`, so it is not mistaken for executed input.
 4. Puppeteer clicks/selects or inserts generated text, or scrolls/waits, then
    collects a new observation. Three unchanged actions stop the loop.
 
@@ -168,9 +170,11 @@ remain v0 limits. Guards reduce stale-target risk, not all browser races.
 ## Verification and publishing
 
 `npm test` runs AVA with mocked model responses, a fake Puppeteer adapter and
-jsdom DOM fixtures. No browser download or API key is needed for these tests.
-jsdom provides synthetic visibility/layout; it does not prove real Chrome input
-behavior. No real-browser or paid-provider benchmark is claimed.
+jsdom DOM fixtures. No API key is needed for these tests. jsdom provides
+synthetic visibility/layout, so `test/chrome.js` also runs text entry against
+the Chrome that Puppeteer downloads: value replacement in inputs and editing
+hosts, and the keyboard-focus guard. Clicks, selects, scrolling and the full
+loop are not exercised in real Chrome. No paid-provider benchmark is claimed.
 
 This directory is picked up by the existing `packages/*` workspace and release
 globs. No CI, root config or existing package is changed. The owner must publish
