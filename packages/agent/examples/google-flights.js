@@ -2,13 +2,7 @@
 
 const agent = require('..')
 const debug = require('debug-logfmt')('browserless:agent')
-
-const flat = ({ accuracy, cost, timing, error }) => ({
-  ...accuracy,
-  ...cost,
-  ...timing,
-  ...(error && { error: error.message })
-})
+const { flat } = require('./util')
 
 const DAYS_AHEAD = 30
 const DAY_MS = 24 * 60 * 60 * 1000

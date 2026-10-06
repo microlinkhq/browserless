@@ -71,7 +71,7 @@ The CLI exits with code 1 when the agent throws, including a `BlockedError`.
 
 ### Examples
 
-Every file in `examples/` is a self-contained exec script: it navigates, gives
+Every file in `examples/` is an exec script: it navigates, gives
 the page one or more goals, and returns the extracted data, which the CLI
 prints. Jev is used through the gateway, so `AI_GATEWAY_API_KEY` is the only
 key needed. With `DEBUG=browserless:agent`, each goal also logs one line with
@@ -88,21 +88,18 @@ evaluation is paid for.
 | `examples/run.js` | Any page: `--url=<url> --goal=<goal> --extract=<what to get>` |
 
 ```sh
-browserless exec examples/wallapop.js
-DEBUG=browserless:agent browserless exec examples/hacker-news.js
-browserless exec examples/run.js --url=https://en.wikipedia.org/wiki/Main_Page --goal='Find and open the Wikipedia article about Alan Turing.' --extract='get the article title'
+browserless exec examples/wallapop.js --no-headless
+DEBUG=browserless:agent browserless exec examples/hacker-news.js --no-headless
+browserless exec examples/run.js --no-headless --url=https://en.wikipedia.org/wiki/Main_Page --goal='Find and open the Wikipedia article about Alan Turing.' --extract='get the article title'
 ```
+
+`--no-headless` opens a visible browser window, so every step the agent takes
+can be watched. Without it the browser runs headless.
 
 ```js
 const agent = require('@browserless/agent')
 const debug = require('debug-logfmt')('browserless:agent')
-
-const flat = ({ accuracy, cost, timing, error }) => ({
-  ...accuracy,
-  ...cost,
-  ...timing,
-  ...(error && { error: error.message })
-})
+const { flat } = require('./util')
 
 module.exports = async ({ page, browserless }) => {
   agent(page, { decisions: 'typesafe-ai/jev' })

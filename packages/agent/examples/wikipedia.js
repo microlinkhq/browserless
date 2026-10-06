@@ -2,13 +2,7 @@
 
 const agent = require('..')
 const debug = require('debug-logfmt')('browserless:agent')
-
-const flat = ({ accuracy, cost, timing, error }) => ({
-  ...accuracy,
-  ...cost,
-  ...timing,
-  ...(error && { error: error.message })
-})
+const { flat } = require('./util')
 
 module.exports = async ({ page, browserless }) => {
   agent(page, { decisions: 'typesafe-ai/jev' })

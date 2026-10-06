@@ -46,7 +46,7 @@
   ],
   "scripts": {
     "test": "ava",
-    "start": "browserless exec examples/wallapop.js",
+    "start": "browserless exec examples/wallapop.js --no-headless",
     "benchmark": "browserless exec scripts/benchmark.js"
   },
   "license": "MIT",
