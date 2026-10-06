@@ -6,6 +6,9 @@ const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
 
+const pageChanged = (before, after) =>
+  JSON.stringify(before.marker) !== JSON.stringify(after.marker)
+
 const observe = async page => {
   const state = await page.evaluate(snapshot)
   if (!state) throw new BlockedError('unsupported_surface', 'No document body is available.')
@@ -72,10 +75,7 @@ const execute = async (page, state, action, text, waitMs) => {
     return
   }
   if (action.kind === 'scroll') {
-    const current = await observe(page)
-    if (JSON.stringify(current.marker) !== JSON.stringify(state.marker)) {
-      throw new StaleDecisionError()
-    }
+    if (pageChanged(state, await observe(page))) throw new StaleDecisionError()
     await page.mouse.move(state.w / 2, state.h / 2)
     await page.mouse.wheel({ deltaY: action.delta })
     return
@@ -91,17 +91,19 @@ const execute = async (page, state, action, text, waitMs) => {
         throw new StaleDecisionError()
       }
     }
-    await assertFresh()
-    if (action.kind === 'fill') {
-      // Focus can trigger menus/re-renders. Validate again before changing value.
+    // Focus can trigger menus/re-renders, so freshness is checked again after it.
+    const focusForKeyboard = async () => {
       await element.focus()
       await assertFresh(KEYBOARD_TARGET)
+    }
+    await assertFresh()
+    if (action.kind === 'fill') {
+      await focusForKeyboard()
       await element.evaluate(selectContents)
       await assertFresh(KEYBOARD_TARGET)
       await page.keyboard.sendCharacter(text)
     } else if (action.kind === 'submit') {
-      await element.focus()
-      await assertFresh(KEYBOARD_TARGET)
+      await focusForKeyboard()
       await page.keyboard.press('Enter')
     } else if (action.kind === 'select') {
       await element.select(action.value)
@@ -113,4 +115,4 @@ const execute = async (page, state, action, text, waitMs) => {
   }
 }
 
-module.exports = { observe, execute, targetFresh, selectContents }
+module.exports = { observe, execute, pageChanged, targetFresh, selectContents }

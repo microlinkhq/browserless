@@ -16,6 +16,9 @@ const WINNER_TOLERANCE = 1e-6
 const TEXT_MAX_OUTPUT_TOKENS = 1024
 const TEXT_MAX_LENGTH = 2000
 const MIN_DECIMALS_FOR_ROUNDING_TOLERANCE = 2
+const MAX_RETRIES = 0
+const DECISION_HISTORY_LENGTH = 10
+const TEXT_HISTORY_LENGTH = 6
 
 const FIELD_VALUE_SCHEMA = jsonSchema({
   type: 'object',
@@ -31,23 +34,27 @@ const roundingTolerance = (optionCount, rounding) => {
     : 0
 }
 
-const validateChoice = (answer, ids, rounding) => {
+const isProbability = value => typeof value === 'number' && value >= 0 && value <= 1
+
+const isWinningDistribution = (answer, ids, rounding) => {
   const probabilities = answer?.probabilities
-  const keys = probabilities && Object.keys(probabilities)
-  const finite = n => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1
+  if (!probabilities || !ids.includes(answer.choice)) return false
+  if (Object.keys(probabilities).length !== ids.length) return false
+  if (!ids.every(id => Object.hasOwn(probabilities, id))) return false
+  const values = Object.values(probabilities)
+  if (!values.every(isProbability)) return false
+  const sum = values.reduce((total, value) => total + value, 0)
   const sumTolerance = Math.max(PROBABILITY_SUM_TOLERANCE, roundingTolerance(ids.length, rounding))
-  if (
-    !ids.includes(answer?.choice) ||
-    !keys ||
-    keys.length !== ids.length ||
-    !ids.every(id => Object.hasOwn(probabilities, id)) ||
-    !Object.values(probabilities).every(finite) ||
-    Math.abs(Object.values(probabilities).reduce((a, b) => a + b, 0) - 1) > sumTolerance ||
-    probabilities[answer.choice] < Math.max(...Object.values(probabilities)) - WINNER_TOLERANCE
-  ) {
+  if (Math.abs(sum - 1) > sumTolerance) return false
+  return probabilities[answer.choice] >= Math.max(...values) - WINNER_TOLERANCE
+}
+
+const validateChoice = (answer, ids, rounding) => {
+  if (!isWinningDistribution(answer, ids, rounding)) {
     throw new TypeError('Invalid decisions response; no action executed.')
   }
-  return { choice: answer.choice, probabilities, confidence: probabilities[answer.choice] }
+  const { choice, probabilities } = answer
+  return { choice, probabilities, confidence: probabilities[choice] }
 }
 
 const OPERATION_DESCRIPTIONS = {
@@ -140,7 +147,7 @@ const buildRequest = (state, goal, history) => {
         page: { url: state.url, title: state.title, text: state.text },
         elements: space.elements,
         recent_actions: history
-          .slice(-10)
+          .slice(-DECISION_HISTORY_LENGTH)
           .map(({ operation, action, text, stale, pageChanged }) => ({
             operation,
             action,
@@ -157,16 +164,18 @@ const buildRequest = (state, goal, history) => {
 const requestSignal = ({ signal, timeout }) =>
   signal ? AbortSignal.any([signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout)
 
+const withinTimeout = async (options, call) => {
+  const abortSignal = requestSignal(options)
+  const result = await call(abortSignal)
+  abortSignal.throwIfAborted()
+  return result
+}
+
 const decide = async (state, goal, history, model, options) => {
   const { space, operations, request } = buildRequest(state, goal, history)
-  const abortSignal = requestSignal(options)
-  const { answers, rounding } = await decideWithModel({
-    model,
-    ...request,
-    maxRetries: 0,
-    abortSignal
-  })
-  abortSignal.throwIfAborted()
+  const { answers, rounding } = await withinTimeout(options, abortSignal =>
+    decideWithModel({ model, ...request, maxRetries: MAX_RETRIES, abortSignal })
+  )
   const answer = validateChoice(answers?.operation, Object.keys(operations), rounding)
   const operation = answer.choice
   let targetAnswer
@@ -204,34 +213,33 @@ const generateFieldValue = async request => {
   }
 }
 
+const isFieldValue = output =>
+  !!output &&
+  typeof output === 'object' &&
+  Object.keys(output).length === 1 &&
+  typeof output.text === 'string' &&
+  output.text.trim() !== '' &&
+  output.text.length <= TEXT_MAX_LENGTH
+
 const fieldText = async (goal, action, state, history, model, options) => {
-  const abortSignal = requestSignal(options)
-  const output = await generateFieldValue({
-    model,
-    system: TEXT_VALUE,
-    prompt: JSON.stringify({
-      goal,
-      field: { label: action.label, role: action.role, value: action.value },
-      page: { title: state.title, text: state.text },
-      recent_actions: history.slice(-6)
-    }),
-    output: Output.object({ schema: FIELD_VALUE_SCHEMA }),
-    maxOutputTokens: TEXT_MAX_OUTPUT_TOKENS,
-    maxRetries: 0,
-    reasoning: options.reasoning,
-    abortSignal
-  })
-  abortSignal.throwIfAborted()
-  if (
-    !output ||
-    typeof output !== 'object' ||
-    Object.keys(output).length !== 1 ||
-    typeof output.text !== 'string' ||
-    !output.text.trim() ||
-    output.text.length > TEXT_MAX_LENGTH
-  ) {
-    throw invalidFieldValue()
-  }
+  const output = await withinTimeout(options, abortSignal =>
+    generateFieldValue({
+      model,
+      system: TEXT_VALUE,
+      prompt: JSON.stringify({
+        goal,
+        field: { label: action.label, role: action.role, value: action.value },
+        page: { title: state.title, text: state.text },
+        recent_actions: history.slice(-TEXT_HISTORY_LENGTH)
+      }),
+      output: Output.object({ schema: FIELD_VALUE_SCHEMA }),
+      maxOutputTokens: TEXT_MAX_OUTPUT_TOKENS,
+      maxRetries: MAX_RETRIES,
+      reasoning: options.reasoning,
+      abortSignal
+    })
+  )
+  if (!isFieldValue(output)) throw invalidFieldValue()
   return output.text
 }
 
