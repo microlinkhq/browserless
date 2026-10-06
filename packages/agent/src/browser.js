@@ -67,16 +67,17 @@ const selectContents = element => {
 }
 
 const execute = async (page, state, action, text, waitMs) => {
-  if (action.kind === 'wait' || action.kind === 'scroll') {
+  if (action.kind === 'wait') {
+    await new Promise(resolve => setTimeout(resolve, waitMs))
+    return
+  }
+  if (action.kind === 'scroll') {
     const current = await observe(page)
     if (JSON.stringify(current.marker) !== JSON.stringify(state.marker)) {
       throw new StaleDecisionError()
     }
-    if (action.kind === 'wait') await new Promise(resolve => setTimeout(resolve, waitMs))
-    else {
-      await page.mouse.move(state.w / 2, state.h / 2)
-      await page.mouse.wheel({ deltaY: action.delta })
-    }
+    await page.mouse.move(state.w / 2, state.h / 2)
+    await page.mouse.wheel({ deltaY: action.delta })
     return
   }
   const handle = await page.evaluateHandle(
