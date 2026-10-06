@@ -5,7 +5,7 @@ const debug = require('debug-logfmt')('browserless:agent')
 const { flat } = require('./util')
 
 module.exports = async ({ page, browserless }) => {
-  agent(page, { decisions: 'typesafe-ai/jev' })
+  agent(page)
 
   await browserless.goto(page, { url: 'https://github.com/microlinkhq/browserless' })
   const opened = await page.goal('Open the list of open issues of this repository.')

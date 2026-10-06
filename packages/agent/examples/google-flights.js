@@ -15,7 +15,7 @@ const departure = new Date(Date.now() + DAYS_AHEAD * DAY_MS).toLocaleDateString(
 })
 
 module.exports = async ({ page, browserless }) => {
-  agent(page, { decisions: 'typesafe-ai/jev' })
+  agent(page)
 
   await browserless.goto(page, {
     url: 'https://www.google.com/travel/flights?hl=en',

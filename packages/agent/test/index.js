@@ -345,12 +345,101 @@ test('SUBMIT is discarded when the field does not keep keyboard focus', async t 
 
 const runWithoutDecisionModel = (page, language, options = {}) =>
   agent.goal(page, 'find cheapest bmw x3', {
+    decisions: false,
     text: language.text,
     waitMs: 0,
     ...options
   })
 
-test('without a decision model the language model chooses the operation and target', async t => {
+const GOAL = 'find cheapest bmw x3'
+
+const captureDefaultDecisionModel = t => {
+  const requested = []
+  const provider = globalThis.AI_SDK_DEFAULT_PROVIDER
+  globalThis.AI_SDK_DEFAULT_PROVIDER = {
+    decisionModel: id => {
+      requested.push(id)
+      return mockModels(['DONE']).decisions
+    }
+  }
+  t.teardown(() => {
+    globalThis.AI_SDK_DEFAULT_PROVIDER = provider
+  })
+  return requested
+}
+
+test.serial('without a decisions option the decision model is typesafe-ai/jev', async t => {
+  const requested = captureDefaultDecisionModel(t)
+  const { text } = mockModels(['DONE'])
+  const result = await agent.goal(new Page(), GOAL, { text, waitMs: 0 })
+  t.is(result.status, 'done')
+  t.deepEqual(requested, ['typesafe-ai/jev'])
+})
+
+test.serial(
+  'a nullish decisions option means typesafe-ai/jev, from the page method too',
+  async t => {
+    const requested = captureDefaultDecisionModel(t)
+    const { text } = mockModels(['DONE'])
+    await agent.goal(new Page(), GOAL, { decisions: null, text, waitMs: 0 })
+    await agent.goal(new Page(), GOAL, { decisions: undefined, text, waitMs: 0 })
+    await agent(new Page(), { text, waitMs: 0 }).goal(GOAL)
+    t.deepEqual(requested, ['typesafe-ai/jev', 'typesafe-ai/jev', 'typesafe-ai/jev'])
+  }
+)
+
+test.serial(
+  'decisions set to false as a default survives calls that give no decisions',
+  async t => {
+    const requested = captureDefaultDecisionModel(t)
+    const language = languageDecider(['DONE', 'DONE', 'DONE'])
+    const page = agent(new Page(), { decisions: false, text: language.text, waitMs: 0 })
+    await page.goal(GOAL)
+    await page.goal(GOAL, { decisions: undefined })
+    await page.goal(GOAL, { decisions: null })
+    t.deepEqual(requested, [])
+    t.deepEqual(
+      language.calls.map(call => call.kind),
+      ['decide', 'decide', 'decide']
+    )
+  }
+)
+
+test('a default decision model survives a call that gives undefined decisions', async t => {
+  const models = mockModels(['DONE'])
+  const page = agent(new Page(), { decisions: models.decisions, text: models.text, waitMs: 0 })
+  t.is((await page.goal(GOAL, { decisions: undefined })).status, 'done')
+  t.deepEqual(
+    models.calls.map(call => call.kind),
+    ['decide']
+  )
+})
+
+test('decisions set to false in a call overrides a default decision model', async t => {
+  const models = mockModels(['DONE'])
+  const language = languageDecider(['DONE'])
+  const page = agent(new Page(), { decisions: models.decisions, text: language.text, waitMs: 0 })
+  t.is((await page.goal(GOAL, { decisions: false })).status, 'done')
+  t.deepEqual(models.calls, [])
+  t.deepEqual(
+    language.calls.map(call => call.kind),
+    ['decide']
+  )
+})
+
+for (const decisions of ['', ' ', true, 0, {}, []]) {
+  test(`decisions ${JSON.stringify(decisions)} is refused before the page is touched`, async t => {
+    const page = new Page()
+    const { text } = mockModels(['DONE'])
+    await t.throwsAsync(agent.goal(page, GOAL, { decisions, text }), {
+      message: 'decisions must be a model id or an AI SDK model.'
+    })
+    t.deepEqual(page.inputs, [])
+    t.is(page.reads, 0)
+  })
+}
+
+test('decisions set to false lets the language model choose the operation and target', async t => {
   const page = new Page([state(), state('Results')])
   const language = languageDecider(['CLICK', 'DONE'])
   const result = await runWithoutDecisionModel(page, language)

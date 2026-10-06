@@ -26,7 +26,7 @@ declare namespace agent {
   const applyRules: Extractor
   interface Options {
     extractor?: Extractor
-    decisions?: Experimental_DecisionModel
+    decisions?: Experimental_DecisionModel | false
     text?: LanguageModel
     evaluator?: Experimental_DecisionModel
     reasoning?: Reasoning

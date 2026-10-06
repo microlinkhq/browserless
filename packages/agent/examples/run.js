@@ -11,7 +11,7 @@ module.exports = async ({ page, browserless, opts }) => {
       'Usage: browserless exec examples/run.js --url=<url> --goal=<goal> --extract=<what to get>'
     )
   }
-  agent(page, { decisions: 'typesafe-ai/jev' })
+  agent(page)
 
   await browserless.goto(page, { url })
   const reached = await page.goal(goal)

@@ -16,6 +16,7 @@ const { createInfo } = require('./info')
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
 const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
 const DEFAULT_TEXT_MODEL = 'openai/gpt-6-luna'
+const DEFAULT_DECISION_MODEL = 'typesafe-ai/jev'
 const DEFAULT_EVALUATOR = 'typesafe-ai/jev'
 const DEFAULT_REASONING = 'none'
 const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
@@ -31,6 +32,9 @@ const isModel = model =>
   (typeof model === 'string' && model.trim() !== '') ||
   typeof model?.specificationVersion === 'string'
 
+const withoutNullish = (options = {}) =>
+  Object.fromEntries(Object.entries(options).filter(([, value]) => value != null))
+
 const withDefaults = (options, defaults) =>
   Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, options[key] ?? value]))
 
@@ -41,8 +45,9 @@ const resolveOptions = options => {
       throw new TypeError(`${key} must be an integer of at least ${minimum}.`)
     }
   }
+  const decisions = options.decisions ?? DEFAULT_DECISION_MODEL
   const models = {
-    decisions: options.decisions ?? undefined,
+    decisions: decisions === false ? undefined : decisions,
     text: options.text ?? DEFAULT_TEXT_MODEL
   }
   for (const [key, model] of Object.entries(models)) {
@@ -266,7 +271,7 @@ const agent = (page, defaults = {}) => {
   const existingExtract = typeof page.extract === 'function' ? page.extract.bind(page) : undefined
   const extractor = defaults.extractor ?? (existingExtract && ((_, data) => existingExtract(data)))
   const settings = extractor ? { ...defaults, extractor } : defaults
-  const withSettings = options => ({ ...settings, ...options })
+  const withSettings = options => ({ ...settings, ...withoutNullish(options) })
   return Object.assign(page, {
     goal: (text, options) => goal(page, text, withSettings(options)),
     extract: (input, ...rest) =>

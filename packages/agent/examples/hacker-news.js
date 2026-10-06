@@ -5,7 +5,7 @@ const debug = require('debug-logfmt')('browserless:agent')
 const { flat } = require('./util')
 
 module.exports = async ({ page, browserless }) => {
-  agent(page, { decisions: 'typesafe-ai/jev' })
+  agent(page)
 
   await browserless.goto(page, { url: 'https://news.ycombinator.com' })
   const opened = await page.goal('Open the comments page of the first story on the front page.')

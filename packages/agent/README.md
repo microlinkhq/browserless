@@ -41,7 +41,8 @@ and returns the same page:
   until the model reports the goal is met.
 - `page.extract(...)` returns data from the current page. It does not navigate.
 
-`defaults` apply to both; options passed to a call override them. The same
+`defaults` apply to both; options passed to a call override them, and an option
+passed as `undefined` or `null` keeps the default. The same
 functions are exported for use without touching the page: `agent.goal(page, …)`
 and `agent.extract(page, …)`.
 
@@ -102,7 +103,7 @@ const debug = require('debug-logfmt')('browserless:agent')
 const { flat } = require('./util')
 
 module.exports = async ({ page, browserless }) => {
-  agent(page, { decisions: 'typesafe-ai/jev' })
+  agent(page)
 
   await browserless.goto(page, { url: 'https://wallapop.com' })
   const searched = await page.goal('busca "bmw x3"')
@@ -172,7 +173,7 @@ on a model: observing, acting, settling and waits.
 its fields, and the actions taken, without the run's own DONE, and answers
 whether the goal is met. `probability` is its probability that it is. It is a
 second model judgment, not ground truth: the default evaluator,
-`'typesafe-ai/jev'`, is the same model the examples pass as `decisions`. Its cost is included in `cost` and its time
+`'typesafe-ai/jev'`, is the same model that takes the decisions by default. Its cost is included in `cost` and its time
 in `evaluationMs`, not `totalMs`. Calling `info()` sends the page text and typed
 values to the evaluator's provider.
 
@@ -203,8 +204,8 @@ each decision still spends a request.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `decisions` | none | Decision model such as `'typesafe-ai/jev'`: an AI Gateway model id or an AI SDK decision model. When omitted, the text model makes the decisions |
-| `text` | `'openai/gpt-6-luna'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
+| `decisions` | `'typesafe-ai/jev'` | Decision model: an AI Gateway model id or an AI SDK decision model. `false` makes the text model take the decisions |
+| `text` | `'openai/gpt-6-luna'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is `false` |
 | `evaluator` | `'typesafe-ai/jev'` | Decision model that `info()` asks whether the goal was met: an AI Gateway model id or an AI SDK decision model |
 | `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
@@ -332,6 +333,8 @@ const page = agent(await browser.newPage(), {
 })
 ```
 
+Those two are the defaults, so `agent(page)` does the same.
+
 Any AI SDK model instance works too, so a provider can be called directly with
 its own key. This runs Jev on a TypeSafe key and keeps the gateway for text:
 
@@ -361,7 +364,7 @@ of the chosen option.
 
 ### Without a decision model
 
-`decisions` is optional. Without it, the language model in `text` receives the
+With `decisions: false`, the language model in `text` receives the
 same state and the same questions and returns `{ "operation", "target" }`. The
 operation must be one of the offered operations and the target one of the
 targets offered for it, or the run stops before any input. A target sent for an
@@ -370,8 +373,8 @@ probabilities on this path, so `confidence` and `probabilities` are absent from
 the trace.
 
 ```js
-await page.goal(goal)                                   // language model decides
-await page.goal(goal, { decisions: 'typesafe-ai/jev' }) // Jev decides
+await page.goal(goal)                       // Jev decides
+await page.goal(goal, { decisions: false }) // language model decides
 ```
 
 Every trace entry has `decisionMs`, the time its decision took (the model
