@@ -460,6 +460,8 @@ comparison; both are absent when any run did not report its cost, and neither
 includes the extraction request. A run that fails is recorded and the remaining
 runs go on.
 
+Results of past comparisons are collected in [scripts/README.md](scripts/README.md).
+
 What it does not measure: the cost of the extraction request, and whether a
 finished run is correct. `passed` is a second model's opinion, and on the same
 path and final page it has answered both yes and no.
