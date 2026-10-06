@@ -1,6 +1,14 @@
 'use strict'
 
 const agent = require('..')
+const debug = require('debug-logfmt')('browserless:agent')
+
+const flat = ({ accuracy, cost, timing, error }) => ({
+  ...accuracy,
+  ...cost,
+  ...timing,
+  ...(error && { error: error.message })
+})
 
 module.exports = async ({ page, browserless, opts }) => {
   const { url, goal, extract } = opts
@@ -12,7 +20,8 @@ module.exports = async ({ page, browserless, opts }) => {
   agent(page, { decisions: 'typesafe-ai/jev' })
 
   await browserless.goto(page, { url })
-  await page.goal(goal)
+  const reached = await page.goal(goal)
+  if (debug.enabled) debug('goal', flat(await reached()))
 
   return page.extract(extract)
 }

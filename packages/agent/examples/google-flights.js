@@ -1,6 +1,14 @@
 'use strict'
 
 const agent = require('..')
+const debug = require('debug-logfmt')('browserless:agent')
+
+const flat = ({ accuracy, cost, timing, error }) => ({
+  ...accuracy,
+  ...cost,
+  ...timing,
+  ...(error && { error: error.message })
+})
 
 const DAYS_AHEAD = 30
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -19,10 +27,14 @@ module.exports = async ({ page, browserless }) => {
     url: 'https://www.google.com/travel/flights?hl=en',
     adblock: false
   })
-  await page.goal('If a cookie consent page is shown, scroll down and reject all cookies.')
-  await page.goal(
+  const consented = await page.goal(
+    'If a cookie consent page is shown, scroll down and reject all cookies.'
+  )
+  if (debug.enabled) debug('reject cookies', flat(await consented()))
+  const found = await page.goal(
     `Find one-way flights from Zurich to London on ${departure}, for one adult in economy. Stop when matching flight options are visible.`
   )
+  if (debug.enabled) debug('find flights', flat(await found()))
 
   return page.extract('get the flights listed on the page', {
     fields: {

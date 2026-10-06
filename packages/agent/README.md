@@ -24,7 +24,7 @@ const browser = await puppeteer.launch()
 const page = agent(await browser.newPage())
 
 await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' })
-await page.goal('busca el bmw x3 más barato')
+const searched = await page.goal('busca el bmw x3 más barato')
 const { products } = await page.extract('get the search results', {
   fields: {
     products: {
@@ -32,6 +32,7 @@ const { products } = await page.extract('get the search results', {
     }
   }
 })
+const { accuracy, cost, timing } = await searched() // optional: one extra request, for accuracy
 await browser.close()
 ```
 
@@ -77,7 +78,9 @@ The CLI exits with code 1 when the agent throws, including a `BlockedError`.
 Every file in `examples/` is a self-contained exec script: it navigates, gives
 the page one or more goals, and returns the extracted data, which the CLI
 prints. Jev is used through the gateway, so `AI_GATEWAY_API_KEY` is the only
-key needed.
+key needed. With `DEBUG=browserless:agent`, each goal also logs one line with
+its `accuracy`, `cost` and `timing`; without it, `info()` is never called, so no
+evaluation is paid for.
 
 | Script | Steps |
 | --- | --- |
@@ -90,18 +93,29 @@ key needed.
 
 ```sh
 browserless exec examples/wallapop.js
+DEBUG=browserless:agent browserless exec examples/hacker-news.js
 browserless exec examples/run.js --url=https://en.wikipedia.org/wiki/Main_Page --goal='Find and open the Wikipedia article about Alan Turing.' --extract='get the article title'
 ```
 
 ```js
 const agent = require('@browserless/agent')
+const debug = require('debug-logfmt')('browserless:agent')
+
+const flat = ({ accuracy, cost, timing, error }) => ({
+  ...accuracy,
+  ...cost,
+  ...timing,
+  ...(error && { error: error.message })
+})
 
 module.exports = async ({ page, browserless }) => {
   agent(page, { decisions: 'typesafe-ai/jev' })
 
   await browserless.goto(page, { url: 'https://wallapop.com' })
-  await page.goal('busca "bmw x3"')
-  await page.goal('ordena los resultados de más barato a más caro')
+  const searched = await page.goal('busca "bmw x3"')
+  if (debug.enabled) debug('search', flat(await searched()))
+  const sorted = await page.goal('ordena los resultados de más barato a más caro')
+  if (debug.enabled) debug('sort', flat(await sorted()))
 
   return page.extract('get the search results', {
     fields: {
