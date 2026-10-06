@@ -1,0 +1,7 @@
+'use strict'
+
+module.exports = require('./task')({
+  name: 'github',
+  url: 'https://github.com/microlinkhq/browserless',
+  goal: 'Open the list of open issues of this repository.'
+})

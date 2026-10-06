@@ -51,25 +51,48 @@ module.exports = async ({ page, browserless }) => {
 browserless exec agent-example.js
 ```
 
-The CLI prints the returned trace as JSON and exits with code 1 when the agent
-throws, including a `BlockedError`. `examples/wallapop.js` is this script; in
-this repository `npm start` runs it. It needs `AI_GATEWAY_API_KEY` for the text
-model. When `TYPESAFE_API_KEY` is set, Jev makes the decisions, called directly
-with that key; otherwise, or with `--no-jev`, the text model decides.
+The CLI exits with code 1 when the agent throws, including a `BlockedError`.
 
-It has been run live against Wallapop with `jev-latest` through
-`@ai-sdk/typesafe-ai` for decisions and `inception/mercury-2.5` through Vercel
-AI Gateway for text (the default text model at the time; the current default,
-`openai/gpt-6-luna`, has not been run). Of the last ten runs, seven ended on the results for
-`bmw x3` sorted by lowest price in 9 to 16 decision requests (3.6 to 5.2 seconds
-on the six that were timed), and three failed because the text model did not
-answer within the 25 second timeout on the gateway's free tier. Requests are
-not retried, so one such hang ends the run. Earlier builds also
-reported `done` before results had loaded or been sorted. `done` is the model's
-judgment, not a verified outcome. Several of those timeouts were probably the
-free tier's limit of 5 requests per minute, hit by running back to back.
-Decisions through the gateway (`typesafe-ai/jev`) have not been run: the free
-gateway tier refuses that model.
+### Examples
+
+Every file in `examples/` is an exec script. Each prints a short summary
+(status, final URL, operations, `decisionMs`) and saves `<name>.png`.
+
+| Script | Goal |
+| --- | --- |
+| `examples/wallapop.js` | Search Wallapop for the cheapest BMW X3 |
+| `examples/wikipedia.js` | Find and open the article about Gödel's incompleteness theorems |
+| `examples/google-flights.js` | Find one-way Zurich to London flights 30 days from today |
+| `examples/hacker-news.js` | Open the comments of the first story on the front page |
+| `examples/github.js` | Open the open issues of this repository |
+| `examples/run.js` | Any page: `--url=<url> --goal=<goal>` |
+
+```sh
+browserless exec examples/wikipedia.js
+browserless exec examples/run.js --url=https://en.wikipedia.org/wiki/Main_Page --goal='Find and open the Wikipedia article about Alan Turing.'
+```
+
+Flags, all optional: `--text=<model id>` picks the language model, `--no-jev`
+lets it make the decisions too, `--trace` prints the full trace. `npm start`
+runs the Wallapop one. They need `AI_GATEWAY_API_KEY`. When `TYPESAFE_API_KEY`
+is set, Jev makes the decisions, called directly with that key (this needs
+`@ai-sdk/typesafe-ai` installed); otherwise the language model decides.
+
+Each example was run live once or twice and ended `done` on a page that matched
+its goal, with `jev-latest` for decisions and `alibaba/qwen3.7-flash` for text.
+That is a check that they can work, not a reliability figure: `done` is the
+model's judgment, and one Wallapop run searched `x3 bmw` from a suggestion
+instead of `bmw x3`. Notes from those runs:
+
+- Google Flights shows a cookie consent page in the EU, so its goal starts by
+  rejecting cookies, and it navigates with the browserless adblocker off because
+  the adblocker leaves that consent page blank.
+- Wallapop was measured more: on an earlier build with `inception/mercury-2.5`
+  for text, seven of ten runs ended on the results for `bmw x3` sorted by lowest
+  price in 9 to 16 decisions, and three failed on text-model timeouts that were
+  probably the gateway free tier's limit of 5 requests per minute.
+- The default text model `openai/gpt-6-luna` and Jev through the gateway
+  (`typesafe-ai/jev`) have not been run: the gateway free tier refuses both.
 
 ## API
 
