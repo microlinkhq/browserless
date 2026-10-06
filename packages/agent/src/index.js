@@ -1,10 +1,18 @@
 'use strict'
 
 const { observe, execute } = require('./browser')
-const { provider, decide, fieldText } = require('./model')
+const { decide, fieldText } = require('./model')
 const { BlockedError, StaleDecisionError } = require('./errors')
 const activePages = new WeakSet()
 const MAX_STALE_DECISIONS_PER_TARGET = 3
+const DEFAULT_DECISION_MODEL = 'typesafe-ai/jev'
+const DEFAULT_TEXT_MODEL = 'inception/mercury-2.5'
+const DEFAULT_REASONING = 'none'
+const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
+
+const isModel = model =>
+  (typeof model === 'string' && model.trim() !== '') ||
+  typeof model?.specificationVersion === 'string'
 
 const actionKey = action => `${action.kind}:${action.node ?? action.id}:${action.value ?? ''}`
 
@@ -23,17 +31,16 @@ const agent = async (page, goal, options = {}) => {
       throw new TypeError(`${key} must be an integer of at least ${minimum}.`)
     }
   }
-  const config = provider(
-    options.decisions,
-    options.decisions
-      ? {}
-      : {
-          apiKey: process.env.TYPESAFE_API_KEY,
-          baseUrl: process.env.TYPESAFE_BASE_URL || 'https://api.typesafe.ai/v1',
-          model: process.env.TYPESAFE_MODEL || 'jev-latest'
-        }
-  )
-  const http = { fetch: options.fetch ?? globalThis.fetch, timeout, signal: options.signal }
+  const decisionModel = options.decisions ?? DEFAULT_DECISION_MODEL
+  const textModel = options.text ?? DEFAULT_TEXT_MODEL
+  for (const [key, model] of Object.entries({ decisions: decisionModel, text: textModel })) {
+    if (!isModel(model)) throw new TypeError(`${key} must be a model id or an AI SDK model.`)
+  }
+  const reasoning = options.reasoning ?? DEFAULT_REASONING
+  if (!REASONING_LEVELS.includes(reasoning)) {
+    throw new TypeError(`reasoning must be one of: ${REASONING_LEVELS.join(', ')}.`)
+  }
+  const request = { timeout, signal: options.signal, reasoning }
   const trace = []
   let steps = 0
   let decisions = 0
@@ -82,7 +89,7 @@ const agent = async (page, goal, options = {}) => {
         ...state,
         actions: state.actions.filter(action => !ineffectiveActions.has(actionKey(action)))
       }
-      const decision = await decide(offered, goal, trace, config, http)
+      const decision = await decide(offered, goal, trace, decisionModel, request)
       const entry = { ...decision, action: decision.action?.id, step: steps, decision: decisions }
       trace.push(entry)
       if (decision.operation === 'DONE') return { status: 'done', steps, decisions, trace }
@@ -95,18 +102,7 @@ const agent = async (page, goal, options = {}) => {
       }
       let text
       if (decision.operation === 'TYPE_TEXT') {
-        const textConfig = provider(
-          options.text,
-          options.text
-            ? {}
-            : {
-                apiKey: process.env.TEXT_MODEL_API_KEY,
-                baseUrl: process.env.TEXT_MODEL_BASE_URL,
-                model: process.env.TEXT_MODEL,
-                reasoning: process.env.TEXT_MODEL_REASONING || undefined
-              }
-        )
-        text = await fieldText(goal, decision.action, state, trace, textConfig, http)
+        text = await fieldText(goal, decision.action, state, trace, textModel, request)
         entry.text = text
       }
       options.signal?.throwIfAborted()

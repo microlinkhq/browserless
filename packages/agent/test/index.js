@@ -3,12 +3,11 @@
 const test = require('ava')
 const agent = require('..')
 const { execute } = require('../src/browser')
-const { Page, state, mockFetch, provider } = require('./fixtures/page')
-const run = (page, operations, options = {}) =>
+const { Page, state, mockModels } = require('./fixtures/page')
+const run = (page, operations, { models = mockModels(operations), ...options } = {}) =>
   agent(page, 'find cheapest bmw x3', {
-    decisions: provider,
-    text: provider,
-    fetch: mockFetch(operations),
+    decisions: models.decisions,
+    text: models.text,
     waitMs: 0,
     ...options
   })
@@ -32,21 +31,45 @@ test('click then done uses a retained handle and disposes it', async t => {
   t.is(page.disposals, 1)
 })
 
-test('TYPE_TEXT alone invokes chat helper, replaces text, revalidates focus', async t => {
+test('TYPE_TEXT alone invokes the text model, replaces text, revalidates focus', async t => {
   const page = new Page([state(), state('bmw x3')])
-  const fetch = mockFetch(['TYPE_TEXT', 'DONE'])
-  await run(page, [], { fetch })
+  const models = mockModels(['TYPE_TEXT', 'DONE'])
+  await run(page, [], { models })
   t.deepEqual(page.inputs, [{ selectContents: true }, { text: 'bmw x3' }])
   t.deepEqual(
-    fetch.calls.map(c => c.url.split('/').pop()),
-    ['systemone', 'completions', 'systemone']
+    models.calls.map(call => call.kind),
+    ['decide', 'text', 'decide']
   )
+})
+
+for (const [reasoning, expected] of [
+  [undefined, 'none'],
+  ['low', 'low']
+]) {
+  test(`text model is called with reasoning ${expected} when the option is ${reasoning}`, async t => {
+    const page = new Page([state(), state('bmw x3')])
+    const models = mockModels(['TYPE_TEXT', 'DONE'])
+    await run(page, [], { models, reasoning })
+    t.is(models.calls.find(call => call.kind === 'text').options.reasoning, expected)
+  })
+}
+
+test('a failing decision model is called once and no input is sent', async t => {
+  const page = new Page()
+  const models = mockModels([], {
+    onDecide: () => {
+      throw new Error('provider unavailable')
+    }
+  })
+  await t.throwsAsync(run(page, [], { models }))
+  t.is(models.calls.length, 1)
+  t.deepEqual(page.inputs, [])
 })
 
 test('invalid generated text does not focus or type', async t => {
   const page = new Page()
   await t.throwsAsync(
-    run(page, [], { fetch: mockFetch(['TYPE_TEXT'], { text: '{"text":null}' }) }),
+    run(page, [], { models: mockModels(['TYPE_TEXT'], { text: '{"text":null}' }) }),
     { instanceOf: TypeError }
   )
   t.deepEqual(page.inputs, [])
@@ -64,12 +87,12 @@ test('stale click is discarded, then a new observation and decision are consumed
 
 test('form changes while text helper runs cause no input', async t => {
   const page = new Page()
-  const fetch = mockFetch(['TYPE_TEXT', 'DONE'], {
-    onRequest: body => {
-      if (body.messages) page.guards = [false]
+  const models = mockModels(['TYPE_TEXT', 'DONE'], {
+    onText: () => {
+      page.guards = [false]
     }
   })
-  const result = await run(page, [], { fetch })
+  const result = await run(page, [], { models })
   t.true(result.trace[0].stale)
   t.deepEqual(page.inputs, [])
 })
@@ -113,11 +136,11 @@ test('repeated stale decisions exhaust request budget without input', async t =>
 test('three consecutive stale decisions on one target stop the run', async t => {
   const page = new Page()
   page.guards = [false, false, false]
-  const fetch = mockFetch(['CLICK', 'CLICK', 'CLICK', 'CLICK'])
-  const error = await t.throwsAsync(run(page, [], { fetch }), { instanceOf: agent.BlockedError })
+  const models = mockModels(['CLICK', 'CLICK', 'CLICK', 'CLICK'])
+  const error = await t.throwsAsync(run(page, [], { models }), { instanceOf: agent.BlockedError })
   t.is(error.reason, 'stale_target')
   t.is(error.trace.length, 3)
-  t.is(fetch.calls.length, 3)
+  t.is(models.calls.length, 3)
   t.deepEqual(page.inputs, [])
 })
 
@@ -140,14 +163,14 @@ test('three consecutive no-change actions block a fourth', async t => {
 
 test('an action that changed nothing is not offered again until the page changes', async t => {
   const page = new Page([state(), state(), state('Changed')])
-  const fetch = mockFetch(['CLICK', 'TYPE_TEXT', 'DONE'])
-  await run(page, [], { fetch })
-  const decisionRequests = fetch.calls.filter(call => call.url.endsWith('/systemone'))
+  const models = mockModels(['CLICK', 'TYPE_TEXT', 'DONE'])
+  await run(page, [], { models })
+  const decisionRequests = models.calls.filter(call => call.kind === 'decide')
   t.deepEqual(
-    decisionRequests.map(call => 'click_target' in call.body.questions),
+    decisionRequests.map(call => 'click_target' in call.questions),
     [true, false, true]
   )
-  t.false('CLICK' in decisionRequests[1].body.questions.operation.criteria)
+  t.false('CLICK' in decisionRequests[1].questions.operation.criteria)
 })
 
 for (const [reason, changes] of [
@@ -155,12 +178,12 @@ for (const [reason, changes] of [
   ['login_wall', { unsupported: ['password'] }],
   ['unsupported_surface', { unsupported: ['iframe'] }]
 ]) {
-  test(`pre-observation blocks ${reason} without provider call`, async t => {
+  test(`pre-observation blocks ${reason} without a model call`, async t => {
     const page = new Page([{ ...state(), ...changes }])
-    const fetch = mockFetch([])
-    const error = await t.throwsAsync(run(page, [], { fetch }), { instanceOf: agent.BlockedError })
+    const models = mockModels([])
+    const error = await t.throwsAsync(run(page, [], { models }), { instanceOf: agent.BlockedError })
     t.is(error.reason, reason)
-    t.is(fetch.calls.length, 0)
+    t.is(models.calls.length, 0)
   })
 }
 
@@ -215,16 +238,25 @@ test('invalid options name the accepted range', async t => {
   })
 })
 
-test('invalid options and missing providers fail before browser input', async t => {
-  await t.throwsAsync(run(new Page(), [], { maxSteps: 0 }), { instanceOf: TypeError })
-  await t.throwsAsync(agent(new Page(), 'cars', { decisions: {} }), { instanceOf: TypeError })
+test('invalid models and reasoning levels fail before any model call', async t => {
+  const models = mockModels(['DONE'])
+  await t.throwsAsync(agent(new Page(), 'cars', { decisions: {} }), {
+    message: 'decisions must be a model id or an AI SDK model.'
+  })
+  await t.throwsAsync(agent(new Page(), 'cars', { text: '' }), {
+    message: 'text must be a model id or an AI SDK model.'
+  })
+  await t.throwsAsync(run(new Page(), [], { models, reasoning: 'extreme' }), {
+    message: /reasoning must be one of: provider-default, none/
+  })
+  t.is(models.calls.length, 0)
 })
 
-test('abort while provider responds stops before input', async t => {
+test('abort while the decision model responds stops before input', async t => {
   const page = new Page()
   const controller = new AbortController()
-  const fetch = mockFetch(['CLICK'], { onRequest: () => controller.abort() })
-  await t.throwsAsync(run(page, [], { fetch, signal: controller.signal }), { name: 'AbortError' })
+  const models = mockModels(['CLICK'], { onDecide: () => controller.abort() })
+  await t.throwsAsync(run(page, [], { models, signal: controller.signal }), { name: 'AbortError' })
   t.deepEqual(page.inputs, [])
   t.is(page.listenerCount('popup'), 0)
 })
@@ -235,12 +267,13 @@ test('concurrent runs on one page are rejected and the first can finish', async 
   const pending = new Promise(resolve => {
     release = resolve
   })
-  const original = mockFetch(['DONE'])
-  const fetch = async (...args) => {
+  const models = mockModels(['DONE'])
+  const decide = models.decisions.doDecide
+  models.decisions.doDecide = async options => {
     await pending
-    return original(...args)
+    return decide(options)
   }
-  const first = run(page, [], { fetch })
+  const first = run(page, [], { models })
   await t.throwsAsync(run(page, ['DONE']), { message: /already running/ })
   release()
   t.is((await first).status, 'done')
@@ -249,9 +282,9 @@ test('concurrent runs on one page are rejected and the first can finish', async 
 test('a discarded stale decision is reported to the next decision request', async t => {
   const page = new Page([state(), state('Changed')])
   page.guards = [false]
-  const fetch = mockFetch(['CLICK', 'DONE'])
-  await run(page, [], { fetch })
-  t.deepEqual(fetch.calls[1].body.state.recent_actions, [
+  const models = mockModels(['CLICK', 'DONE'])
+  await run(page, [], { models })
+  t.deepEqual(models.calls[1].state.recent_actions, [
     { operation: 'CLICK', action: 'e2', stale: true }
   ])
 })

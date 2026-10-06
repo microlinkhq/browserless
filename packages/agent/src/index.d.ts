@@ -1,20 +1,20 @@
 import type { Page } from 'puppeteer' with { 'resolution-mode': 'import' }
+import type { Experimental_DecisionModel, LanguageModel } from 'ai' with { 'resolution-mode': 'import' }
 
 declare function agent(page: Page, goal: string, options?: agent.Options): Promise<agent.Result>
 
 declare namespace agent {
   type BlockedReason = 'captcha' | 'login_wall' | 'unsupported_surface' | 'step_budget' | 'no_change' | 'stale_target' | 'model_blocked'
-  interface Provider { apiKey: string; baseUrl: string; model: string }
-  interface TextProvider extends Provider { reasoning?: 'none' | 'low' | 'default' }
+  type Reasoning = 'provider-default' | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
   interface Options {
-    decisions?: Provider
-    text?: TextProvider
+    decisions?: Experimental_DecisionModel
+    text?: LanguageModel
+    reasoning?: Reasoning
     maxSteps?: number
     maxDecisions?: number
     waitMs?: number
     timeout?: number
     signal?: AbortSignal
-    fetch?: typeof globalThis.fetch
   }
   interface TraceEntry {
     operation: 'CLICK' | 'TYPE_TEXT' | 'SELECT' | 'SUBMIT' | 'SCROLL_UP' | 'SCROLL_DOWN' | 'WAIT' | 'DONE' | 'BLOCKED'

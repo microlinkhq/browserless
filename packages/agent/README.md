@@ -4,9 +4,8 @@ Drive an existing Puppeteer page toward a natural-language goal. The caller owns
 navigation, browser setup, screenshots and closing the browser. This package does
 not change `@browserless/ai`, which uses Chrome's built-in AI APIs.
 
-Experimental: the offline contract tests pass, but no real provider or Wallapop
-acceptance run has been performed. Do not treat this README as evidence that
-Wallapop works.
+Experimental. It has completed a live Wallapop search (see below), but `done`
+is the model's own judgment and runs are not fully reliable.
 
 ## Usage
 
@@ -14,6 +13,7 @@ Requires Node.js >=24 and browserless >=13. After the package is published:
 
 ```sh
 npm install @browserless/agent browserless puppeteer
+export AI_GATEWAY_API_KEY=...
 ```
 
 ```js
@@ -53,15 +53,18 @@ browserless exec agent-example.js
 
 The CLI prints the returned trace as JSON and exits with code 1 when the agent
 throws, including a `BlockedError`. `examples/wallapop.js` is this script; in
-this repository `npm start` runs it. It requires decision-provider credentials
-and, for any text entry, separate chat-helper configuration.
+this repository `npm start` runs it. It needs `AI_GATEWAY_API_KEY` for the text
+model; when `TYPESAFE_API_KEY` is set it calls Jev directly with that key
+instead of through the gateway.
 
-It has been run live against Wallapop with `jev-latest` for decisions and
-`inception/mercury-2.5` through an OpenAI-compatible gateway for text. In the
-last five runs, two ended on the results for `bmw x3` sorted by lowest price,
-two reported `done` too early (one unsorted, one before results loaded) and one
-failed on a text-provider timeout. `done` is the model's judgment, not a
-verified outcome.
+It has been run live against Wallapop with `jev-latest` through
+`@ai-sdk/typesafe-ai` for decisions and `inception/mercury-2.5` through Vercel
+AI Gateway for text. Of the last six runs, five ended on the results for
+`bmw x3` sorted by lowest price in 9 to 16 decision requests (3.6 to 5.1 seconds
+on the four that were timed), and one failed on a text-model timeout. Earlier builds also
+reported `done` before results had loaded or been sorted. `done` is the model's
+judgment, not a verified outcome. Decisions through the gateway
+(`typesafe-ai/jev`) have not been run: the free gateway tier refuses that model.
 
 ## API
 
@@ -93,73 +96,67 @@ each decision still spends a request.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `decisions` | TypeSafe env configuration | `{ apiKey, baseUrl, model }` |
-| `text` | Text-helper env configuration | `{ apiKey, baseUrl, model }`, only used for TYPE_TEXT |
+| `decisions` | `'typesafe-ai/jev'` | Decision model: an AI Gateway model id or an AI SDK decision model |
+| `text` | `'inception/mercury-2.5'` | Text model: an AI Gateway model id or an AI SDK language model, only used for TYPE_TEXT |
+| `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
 | `maxDecisions` | `120` | Maximum decision requests, including discarded stale decisions |
 | `waitMs` | `100` | Duration of WAIT, accepts zero |
-| `timeout` | `25000` | Milliseconds per HTTP request |
+| `timeout` | `25000` | Milliseconds per model request |
 | `signal` | none | AbortSignal; checked before decisions and input |
-| `fetch` | global fetch | Fetch-compatible transport, useful for offline tests |
 
-No automatic HTTP retries: this keeps request accounting exact. A final DONE
-observation can succeed after the last permitted action; no extra input is
+Model requests are never retried: this keeps request accounting exact. A reply
+that arrives after `timeout` is discarded even if the model ignored the abort. A final
+DONE observation can succeed after the last permitted action; no extra input is
 allowed. Concurrent agent calls on the same Page are rejected.
 
-## Providers
+## Models
 
-Default decisions configuration:
-
-- `TYPESAFE_API_KEY`: required TypeSafe Bearer token.
-- `TYPESAFE_BASE_URL`: defaults to `https://api.typesafe.ai/v1`.
-- `TYPESAFE_MODEL`: defaults to `jev-latest`.
-
-The code sends one POST to `${baseUrl}/systemone`. The body contains `model`,
-`state: { page, elements, recent_actions }`, and `questions`. Each question has
-`type: 'choice'`, `criteria`, and `instructions`. The response must contain
-`answers.operation` and the target head selected by that operation. Each answer
-must have `choice`, `confidence`, and a `probabilities` object with exactly the
-offered IDs, finite values in [0,1], a sum within 0.02 of 1, and a winning choice.
-Unused speculative heads cannot drive input and are deliberately not consumed.
-
-An alternative decisions-compatible provider, including an OpenRouter deployment
-that actually exposes this contract, must be explicit:
+Both model calls go through the [AI SDK](https://ai-sdk.dev) (`ai`). A model id
+string is resolved by [Vercel AI Gateway](https://vercel.com/docs/ai-gateway),
+which reads `AI_GATEWAY_API_KEY`:
 
 ```js
 await agent(page, goal, {
-  decisions: {
-    apiKey: process.env.OPENROUTER_API_KEY,
-    baseUrl: process.env.OPENROUTER_DECISIONS_BASE_URL,
-    model: process.env.OPENROUTER_DECISIONS_MODEL
-  },
-  text: {
-    apiKey: process.env.TEXT_MODEL_API_KEY,
-    baseUrl: process.env.TEXT_MODEL_BASE_URL,
-    model: process.env.TEXT_MODEL
-  }
+  decisions: 'typesafe-ai/jev',
+  text: 'openai/gpt-6-luna'
 })
 ```
 
-A normal OpenRouter chat endpoint is NOT a decisions-compatible endpoint. This
-package does not claim that OpenRouter's public API exposes `/systemone`; provide
-a compatible base URL or use TypeSafe. No generic chat-to-decisions adapter is
-silently inserted.
+Any AI SDK model instance works too, so a provider can be called directly with
+its own key. This runs Jev on a TypeSafe key and keeps the gateway for text:
 
-For the text helper, all of `TEXT_MODEL_API_KEY`, `TEXT_MODEL_BASE_URL` and
-`TEXT_MODEL` are required unless `options.text` supplies all three. Reasoning
-models can spend the whole 1024-token reply budget thinking and return no
-usable value, so the helper asks the provider to turn reasoning off by sending
-`reasoning: { enabled: false }`. `TEXT_MODEL_REASONING` or
-`options.text.reasoning` changes that: `none` (default), `low` (sends
-`reasoning: { effort: 'low' }`) or `default` (sends no reasoning field, for
-providers that reject it). Base URLs
-must be clean HTTPS URLs. The helper calls `${baseUrl}/chat/completions` only for
-TYPE_TEXT. It requests a JSON object and accepts exactly `{ "text": "..." }` with
-a nonempty string of at most 2000 characters. Null, extra keys, code fences and
-invalid JSON fail closed. No personal information or missing value is guessed
-by the executor. API keys are sent only to the configured endpoints; redirects
-are rejected. Page text, goals, fields and recent actions leave the browser for
-these providers. Use only pages you may disclose to them.
+```js
+import { createTypeSafeAi } from '@ai-sdk/typesafe-ai'
+
+const typesafe = createTypeSafeAi({ apiKey: process.env.TYPESAFE_API_KEY })
+
+await agent(page, goal, { decisions: typesafe.decisionModel('jev-latest') })
+```
+
+The decision model answers typed questions with `experimental_decide`, an AI SDK
+API that may still change. One request carries
+`state: { page, elements, recent_actions }` and one `choice` question for the
+operation plus one per operation that has targets. The AI SDK rejects answers
+that miss a question or pick an option that was not offered. This package then
+requires, for the operation and for the target head that operation selects, a
+`probabilities` object with exactly the offered IDs, finite values in [0,1], a
+winning choice and a sum close to 1. The AI SDK already checks the sum against
+the rounding the provider declares, and rejects any deviation when none is
+declared. This package allows 0.02, widened only for the rounding of a provider
+that declares two or more decimals. Unused speculative heads cannot
+drive input and are not consumed. `confidence` in the trace is the probability
+of the chosen option.
+
+The text model is called with `generateText` and a JSON object output only for
+TYPE_TEXT. It must return exactly `{ "text": "..." }` with a nonempty string of
+at most 2000 characters. Null, extra keys, arrays, invalid JSON and a reply
+with no output fail closed.
+Reasoning models can spend the whole 1024-token reply budget thinking and
+return no usable value, so reasoning is off unless `reasoning` says otherwise.
+No personal information or missing value is guessed by the executor. Page text,
+goals, fields and recent actions leave the browser for these providers. Use
+only pages you may disclose to them.
 
 ## How it works
 
