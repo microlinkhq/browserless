@@ -26,6 +26,7 @@
   ],
   "dependencies": {
     "ai": "~7.0.128",
+    "debug-logfmt": "~1.4.15",
     "zod": "^4.1.8"
   },
   "devDependencies": {
