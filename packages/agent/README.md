@@ -408,6 +408,56 @@ not correctness: it shows how often a model picked the step of a run that is
 known to have worked. These are the small models the free tier allows, one run
 each; larger models were not measured.
 
+### Compare models
+
+`scripts/compare.js` runs one task several times with each model setup, each
+run in a fresh browser context, and ranks the setups:
+
+```sh
+DEBUG=browserless:agent:compare npm run compare -- \
+  --url=https://news.ycombinator.com \
+  --goal='Open the comments page of the first story on the front page.' \
+  --extract='get the story title and its points' \
+  --decisions=typesafe-ai/jev,none \
+  --text=openai/gpt-6-luna,zai/glm-5.3-flash \
+  --runs=5
+```
+
+`--decisions` and `--text` take comma-separated model ids and every decision
+model is paired with every text model; `none` makes the text model take the
+decisions. `--goal` can be repeated for goals that run one after another.
+`--extract` is optional. `--out=<file.jsonl>` chooses where the records go;
+the default is a new file in the temporary directory, printed as `file`.
+
+One JSON line is appended per run, and with `DEBUG` set the same record is
+logged as it finishes:
+
+| Field | Meaning |
+| --- | --- |
+| `decisions`, `text`, `run` | The setup and the run number |
+| `status`, `error`, `goalsDone` | `done`, or the `BlockedError` reason, or `error` for anything else, including a run that could not start; how many goals finished |
+| `navigationError` | Present when loading `--url` reported an error, such as a timeout. The run continues on whatever loaded |
+| `path` | The operations and targets that ran, such as `CLICK e17 > DONE`; goals are separated by a vertical bar |
+| `decisionRequests`, `staleDecisions`, `actionsWithoutPageChange` | How much work the run took and how much of it was wasted |
+| `minConfidence` | The lowest confidence of any decision, in the operation or in its target; absent when the text model decides |
+| `passed`, `probability` | The evaluator's judgment from `info()`: `passed` needs every goal judged met, `probability` is the lowest. Absent when the run did not finish or a goal was not judged |
+| `calls`, `inputTokens`, `outputTokens`, `usd` | Cost of the goals from `info()`, which includes the evaluator's request. Absent when any request did not report it |
+| `totalMs`, `modelMs` | Time of the goals from `info()`, without the evaluator's request |
+| `finalUrl` | Where the run ended |
+| `extracted`, `extractError`, `extractMs`, `dataValues`, `dataHash` | With `--extract`, after every goal finished: whether it returned at least one value, how many non-empty values, and a hash of the data that ignores key order |
+
+The printed `ranking` has one entry per setup, best first: by `doneRate`, then
+`passRate` (the share of all runs that finished and were judged met;
+`judgedRuns` says how many were judged at all), then `pathAgreement` (the share
+of finished runs that took the most common path), then `medianTotalMs`, then
+`medianUsd`. `dataAgreement` is the same share for the extracted data. Medians
+cover finished runs only, and a median is absent when one of them did not
+report the number. A run that fails is recorded and the remaining runs go on.
+
+What it does not measure: the cost of the extraction request, and whether a
+finished run is correct. `passed` is a second model's opinion, and on the same
+path and final page it has answered both yes and no.
+
 ### Text values
 
 The text model is called with `generateText` and a JSON object output only for
