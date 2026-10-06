@@ -6,7 +6,10 @@ const MAX_RULE_DEPTH = 4
 const MAX_SELECTOR_LENGTH = 300
 const MODEL_DEFAULT_ATTR = 'text'
 
-const isPlainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
+const isPlainObject = value =>
+  value !== null &&
+  typeof value === 'object' &&
+  [Object.prototype, null].includes(Object.getPrototypeOf(value))
 
 const isSelector = value =>
   typeof value === 'string' && value.trim() !== '' && value.length <= MAX_SELECTOR_LENGTH
@@ -68,7 +71,9 @@ const writtenLocation = (written, path) => {
 
 const filledAttr = (field, written, path) => {
   if (isNested(field)) {
-    if (!isNested(written)) { throw invalidRule(path, 'the model wrote no nested rules for this field') }
+    if (!isNested(written)) {
+      throw invalidRule(path, 'the model wrote no nested rules for this field')
+    }
     return { attr: fillFields(field.attr, written.attr, `${path}.attr`) }
   }
   if ('attr' in field) return { attr: field.attr }
@@ -283,6 +288,14 @@ const readingText = rule => {
 const readingTextByDefault = rules =>
   Object.fromEntries(Object.entries(rules).map(([name, rule]) => [name, readingText(rule)]))
 
+const hasEverySelector = rule => {
+  if (Array.isArray(rule)) return true
+  if (!hasLocation(rule)) return false
+  return !isNested(rule) || Object.values(rule.attr).every(hasEverySelector)
+}
+
+const needSelectors = rules => !Object.values(rules).every(hasEverySelector)
+
 const hasData = value => {
   if (value === null || value === undefined || value === '') return false
   if (typeof value !== 'object') return true
@@ -295,5 +308,6 @@ module.exports = {
   assertRules,
   fillFields,
   readingTextByDefault,
+  needSelectors,
   hasData
 }

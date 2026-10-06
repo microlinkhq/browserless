@@ -20,6 +20,7 @@ module.exports = async ({ page, browserless }) => {
   if (debug.enabled) debug('open article', flat(await opened()))
 
   return page.extract('get the article title and its first paragraph', {
-    fields: { title: { type: 'string' }, firstParagraph: { type: 'string' } }
+    title: { type: 'string' },
+    firstParagraph: { type: 'string' }
   })
 }

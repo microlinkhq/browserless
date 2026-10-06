@@ -23,14 +23,15 @@ async function check () {
   const judged: agent.Result = await page.goal('find cars', { evaluator: 'typesafe-ai/jev' })
   const fromError: agent.InfoFunction | undefined = new agent.BlockedError('captcha', 'Verify').info
   const fields: agent.Rules = { cars: { attr: { title: {}, price: { type: 'number' } } } }
-  const rules: agent.Rules = await page.rules('get the cars', { fields })
-  const fromRules: agent.Data = await page.extract(rules)
-  const fromInstruction: agent.Data = await page.extract('get the cars', { fields, timeout: 5000 })
+  const fromRules: agent.Data = await page.extract({ title: { selector: 'h1' } }, { timeout: 5000 })
+  const fromInstruction: agent.Data = await page.extract('get the cars')
+  const fromBoth: agent.Data = await page.extract('get the cars', fields, { timeout: 5000 })
+  const exported: agent.Data = await agent.extract(page, 'get the cars', fields, { timeout: 5000 })
   const same: agent.Data = await agent.extract(page, { title: { selector: 'h1', attr: 'text' } })
   // @ts-expect-error a rule has no evaluate property
   void page.extract({ title: { selector: 'h1', evaluate: '() => 1' } })
   const reason: agent.BlockedReason = new agent.BlockedError('captcha', 'Verify').reason
-  void [result, fromRules, fromInstruction, same, reason, usd, passed, summary, status, judged, fromError, strictUsd, failure, ids]
+  void [result, fromRules, fromInstruction, fromBoth, exported, same, reason, usd, passed, summary, status, judged, fromError, strictUsd, failure, ids]
   await browser.close()
 }
 void check

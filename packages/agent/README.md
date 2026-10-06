@@ -26,28 +26,24 @@ const page = agent(await browser.newPage())
 await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' })
 const searched = await page.goal('busca el bmw x3 más barato')
 const { products } = await page.extract('get the search results', {
-  fields: {
-    products: {
-      attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
-    }
+  products: {
+    attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
   }
 })
 const { accuracy, cost, timing } = await searched() // optional: one extra request, for accuracy
 await browser.close()
 ```
 
-`agent(page, defaults?)` adds three methods to the Puppeteer page it is given
+`agent(page, defaults?)` adds two methods to the Puppeteer page it is given
 and returns the same page:
 
 - `page.goal(goal, options?)` drives the page, over as many steps as it takes,
   until the model reports the goal is met.
 - `page.extract(...)` returns data from the current page. It does not navigate.
-- `page.rules(instruction, options?)` returns the extraction rules a
-  model writes for the current page, to save and reuse.
 
-`defaults` apply to all three; options passed to a call override them. The same
-functions are exported for use without touching the page: `agent.goal(page, …)`,
-`agent.extract(page, …)` and `agent.rules(page, …)`.
+`defaults` apply to both; options passed to a call override them. The same
+functions are exported for use without touching the page: `agent.goal(page, …)`
+and `agent.extract(page, …)`.
 
 Import compatibility is CommonJS plus the Node ESM default import, with
 TypeScript declarations.
@@ -118,10 +114,8 @@ module.exports = async ({ page, browserless }) => {
   if (debug.enabled) debug('sort', flat(await sorted()))
 
   return page.extract('get the search results', {
-    fields: {
-      products: {
-        attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
-      }
+    products: {
+      attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
     }
   })
 }
@@ -260,24 +254,20 @@ await page.extract({
 // 2. Instruction: the model writes the rules, then they run.
 await page.extract('get the stories with their title and link')
 
-// 3. Instruction plus fields: you name the fields and types, the model fills in the selectors.
+// 3. Instruction plus rules without selectors: you name the fields and types, the model fills in the selectors.
 await page.extract('get the stories', {
-  fields: { stories: { attr: { title: { type: 'string' }, href: { type: 'url' } } } }
+  stories: { attr: { title: { type: 'string' }, href: { type: 'url' } } }
 })
 ```
+
+Options go last: `page.extract(rules, options?)` and
+`page.extract(instruction, rules?, options?)`. Rules passed with an instruction
+that already have a selector for every field run as they are, with no model
+request. Options passed where the rules belong throw.
 
 The values always come from the DOM. A language model only ever writes
 selectors, so it cannot invent a value: a wrong selector gives a missing field,
 `null` inside a list item, or the wrong element's text.
-
-`page.rules(instruction, { fields }?)` does the model step alone and returns the
-rules, so they can be stored and passed to `page.extract(rules)` later without
-a model call:
-
-```js
-const rules = await page.rules('get the search results')
-const data = await page.extract(rules)
-```
 
 How rules are written:
 
@@ -291,7 +281,7 @@ How rules are written:
 - Rules from the model may only contain `selector`, `selectorAll`, `attr` and
   `type`. Anything else, including `evaluate`, is rejected, so a model never
   supplies code.
-- With `fields`, the result has exactly your field names and nesting. A rule you
+- With rules of your own, the result has exactly your field names and nesting. A rule you
   wrote with its own selector is kept untouched; otherwise the model supplies
   the selector, your `type` and `attr` win over the model's, and a reply that
   omits a field or nests where you did not throws.

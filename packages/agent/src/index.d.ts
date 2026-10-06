@@ -17,15 +17,12 @@ declare namespace agent {
   type Extractor = (page: Page, rules: Rules) => Promise<Data>
   interface Methods {
     goal(goal: string, options?: Options): Promise<Result>
-    rules(instruction: string, options?: ExtractOptions): Promise<Rules>
     extract(rules: Rules, options?: Options): Promise<Data>
-    extract(instruction: string, options?: ExtractOptions): Promise<Data>
+    extract(instruction: string, rules?: Rules, options?: Options): Promise<Data>
   }
-  interface ExtractOptions extends Options { fields?: Rules }
   function goal(page: Page, goal: string, options?: Options): Promise<Result>
-  function rules(page: Page, instruction: string, options?: ExtractOptions): Promise<Rules>
   function extract(page: Page, rules: Rules, options?: Options): Promise<Data>
-  function extract(page: Page, instruction: string, options?: ExtractOptions): Promise<Data>
+  function extract(page: Page, instruction: string, rules?: Rules, options?: Options): Promise<Data>
   const applyRules: Extractor
   interface Options {
     extractor?: Extractor

@@ -20,10 +20,8 @@ module.exports = async ({ page, browserless }) => {
   if (debug.enabled) debug('sort', flat(await sorted()))
 
   return page.extract('get the search results', {
-    fields: {
-      products: {
-        attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
-      }
+    products: {
+      attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
     }
   })
 }

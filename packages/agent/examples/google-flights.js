@@ -37,8 +37,6 @@ module.exports = async ({ page, browserless }) => {
   if (debug.enabled) debug('find flights', flat(await found()))
 
   return page.extract('get the flights listed on the page', {
-    fields: {
-      flights: { attr: Object.fromEntries(FLIGHT_FIELDS.map(name => [name, { type: 'string' }])) }
-    }
+    flights: { attr: Object.fromEntries(FLIGHT_FIELDS.map(name => [name, { type: 'string' }])) }
   })
 }

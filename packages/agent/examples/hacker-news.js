@@ -18,10 +18,8 @@ module.exports = async ({ page, browserless }) => {
   if (debug.enabled) debug('open comments', flat(await opened()))
 
   return page.extract('get the story title, its points and the comments', {
-    fields: {
-      title: { type: 'string' },
-      points: { type: 'number' },
-      comments: { attr: { author: { type: 'string' }, text: { type: 'string' } } }
-    }
+    title: { type: 'string' },
+    points: { type: 'number' },
+    comments: { attr: { author: { type: 'string' }, text: { type: 'string' } } }
   })
 }

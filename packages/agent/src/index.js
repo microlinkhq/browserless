@@ -2,7 +2,14 @@
 
 const { observe, execute, settle, pageChanged, readStableOutline } = require('./browser')
 const { decide, decideWithLanguageModel, fieldText, writeRules, invalidRules } = require('./model')
-const { applyRules, assertRules, fillFields, readingTextByDefault, hasData } = require('./rules')
+const {
+  applyRules,
+  assertRules,
+  fillFields,
+  readingTextByDefault,
+  needSelectors,
+  hasData
+} = require('./rules')
 const { BlockedError, StaleDecisionError } = require('./errors')
 const { createInfo } = require('./info')
 
@@ -240,12 +247,11 @@ const usableRules = async (page, written, fields) => {
   return rules
 }
 
-const rules = async (page, instruction, options = {}) => {
-  if (!isPage(page) || !isInstruction(instruction)) {
-    throw new TypeError('rules requires a Puppeteer page and a nonempty instruction.')
+const rulesFor = async (page, instruction, fields, options) => {
+  if (!isInstruction(instruction)) {
+    throw new TypeError('extract requires rules or a nonempty instruction.')
   }
-  const { fields } = options
-  if (fields !== undefined) assertRules(fields, 'fields')
+  if (fields !== undefined && !needSelectors(assertRules(fields, 'rules'))) return fields
   const { timeout, models, reasoning } = resolveOptions(options)
   const request = { timeout, signal: options.signal, reasoning }
   const outline = await readStableOutline(page)
@@ -253,10 +259,12 @@ const rules = async (page, instruction, options = {}) => {
   return usableRules(page, written, fields)
 }
 
-const extract = async (page, input, options = {}) => {
+const extract = async (page, input, ...rest) => {
   if (!isPage(page)) throw new TypeError('extract requires a Puppeteer page.')
+  const fromInstruction = typeof input === 'string'
+  const [fields, options = {}] = fromInstruction ? rest : [undefined, rest[0]]
   const { extractor = applyRules } = options
-  return extractor(page, typeof input === 'string' ? await rules(page, input, options) : input)
+  return extractor(page, fromInstruction ? await rulesFor(page, input, fields, options) : input)
 }
 
 const agent = (page, defaults = {}) => {
@@ -267,14 +275,15 @@ const agent = (page, defaults = {}) => {
   const withSettings = options => ({ ...settings, ...options })
   return Object.assign(page, {
     goal: (text, options) => goal(page, text, withSettings(options)),
-    rules: (instruction, options) => rules(page, instruction, withSettings(options)),
-    extract: (input, options) => extract(page, input, withSettings(options))
+    extract: (input, ...rest) =>
+      typeof input === 'string'
+        ? extract(page, input, rest[0], withSettings(rest[1]))
+        : extract(page, input, withSettings(rest[0]))
   })
 }
 
 module.exports = agent
 module.exports.goal = goal
-module.exports.rules = rules
 module.exports.extract = extract
 module.exports.applyRules = applyRules
 module.exports.BlockedError = BlockedError

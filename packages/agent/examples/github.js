@@ -18,6 +18,6 @@ module.exports = async ({ page, browserless }) => {
   if (debug.enabled) debug('open issues', flat(await opened()))
 
   return page.extract('get the open issues listed on the page', {
-    fields: { issues: { attr: { title: { type: 'string' }, url: { type: 'url' } } } }
+    issues: { attr: { title: { type: 'string' }, url: { type: 'url' } } }
   })
 }
