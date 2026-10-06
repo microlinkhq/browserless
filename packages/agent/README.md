@@ -74,49 +74,60 @@ The CLI exits with code 1 when the agent throws, including a `BlockedError`.
 
 ### Examples
 
-Every file in `examples/` is an exec script. Each runs one `page.goal`, has the
-model write extraction rules for the page it ended on, runs them, prints a
-short summary (status, final URL, rules, extracted output, operations,
-`decisionMs`) and saves `<name>.png`.
+Every file in `examples/` is a self-contained exec script: it navigates, gives
+the page one or more goals, and returns the extracted data, which the CLI
+prints. Jev is used through the gateway, so `AI_GATEWAY_API_KEY` is the only
+key needed.
 
-| Script | Goal |
+| Script | Steps |
 | --- | --- |
-| `examples/wallapop.js` | Search Wallapop for the cheapest BMW X3 |
-| `examples/wikipedia.js` | Find and open the article about Gödel's incompleteness theorems |
-| `examples/google-flights.js` | Find one-way Zurich to London flights 30 days from today |
-| `examples/hacker-news.js` | Open the comments of the first story on the front page |
-| `examples/github.js` | Open the open issues of this repository |
+| `examples/wallapop.js` | Search `bmw x3`; sort by lowest price; extract the products |
+| `examples/wikipedia.js` | Search for an article and open it; extract title and first paragraph |
+| `examples/google-flights.js` | Reject cookies if asked; find one-way Zurich to London flights 30 days from today; extract the flights |
+| `examples/hacker-news.js` | Open the comments of the first story; extract title, points and comments |
+| `examples/github.js` | Open the open issues of this repository; extract them |
 | `examples/run.js` | Any page: `--url=<url> --goal=<goal> --extract=<what to get>` |
 
 ```sh
-browserless exec examples/wikipedia.js
+browserless exec examples/wallapop.js
 browserless exec examples/run.js --url=https://en.wikipedia.org/wiki/Main_Page --goal='Find and open the Wikipedia article about Alan Turing.' --extract='get the article title'
 ```
 
-Flags, all optional: `--text=<model id>` picks the language model, `--no-jev`
-lets it make the decisions too, `--trace` prints the full trace. `npm start`
-runs the Wallapop one. They need `AI_GATEWAY_API_KEY`. When `TYPESAFE_API_KEY`
-is set, Jev makes the decisions, called directly with that key (this needs
-`@ai-sdk/typesafe-ai` installed); otherwise the language model decides.
+```js
+const agent = require('@browserless/agent')
 
-Each example was run live once or twice and ended `done` on a page that matched
-its goal, with `jev-latest` for decisions and `alibaba/qwen3.7-flash` for text.
-That is a check that they can work, not a reliability figure: `done` is the
-model's judgment, and one Wallapop run searched `x3 bmw` from a suggestion
-instead of `bmw x3`. Notes from those runs:
+module.exports = async ({ page, browserless }) => {
+  agent(page, { decisions: 'typesafe-ai/jev' })
 
-- Google Flights shows a cookie consent page in the EU, so its goal starts by
-  rejecting cookies, and it navigates with the browserless adblocker off because
-  the adblocker leaves that consent page blank.
-- Wallapop was measured more: on an earlier build with `inception/mercury-2.5`
-  for text, seven of ten runs ended on the results for `bmw x3` sorted by lowest
-  price in 9 to 16 decisions, and three failed on text-model timeouts that were
-  probably the gateway free tier's limit of 5 requests per minute.
-- With paid gateway credits and one `AI_GATEWAY_API_KEY`, one Wallapop run used
-  `decisions: 'typesafe-ai/jev'` and the default text model `openai/gpt-6-luna`:
-  it ended sorted by lowest price in 13 decisions (median 344 ms each through
-  the gateway) and extracted 32 products. `openai/gpt-6-luna` wrote usable rules
-  in 8 of 8 attempts over Hacker News, Wallapop, Wikipedia and GitHub issues.
+  await browserless.goto(page, { url: 'https://wallapop.com' })
+  await page.goal('busca "bmw x3"')
+  await page.goal('ordena los resultados de más barato a más caro')
+
+  return page.extract('get the search results', {
+    fields: {
+      products: {
+        attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
+      }
+    }
+  })
+}
+```
+
+`npm start` runs the Wallapop one. All six were run as shipped on a paid gateway
+account and returned data matching their goal: 32 Wallapop products sorted by
+lowest price, the Wikipedia title, 48 flights with prices, a Hacker News story
+with its points and comments, 4 GitHub issues, and `Alan Turing`. That is a
+check that they can work, not a reliability figure. What went wrong along the
+way:
+
+- Wikipedia's first paragraph was never extracted: the first `<p>` on the page
+  is empty and a rule reads the first match.
+- Google Flights shows a cookie consent page in the EU, hence its first goal,
+  and navigates with the browserless adblocker off because the adblocker leaves
+  that page blank. One of its two final runs failed when the AI SDK refused a
+  decision whose chosen option was not the most probable.
+- One Wallapop run failed when the gateway took over 25 seconds to answer.
+- Model requests are not retried, so one slow or refused answer ends a run.
 
 ## API
 

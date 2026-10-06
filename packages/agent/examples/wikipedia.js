@@ -1,11 +1,14 @@
 'use strict'
 
-module.exports = require('./task')({
-  name: 'wikipedia',
-  url: 'https://en.wikipedia.org/wiki/Main_Page',
-  goal: 'Find and open the Wikipedia article about Gödel’s incompleteness theorems.',
-  extract: {
-    instruction: 'get the article title and its first paragraph',
+const agent = require('..')
+
+module.exports = async ({ page, browserless }) => {
+  agent(page, { decisions: 'typesafe-ai/jev' })
+
+  await browserless.goto(page, { url: 'https://en.wikipedia.org/wiki/Main_Page' })
+  await page.goal('Search for "Gödel\'s incompleteness theorems" and open that article.')
+
+  return page.extract('get the article title and its first paragraph', {
     fields: { title: { type: 'string' }, firstParagraph: { type: 'string' } }
-  }
-})
+  })
+}

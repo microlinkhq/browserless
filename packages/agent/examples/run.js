@@ -1,13 +1,18 @@
 'use strict'
 
-const task = require('./task')
+const agent = require('..')
 
-module.exports = context => {
-  const { url, goal, extract } = context.opts
+module.exports = async ({ page, browserless, opts }) => {
+  const { url, goal, extract } = opts
   if (!url || !goal || !extract) {
     throw new TypeError(
       'Usage: browserless exec examples/run.js --url=<url> --goal=<goal> --extract=<what to get>'
     )
   }
-  return task({ name: 'run', url, goal, extract: { instruction: extract } })(context)
+  agent(page, { decisions: 'typesafe-ai/jev' })
+
+  await browserless.goto(page, { url })
+  await page.goal(goal)
+
+  return page.extract(extract)
 }

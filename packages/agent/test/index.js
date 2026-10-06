@@ -785,3 +785,26 @@ test('a rule the model wrote without attr reads text, not html', async t => {
     products: { selectorAll: 'article', attr: { name: { selector: 'h3', attr: 'text' } } }
   })
 })
+
+test('BLOCKED on a page that is still changing is asked again instead of ending the run', async t => {
+  const settling = { ...state('Menu closing'), actions: state().actions.slice(-1) }
+  const page = new Page([settling, state('Form ready'), state('Results')])
+  const models = mockModels(['BLOCKED', 'CLICK', 'DONE'])
+  const result = await run(page, [], { models })
+  t.is(result.status, 'done')
+  t.deepEqual(
+    result.trace.map(entry => entry.operation),
+    ['BLOCKED', 'CLICK', 'DONE']
+  )
+  t.false('TYPE_TEXT' in models.calls[0].questions.operation.criteria)
+  t.true('TYPE_TEXT' in models.calls[1].questions.operation.criteria)
+})
+
+test('BLOCKED on a page that stays the same ends the run', async t => {
+  const page = new Page()
+  const models = mockModels(['BLOCKED', 'CLICK'])
+  const error = await t.throwsAsync(run(page, [], { models }), { instanceOf: agent.BlockedError })
+  t.is(error.reason, 'model_blocked')
+  t.is(models.calls.length, 1)
+  t.deepEqual(page.inputs, [])
+})
