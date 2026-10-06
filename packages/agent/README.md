@@ -59,7 +59,8 @@ with that key; otherwise, or with `--no-jev`, the text model decides.
 
 It has been run live against Wallapop with `jev-latest` through
 `@ai-sdk/typesafe-ai` for decisions and `inception/mercury-2.5` through Vercel
-AI Gateway for text. Of the last ten runs, seven ended on the results for
+AI Gateway for text (the default text model at the time; the current default,
+`openai/gpt-6-luna`, has not been run). Of the last ten runs, seven ended on the results for
 `bmw x3` sorted by lowest price in 9 to 16 decision requests (3.6 to 5.2 seconds
 on the six that were timed), and three failed because the text model did not
 answer within the 25 second timeout on the gateway's free tier. Requests are
@@ -101,13 +102,17 @@ each decision still spends a request.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `decisions` | none | Decision model such as `'typesafe-ai/jev'`: an AI Gateway model id or an AI SDK decision model. When omitted, the text model makes the decisions |
-| `text` | `'inception/mercury-2.5'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
+| `text` | `'openai/gpt-6-luna'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
 | `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
 | `maxDecisions` | `120` | Maximum decision requests, including discarded stale decisions |
 | `waitMs` | `100` | Duration of WAIT, accepts zero |
 | `timeout` | `25000` | Milliseconds per model request |
 | `signal` | none | AbortSignal; checked before decisions and input |
+
+The default text model needs paid AI Gateway credits: the gateway's free tier
+refuses `openai/gpt-6-luna`. On the free tier, pass a model it allows, such as
+`text: 'inception/mercury-2.5'`.
 
 Model requests are never retried: this keeps request accounting exact. A reply
 that arrives after `timeout` is discarded even if the model ignored the abort. A final
