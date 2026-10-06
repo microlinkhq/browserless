@@ -20,13 +20,32 @@ export AI_GATEWAY_API_KEY=...
 import puppeteer from 'puppeteer'
 import agent from '@browserless/agent'
 
-const browser = await puppeteer.launch();
-const page = await browser.newPage();
-await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' });
-await agent(page, 'busca el bmw x3 más barato')
-await page.screenshot({ path: 'wallapop.png' });
-await browser.close();
+import { z } from 'zod'
+
+const browser = await puppeteer.launch()
+const page = agent(await browser.newPage())
+
+await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' })
+await page.goal('busca el bmw x3 más barato')
+const { products } = await page.extract(
+  'get the top 5 results',
+  z.object({ products: z.array(z.object({ name: z.string(), price: z.number() })) })
+)
+await browser.close()
 ```
+
+`agent(page, defaults?)` adds two methods to the Puppeteer page it is given and
+returns the same page:
+
+- `page.goal(goal, options?)` drives the page, over as many steps as it takes,
+  until the model reports the goal is met.
+- `page.extract(instruction, schema, options?)` reads the current page and
+  returns data in the shape of the schema. It does not navigate.
+
+`defaults` apply to both; options passed to a call override them. The same
+functions are exported for use without touching the page:
+`agent.goal(page, goal, options?)` and
+`agent.extract(page, instruction, schema, options?)`.
 
 Import compatibility is CommonJS plus the Node ESM default import, with
 TypeScript declarations.
@@ -39,11 +58,10 @@ the function the file exports, so the script does not manage the browser:
 ```js
 const agent = require('@browserless/agent')
 
-module.exports = async ({ page, browserless }) => {
+module.exports = async ({ page: browserPage, browserless }) => {
+  const page = agent(browserPage)
   await browserless.goto(page, { url: 'https://wallapop.com' })
-  const result = await agent(page, 'busca el bmw x3 más barato')
-  await page.screenshot({ path: 'wallapop.png' })
-  return result
+  return page.goal('busca el bmw x3 más barato')
 }
 ```
 
@@ -55,8 +73,9 @@ The CLI exits with code 1 when the agent throws, including a `BlockedError`.
 
 ### Examples
 
-Every file in `examples/` is an exec script. Each prints a short summary
-(status, final URL, operations, `decisionMs`) and saves `<name>.png`.
+Every file in `examples/` is an exec script. Each runs one `page.goal`, then one
+`page.extract`, prints a short summary (status, final URL, extracted output,
+operations, `decisionMs`) and saves `<name>.png`.
 
 | Script | Goal |
 | --- | --- |
@@ -96,7 +115,7 @@ instead of `bmw x3`. Notes from those runs:
 
 ## API
 
-### `await agent(page, goal, options?)`
+### `await page.goal(goal, options?)`
 
 Returns `{ status: 'done', steps, decisions, trace }` when the model reports
 visible satisfaction of the goal. DONE is a model judgment, not an independent
@@ -142,6 +161,25 @@ that arrives after `timeout` is discarded even if the model ignored the abort. A
 DONE observation can succeed after the last permitted action; no extra input is
 allowed. Concurrent agent calls on the same Page are rejected.
 
+### `await page.extract(instruction, schema, options?)`
+
+Reads the page it is called on and returns an object in the shape of `schema`,
+which is anything the AI SDK accepts as an object schema; a `zod` schema also
+validates the reply. One request to the language model in `text`; `reasoning`,
+`timeout` and `signal` apply.
+
+- The model receives the text of the whole document, not only the viewport, up
+  to 60,000 characters, including open shadow roots, with each link followed by
+  its URL. Content that only loads on scroll is not there until something
+  scrolls to it.
+- The page is read once its text has stopped changing, waiting up to 3 seconds.
+- A reply that does not match the schema throws
+  `The page did not produce output matching the schema.`
+- The values are written by a language model. It is told to copy them from the
+  page and never invent them, but nothing checks that it did. On one Wallapop
+  run a script found all five extracted names, prices and URLs in the page
+  text.
+
 ## Models
 
 Both model calls go through the [AI SDK](https://ai-sdk.dev) (`ai`). A model id
@@ -149,7 +187,7 @@ string is resolved by [Vercel AI Gateway](https://vercel.com/docs/ai-gateway),
 which reads `AI_GATEWAY_API_KEY`:
 
 ```js
-await agent(page, goal, {
+const page = agent(await browser.newPage(), {
   decisions: 'typesafe-ai/jev',
   text: 'openai/gpt-6-luna'
 })
@@ -163,7 +201,9 @@ import { createTypeSafeAi } from '@ai-sdk/typesafe-ai'
 
 const typesafe = createTypeSafeAi({ apiKey: process.env.TYPESAFE_API_KEY })
 
-await agent(page, goal, { decisions: typesafe.decisionModel('jev-latest') })
+const page = agent(await browser.newPage(), {
+  decisions: typesafe.decisionModel('jev-latest')
+})
 ```
 
 The decision model answers typed questions with `experimental_decide`, an AI SDK
@@ -191,8 +231,8 @@ probabilities on this path, so `confidence` and `probabilities` are absent from
 the trace.
 
 ```js
-await agent(page, goal)                                   // language model decides
-await agent(page, goal, { decisions: 'typesafe-ai/jev' }) // Jev decides
+await page.goal(goal)                                   // language model decides
+await page.goal(goal, { decisions: 'typesafe-ai/jev' }) // Jev decides
 ```
 
 Every trace entry has `decisionMs`, the time its decision took (the model

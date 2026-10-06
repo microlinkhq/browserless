@@ -3,9 +3,17 @@
 const test = require('ava')
 const agent = require('..')
 const { execute } = require('../src/browser')
-const { Page, state, mockModels, languageDecider } = require('./fixtures/page')
+const {
+  Page,
+  state,
+  mockModels,
+  languageDecider,
+  OUTPUT_SCHEMA,
+  OUTPUT,
+  PAGE_CONTENT
+} = require('./fixtures/page')
 const run = (page, operations, { models = mockModels(operations), ...options } = {}) =>
-  agent(page, 'find cheapest bmw x3', {
+  agent.goal(page, 'find cheapest bmw x3', {
     decisions: models.decisions,
     text: models.text,
     waitMs: 0,
@@ -240,10 +248,10 @@ test('invalid options name the accepted range', async t => {
 
 test('invalid models and reasoning levels fail before any model call', async t => {
   const models = mockModels(['DONE'])
-  await t.throwsAsync(agent(new Page(), 'cars', { decisions: {} }), {
+  await t.throwsAsync(agent.goal(new Page(), 'cars', { decisions: {} }), {
     message: 'decisions must be a model id or an AI SDK model.'
   })
-  await t.throwsAsync(agent(new Page(), 'cars', { text: '' }), {
+  await t.throwsAsync(agent.goal(new Page(), 'cars', { text: '' }), {
     message: 'text must be a model id or an AI SDK model.'
   })
   await t.throwsAsync(run(new Page(), [], { models, reasoning: 'extreme' }), {
@@ -336,7 +344,11 @@ test('SUBMIT is discarded when the field does not keep keyboard focus', async t 
 })
 
 const runWithoutDecisionModel = (page, language, options = {}) =>
-  agent(page, 'find cheapest bmw x3', { text: language.text, waitMs: 0, ...options })
+  agent.goal(page, 'find cheapest bmw x3', {
+    text: language.text,
+    waitMs: 0,
+    ...options
+  })
 
 test('without a decision model the language model chooses the operation and target', async t => {
   const page = new Page([state(), state('Results')])
@@ -472,4 +484,107 @@ test('an unrelated input error still stops the run', async t => {
   const page = new Page()
   page.clickErrors = ['Protocol error: session closed']
   await t.throwsAsync(run(page, ['CLICK']), { message: 'Protocol error: session closed' })
+})
+
+test('a page that navigates while the target is looked up gives a stale decision', async t => {
+  const page = new Page([state(), state('Changed'), state('Results')])
+  page.handleErrors = ['Execution context was destroyed, most likely because of a navigation.']
+  const result = await run(page, ['CLICK', 'CLICK', 'DONE'])
+  t.true(result.trace[0].stale)
+  t.deepEqual(page.inputs, [{ click: true }])
+})
+
+const INSTRUCTION = 'get the title'
+
+const extractWith = (page, models, schema = OUTPUT_SCHEMA, options = {}) =>
+  agent.extract(page, INSTRUCTION, schema, { text: models.text, ...options })
+
+test('extract returns the output read from the page', async t => {
+  const models = mockModels([])
+  t.deepEqual(await extractWith(new Page(), models), OUTPUT)
+  const [extraction] = models.calls
+  t.is(extraction.kind, 'output')
+  const user = extraction.options.prompt.find(message => message.role === 'user')
+  t.deepEqual(JSON.parse(user.content[0].text), { instruction: INSTRUCTION, page: PAGE_CONTENT })
+  t.is(extraction.options.responseFormat.schema.properties.title.type, 'string')
+  t.is(models.calls.length, 1)
+})
+
+test('extract requires a page, an instruction and a schema before any model call', async t => {
+  const models = mockModels([])
+  await t.throwsAsync(agent.extract({}, INSTRUCTION, OUTPUT_SCHEMA), {
+    message: 'extract requires a Puppeteer page and a nonempty instruction.'
+  })
+  await t.throwsAsync(agent.extract(new Page(), ' ', OUTPUT_SCHEMA), {
+    message: 'extract requires a Puppeteer page and a nonempty instruction.'
+  })
+  for (const schema of [undefined, null]) {
+    await t.throwsAsync(agent.extract(new Page(), INSTRUCTION, schema, { text: models.text }), {
+      message: 'extract requires a schema describing the result.'
+    })
+  }
+  t.is(models.calls.length, 0)
+})
+
+for (const [name, reply] of Object.entries({
+  'a wrong type': '{"title":42}',
+  'a missing key': '{}',
+  'invalid JSON': 'Cars'
+})) {
+  test(`extract rejects output that does not match the schema: ${name}`, async t => {
+    const models = mockModels([], { output: reply })
+    await t.throwsAsync(extractWith(new Page(), models), {
+      message: 'The page did not produce output matching the schema.'
+    })
+  })
+}
+
+test('extract reads the page once its content has stopped changing', async t => {
+  const page = new Page()
+  const loaded = { ...PAGE_CONTENT, text: 'Cars for sale: BMW X3 6999 €' }
+  page.contents = [
+    { ...PAGE_CONTENT, text: 'Loading' },
+    { ...PAGE_CONTENT, text: 'Loading results' },
+    loaded
+  ]
+  const models = mockModels([])
+  await extractWith(page, models)
+  const user = models.calls[0].options.prompt.find(message => message.role === 'user')
+  t.deepEqual(JSON.parse(user.content[0].text).page, loaded)
+})
+
+test('a goal makes no extraction request', async t => {
+  const models = mockModels(['DONE'])
+  const result = await run(new Page(), [], { models })
+  t.false('output' in result)
+  t.deepEqual(
+    models.calls.map(call => call.kind),
+    ['decide']
+  )
+})
+
+test('agent adds goal and extract to the page, with shared defaults', async t => {
+  const models = mockModels(['CLICK', 'DONE'])
+  const page = agent(new Page([state(), state('Results')]), {
+    decisions: models.decisions,
+    text: models.text,
+    waitMs: 0
+  })
+  const result = await page.goal('find cheapest bmw x3')
+  t.is(result.status, 'done')
+  t.deepEqual(page.inputs, [{ click: true }])
+  t.deepEqual(await page.extract(INSTRUCTION, OUTPUT_SCHEMA), OUTPUT)
+})
+
+test('options passed to a page method override the defaults', async t => {
+  const models = mockModels(['CLICK'])
+  const page = agent(new Page(), { decisions: models.decisions, text: models.text, waitMs: 0 })
+  const error = await t.throwsAsync(page.goal('find cars', { maxDecisions: 1, maxSteps: 1 }), {
+    instanceOf: agent.BlockedError
+  })
+  t.is(error.reason, 'step_budget')
+})
+
+test('agent requires a Puppeteer page', t => {
+  t.throws(() => agent({}), { message: 'agent requires a Puppeteer page.' })
 })

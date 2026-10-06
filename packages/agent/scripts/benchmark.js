@@ -110,13 +110,15 @@ module.exports = async ({ page, browserless, opts }) => {
   while (recorded.length < sampleCount && liveRuns.length < MAX_LIVE_RUNS) {
     await browserless.goto(page, { url })
     const before = recorded.length
-    const status = await agent(page, goal, {
-      decisions: recordingDecisionModel(jev, recorded),
-      text: opts.text
-    }).then(
-      result => result.status,
-      error => `${error.name}: ${error.message}`.slice(0, 120)
-    )
+    const status = await agent
+      .goal(page, goal, {
+        decisions: recordingDecisionModel(jev, recorded),
+        text: opts.text
+      })
+      .then(
+        result => result.status,
+        error => `${error.name}: ${error.message}`.slice(0, 120)
+      )
     liveRuns.push({ status, decisions: recorded.length - before, finalUrl: page.url() })
   }
   const requests = recorded.slice(0, sampleCount)
