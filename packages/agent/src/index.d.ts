@@ -19,8 +19,10 @@ declare namespace agent {
   interface TraceEntry {
     operation: 'CLICK' | 'TYPE_TEXT' | 'SELECT' | 'SUBMIT' | 'SCROLL_UP' | 'SCROLL_DOWN' | 'WAIT' | 'DONE' | 'BLOCKED'
     action?: string
-    confidence: number
-    probabilities: Record<string, number>
+    confidence?: number
+    probabilities?: Record<string, number>
+    decisionMs: number
+    textMs?: number
     targetConfidence?: number
     targetProbabilities?: Record<string, number>
     step: number

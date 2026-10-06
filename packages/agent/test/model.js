@@ -1,7 +1,14 @@
 'use strict'
 
 const test = require('ava')
-const { validateChoice, actionSpace, buildRequest, decide, fieldText } = require('../src/model')
+const {
+  validateChoice,
+  actionSpace,
+  buildRequest,
+  decide,
+  decideWithLanguageModel,
+  fieldText
+} = require('../src/model')
 const { APICallError } = require('ai')
 const { state, answer, decisionModel, textModel, mockModels } = require('./fixtures/page')
 
@@ -317,4 +324,33 @@ test('a text reply without output is rejected as an invalid field value', async 
   await t.throwsAsync(fieldText('cars', state().actions[0], state(), [], model, REQUEST), {
     message: 'Text helper returned no valid field value; nothing typed.'
   })
+})
+
+test('a failing language model decision is not retried', async t => {
+  const model = textModel('{}')
+  let calls = 0
+  model.doGenerate = async () => {
+    calls++
+    throw retryableFailure()
+  }
+  await t.throwsAsync(decideWithLanguageModel(state(), 'cars', [], model, REQUEST), {
+    message: /provider unavailable/
+  })
+  t.is(calls, 1)
+})
+
+test('a language model decision that arrives after the timeout is discarded', async t => {
+  const model = textModel('{"operation":"DONE","target":null}')
+  const generate = model.doGenerate
+  model.doGenerate = async options => afterMs(60, await generate(options))
+  await t.throwsAsync(decideWithLanguageModel(state(), 'cars', [], model, { timeout: 20 }), {
+    name: 'TimeoutError'
+  })
+})
+
+test('a language model decision without a target runs the page-level control', async t => {
+  const model = textModel('{"operation":"WAIT","target":null}')
+  const decision = await decideWithLanguageModel(state(), 'cars', [], model, REQUEST)
+  t.is(decision.operation, 'WAIT')
+  t.is(decision.action.id, 'wait')
 })

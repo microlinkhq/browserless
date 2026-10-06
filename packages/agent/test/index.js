@@ -3,7 +3,7 @@
 const test = require('ava')
 const agent = require('..')
 const { execute } = require('../src/browser')
-const { Page, state, mockModels } = require('./fixtures/page')
+const { Page, state, mockModels, languageDecider } = require('./fixtures/page')
 const run = (page, operations, { models = mockModels(operations), ...options } = {}) =>
   agent(page, 'find cheapest bmw x3', {
     decisions: models.decisions,
@@ -333,4 +333,106 @@ test('SUBMIT is discarded when the field does not keep keyboard focus', async t 
   const result = await run(page, ['SUBMIT', 'DONE'])
   t.true(result.trace[0].stale)
   t.deepEqual(page.inputs, [])
+})
+
+const runWithoutDecisionModel = (page, language, options = {}) =>
+  agent(page, 'find cheapest bmw x3', { text: language.text, waitMs: 0, ...options })
+
+test('without a decision model the language model chooses the operation and target', async t => {
+  const page = new Page([state(), state('Results')])
+  const language = languageDecider(['CLICK', 'DONE'])
+  const result = await runWithoutDecisionModel(page, language)
+  t.is(result.status, 'done')
+  t.deepEqual(page.inputs, [{ click: true }])
+  t.deepEqual(
+    language.calls.map(call => call.kind),
+    ['decide', 'decide']
+  )
+  t.deepEqual(
+    result.trace.map(entry => [entry.operation, entry.action, entry.confidence]),
+    [
+      ['CLICK', 'e2', undefined],
+      ['DONE', undefined, undefined]
+    ]
+  )
+})
+
+test('without a decision model one language model decides and writes the text', async t => {
+  const page = new Page([state(), state('bmw x3')])
+  const language = languageDecider(['TYPE_TEXT', 'DONE'])
+  await runWithoutDecisionModel(page, language)
+  t.deepEqual(page.inputs, [{ selectContents: true }, { text: 'bmw x3' }])
+  t.deepEqual(
+    language.calls.map(call => call.kind),
+    ['decide', 'text', 'decide']
+  )
+})
+
+test('the language model is offered the same operations and targets as the decision model', async t => {
+  const language = languageDecider(['DONE'])
+  const models = mockModels(['DONE'])
+  await runWithoutDecisionModel(new Page(), language)
+  await run(new Page(), [], { models })
+  t.deepEqual(language.calls[0].questions, JSON.parse(JSON.stringify(models.calls[0].questions)))
+  t.deepEqual(language.calls[0].options.responseFormat.schema.properties.operation.enum, [
+    'TYPE_TEXT',
+    'CLICK',
+    'WAIT',
+    'DONE',
+    'BLOCKED'
+  ])
+})
+
+for (const [name, output] of Object.entries({
+  'an operation that was not offered': { operation: 'NAVIGATE', target: null },
+  'a target that was not offered': { operation: 'CLICK', target: '99' },
+  'a missing target': { operation: 'CLICK', target: null },
+  'an inherited property as operation': { operation: 'constructor', target: null },
+  'an inherited property as target': { operation: 'CLICK', target: 'constructor' },
+  'a prototype key as operation': { operation: '__proto__', target: 'constructor' },
+  'an array operation': { operation: ['CLICK'], target: '1' },
+  'a numeric target': { operation: 'CLICK', target: 1 },
+  'an array target': { operation: 'CLICK', target: ['1'] },
+  'an object target': { operation: 'CLICK', target: { toString: () => '1' } },
+  'a padded target': { operation: 'CLICK', target: ' 1 ' },
+  'a lowercase operation': { operation: 'click', target: '1' },
+  'a padded operation': { operation: ' CLICK', target: '1' },
+  'no operation': {},
+  'an array': ['CLICK', '1']
+})) {
+  test(`a language model decision with ${name} is rejected before input`, async t => {
+    const page = new Page()
+    const language = languageDecider([output])
+    await t.throwsAsync(runWithoutDecisionModel(page, language), {
+      message: 'Invalid decisions response; no action executed.'
+    })
+    t.deepEqual(page.inputs, [])
+  })
+}
+
+test('the trace records how long each model request took', async t => {
+  const page = new Page([state(), state('bmw x3')])
+  const result = await run(page, ['TYPE_TEXT', 'DONE'])
+  const [typed, done] = result.trace
+  t.true(Number.isInteger(typed.decisionMs) && typed.decisionMs >= 0)
+  t.true(Number.isInteger(typed.textMs) && typed.textMs >= 0)
+  t.true(Number.isInteger(done.decisionMs))
+  t.false('textMs' in done)
+})
+
+test('a target sent for an operation without targets is ignored', async t => {
+  const page = new Page()
+  const language = languageDecider([{ operation: 'DONE', target: '1' }])
+  const result = await runWithoutDecisionModel(page, language)
+  t.is(result.status, 'done')
+  t.deepEqual(page.inputs, [])
+})
+
+test('language model decisions are timed, including discarded stale ones', async t => {
+  const page = new Page([state(), state('Changed')])
+  page.guards = [false]
+  const language = languageDecider(['CLICK', 'DONE'])
+  const result = await runWithoutDecisionModel(page, language)
+  t.true(result.trace[0].stale)
+  t.true(result.trace.every(entry => Number.isInteger(entry.decisionMs) && entry.decisionMs >= 0))
 })
