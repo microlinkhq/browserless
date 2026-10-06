@@ -10,6 +10,7 @@ const {
   REASONING_LEVELS
 } = require('./model')
 const {
+  isPlainObject,
   applyRules,
   assertRules,
   fillFields,
@@ -18,7 +19,7 @@ const {
   hasData
 } = require('./rules')
 const { BlockedError, StaleDecisionError } = require('./errors')
-const { createInfo } = require('./info')
+const { createInfo, createExtractInfo } = require('./info')
 
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
 const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
@@ -238,8 +239,32 @@ const goal = async (page, goal, options = {}) => {
   }
 }
 
-const withInfo = (summary, info) =>
-  Object.defineProperty(Object.assign(info, summary), 'toJSON', { value: () => summary })
+const FUNCTION_OWN_KEYS = ['length', 'name']
+
+const hasOwnSerialization = values => typeof values?.toJSON === 'function'
+
+const carryFields = (info, fields) => {
+  for (const key of FUNCTION_OWN_KEYS) delete info[key]
+  for (const key of Reflect.ownKeys(fields)) {
+    const descriptor = Object.getOwnPropertyDescriptor(fields, key)
+    Object.defineProperty(info, key, { ...descriptor, configurable: true })
+  }
+  const overwrittenByToJSON = Object.hasOwn(fields, 'toJSON') ? { toJSON: fields.toJSON } : {}
+  return () => ({ ...info, ...overwrittenByToJSON })
+}
+
+const withInfo = (values, info) => {
+  const carried = isPlainObject(values) && !hasOwnSerialization(values)
+  const toJSON = carried
+    ? carryFields(info, values)
+    : () => (hasOwnSerialization(values) ? values.toJSON() : values)
+  return Object.defineProperty(info, 'toJSON', { value: toJSON })
+}
+
+const attachInfo = (error, info) => {
+  const canCarry = error instanceof Error && Object.isExtensible(error) && !('info' in error)
+  if (canCarry) error.info = info
+}
 
 const usableRules = async (page, written, fields) => {
   try {
@@ -252,13 +277,13 @@ const usableRules = async (page, written, fields) => {
   throw new TypeError('The rules the model wrote matched nothing on the page.')
 }
 
-const rulesFor = async (page, instruction, fields, options) => {
+const rulesFor = async (page, instruction, fields, options, onCall) => {
   if (!isInstruction(instruction)) {
     throw new TypeError('extract requires rules or a nonempty instruction.')
   }
   if (fields !== undefined && isComplete(assertRules(fields, 'rules'))) return fields
   const { timeout, models, reasoning } = resolveOptions(options)
-  const request = { timeout, signal: options.signal, reasoning }
+  const request = { timeout, signal: options.signal, reasoning, onCall }
   const outline = await readStableOutline(page)
   const written = await writeRules(instruction, outline, fields, models.text, request)
   return usableRules(page, written, fields)
@@ -269,7 +294,24 @@ const extract = async (page, input, ...rest) => {
   const fromInstruction = typeof input === 'string'
   const [fields, options = {}] = fromInstruction ? rest : [undefined, rest[0]]
   const { extractor = applyRules } = options
-  return extractor(page, fromInstruction ? await rulesFor(page, input, fields, options) : input)
+  const calls = []
+  const started = performance.now()
+  const used = { rules: fromInstruction ? undefined : input }
+  const info = () =>
+    createExtractInfo({
+      rules: used.rules,
+      calls,
+      totalMs: Math.round(performance.now() - started)
+    })
+  try {
+    if (fromInstruction) {
+      used.rules = await rulesFor(page, input, fields, options, metrics => calls.push(metrics))
+    }
+    return withInfo(await extractor(page, used.rules), info())
+  } catch (error) {
+    attachInfo(error, info())
+    throw error
+  }
 }
 
 const agent = (page, defaults = {}) => {

@@ -174,12 +174,13 @@ const statusOf = (goals, runError) => {
   return goals.find(goal => goal.status !== DONE)?.status ?? DONE
 }
 
-const extractionFields = ({ data, error, ms }) => {
+const extractionFields = ({ data, error, ms, info }) => {
   const dataValues = countLeaves(data)
   return {
     extracted: error === undefined && dataValues > 0,
     ...(error && { extractError: error }),
     extractMs: ms,
+    extractUsd: rounded(info?.cost?.usd, USD_DECIMALS),
     dataValues,
     dataHash: data === undefined ? undefined : digest(data)
   }
@@ -190,7 +191,9 @@ const toRecord = ({ setup, run, goals = [], extraction, finalUrl, navigationErro
   const infos = goals.map(goal => goal.info ?? {})
   const status = statusOf(goals, runError)
   const error = runError ?? goals.find(goal => goal.status !== DONE)?.error
-  const reportedByEveryGoal = read => (runError ? undefined : sumWhenAllReported(infos.map(read)))
+  const requestInfos = extraction ? [...infos, extraction.info ?? {}] : infos
+  const reportedBy = (reporters, read) =>
+    runError ? undefined : sumWhenAllReported(reporters.map(read))
   return {
     decisions: setup.decisions,
     text: setup.text,
@@ -206,15 +209,15 @@ const toRecord = ({ setup, run, goals = [], extraction, finalUrl, navigationErro
     path: pathOf(goals),
     minConfidence: lowest(trace.flatMap(entry => [entry.confidence, entry.targetConfidence])),
     ...accuracyOf(goals, status),
-    calls: sum(infos.map(info => info.cost?.calls ?? 0)),
-    inputTokens: reportedByEveryGoal(info => info.cost?.inputTokens),
-    outputTokens: reportedByEveryGoal(info => info.cost?.outputTokens),
+    calls: sum(requestInfos.map(info => info.cost?.calls ?? 0)),
+    inputTokens: reportedBy(requestInfos, info => info.cost?.inputTokens),
+    outputTokens: reportedBy(requestInfos, info => info.cost?.outputTokens),
     usd: rounded(
-      reportedByEveryGoal(info => info.cost?.usd),
+      reportedBy(requestInfos, info => info.cost?.usd),
       USD_DECIMALS
     ),
-    totalMs: reportedByEveryGoal(info => info.timing?.totalMs),
-    modelMs: reportedByEveryGoal(info => info.timing?.modelMs),
+    totalMs: reportedBy(infos, info => info.timing?.totalMs),
+    modelMs: reportedBy(infos, info => info.timing?.modelMs),
     finalUrl,
     ...(extraction && extractionFields(extraction))
   }
@@ -291,6 +294,8 @@ const report = (task, file, records) => {
 const messageOf = error =>
   error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
+const infoOf = error => (typeof error?.info === 'function' ? error.info() : undefined)
+
 const measureGoal = async (page, goal, options) => {
   try {
     const result = await agent.goal(page, goal, options)
@@ -301,7 +306,7 @@ const measureGoal = async (page, goal, options) => {
       status: error?.reason ?? UNEXPECTED_ERROR,
       error: messageOf(error),
       trace: error?.trace ?? [],
-      info: typeof error?.info === 'function' ? await error.info() : undefined
+      info: await infoOf(error)
     }
   }
 }
@@ -309,8 +314,8 @@ const measureGoal = async (page, goal, options) => {
 const measureExtraction = async (page, instruction, options) => {
   const started = performance.now()
   const outcome = await agent.extract(page, instruction, undefined, options).then(
-    data => ({ data }),
-    error => ({ error: messageOf(error) })
+    async extracted => ({ data: extracted.toJSON(), info: await extracted() }),
+    async error => ({ error: messageOf(error), info: await infoOf(error) })
   )
   return { ...outcome, ms: Math.round(performance.now() - started) }
 }

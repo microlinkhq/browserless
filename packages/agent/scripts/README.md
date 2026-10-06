@@ -38,7 +38,7 @@ calls the text model, so every text model gets the same result.
 | Same path | Share of finished runs that took the most common sequence of actions |
 | Decisions | Median decision requests of the finished runs |
 | p90 ms | Time that nine in ten finished runs did not exceed. With fewer than ten finished runs it is the slowest one |
-| Total usd | Cost of every run of the setup, extraction request excluded. `not reported` when a failed run reported no cost |
+| Total usd | Cost of every run of the setup. Entries up to 2026-10-06 exclude the extraction request; later ones include it. `not reported` when a failed run reported no cost |
 | Extracted | Runs where the extraction returned at least one value |
 
 Rows are ordered as the script ranks them: done, passed, same path, p90.

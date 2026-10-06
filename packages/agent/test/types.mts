@@ -27,6 +27,12 @@ async function check () {
   const fromInstruction: agent.Data = await page.extract('get the cars')
   const languageDecides: agent.Result = await page.goal('find cars', { decisions: false })
   const fromBoth: agent.Data = await page.extract('get the cars', fields, { timeout: 5000 })
+  const extracted: agent.Extracted = await page.extract('get the cars')
+  const extractInfo: agent.ExtractInfo = await extracted()
+  const extractUsd: number | undefined = extractInfo.cost.usd
+  const usedRules: agent.Rules | undefined = extractInfo.rules
+  const plainData: agent.Data = extracted.toJSON()
+  void [extractUsd, usedRules, plainData]
   const exported: agent.Data = await agent.extract(page, 'get the cars', fields, { timeout: 5000 })
   const same: agent.Data = await agent.extract(page, { title: { selector: 'h1', attr: 'text' } })
   // @ts-expect-error a rule has no evaluate property

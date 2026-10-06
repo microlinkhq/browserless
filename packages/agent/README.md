@@ -263,6 +263,29 @@ Options go last: `page.extract(rules, options?)` and
 that already have a selector for every field run as they are, with no model
 request. Options passed where the rules belong throw.
 
+What `extract` resolves to is the data, and it can also be called for the
+cost of getting it, the same way as the result of `goal`:
+
+```js
+const found = await page.extract('get the stories', {
+  stories: { attr: { title: { type: 'string' }, href: { type: 'url' } } }
+})
+found.stories // the data, as before; JSON.stringify(found) and { ...found } give the data too
+const { rules, cost, timing } = await found()
+```
+
+`rules` are the rules that ran, so the ones a model wrote can be stored and
+passed to `page.extract(rules)` next time without a request. `cost` and
+`timing` have the same fields as for `goal`; with rules of your own they report
+no request and no cost. No extra request is made and there is no `accuracy`.
+When `extract` throws, the error has the same `info()` for what was spent
+before it failed.
+
+Fields are read as properties when the data is a plain object, which is what
+the built-in engine returns. A custom engine that returns a list or any other
+value is read with `found.toJSON()`. One name is taken: `found.toJSON` is always
+the function, so a field called `toJSON` is only in `found.toJSON()`.
+
 The values always come from the DOM. A language model only ever writes
 selectors, so it cannot invent a value: a wrong selector gives a missing field,
 `null` inside a list item, or the wrong element's text.
@@ -446,10 +469,10 @@ logged as it finishes:
 | `decisionRequests`, `staleDecisions`, `actionsWithoutPageChange` | How much work the run took and how much of it was wasted |
 | `minConfidence` | The lowest confidence of any decision, in the operation or in its target; absent when the text model decides |
 | `passed`, `probability` | The evaluator's judgment from `info()`: `passed` needs every goal judged met, `probability` is the lowest. Absent when the run did not finish or a goal was not judged |
-| `calls`, `inputTokens`, `outputTokens`, `usd` | Cost of the goals from `info()`, which includes the evaluator's request. Absent when any request did not report it |
+| `calls`, `inputTokens`, `outputTokens`, `usd` | Cost of the goals from `info()`, which includes the evaluator's request, plus the extraction request with `--extract`. Absent when any request did not report it |
 | `totalMs`, `modelMs` | Time of the goals from `info()`, without the evaluator's request |
 | `finalUrl` | Where the run ended |
-| `extracted`, `extractError`, `extractMs`, `dataValues`, `dataHash` | With `--extract`, after every goal finished: whether it returned at least one value, how many non-empty values, and a hash of the data that ignores key order |
+| `extracted`, `extractError`, `extractMs`, `extractUsd`, `dataValues`, `dataHash` | With `--extract`, after every goal finished: whether it returned at least one value, how many non-empty values, and a hash of the data that ignores key order |
 
 The printed `ranking` has one entry per setup, best first: by `doneRate`, then
 `passRate` (the share of all runs that finished and were judged met;
@@ -461,16 +484,15 @@ share of extractions that returned the most common data. Medians and
 `p90TotalMs` cover finished runs only, and each is absent when no run finished
 or one of them did not report the number. `totalUsd` is what every run of the setup cost, failed
 ones included, and the `totalUsd` next to `ranking` is the cost of the whole
-comparison; both are absent when any run did not report its cost, and neither
-includes the extraction request. `reportedUsd` is the sum of the costs that
+comparison; both are absent when any run did not report its cost. `reportedUsd` is the sum of the costs that
 were reported and `runsWithoutCost` counts the runs that reported none, such
 as a run that ended on an error. A run that fails is recorded and the remaining
 runs go on.
 
 Results of past comparisons are collected in [scripts/README.md](scripts/README.md).
 
-What it does not measure: the cost of the extraction request, and whether a
-finished run is correct. `passed` is a second model's opinion, and on the same
+What it does not measure: whether a finished run is correct. `passed` is a
+second model's opinion, and on the same
 path and final page it has answered both yes and no.
 
 ### Text values

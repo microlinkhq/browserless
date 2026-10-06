@@ -17,12 +17,12 @@ declare namespace agent {
   type Extractor = (page: Page, rules: Rules) => Promise<Data>
   interface Methods {
     goal(goal: string, options?: Options): Promise<Result>
-    extract(rules: Rules, options?: Options): Promise<Data>
-    extract(instruction: string, rules?: Rules, options?: Options): Promise<Data>
+    extract(rules: Rules, options?: Options): Promise<Extracted>
+    extract(instruction: string, rules?: Rules, options?: Options): Promise<Extracted>
   }
   function goal(page: Page, goal: string, options?: Options): Promise<Result>
-  function extract(page: Page, rules: Rules, options?: Options): Promise<Data>
-  function extract(page: Page, instruction: string, rules?: Rules, options?: Options): Promise<Data>
+  function extract(page: Page, rules: Rules, options?: Options): Promise<Extracted>
+  function extract(page: Page, instruction: string, rules?: Rules, options?: Options): Promise<Extracted>
   const applyRules: Extractor
   interface Options {
     extractor?: Extractor
@@ -85,6 +85,13 @@ declare namespace agent {
   interface Result extends Summary, InfoFunction {
     toJSON(): Summary
   }
+  interface ExtractInfo {
+    rules: Rules | undefined
+    cost: Cost
+    timing: Timing
+  }
+  type ExtractInfoFunction = () => Promise<ExtractInfo>
+  type Extracted = Data & ExtractInfoFunction & { toJSON(): Data }
   class BlockedError extends Error {
     constructor(reason: BlockedReason, message: string, trace?: TraceEntry[])
     code: 'BLOCKED'

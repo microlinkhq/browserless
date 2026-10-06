@@ -70,4 +70,9 @@ const createInfo = ({ goal, state, trace, calls, totalMs, evaluator, timeout }) 
   }
 }
 
-module.exports = { createInfo, costOf, timingOf }
+const createExtractInfo = ({ rules, calls, totalMs }) => {
+  const report = { rules, cost: costOf(calls), timing: timingOf(calls, [], totalMs) }
+  return async () => report
+}
+
+module.exports = { createInfo, createExtractInfo, costOf, timingOf }

@@ -400,6 +400,25 @@ test('the lowest confidence also looks at the confidence in the chosen target', 
   t.is(record({ goals: [goal] }).minConfidence, 0.3)
 })
 
+test('the cost of the extraction request is part of the run cost and is also kept apart', t => {
+  const extractInfo = { cost: { calls: 1, inputTokens: 40, outputTokens: 4, usd: 0.0004 } }
+  const withExtraction = record({ extraction: { data: { a: 1 }, ms: 9, info: extractInfo } })
+  t.like(withExtraction, {
+    calls: 3,
+    inputTokens: 140,
+    outputTokens: 14,
+    usd: 0.0014,
+    extractUsd: 0.0004,
+    totalMs: 1000
+  })
+  const failed = record({ extraction: { error: 'TypeError: nothing', ms: 9, info: extractInfo } })
+  t.like(failed, { extracted: false, usd: 0.0014, extractUsd: 0.0004 })
+  const unreported = record({ extraction: { data: { a: 1 }, ms: 9 } })
+  t.is(unreported.usd, undefined)
+  t.is(unreported.extractUsd, undefined)
+  t.is(record().usd, 0.001)
+})
+
 test('the data hash does not depend on key order and empty data is not an extraction', t => {
   const hashOf = data => record({ extraction: { data, ms: 1 } }).dataHash
   t.is(hashOf({ a: 1, b: [{ c: 2, d: 3 }] }), hashOf({ b: [{ d: 3, c: 2 }], a: 1 }))

@@ -302,6 +302,7 @@ const hasData = value => {
 }
 
 module.exports = {
+  isPlainObject,
   applyRules,
   evaluateRules,
   assertRules,

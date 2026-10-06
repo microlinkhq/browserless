@@ -593,7 +593,7 @@ const writtenRules = async (page, instruction, rules, options) => {
 test('extract with rules runs them without any model request', async t => {
   const page = new Page()
   const models = mockModels([])
-  t.deepEqual(await agent.extract(page, RULES, { text: models.text }), DATA)
+  t.deepEqual((await agent.extract(page, RULES, { text: models.text })).toJSON(), DATA)
   t.deepEqual(page.appliedRules, [RULES])
   t.is(models.calls.length, 0)
 })
@@ -601,7 +601,10 @@ test('extract with rules runs them without any model request', async t => {
 test('extract with an instruction has the model write rules, then runs them', async t => {
   const page = new Page()
   const models = mockModels([])
-  t.deepEqual(await agent.extract(page, INSTRUCTION, undefined, { text: models.text }), DATA)
+  t.deepEqual(
+    (await agent.extract(page, INSTRUCTION, undefined, { text: models.text })).toJSON(),
+    DATA
+  )
   t.deepEqual(page.appliedRules, [RULES, RULES])
   const [request] = models.calls
   t.is(request.kind, 'rules')
@@ -700,7 +703,9 @@ test('a custom extractor runs the rules instead of the default engine', async t 
     received.push([target, rules])
     return { title: 'From the custom engine' }
   }
-  t.deepEqual(await agent.extract(page, RULES, { extractor }), { title: 'From the custom engine' })
+  t.deepEqual((await agent.extract(page, RULES, { extractor })).toJSON(), {
+    title: 'From the custom engine'
+  })
   t.deepEqual(received, [[page, RULES]])
   t.deepEqual(page.appliedRules, [])
 })
@@ -723,8 +728,8 @@ test('agent adds goal and extract to the page, with shared defaults', async t =>
   })
   t.is((await page.goal('find cheapest bmw x3')).status, 'done')
   t.deepEqual(page.inputs, [{ click: true }])
-  t.deepEqual(await page.extract(INSTRUCTION), DATA)
-  t.deepEqual(await page.extract(RULES), DATA)
+  t.deepEqual((await page.extract(INSTRUCTION)).toJSON(), DATA)
+  t.deepEqual((await page.extract(RULES)).toJSON(), DATA)
 })
 
 test('a page that already has extract keeps it as the rules engine', async t => {
@@ -736,8 +741,8 @@ test('a page that already has extract keeps it as the rules engine', async t => 
   }
   const models = mockModels([])
   const page = agent(browserPage, { text: models.text })
-  t.deepEqual(await page.extract(RULES), { title: 'From the page' })
-  t.deepEqual(await page.extract(INSTRUCTION), { title: 'From the page' })
+  t.deepEqual((await page.extract(RULES)).toJSON(), { title: 'From the page' })
+  t.deepEqual((await page.extract(INSTRUCTION)).toJSON(), { title: 'From the page' })
   t.deepEqual(calls, [
     [browserPage, RULES],
     [browserPage, RULES]
@@ -884,7 +889,10 @@ test('an instruction with rules that already have every selector makes no model 
   const complete = {
     products: { selectorAll: 'article', attr: { name: { selector: 'h3', attr: 'text' } } }
   }
-  t.deepEqual(await agent.extract(page, INSTRUCTION, complete, { text: models.text }), DATA)
+  t.deepEqual(
+    (await agent.extract(page, INSTRUCTION, complete, { text: models.text })).toJSON(),
+    DATA
+  )
   t.deepEqual(page.appliedRules, [complete])
   t.is(models.calls.length, 0)
 })
