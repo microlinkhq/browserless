@@ -6,6 +6,6 @@ module.exports = require('./task')({
   goal: 'Find and open the Wikipedia article about Gödel’s incompleteness theorems.',
   extract: {
     instruction: 'get the article title and its first paragraph',
-    fields: { title: {}, firstParagraph: {} }
+    fields: { title: { type: 'string' }, firstParagraph: { type: 'string' } }
   }
 })

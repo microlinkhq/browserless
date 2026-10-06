@@ -6,6 +6,10 @@ module.exports = require('./task')({
   goal: 'Open the comments page of the first story on the front page.',
   extract: {
     instruction: 'get the story title, its points and the authors of the comments',
-    fields: { title: {}, points: { type: 'number' }, commenters: {} }
+    fields: {
+      title: { type: 'string' },
+      points: { type: 'number' },
+      commenters: { type: 'string' }
+    }
   }
 })

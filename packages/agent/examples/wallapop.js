@@ -7,7 +7,9 @@ module.exports = require('./task')({
   extract: {
     instruction: 'get the search results',
     fields: {
-      products: { attr: { name: {}, price: { type: 'number' }, url: { type: 'url' } } }
+      products: {
+        attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
+      }
     }
   }
 })

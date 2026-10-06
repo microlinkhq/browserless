@@ -1,5 +1,6 @@
 'use strict'
 
+const FLIGHT_FIELDS = ['airline', 'departure', 'arrival', 'duration', 'stops', 'price']
 const DAYS_AHEAD = 30
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -17,7 +18,7 @@ module.exports = require('./task')({
     instruction: 'get the flights listed on the page',
     fields: {
       flights: {
-        attr: { airline: {}, departure: {}, arrival: {}, duration: {}, stops: {}, price: {} }
+        attr: Object.fromEntries(FLIGHT_FIELDS.map(name => [name, { type: 'string' }]))
       }
     }
   },

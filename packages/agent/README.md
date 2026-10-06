@@ -26,7 +26,11 @@ const page = agent(await browser.newPage())
 await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' })
 await page.goal('busca el bmw x3 más barato')
 const { products } = await page.extract('get the search results', {
-  fields: { products: { attr: { name: {}, price: { type: 'number' }, url: { type: 'url' } } } }
+  fields: {
+    products: {
+      attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
+    }
+  }
 })
 await browser.close()
 ```
@@ -108,8 +112,11 @@ instead of `bmw x3`. Notes from those runs:
   for text, seven of ten runs ended on the results for `bmw x3` sorted by lowest
   price in 9 to 16 decisions, and three failed on text-model timeouts that were
   probably the gateway free tier's limit of 5 requests per minute.
-- Jev through the gateway (`typesafe-ai/jev`) has not been run: the gateway free
-  tier refuses it.
+- With paid gateway credits and one `AI_GATEWAY_API_KEY`, one Wallapop run used
+  `decisions: 'typesafe-ai/jev'` and the default text model `openai/gpt-6-luna`:
+  it ended sorted by lowest price in 13 decisions (median 344 ms each through
+  the gateway) and extracted 32 products. `openai/gpt-6-luna` wrote usable rules
+  in 8 of 8 attempts over Hacker News, Wallapop, Wikipedia and GitHub issues.
 
 ## API
 
@@ -142,7 +149,7 @@ each decision still spends a request.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `decisions` | none | Decision model such as `'typesafe-ai/jev'`: an AI Gateway model id or an AI SDK decision model. When omitted, the text model makes the decisions |
-| `text` | `'alibaba/qwen3.8-flash'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
+| `text` | `'openai/gpt-6-luna'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
 | `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
 | `maxDecisions` | `120` | Maximum decision requests, including discarded stale decisions |
@@ -150,7 +157,9 @@ each decision still spends a request.
 | `timeout` | `25000` | Milliseconds per model request |
 | `signal` | none | AbortSignal; checked before decisions and input |
 
-The gateway's free tier allows the default text model, at 5 requests per minute.
+The default text model needs paid AI Gateway credits; the gateway's free tier
+refuses `openai/gpt-6-luna`. On the free tier pass a model it allows, for
+example `text: 'zai/glm-5.3-flash'`, at 5 requests per minute.
 
 Model requests are never retried: this keeps request accounting exact. A reply
 that arrives after `timeout` is discarded even if the model ignored the abort. A final
@@ -188,7 +197,7 @@ await page.extract('get the stories with their title and link')
 
 // 3. Instruction plus fields: you name the fields and types, the model fills in the selectors.
 await page.extract('get the stories', {
-  fields: { stories: { attr: { title: {}, href: { type: 'url' } } } }
+  fields: { stories: { attr: { title: { type: 'string' }, href: { type: 'url' } } } }
 })
 ```
 
@@ -267,7 +276,7 @@ which reads `AI_GATEWAY_API_KEY`:
 ```js
 const page = agent(await browser.newPage(), {
   decisions: 'typesafe-ai/jev',
-  text: 'alibaba/qwen3.8-flash'
+  text: 'openai/gpt-6-luna'
 })
 ```
 
