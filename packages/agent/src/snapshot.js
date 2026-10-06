@@ -1,5 +1,5 @@
 /* global location, scrollX, scrollY, innerWidth, innerHeight, NodeFilter */
-// Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See LICENSE.jev.
+// Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See README.md.
 module.exports = function snapshot () {
   return (() => {
     if (!document.body) return null

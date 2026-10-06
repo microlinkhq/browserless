@@ -42,8 +42,7 @@
   "files": [
     "examples",
     "src",
-    "LICENSE.md",
-    "LICENSE.jev"
+    "LICENSE.md"
   ],
   "scripts": {
     "test": "ava",
