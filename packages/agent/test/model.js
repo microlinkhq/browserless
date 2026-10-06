@@ -111,6 +111,42 @@ test('text helper returns only a validated field value', async t => {
   )
 })
 
+for (const [setting, expected] of [
+  [undefined, { enabled: false }],
+  ['none', { enabled: false }],
+  ['low', { effort: 'low' }],
+  ['default', undefined]
+]) {
+  test(`text helper reasoning setting ${setting} is sent to the provider`, async t => {
+    const fetch = mockFetch([])
+    await fieldText(
+      'cars',
+      state().actions[0],
+      state(),
+      [],
+      { ...provider, reasoning: setting },
+      http(fetch)
+    )
+    t.deepEqual(fetch.calls[0].body.reasoning, expected)
+  })
+}
+
+test('unknown text helper reasoning setting is rejected before any request', async t => {
+  const fetch = mockFetch([])
+  await t.throwsAsync(
+    fieldText(
+      'cars',
+      state().actions[0],
+      state(),
+      [],
+      { ...provider, reasoning: 'high' },
+      http(fetch)
+    ),
+    { message: /reasoning must be one of: none, low, default/ }
+  )
+  t.is(fetch.calls.length, 0)
+})
+
 test('provider configuration must be explicit and secure', t => {
   for (const config of [
     {},
@@ -177,4 +213,22 @@ test('recent actions tell the model which decisions were discarded as stale', t 
     { operation: 'TYPE_TEXT', action: 'e1', text: 'bmw x3', stale: true, page_changed: undefined },
     { operation: 'CLICK', action: 'e2', text: undefined, stale: undefined, page_changed: true }
   ])
+})
+
+test('SUBMIT is offered with its own target question and a description', t => {
+  const populated = state()
+  populated.actions.push({
+    id: 'e3',
+    node: 1,
+    role: 'searchbox',
+    label: 'Submit Search',
+    kind: 'submit',
+    value: 'bmw x3'
+  })
+  const { body, space } = buildRequest(populated, 'cars', [], 'fixture')
+  t.regex(body.questions.operation.criteria.SUBMIT, /Press Enter/)
+  t.regex(body.questions.operation.criteria.CLICK, /Click an element/)
+  t.deepEqual(Object.keys(body.questions.submit_target.criteria), ['1'])
+  t.is(space.targets.SUBMIT['1'].id, 'e3')
+  t.deepEqual(body.state.elements[0].operations, ['TYPE_TEXT', 'CLICK', 'SUBMIT'])
 })

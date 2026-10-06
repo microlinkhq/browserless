@@ -54,9 +54,14 @@ browserless exec agent-example.js
 The CLI prints the returned trace as JSON and exits with code 1 when the agent
 throws, including a `BlockedError`. `examples/wallapop.js` is this script; in
 this repository `npm start` runs it. It requires decision-provider credentials
-and, for any text entry, separate chat-helper configuration. It has been run
-without credentials only: navigation works and the run stops at
-`Provider requires apiKey.`
+and, for any text entry, separate chat-helper configuration.
+
+It has been run live against Wallapop with `jev-latest` for decisions and
+`inception/mercury-2.5` through an OpenAI-compatible gateway for text. In the
+last five runs, two ended on the results for `bmw x3` sorted by lowest price,
+two reported `done` too early (one unsorted, one before results loaded) and one
+failed on a text-provider timeout. `done` is the model's judgment, not a
+verified outcome.
 
 ## API
 
@@ -77,7 +82,8 @@ Throws `agent.BlockedError` with `code: 'BLOCKED'`, `reason`, and `trace` for:
 | `login_wall` | A visible password field needs manual login |
 | `unsupported_surface` | Unsupported DOM surface, no document body, or popup |
 | `step_budget` | Action or decision-request budget exhausted |
-| `no_change` | Three consecutive successful actions left the same observation |
+| `no_change` | Three consecutive successful actions left the same observation. An action that changed nothing is not offered again until the page changes |
+| `stale_target` | Three consecutive decisions chose the same target and it failed its freshness check each time |
 | `model_blocked` | The provider selected BLOCKED |
 
 Configuration, malformed responses, network/provider failures and aborts reject
@@ -140,7 +146,13 @@ a compatible base URL or use TypeSafe. No generic chat-to-decisions adapter is
 silently inserted.
 
 For the text helper, all of `TEXT_MODEL_API_KEY`, `TEXT_MODEL_BASE_URL` and
-`TEXT_MODEL` are required unless `options.text` supplies all three. Base URLs
+`TEXT_MODEL` are required unless `options.text` supplies all three. Reasoning
+models can spend the whole 1024-token reply budget thinking and return no
+usable value, so the helper asks the provider to turn reasoning off by sending
+`reasoning: { enabled: false }`. `TEXT_MODEL_REASONING` or
+`options.text.reasoning` changes that: `none` (default), `low` (sends
+`reasoning: { effort: 'low' }`) or `default` (sends no reasoning field, for
+providers that reject it). Base URLs
 must be clean HTTPS URLs. The helper calls `${baseUrl}/chat/completions` only for
 TYPE_TEXT. It requests a JSON object and accepts exactly `{ "text": "..." }` with
 a nonempty string of at most 2000 characters. Null, extra keys, code fences and
@@ -155,7 +167,7 @@ these providers. Use only pages you may disclose to them.
    DOM refs. Persistent DOM node IDs, snapshot action IDs (`e1`, `e2`) and model
    indices are separate. At most 250 element actions and 6000 text characters
    are offered per snapshot.
-2. One request proposes an operation plus speculative CLICK, TYPE_TEXT and
+2. One request proposes an operation plus speculative CLICK, TYPE_TEXT, SUBMIT and
    SELECT target heads. The operation chooses which head to consume. The model
    never supplies a selector, JavaScript or screen coordinates.
 3. Code resolves the selected node via a retained ElementHandle. Immediately
@@ -177,11 +189,18 @@ It is not a permission policy or a CAPTCHA-solving system.
 
 ## Limits
 
-Single top-level light DOM page only. Visible iframes, canvas, open shadow roots,
-file inputs and password inputs conservatively stop the entire run, even if they
-are unrelated to the goal. Closed shadow roots cannot be detected from JS and
-are not supported. Popup tabs are reported, never followed or automatically
-closed. A popup may already have opened before it can be detected.
+Single top-level page only. Open shadow roots are traversed: their controls and
+text are observed, slotted content names the control it is slotted into, and
+hit-testing and focus checks follow the composed tree. Visible iframes, canvas,
+file inputs and password inputs, in the light DOM or inside open shadow roots,
+conservatively stop the entire run, even if they are unrelated to the goal.
+The same-form and nearby-text freshness guards do not see changes inside shadow
+roots, a `:host::after` overlay is not detected as a cover, and actions are
+listed root by root, so the 250-action cap can drop shadow controls on very
+large pages. Closed shadow roots cannot be detected from JS: their content is
+invisible to the agent and never blocks or receives input. Popup tabs are reported, never
+followed or automatically closed. A popup may already have opened before it can
+be detected.
 
 Login detection is limited to visible password fields, while CAPTCHA detection
 is a text heuristic. Other login/challenge walls may end as model_blocked or
