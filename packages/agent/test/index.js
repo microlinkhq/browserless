@@ -8,9 +8,9 @@ const {
   state,
   mockModels,
   languageDecider,
-  OUTPUT_SCHEMA,
-  OUTPUT,
-  PAGE_CONTENT
+  RULES,
+  DATA,
+  PAGE_OUTLINE
 } = require('./fixtures/page')
 const run = (page, operations, { models = mockModels(operations), ...options } = {}) =>
   agent.goal(page, 'find cheapest bmw x3', {
@@ -496,84 +496,161 @@ test('a page that navigates while the target is looked up gives a stale decision
 
 const INSTRUCTION = 'get the title'
 
-const extractWith = (page, models, schema = OUTPUT_SCHEMA, options = {}) =>
-  agent.extract(page, INSTRUCTION, schema, { text: models.text, ...options })
-
-test('extract returns the output read from the page', async t => {
+test('extract with rules runs them without any model request', async t => {
+  const page = new Page()
   const models = mockModels([])
-  t.deepEqual(await extractWith(new Page(), models), OUTPUT)
-  const [extraction] = models.calls
-  t.is(extraction.kind, 'output')
-  const user = extraction.options.prompt.find(message => message.role === 'user')
-  t.deepEqual(JSON.parse(user.content[0].text), { instruction: INSTRUCTION, page: PAGE_CONTENT })
-  t.is(extraction.options.responseFormat.schema.properties.title.type, 'string')
-  t.is(models.calls.length, 1)
-})
-
-test('extract requires a page, an instruction and a schema before any model call', async t => {
-  const models = mockModels([])
-  await t.throwsAsync(agent.extract({}, INSTRUCTION, OUTPUT_SCHEMA), {
-    message: 'extract requires a Puppeteer page and a nonempty instruction.'
-  })
-  await t.throwsAsync(agent.extract(new Page(), ' ', OUTPUT_SCHEMA), {
-    message: 'extract requires a Puppeteer page and a nonempty instruction.'
-  })
-  for (const schema of [undefined, null]) {
-    await t.throwsAsync(agent.extract(new Page(), INSTRUCTION, schema, { text: models.text }), {
-      message: 'extract requires a schema describing the result.'
-    })
-  }
+  t.deepEqual(await agent.extract(page, RULES, { text: models.text }), DATA)
+  t.deepEqual(page.appliedRules, [RULES])
   t.is(models.calls.length, 0)
 })
 
+test('extract with an instruction has the model write rules, then runs them', async t => {
+  const page = new Page()
+  const models = mockModels([])
+  t.deepEqual(await agent.extract(page, INSTRUCTION, { text: models.text }), DATA)
+  t.deepEqual(page.appliedRules, [RULES, RULES])
+  const [request] = models.calls
+  t.is(request.kind, 'rules')
+  const user = request.options.prompt.find(message => message.role === 'user')
+  t.deepEqual(JSON.parse(user.content[0].text), { instruction: INSTRUCTION, page: PAGE_OUTLINE })
+  t.is(models.calls.length, 1)
+})
+
+test('rules returns what the model wrote, for reuse', async t => {
+  const models = mockModels([])
+  t.deepEqual(await agent.rules(new Page(), INSTRUCTION, { text: models.text }), RULES)
+})
+
+test('fields given by the caller keep their names, types and selectors', async t => {
+  const written = {
+    products: {
+      selectorAll: 'article',
+      attr: {
+        name: { selector: 'h3', attr: 'text', type: 'date' },
+        price: { selector: '.price', attr: 'text' },
+        extra: { selector: 'b', attr: 'text' }
+      }
+    },
+    unrequested: { selector: 'h1', attr: 'text' }
+  }
+  const fields = {
+    products: { attr: { name: {}, price: { type: 'number', selector: '[data-price]' } } }
+  }
+  const models = mockModels([], { rules: JSON.stringify(written) })
+  const filled = await agent.rules(new Page(), 'get the products', {
+    text: models.text,
+    fields
+  })
+  t.deepEqual(filled, {
+    products: {
+      selectorAll: 'article',
+      attr: {
+        name: { selector: 'h3', attr: 'text', type: 'date' },
+        price: { type: 'number', selector: '[data-price]' }
+      }
+    }
+  })
+  const user = models.calls[0].options.prompt.find(message => message.role === 'user')
+  t.deepEqual(JSON.parse(user.content[0].text).fields, fields)
+})
+
 for (const [name, reply] of Object.entries({
-  'a wrong type': '{"title":42}',
-  'a missing key': '{}',
-  'invalid JSON': 'Cars'
+  'code to evaluate': JSON.stringify({
+    title: { selector: 'h1', evaluate: '() => fetch("https://evil.example")' }
+  }),
+  'an unknown property': JSON.stringify({ title: { selector: 'h1', attr: 'text', click: true } }),
+  'a selector that is not a string': JSON.stringify({ title: { selector: 42 } }),
+  'an empty object': '{}',
+  'an array': JSON.stringify([{ selector: 'h1' }]),
+  'text that is not JSON': 'h1'
 })) {
-  test(`extract rejects output that does not match the schema: ${name}`, async t => {
-    const models = mockModels([], { output: reply })
-    await t.throwsAsync(extractWith(new Page(), models), {
-      message: 'The page did not produce output matching the schema.'
+  test(`rules written by the model are rejected when they contain ${name}`, async t => {
+    const page = new Page()
+    const models = mockModels([], { rules: reply })
+    await t.throwsAsync(agent.extract(page, INSTRUCTION, { text: models.text }), {
+      message: 'The model did not write usable extraction rules.'
     })
+    t.deepEqual(page.appliedRules, [])
   })
 }
 
-test('extract reads the page once its content has stopped changing', async t => {
+test('rules passed by the caller are validated before they run', async t => {
   const page = new Page()
-  const loaded = { ...PAGE_CONTENT, text: 'Cars for sale: BMW X3 6999 €' }
-  page.contents = [
-    { ...PAGE_CONTENT, text: 'Loading' },
-    { ...PAGE_CONTENT, text: 'Loading results' },
+  await t.throwsAsync(agent.extract(page, { title: { selector: '' } }), {
+    message: 'Invalid rule `data.title`: selector must be a CSS selector or a list of them.'
+  })
+  await t.throwsAsync(agent.extract(page, { title: { selector: 'h1', evaluate: 'x' } }), {
+    message: 'Invalid rule `data.title`: `evaluate` is not supported.'
+  })
+  await t.throwsAsync(agent.extract({}, RULES), { message: 'extract requires a Puppeteer page.' })
+  t.deepEqual(page.appliedRules, [])
+})
+
+test('the model reads the page outline once it has stopped changing', async t => {
+  const page = new Page()
+  const loaded = { ...PAGE_OUTLINE, outline: '<body>\n  <h1> Cars\n  <article>' }
+  page.outlines = [
+    { ...PAGE_OUTLINE, outline: '<body>' },
+    { ...PAGE_OUTLINE, outline: '<body>\n  <h1> Cars' },
     loaded
   ]
   const models = mockModels([])
-  await extractWith(page, models)
+  await agent.rules(page, INSTRUCTION, { text: models.text })
   const user = models.calls[0].options.prompt.find(message => message.role === 'user')
   t.deepEqual(JSON.parse(user.content[0].text).page, loaded)
 })
 
+test('a custom extractor runs the rules instead of the default engine', async t => {
+  const page = new Page()
+  const received = []
+  const extractor = async (target, rules) => {
+    received.push([target, rules])
+    return { title: 'From the custom engine' }
+  }
+  t.deepEqual(await agent.extract(page, RULES, { extractor }), { title: 'From the custom engine' })
+  t.deepEqual(received, [[page, RULES]])
+  t.deepEqual(page.appliedRules, [])
+})
+
 test('a goal makes no extraction request', async t => {
   const models = mockModels(['DONE'])
-  const result = await run(new Page(), [], { models })
-  t.false('output' in result)
+  await run(new Page(), [], { models })
   t.deepEqual(
     models.calls.map(call => call.kind),
     ['decide']
   )
 })
 
-test('agent adds goal and extract to the page, with shared defaults', async t => {
+test('agent adds goal, rules and extract to the page, with shared defaults', async t => {
   const models = mockModels(['CLICK', 'DONE'])
   const page = agent(new Page([state(), state('Results')]), {
     decisions: models.decisions,
     text: models.text,
     waitMs: 0
   })
-  const result = await page.goal('find cheapest bmw x3')
-  t.is(result.status, 'done')
+  t.is((await page.goal('find cheapest bmw x3')).status, 'done')
   t.deepEqual(page.inputs, [{ click: true }])
-  t.deepEqual(await page.extract(INSTRUCTION, OUTPUT_SCHEMA), OUTPUT)
+  t.deepEqual(await page.rules(INSTRUCTION), RULES)
+  t.deepEqual(await page.extract(INSTRUCTION), DATA)
+  t.deepEqual(await page.extract(RULES), DATA)
+})
+
+test('a page that already has extract keeps it as the rules engine', async t => {
+  const browserPage = new Page()
+  const calls = []
+  browserPage.extract = async function (rules) {
+    calls.push([this, rules])
+    return { title: 'From the page' }
+  }
+  const models = mockModels([])
+  const page = agent(browserPage, { text: models.text })
+  t.deepEqual(await page.extract(RULES), { title: 'From the page' })
+  t.deepEqual(await page.extract(INSTRUCTION), { title: 'From the page' })
+  t.deepEqual(calls, [
+    [browserPage, RULES],
+    [browserPage, RULES]
+  ])
+  t.deepEqual(browserPage.appliedRules, [RULES])
 })
 
 test('options passed to a page method override the defaults', async t => {
@@ -587,4 +664,124 @@ test('options passed to a page method override the defaults', async t => {
 
 test('agent requires a Puppeteer page', t => {
   t.throws(() => agent({}), { message: 'agent requires a Puppeteer page.' })
+})
+
+test('rules the model wrote are tried on the page before they are returned', async t => {
+  const page = new Page()
+  const models = mockModels([])
+  await agent.rules(page, INSTRUCTION, { text: models.text })
+  t.deepEqual(page.appliedRules, [RULES])
+})
+
+test('rules written by the model that match nothing are rejected', async t => {
+  const page = new Page()
+  page.data = {}
+  const models = mockModels([])
+  await t.throwsAsync(agent.rules(page, INSTRUCTION, { text: models.text }), {
+    message: 'The rules the model wrote matched nothing on the page.'
+  })
+})
+
+test('rules written by the model with an invalid selector are rejected', async t => {
+  const page = new Page()
+  page.invalidSelectors = ['#4 9977979 a']
+  const models = mockModels([])
+  await t.throwsAsync(agent.rules(page, INSTRUCTION, { text: models.text }), {
+    message: 'The model did not write usable extraction rules.'
+  })
+})
+
+test('rules passed by the caller with an invalid selector name it', async t => {
+  const page = new Page()
+  page.invalidSelectors = ['#4 9977979 a']
+  await t.throwsAsync(agent.extract(page, RULES), {
+    message: 'Invalid CSS selector: #4 9977979 a'
+  })
+})
+
+const fillWith = async (fields, written) => {
+  const models = mockModels([], { rules: JSON.stringify(written) })
+  return agent.rules(new Page(), 'get the data', { text: models.text, fields })
+}
+
+test('a rule the caller wrote in full is kept exactly, alternatives included', async t => {
+  const alternatives = [
+    { selector: 'h1', attr: 'text' },
+    { selector: 'h2', attr: 'text' }
+  ]
+  const filled = await fillWith(
+    { heading: alternatives, title: { selector: 'h1' } },
+    { heading: { selectorAll: 'h3' }, title: { selectorAll: 'h2', attr: 'text', type: 'number' } }
+  )
+  t.deepEqual(filled, { heading: alternatives, title: { selector: 'h1' } })
+})
+
+for (const [name, fields, written] of [
+  ['omits a field', { price: { type: 'number' } }, { other: { selector: 'p', attr: 'text' } }],
+  ['writes no selector', { price: {} }, { price: { attr: 'text' } }],
+  [
+    'writes a single value where a list of fields was asked',
+    { products: { attr: { name: {} } } },
+    { products: { selectorAll: 'article', attr: 'text' } }
+  ],
+  [
+    'writes nested rules where a single value was asked',
+    { title: {} },
+    { title: { selector: 'h1', attr: { hacked: { selector: 'a', attr: 'href' } } } }
+  ],
+  ['replies with something that is not an object of rules', { title: {} }, ['h1']]
+]) {
+  test(`fields are not filled when the model ${name}`, async t => {
+    await t.throwsAsync(fillWith(fields, written), {
+      message: 'The model did not write usable extraction rules.'
+    })
+  })
+}
+
+test('rules that only produce empty items count as matching nothing', async t => {
+  const page = new Page()
+  page.data = { products: [{ name: null }, { name: null }] }
+  const models = mockModels([])
+  await t.throwsAsync(agent.rules(page, INSTRUCTION, { text: models.text }), {
+    message: 'The rules the model wrote matched nothing on the page.'
+  })
+})
+
+test('a custom extractor receives rules the built-in engine would refuse', async t => {
+  const hostRules = { title: { evaluate: '() => document.title', type: ['string', 'x'] } }
+  const received = []
+  const extractor = async (page, rules) => received.push(rules)
+  await agent.extract(new Page(), hostRules, { extractor })
+  t.deepEqual(received, [hostRules])
+})
+
+test('options are never mistaken for fields', async t => {
+  const controller = new AbortController()
+  controller.abort()
+  const models = mockModels([])
+  await t.throwsAsync(
+    agent.extract(new Page(), INSTRUCTION, { text: models.text, signal: controller.signal }),
+    { name: 'AbortError' }
+  )
+})
+
+test('invalid fields name the problem before any model call', async t => {
+  const models = mockModels([])
+  await t.throwsAsync(
+    agent.rules(new Page(), INSTRUCTION, { text: models.text, fields: { title: 'h1' } }),
+    { message: 'Invalid rule `fields.title`: a rule must be an object.' }
+  )
+  t.is(models.calls.length, 0)
+})
+
+test('a rule the model wrote without attr reads text, not html', async t => {
+  const written = {
+    title: { selector: 'h1' },
+    products: { selectorAll: 'article', attr: { name: { selector: 'h3' } } }
+  }
+  const models = mockModels([], { rules: JSON.stringify(written) })
+  t.deepEqual(await agent.rules(new Page(), INSTRUCTION, { text: models.text }), {
+    title: { selector: 'h1', attr: 'text' },
+    products: { selectorAll: 'article', attr: { name: { selector: 'h3', attr: 'text' } } }
+  })
 })

@@ -1,18 +1,13 @@
 'use strict'
 
-const { z } = require('zod')
-
 const task = require('./task')
 
-const extract = {
-  instruction: 'say in one or two sentences what the page shows for the goal',
-  schema: z.object({ answer: z.string() })
-}
-
 module.exports = context => {
-  const { url, goal } = context.opts
-  if (!url || !goal) {
-    throw new TypeError('Usage: browserless exec examples/run.js --url=<url> --goal=<goal>')
+  const { url, goal, extract } = context.opts
+  if (!url || !goal || !extract) {
+    throw new TypeError(
+      'Usage: browserless exec examples/run.js --url=<url> --goal=<goal> --extract=<what to get>'
+    )
   }
-  return task({ name: 'run', url, goal, extract })(context)
+  return task({ name: 'run', url, goal, extract: { instruction: extract } })(context)
 }

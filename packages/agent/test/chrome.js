@@ -3,7 +3,8 @@
 const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
-const { observe, execute, settled, readContent, pageContent } = require('../src/browser')
+const { observe, execute, settled, pageOutline } = require('../src/browser')
+const { applyRules } = require('../src/rules')
 const { StaleDecisionError } = require('../src/errors')
 
 const GENERATED_TEXT = 'bmw x3'
@@ -322,38 +323,316 @@ test('observing right after a click that navigates waits for the new page body',
   )
 })
 
-test('page content covers the whole page, not only the viewport', async t => {
+const STORIES = `
+  <h1>Top stories</h1>
+  <table>
+    <tr class="athing"><td><span class="titleline"><a href="/item?id=1">  First   story </a></span><span class="score">120 points</span></td></tr>
+    <tr class="athing"><td><span class="titleline"><a href="https://other.example/2">Second story</a></span></td></tr>
+  </table>
+  <img id="avatar" src="/avatar.png" alt="Avatar">
+  <input id="query" value="bmw x3">
+  <time datetime="2026-10-06T10:00:00Z">today</time>`
+
+const withBase = html => `<base href="https://news.example/">${html}`
+
+test('rules read one element, one attribute and a typed value', async t => {
+  const page = await open(t, withBase(STORIES))
+  t.deepEqual(
+    await applyRules(page, {
+      heading: { selector: 'h1', attr: 'text' },
+      avatar: { selector: '#avatar', attr: 'src', type: 'image' },
+      avatarAttribute: { selector: '#avatar', attr: 'src' },
+      alt: { selector: '#avatar', attr: 'alt' },
+      query: { selector: '#query', attr: 'val' },
+      published: { selector: 'time', attr: 'datetime', type: 'date' },
+      score: { selector: '.score', attr: 'text', type: 'number' }
+    }),
+    {
+      heading: 'Top stories',
+      avatar: 'https://news.example/avatar.png',
+      avatarAttribute: '/avatar.png',
+      alt: 'Avatar',
+      query: 'bmw x3',
+      published: '2026-10-06T10:00:00.000Z',
+      score: 120
+    }
+  )
+})
+
+test('selectorAll with nested rules gives one object per element, null where a field is missing', async t => {
+  const page = await open(t, withBase(STORIES))
+  t.deepEqual(
+    await applyRules(page, {
+      stories: {
+        selectorAll: '.athing',
+        attr: {
+          title: { selector: '.titleline > a', attr: 'text' },
+          href: { selector: '.titleline > a', attr: 'href', type: 'url' },
+          score: { selector: '.score', attr: 'text', type: 'number' }
+        }
+      }
+    }),
+    {
+      stories: [
+        { title: 'First story', href: 'https://news.example/item?id=1', score: 120 },
+        { title: 'Second story', href: 'https://other.example/2', score: null }
+      ]
+    }
+  )
+})
+
+test('a field whose selector matches nothing is left out', async t => {
+  const page = await open(t, STORIES)
+  t.deepEqual(
+    await applyRules(page, {
+      heading: { selector: 'h1', attr: 'text' },
+      missing: { selector: '.nope', attr: 'text' },
+      missingList: { selectorAll: '.nope', attr: 'text' }
+    }),
+    { heading: 'Top stories' }
+  )
+})
+
+test('alternative rules, selectors and attributes fall back in order', async t => {
+  const page = await open(t, STORIES)
+  t.deepEqual(
+    await applyRules(page, {
+      heading: [
+        { selector: '.nope', attr: 'text' },
+        { selector: 'h1', attr: 'text' }
+      ],
+      title: { selector: ['.nope', '.titleline > a'], attr: 'text' },
+      label: { selector: '#avatar', attr: ['title', 'alt'] }
+    }),
+    { heading: 'Top stories', title: 'First story', label: 'Avatar' }
+  )
+})
+
+test('a list drops repeated values and a rule without attr reads the html', async t => {
+  const page = await open(t, '<ul><li><b>a</b></li><li><b>a</b></li><li><b>b</b></li></ul>')
+  t.deepEqual(
+    await applyRules(page, {
+      letters: { selectorAll: 'li', attr: 'text' },
+      first: { selector: 'li' }
+    }),
+    { letters: ['a', 'b'], first: '<b>a</b>' }
+  )
+})
+
+for (const [text, expected] of [
+  ['6999 €', 6999],
+  ['16.690 €', 16690],
+  ['1.234.567', 1234567],
+  ['1,234.50 USD', 1234.5],
+  ['1.234,50 €', 1234.5],
+  ['4.5 stars', 4.5],
+  ['0 €', 0],
+  ['-12', -12],
+  ['0.125', 0.125],
+  ['0,5', 0.5],
+  ['4.5 (1,234 reviews)', 4.5],
+  ['\u22125 °C', -5],
+  ['1e3', 1],
+  ['3\u20135', 3],
+  ['3.142', 3142]
+]) {
+  test(`number type reads ${text} as ${expected}`, async t => {
+    const page = await open(t, `<p>${text}</p>`)
+    t.deepEqual(
+      await applyRules(page, { value: { selector: 'p', attr: 'text', type: 'number' } }),
+      {
+        value: expected
+      }
+    )
+  })
+}
+
+test('a value that does not fit its type is left out', async t => {
+  const page = await open(t, '<p>soon</p><a href="javascript:alert(1)">x</a>')
+  t.deepEqual(
+    await applyRules(page, {
+      number: { selector: 'p', attr: 'text', type: 'number' },
+      date: { selector: 'p', attr: 'text', type: 'date' },
+      url: { selector: 'a', attr: 'href', type: 'url' }
+    }),
+    {}
+  )
+})
+
+const OUTLINE_LIMITS = { characters: 60000, text: 80, attribute: 80, siblings: 3 }
+
+test('page outline shows tags, useful attributes and short text, indented by nesting', async t => {
   const page = await open(
     t,
-    '<h1>Results</h1><div style="height:5000px"></div><article><a href="https://shop.example/x3">BMW X3</a><p>6999 €</p></article>'
+    '<main id="results"><article class="card" data-id="7" style="color:red"><a href="/item/7">BMW X3</a><span class="price">6999 €</span></article></main>'
   )
-  const content = await readContent(page)
-  t.is(content.text, 'Results\nBMW X3 <https://shop.example/x3>\n6999 €')
-  t.is(content.url, 'about:blank')
+  const { outline, url, title } = await page.evaluate(pageOutline, OUTLINE_LIMITS)
+  t.is(
+    outline,
+    [
+      '<body>',
+      '  <main id="results">',
+      '    <article class="card" data-id="7">',
+      '      <a href="/item/7"> BMW X3',
+      '      <span class="price"> 6999 €'
+    ].join('\n')
+  )
+  t.is(url, 'about:blank')
+  t.is(title, '')
 })
 
-test('page content includes shadow roots and slotted text once', async t => {
-  const page = await open(t, `${SHADOW_COMPONENTS}<x-button>Sign in</x-button><x-note></x-note>`)
-  const { text } = await readContent(page)
-  t.is(text, 'Sign in Shadow paragraph')
+test('page outline keeps the first similar siblings and counts the rest', async t => {
+  const cards = Array.from({ length: 10 }, (_, i) => `<li class="card">Item ${i}</li>`).join('')
+  const page = await open(t, `<ul>${cards}</ul>`)
+  const { outline } = await page.evaluate(pageOutline, OUTLINE_LIMITS)
+  t.is(
+    outline,
+    [
+      '<body>',
+      '  <ul>',
+      '    <li class="card"> Item 0',
+      '    <li class="card"> Item 1',
+      '    <li class="card"> Item 2',
+      '    <!-- 7 more <li> like the ones above -->'
+    ].join('\n')
+  )
 })
 
-test('page content leaves out hidden, aria-hidden, script and style text', async t => {
+test('page outline leaves out hidden elements, scripts, styles and long values', async t => {
   const page = await open(
     t,
-    '<p>Shown</p><p hidden>Hidden</p><p style="display:none">None</p><p aria-hidden="true">Decorative</p><style>p { color: red }</style><script>window.secret = "script text"</script>'
+    `<p hidden>Hidden</p><p aria-hidden="true">Decorative</p><script>window.x = 1</script><style>p{}</style><p title="${'t'.repeat(
+      200
+    )}">${'word '.repeat(60)}</p>`
   )
-  t.is((await readContent(page)).text, 'Shown')
+  const { outline } = await page.evaluate(pageOutline, OUTLINE_LIMITS)
+  const [body, paragraph, ...rest] = outline.split('\n')
+  t.is(body, '<body>')
+  t.deepEqual(rest, [])
+  t.true(paragraph.includes(`title="${'t'.repeat(80)}…"`))
+  t.true(paragraph.endsWith('…'))
 })
 
-test('page content stops at the character limit', async t => {
-  const page = await open(t, `<p>${'word '.repeat(200)}</p>`)
-  const LIMIT = 50
-  const { text } = await page.evaluate(pageContent, LIMIT)
-  t.is(text.length, LIMIT)
+test('page outline stops at the character limit', async t => {
+  const page = await open(t, `<div>${'<p>text</p>'.repeat(50)}</div>`)
+  const { outline } = await page.evaluate(pageOutline, {
+    ...OUTLINE_LIMITS,
+    characters: 40,
+    siblings: 50
+  })
+  t.true(outline.length <= 40)
 })
 
-test('page content includes text inside display: contents wrappers', async t => {
-  const page = await open(t, '<div style="display:contents"><p>Wrapped</p></div>')
-  t.is((await readContent(page)).text, 'Wrapped')
+test('an invalid selector is reported instead of crashing the page script', async t => {
+  const page = await open(t, STORIES)
+  await t.throwsAsync(
+    applyRules(page, {
+      heading: { selector: 'h1', attr: 'text' },
+      broken: { selector: '#4 9977979 .titleline a', attr: 'text' }
+    }),
+    { message: 'Invalid CSS selector: #4 9977979 .titleline a' }
+  )
+})
+
+for (const text of ['12.34.56', 'v2.10.3', 'soon']) {
+  test(`number type gives nothing for ${text}`, async t => {
+    const page = await open(t, `<p>${text}</p>`)
+    t.deepEqual(
+      await applyRules(page, { value: { selector: 'p', attr: 'text', type: 'number' } }),
+      {}
+    )
+  })
+}
+
+test('an untyped value that looks like a number or boolean is converted, a string type keeps it', async t => {
+  const page = await open(t, '<p id="n">42</p><p id="b">true</p><p id="s">BMW X3 2006</p>')
+  t.deepEqual(
+    await applyRules(page, {
+      number: { selector: '#n', attr: 'text' },
+      boolean: { selector: '#b', attr: 'text' },
+      text: { selector: '#s', attr: 'text' },
+      kept: { selector: '#n', attr: 'text', type: 'string' }
+    }),
+    { number: 42, boolean: true, text: 'BMW X3 2006', kept: '42' }
+  )
+})
+
+test('type names that exist on every object are not treated as converters', async t => {
+  const page = await open(t, '<p>hi</p>')
+  for (const type of ['constructor', 'isPrototypeOf', 'valueOf', '__proto__', 'toString']) {
+    t.deepEqual(await applyRules(page, { value: { selector: 'p', attr: 'text', type } }), {
+      value: 'hi'
+    })
+  }
+})
+
+test('an empty href is a missing value', async t => {
+  const page = await open(t, '<a href="">x</a>')
+  t.deepEqual(await applyRules(page, { link: { selector: 'a', attr: 'href' } }), {})
+})
+
+const CARDS = `
+  <b class="t">outside</b>
+  <ul>
+    <li><a href="/1">One</a><span><a href="/deep">Deep</a></span></li>
+    <li><a href="/1">One</a><span><a href="/deep">Deep</a></span></li>
+  </ul>`
+
+test('nested rules are relative to the item and keep identical items', async t => {
+  const page = await open(t, CARDS)
+  t.deepEqual(
+    await applyRules(page, {
+      items: {
+        selectorAll: 'li',
+        attr: {
+          direct: { selector: '> a', attr: 'text' },
+          either: { selector: '> b, span a', attr: 'text' },
+          outside: { selector: 'body .t', attr: 'text' },
+          self: { attr: 'text' }
+        }
+      }
+    }),
+    {
+      items: [
+        { direct: 'One', either: 'Deep', outside: null, self: null },
+        { direct: 'One', either: 'Deep', outside: null, self: null }
+      ]
+    }
+  )
+})
+
+test('a rule without a selector reads the whole page as rendered text or as html', async t => {
+  const page = await open(t, '<p>Shown</p><script>window.hidden = "script text"</script>')
+  const { text, html } = await applyRules(page, { text: { attr: 'text' }, html: {} })
+  t.is(text, 'Shown')
+  t.true(html.startsWith('<html>'))
+})
+
+test('page outline always shows siblings that have no class or have an id', async t => {
+  const page = await open(
+    t,
+    '<div>a</div><div>b</div><div>c</div><div id="main">d</div><div>e</div><table><tr><td>1</td><td>2</td><td>3</td><td>4</td></tr></table>'
+  )
+  const { outline } = await page.evaluate(pageOutline, OUTLINE_LIMITS)
+  t.true(outline.includes('<div id="main"> d'))
+  t.true(outline.includes('<div> e'))
+  t.true(outline.includes('<td> 4'))
+  t.false(outline.includes('more <'))
+})
+
+test('page outline keeps a repeated item whose inner structure differs', async t => {
+  const plain = '<li class="item"><b class="price">1</b></li>'
+  const onSale = '<li class="item"><b class="price">1</b><i class="sale-price">0</i></li>'
+  const page = await open(t, `<ul>${plain.repeat(5)}${onSale}</ul>`)
+  const { outline } = await page.evaluate(pageOutline, OUTLINE_LIMITS)
+  t.true(outline.includes('class="sale-price"'))
+  t.true(outline.includes('<!-- 2 more <li> like the ones above -->'))
+})
+
+test('page outline shows the value and placeholder of inputs', async t => {
+  const page = await open(t, '<input name="q" value="bmw x3" placeholder="Search">')
+  const { outline } = await page.evaluate(pageOutline, OUTLINE_LIMITS)
+  t.true(outline.includes('name="q"'))
+  t.true(outline.includes('value="bmw x3"'))
+  t.true(outline.includes('placeholder="Search"'))
 })

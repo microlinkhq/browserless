@@ -1,5 +1,4 @@
 import puppeteer from 'puppeteer'
-import { z } from 'zod'
 import agent from '../src/index.js'
 
 async function check () {
@@ -7,23 +6,20 @@ async function check () {
   const page = agent(await browser.newPage(), {
     decisions: 'typesafe-ai/jev',
     text: 'inception/mercury-2.5',
-    reasoning: 'none'
+    reasoning: 'none',
+    extractor: agent.applyRules
   })
   await page.goto('https://example.com')
   const result: agent.Result = await page.goal('find cars', { maxSteps: 60 })
-  const { cars } = await page.extract(
-    'get the cars',
-    z.object({ cars: z.array(z.object({ title: z.string(), price: z.number() })) })
-  )
-  const price: number = cars[0].price
-  const same: agent.Result = await agent.goal(page, 'find cars')
-  const { title } = await agent.extract(page, 'get the title', z.object({ title: z.string() }))
-  // @ts-expect-error extract needs a schema
-  void page.extract('get the cars')
-  // @ts-expect-error output has the shape of the schema
-  void cars[0].unknown
+  const fields: agent.Rules = { cars: { attr: { title: {}, price: { type: 'number' } } } }
+  const rules: agent.Rules = await page.rules('get the cars', { fields })
+  const fromRules: agent.Data = await page.extract(rules)
+  const fromInstruction: agent.Data = await page.extract('get the cars', { fields, timeout: 5000 })
+  const same: agent.Data = await agent.extract(page, { title: { selector: 'h1', attr: 'text' } })
+  // @ts-expect-error a rule has no evaluate property
+  void page.extract({ title: { selector: 'h1', evaluate: '() => 1' } })
   const reason: agent.BlockedReason = new agent.BlockedError('captcha', 'Verify').reason
-  void [result, price, same, title, reason]
+  void [result, fromRules, fromInstruction, same, reason]
   await browser.close()
 }
 void check

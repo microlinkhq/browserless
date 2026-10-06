@@ -2,15 +2,15 @@
 
 const { EventEmitter } = require('node:events')
 const { StaleDecisionError } = require('../../src/errors')
-const { selectContents, settled, pageContent } = require('../../src/browser')
+const { selectContents, settled, pageOutline } = require('../../src/browser')
+const { evaluateRules } = require('../../src/rules')
 const { MockLanguageModelV4 } = require('ai/test')
-const { z } = require('zod')
 
-const OUTPUT_SCHEMA = z.object({ title: z.string() })
-const OUTPUT = { title: 'Cars' }
-const PAGE_CONTENT = { url: 'https://example.com', title: 'Cars', text: 'Cars for sale' }
+const RULES = { title: { selector: 'h1', attr: 'text' } }
+const DATA = { title: 'Cars' }
+const PAGE_OUTLINE = { url: 'https://example.com', title: 'Cars', outline: '<body>\n  <h1> Cars' }
 
-const PROMPT_KINDS = { 'Choose the next browser': 'decide', 'Fill the requested JSON': 'output' }
+const PROMPT_KINDS = { 'Choose the next browser': 'decide', 'Write data extraction rules': 'rules' }
 
 const promptKind = options => {
   const system = options.prompt.find(message => message.role === 'system')?.content ?? ''
@@ -46,7 +46,10 @@ class Page extends EventEmitter {
     this.settles = 0
     this.clickErrors = []
     this.handleErrors = []
-    this.contents = [PAGE_CONTENT]
+    this.outlines = [PAGE_OUTLINE]
+    this.appliedRules = []
+    this.data = DATA
+    this.invalidSelectors = []
     this.mouse = { move: async () => {}, wheel: async value => this.inputs.push(value) }
     this.keyboard = {
       sendCharacter: async text => this.inputs.push({ text }),
@@ -54,12 +57,18 @@ class Page extends EventEmitter {
     }
   }
 
-  async evaluate (fn) {
+  async evaluate (fn, ...args) {
     if (fn === settled) {
       this.settles++
       return
     }
-    if (fn === pageContent) { return this.contents.length > 1 ? this.contents.shift() : this.contents[0] }
+    if (fn === pageOutline) {
+      return this.outlines.length > 1 ? this.outlines.shift() : this.outlines[0]
+    }
+    if (fn === evaluateRules) {
+      this.appliedRules.push(args[0])
+      return { values: this.data, invalidSelectors: this.invalidSelectors }
+    }
     const index = Math.min(this.reads++, this.states.length - 1)
     return this.states[index]
   }
@@ -119,13 +128,7 @@ const textModel = text =>
 
 const mockModels = (
   operations,
-  {
-    targets = {},
-    text = '{"text":"bmw x3"}',
-    output = JSON.stringify(OUTPUT),
-    onDecide,
-    onText
-  } = {}
+  { targets = {}, text = '{"text":"bmw x3"}', rules = JSON.stringify(RULES), onDecide, onText } = {}
 ) => {
   const calls = []
   const decisions = decisionModel(async ({ state, questions }) => {
@@ -143,7 +146,7 @@ const mockModels = (
     }
     return { answers, warnings: [] }
   })
-  const replies = { text: textModel(text).doGenerate, output: textModel(output).doGenerate }
+  const replies = { text: textModel(text).doGenerate, rules: textModel(rules).doGenerate }
   const textGenerator = textModel(text)
   textGenerator.doGenerate = async options => {
     const kind = promptKind(options)
@@ -156,7 +159,7 @@ const mockModels = (
 
 const languageDecider = (
   operations,
-  { targets = {}, text = '{"text":"bmw x3"}', output = JSON.stringify(OUTPUT) } = {}
+  { targets = {}, text = '{"text":"bmw x3"}', rules = JSON.stringify(RULES) } = {}
 ) => {
   const calls = []
   const generated = content => ({
@@ -173,7 +176,7 @@ const languageDecider = (
       const kind = promptKind(options)
       if (kind !== 'decide') {
         calls.push({ kind, options })
-        return generated(kind === 'output' ? output : text)
+        return generated(kind === 'rules' ? rules : text)
       }
       const user = options.prompt.find(message => message.role === 'user')
       const request = JSON.parse(user.content[0].text)
@@ -189,9 +192,9 @@ const languageDecider = (
 }
 
 module.exports = {
-  OUTPUT_SCHEMA,
-  OUTPUT,
-  PAGE_CONTENT,
+  RULES,
+  DATA,
+  PAGE_OUTLINE,
   languageDecider,
   Page,
   state,
