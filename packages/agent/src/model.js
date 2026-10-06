@@ -21,12 +21,20 @@ const validateChoice = (answer, ids) => {
   return answer
 }
 
+const OPERATION_DESCRIPTIONS = {
+  CLICK: 'Click an element, button, menu option, autocomplete suggestion, or calendar day.',
+  TYPE_TEXT:
+    'Enter or replace text in an editable field. A small LLM will supply the value from the goal.',
+  SELECT: 'Select an observed dropdown value.',
+  SUBMIT: 'Press Enter in a field that already holds the needed value, to submit it.'
+}
+
 const actionSpace = actions => {
   const elements = []
   const indices = new Map()
   const targets = {}
   const controls = {}
-  const operations = { click: 'CLICK', fill: 'TYPE_TEXT', select: 'SELECT' }
+  const operations = { click: 'CLICK', fill: 'TYPE_TEXT', select: 'SELECT', submit: 'SUBMIT' }
   for (const action of actions) {
     const operation = operations[action.kind]
     if (!operation) {
@@ -63,7 +71,9 @@ const actionSpace = actions => {
 
 const buildRequest = (state, goal, history, model) => {
   const space = actionSpace(state.actions)
-  const operations = Object.fromEntries(Object.keys(space.targets).map(key => [key, key]))
+  const operations = Object.fromEntries(
+    Object.keys(space.targets).map(key => [key, OPERATION_DESCRIPTIONS[key]])
+  )
   for (const [key, value] of Object.entries(space.controls)) operations[key] = value.label
   Object.assign(operations, {
     DONE: 'Every requirement is visibly satisfied.',
@@ -175,6 +185,21 @@ const decide = async (state, goal, history, config, options) => {
   }
 }
 
+const REASONING_REQUEST_FIELDS = {
+  none: { reasoning: { enabled: false } },
+  low: { reasoning: { effort: 'low' } },
+  default: {}
+}
+
+const reasoningFields = (setting = 'none') => {
+  if (!Object.hasOwn(REASONING_REQUEST_FIELDS, setting)) {
+    throw new TypeError(
+      `Text provider reasoning must be one of: ${Object.keys(REASONING_REQUEST_FIELDS).join(', ')}.`
+    )
+  }
+  return REASONING_REQUEST_FIELDS[setting]
+}
+
 const fieldText = async (goal, action, state, history, config, options) => {
   const result = await post(
     config,
@@ -183,6 +208,7 @@ const fieldText = async (goal, action, state, history, config, options) => {
       model: config.model,
       max_tokens: 1024,
       response_format: { type: 'json_object' },
+      ...reasoningFields(config.reasoning),
       messages: [
         { role: 'system', content: TEXT_VALUE },
         {

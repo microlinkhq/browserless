@@ -23,12 +23,12 @@ const targetFresh = (element, state, action, requirements = {}) => {
     JSON.stringify(cache.guard(element)) !== JSON.stringify(state.guards[action.node]) ||
     performance.timeOrigin !== state.pageKey[0] ||
     location.href !== state.url ||
-    element.closest('[aria-disabled="true"],[inert]') ||
+    cache.closest(element, '[aria-disabled="true"],[inert]') ||
     ['password', 'file', 'hidden'].includes(element.type)
   ) {
     return false
   }
-  if (requirements.focused && document.activeElement !== element) return false
+  if (requirements.focused && cache.activeElement() !== element) return false
   const r = element.getBoundingClientRect()
   const x = r.x + r.width / 2
   const y = r.y + r.height / 2
@@ -39,7 +39,7 @@ const targetFresh = (element, state, action, requirements = {}) => {
     y < 0 ||
     x >= innerWidth ||
     y >= innerHeight ||
-    !element.contains(document.elementFromPoint(x, y))
+    !cache.contains(element, cache.elementFromPoint(x, y))
   ) {
     return false
   }
@@ -98,6 +98,10 @@ const execute = async (page, state, action, text, waitMs) => {
       await element.evaluate(selectContents)
       await assertFresh(KEYBOARD_TARGET)
       await page.keyboard.sendCharacter(text)
+    } else if (action.kind === 'submit') {
+      await element.focus()
+      await assertFresh(KEYBOARD_TARGET)
+      await page.keyboard.press('Enter')
     } else if (action.kind === 'select') {
       await element.select(action.value)
     } else if (action.kind === 'click') {

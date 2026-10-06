@@ -11,16 +11,58 @@ module.exports = function snapshot () {
       return id
     }
     for (const [id, e] of cache.nodes) if (!e.isConnected) cache.nodes.delete(id)
+    const roots = [document]
+    for (const root of roots) {
+      for (const e of root.querySelectorAll('*')) if (e.shadowRoot) roots.push(e.shadowRoot)
+    }
+    const queryAll = selector => roots.flatMap(root => [...root.querySelectorAll(selector)])
+    const flatParent = e => e.assignedSlot || e.parentElement || e.getRootNode().host || null
+    const flatChildren = e => {
+      if (e.tagName === 'SLOT') {
+        const assigned = e.assignedNodes({ flatten: true })
+        return assigned.length ? assigned : [...e.childNodes]
+      }
+      return [...(e.shadowRoot || e).childNodes].filter(
+        child => !['STYLE', 'SCRIPT', 'TEMPLATE'].includes(child.tagName)
+      )
+    }
+    cache.closest = (e, selector) => {
+      for (let current = e; current; current = flatParent(current)) {
+        if (current.matches(selector)) return current
+      }
+      return null
+    }
+    cache.contains = (ancestor, e) => {
+      for (let current = e; current; current = flatParent(current)) {
+        if (current === ancestor) return true
+      }
+      return false
+    }
+    cache.elementFromPoint = (x, y) => {
+      let hit = document.elementFromPoint(x, y)
+      while (hit?.shadowRoot) {
+        const { shadowRoot } = hit
+        const inner = shadowRoot.elementsFromPoint(x, y).find(e => e.getRootNode() === shadowRoot)
+        if (!inner) break
+        hit = inner
+      }
+      return hit
+    }
+    cache.activeElement = () => {
+      let active = document.activeElement
+      while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement
+      return active
+    }
     const safe = e => !['password', 'file', 'hidden'].includes(e.type)
     const visible = e =>
-      !e.closest('[aria-hidden="true"],[inert]') &&
+      !cache.closest(e, '[aria-hidden="true"],[inert]') &&
       e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
     const name = (e, seen = new Set()) => {
       if (!e || seen.has(e)) return ''
       seen.add(e)
       const referenced = (e.getAttribute('aria-labelledby') || '')
         .split(/\s+/)
-        .map(id => name(document.getElementById(id), seen))
+        .map(id => name(e.getRootNode().getElementById(id), seen))
         .filter(Boolean)
         .join(' ')
       return (
@@ -34,16 +76,16 @@ module.exports = function snapshot () {
         e.getAttribute('alt') ||
         (e.tagName === 'INPUT'
           ? ''
-          : [...e.childNodes]
-              .map(n =>
-                n.nodeType === 3
-                  ? n.textContent
-                  : n.nodeType === 1 && n.getAttribute('aria-hidden') !== 'true'
-                    ? name(n, seen)
-                    : ''
-              )
-              .join(' ')
-              .trim()) ||
+          : flatChildren(e)
+            .map(n =>
+              n.nodeType === 3
+                ? n.textContent
+                : n.nodeType === 1 && n.getAttribute('aria-hidden') !== 'true'
+                  ? name(n, seen)
+                  : ''
+            )
+            .join(' ')
+            .trim()) ||
         e.getAttribute('title') ||
         e.getAttribute('placeholder') ||
         ''
@@ -93,14 +135,14 @@ module.exports = function snapshot () {
       scrollY,
       innerWidth,
       innerHeight,
-      [...document.querySelectorAll('input,textarea,select')]
+      queryAll('input,textarea,select')
         .filter(safe)
         .map(e => [identity(e), e.value, e.checked, e.selectedIndex, e.disabled, e.readOnly])
     ]
     cache.guard = e => {
       if (!e?.isConnected || !visible(e)) return null
       const scope =
-        e.closest('form,dialog,[role="dialog"],article,li,tr,[role="row"]') || e.parentElement
+        cache.closest(e, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') || flatParent(e)
       return [
         identity(e),
         role(e),
@@ -124,7 +166,7 @@ module.exports = function snapshot () {
           : null,
         e.getAttribute('href'),
         scope?.innerText?.slice(0, 6000) || '',
-        [...(e.closest('form')?.querySelectorAll('input,textarea,select') || [])]
+        [...(cache.closest(e, 'form')?.querySelectorAll('input,textarea,select') || [])]
           .filter(safe)
           .map(field => [
             identity(field),
@@ -137,12 +179,12 @@ module.exports = function snapshot () {
       ]
     }
     const actions = []
-    for (const e of document.querySelectorAll(selector)) {
+    for (const e of queryAll(selector)) {
       if (
         !safe(e) ||
         !visible(e) ||
         e.matches(':disabled') ||
-        e.closest('[aria-disabled="true"]')
+        cache.closest(e, '[aria-disabled="true"]')
       ) {
         continue
       }
@@ -162,6 +204,8 @@ module.exports = function snapshot () {
         continue
       }
       if (rname === 'gridcell' && e.querySelector('button,[role="button"]')) continue
+      const hit = cache.elementFromPoint(x, y)
+      if (hit && !cache.contains(e, hit)) continue
       const base = {
         node: identity(e),
         role: rname,
@@ -200,49 +244,49 @@ module.exports = function snapshot () {
               : ''
         actions.push({ ...base, kind: editable ? 'fill' : 'click', value })
         if (editable) actions.push({ ...base, kind: 'click', value, label: 'Open ' + base.label })
+        if (editable && e.tagName === 'INPUT' && value) {
+          actions.push({ ...base, kind: 'submit', value, label: 'Submit ' + base.label })
+        }
       }
     }
     const words = []
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
     const range = document.createRange()
-    let node
     let length = 0
-    while ((node = walker.nextNode()) && length < 6000) {
-      const value = node.textContent.trim()
-      const parent = node.parentElement
-      if (
-        !value ||
-        !parent ||
-        parent.closest('script,style,noscript,template') ||
-        !visible(parent)
-      ) {
-        continue
-      }
-      range.selectNodeContents(node)
-      const r = range.getBoundingClientRect()
-      if (
-        r.width > 0 &&
-        r.height > 0 &&
-        r.bottom > 0 &&
-        r.top < innerHeight &&
-        r.right > 0 &&
-        r.left < innerWidth
-      ) {
-        words.push(value)
-        length += value.length
+    for (const root of roots) {
+      const walker = document.createTreeWalker(
+        root === document ? document.body : root,
+        NodeFilter.SHOW_TEXT
+      )
+      let node
+      while ((node = walker.nextNode()) && length < 6000) {
+        const value = node.textContent.trim()
+        const parent = node.parentElement || root.host
+        if (
+          !value ||
+          !parent ||
+          parent.closest('script,style,noscript,template') ||
+          !visible(parent)
+        ) {
+          continue
+        }
+        range.selectNodeContents(node)
+        const r = range.getBoundingClientRect()
+        if (
+          r.width > 0 &&
+          r.height > 0 &&
+          r.bottom > 0 &&
+          r.top < innerHeight &&
+          r.right > 0 &&
+          r.left < innerWidth
+        ) {
+          words.push(value)
+          length += value.length
+        }
       }
     }
     const unsupported = []
-    for (const e of document.querySelectorAll(
-      'iframe,canvas,input[type="password"],input[type="file"]'
-    )) {
+    for (const e of queryAll('iframe,canvas,input[type="password"],input[type="file"]')) {
       if (visible(e)) unsupported.push(e.tagName === 'INPUT' ? e.type : e.tagName.toLowerCase())
-    }
-    for (const e of document.querySelectorAll('*')) {
-      if (e.shadowRoot && visible(e)) {
-        unsupported.push('shadow_dom')
-        break
-      }
     }
     const text = words.join('\n').slice(0, 6000)
     const height = document.documentElement.scrollHeight

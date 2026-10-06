@@ -4,6 +4,9 @@ const { observe, execute } = require('./browser')
 const { provider, decide, fieldText } = require('./model')
 const { BlockedError, StaleDecisionError } = require('./errors')
 const activePages = new WeakSet()
+const MAX_STALE_DECISIONS_PER_TARGET = 3
+
+const actionKey = action => `${action.kind}:${action.node ?? action.id}:${action.value ?? ''}`
 
 const agent = async (page, goal, options = {}) => {
   if (!page || typeof page.evaluate !== 'function' || typeof goal !== 'string' || !goal.trim()) {
@@ -15,7 +18,9 @@ const agent = async (page, goal, options = {}) => {
   const waitMs = options.waitMs ?? 100
   const timeout = options.timeout ?? 25000
   for (const [key, value] of Object.entries({ maxSteps, maxDecisions, waitMs, timeout })) {
-    if (!Number.isSafeInteger(value) || value < (key === 'waitMs' ? 0 : 1)) { throw new TypeError(`${key} must be a positive integer.`) }
+    if (!Number.isSafeInteger(value) || value < (key === 'waitMs' ? 0 : 1)) {
+      throw new TypeError(`${key} must be a positive integer.`)
+    }
   }
   const config = provider(
     options.decisions,
@@ -33,6 +38,9 @@ const agent = async (page, goal, options = {}) => {
   let decisions = 0
   let unchanged = 0
   let popup = false
+  let staleTarget
+  const ineffectiveActions = new Set()
+  let staleDecisions = 0
   const onPopup = () => {
     popup = true
   }
@@ -58,7 +66,9 @@ const agent = async (page, goal, options = {}) => {
       ) {
         blocked('captcha', 'A possible human-verification wall is visible; no bypass attempted.')
       }
-      if (state.unsupported?.includes('password')) { blocked('login_wall', 'A visible password field requires manual login.') }
+      if (state.unsupported?.includes('password')) {
+        blocked('login_wall', 'A visible password field requires manual login.')
+      }
       if (state.unsupported?.length) {
         blocked(
           'unsupported_surface',
@@ -67,13 +77,21 @@ const agent = async (page, goal, options = {}) => {
       }
       if (decisions >= maxDecisions) blocked('step_budget', 'Decision-request budget exhausted.')
       decisions++
-      const decision = await decide(state, goal, trace, config, http)
+      const offered = {
+        ...state,
+        actions: state.actions.filter(action => !ineffectiveActions.has(actionKey(action)))
+      }
+      const decision = await decide(offered, goal, trace, config, http)
       const entry = { ...decision, action: decision.action?.id, step: steps, decision: decisions }
       trace.push(entry)
       if (decision.operation === 'DONE') return { status: 'done', steps, decisions, trace }
-      if (decision.operation === 'BLOCKED') { blocked('model_blocked', 'The model found no supported operation to progress.') }
+      if (decision.operation === 'BLOCKED') {
+        blocked('model_blocked', 'The model found no supported operation to progress.')
+      }
       if (steps >= maxSteps) blocked('step_budget', 'Action budget exhausted.')
-      if (unchanged >= 3) { blocked('no_change', 'Three consecutive actions did not change the observed page.') }
+      if (unchanged >= 3) {
+        blocked('no_change', 'Three consecutive actions did not change the observed page.')
+      }
       let text
       if (decision.operation === 'TYPE_TEXT') {
         const textConfig = provider(
@@ -83,27 +101,42 @@ const agent = async (page, goal, options = {}) => {
             : {
                 apiKey: process.env.TEXT_MODEL_API_KEY,
                 baseUrl: process.env.TEXT_MODEL_BASE_URL,
-                model: process.env.TEXT_MODEL
+                model: process.env.TEXT_MODEL,
+                reasoning: process.env.TEXT_MODEL_REASONING || undefined
               }
         )
         text = await fieldText(goal, decision.action, state, trace, textConfig, http)
         entry.text = text
       }
       options.signal?.throwIfAborted()
-      if (popup) { blocked('unsupported_surface', 'A popup appeared during the decision; no input executed.') }
+      if (popup) {
+        blocked('unsupported_surface', 'A popup appeared during the decision; no input executed.')
+      }
       // The generative helper may be slow. Every action is guarded afterward.
       try {
         await execute(page, state, decision.action, text, waitMs)
       } catch (error) {
         if (!(error instanceof StaleDecisionError)) throw error
         entry.stale = true
+        const target = `${decision.operation}:${decision.action.node ?? decision.action.id}`
+        staleDecisions = target === staleTarget ? staleDecisions + 1 : 1
+        staleTarget = target
+        if (staleDecisions >= MAX_STALE_DECISIONS_PER_TARGET) {
+          blocked(
+            'stale_target',
+            `${MAX_STALE_DECISIONS_PER_TARGET} consecutive decisions chose a target that failed its freshness check.`
+          )
+        }
         state = await observe(page)
         continue
       }
+      staleTarget = undefined
       steps++
       const next = await observe(page)
       entry.pageChanged = JSON.stringify(next.marker) !== JSON.stringify(state.marker)
       unchanged = entry.pageChanged ? 0 : unchanged + 1
+      if (entry.pageChanged) ineffectiveActions.clear()
+      else if (decision.action.kind !== 'wait') ineffectiveActions.add(actionKey(decision.action))
       state = next
     }
   } catch (error) {

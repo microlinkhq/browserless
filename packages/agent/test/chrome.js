@@ -16,6 +16,7 @@ test.after.always(() => browser?.close())
 const open = async (t, html) => {
   const page = await browser.newPage()
   t.teardown(() => page.close())
+  await page.emulateFocusedPage(true)
   await page.setContent(html)
   return page
 }
@@ -88,5 +89,146 @@ test('controls that cannot take keyboard text are never fill targets', async t =
   t.deepEqual(
     actions.filter(a => a.kind === 'fill').map(a => a.label),
     ['Host']
+  )
+})
+
+const SHADOW_COMPONENTS = `<script>
+  const define = (tag, html) =>
+    customElements.define(tag, class extends HTMLElement {
+      connectedCallback () {
+        this.attachShadow({ mode: 'open' }).innerHTML = html
+      }
+    })
+  define('x-button', '<button><slot></slot></button>')
+  define('x-field', '<input aria-label="Search" value="old">')
+  define('x-note', '<p>Shadow paragraph</p>')
+  define('x-secret', '<input type="password">')
+  define('x-outer', '<x-button>Deep</x-button>')
+  define('x-icon', '<style>:host { display: inline-block }</style><svg width="8" height="8"></svg>')
+</script>`
+
+const act = async (page, kind, label) => {
+  const state = await observe(page)
+  const action = state.actions.find(a => a.kind === kind && a.label === label)
+  return execute(page, state, action, GENERATED_TEXT, 0)
+}
+
+const countClicks = page =>
+  page.evaluate(() => {
+    window.clicks = []
+    document.addEventListener('click', event =>
+      window.clicks.push(event.composedPath().find(node => node.tagName === 'BUTTON')?.tagName)
+    )
+  })
+
+test('controls inside open shadow roots are observed with their slotted label', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<x-button>Sign in</x-button><x-note></x-note>`)
+  const state = await observe(page)
+  t.deepEqual(state.unsupported, [])
+  t.deepEqual(
+    state.actions.filter(a => a.kind === 'click').map(a => [a.role, a.label]),
+    [['button', 'Sign in']]
+  )
+  t.true(state.text.includes('Shadow paragraph'))
+})
+
+test('clicking a control inside a shadow root reaches that control', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<x-button>Sign in</x-button>`)
+  await countClicks(page)
+  await act(page, 'click', 'Sign in')
+  t.deepEqual(await page.evaluate(() => window.clicks), ['BUTTON'])
+})
+
+test('controls in nested shadow roots are observed and clickable', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<x-outer></x-outer>`)
+  await countClicks(page)
+  await act(page, 'click', 'Deep')
+  t.deepEqual(await page.evaluate(() => window.clicks), ['BUTTON'])
+})
+
+test('typing replaces the value of an input inside a shadow root', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<x-field></x-field>`)
+  await act(page, 'fill', 'Search')
+  t.is(
+    await page.$eval('x-field', host => host.shadowRoot.querySelector('input').value),
+    GENERATED_TEXT
+  )
+})
+
+test('a covered control inside a shadow root is stale', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<x-button>Sign in</x-button>`)
+  const state = await observe(page)
+  const action = state.actions.find(a => a.label === 'Sign in')
+  await countClicks(page)
+  await page.evaluate(() => {
+    const cover = document.createElement('div')
+    cover.style.cssText = 'position:fixed;inset:0'
+    document.body.append(cover)
+  })
+  await t.throwsAsync(execute(page, state, action, GENERATED_TEXT, 0), {
+    instanceOf: StaleDecisionError
+  })
+  t.deepEqual(await page.evaluate(() => window.clicks), [])
+})
+
+test('shadow controls under a hidden or disabled host are not offered', async t => {
+  const page = await open(
+    t,
+    `${SHADOW_COMPONENTS}<x-button aria-hidden="true">Hidden</x-button><x-button aria-disabled="true">Disabled</x-button><x-button inert>Inert</x-button>`
+  )
+  const { actions } = await observe(page)
+  t.deepEqual(
+    actions.filter(a => a.kind === 'click'),
+    []
+  )
+})
+
+test('a password field inside a shadow root still blocks as unsupported', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<x-secret></x-secret>`)
+  t.deepEqual((await observe(page)).unsupported, ['password'])
+})
+
+const SEARCH_FORM = `<form><input aria-label="Search" value="bmw x3"></form><input aria-label="Other">
+<script>
+  window.submissions = 0
+  document.querySelector('form').addEventListener('submit', event => {
+    event.preventDefault()
+    window.submissions++
+  })
+</script>`
+
+test('submitting a populated field sends Enter to its form', async t => {
+  const page = await open(t, SEARCH_FORM)
+  await act(page, 'submit', 'Submit Search')
+  t.is(await page.evaluate(() => window.submissions), 1)
+})
+
+test('submitting is discarded when the page moves focus to another control', async t => {
+  const page = await open(t, SEARCH_FORM)
+  await page.$eval('input', e =>
+    e.addEventListener('focus', () => document.querySelector('[aria-label="Other"]').focus())
+  )
+  await t.throwsAsync(act(page, 'submit', 'Submit Search'), { instanceOf: StaleDecisionError })
+  t.is(await page.evaluate(() => window.submissions), 0)
+})
+
+test('a control covered by another element is not offered', async t => {
+  const page = await open(
+    t,
+    '<button>Covered</button><div style="position:fixed;inset:0 0 50% 0"></div><button style="position:fixed;bottom:0">Free</button>'
+  )
+  const { actions } = await observe(page)
+  t.deepEqual(
+    actions.filter(a => a.kind === 'click').map(a => a.label),
+    ['Free']
+  )
+})
+
+test('styles inside a shadow root never leak into a control label', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<a href="/home"><x-icon></x-icon> Home</a>`)
+  const { actions } = await observe(page)
+  t.deepEqual(
+    actions.filter(a => a.kind === 'click').map(a => a.label),
+    ['Home']
   )
 })

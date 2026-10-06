@@ -30,7 +30,10 @@ class Page extends EventEmitter {
     this.guards = []
     this.disposals = 0
     this.mouse = { move: async () => {}, wheel: async value => this.inputs.push(value) }
-    this.keyboard = { sendCharacter: async text => this.inputs.push({ text }) }
+    this.keyboard = {
+      sendCharacter: async text => this.inputs.push({ text }),
+      press: async key => this.inputs.push({ press: key })
+    }
   }
 
   async evaluate () {

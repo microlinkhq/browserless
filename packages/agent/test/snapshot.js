@@ -26,6 +26,7 @@ const dom = html => {
     right: 110,
     left: 10
   })
+  window.document.elementFromPoint = () => null
   const observe = () => window.eval(`(${snapshot.toString()})()`)
   const fresh = (element, state, action, requirements = {}) => {
     window.target = element
@@ -67,15 +68,6 @@ test('snapshot skips password/file inputs and reports unsupported surfaces', t =
   t.deepEqual(Array.from(current.unsupported).sort(), ['canvas', 'file', 'iframe', 'password'])
   t.true(current.actions.every(a => !['password', 'file'].includes(a.role)))
   t.is(current.actions.filter(a => a.kind === 'fill').length, 1)
-})
-
-test('open shadow roots are reported, not traversed', t => {
-  const { window, observe } = dom('<body><div id="host"></div></body>')
-  window.document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML =
-    '<button>Inside shadow</button>'
-  const current = observe()
-  t.true(current.unsupported.includes('shadow_dom'))
-  t.false(current.actions.some(a => a.label === 'Inside shadow'))
 })
 
 test('target guard tolerates unrelated DOM changes but rejects same-form value changes', t => {
@@ -182,8 +174,14 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
-test('several shadow hosts are reported once', t => {
-  const { window, observe } = dom('<body><div id="a"></div><div id="b"></div></body>')
-  for (const id of ['a', 'b']) window.document.getElementById(id).attachShadow({ mode: 'open' })
-  t.deepEqual(observe().unsupported, ['shadow_dom'])
+test('submit is offered only for inputs that already hold a value', t => {
+  const { observe } = dom(
+    '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
+  )
+  t.deepEqual(
+    observe()
+      .actions.filter(a => a.kind === 'submit')
+      .map(a => [a.label, a.value]),
+    [['Submit Filled', 'bmw x3']]
+  )
 })

@@ -110,13 +110,44 @@ test('repeated stale decisions exhaust request budget without input', async t =>
   t.deepEqual(page.inputs, [])
 })
 
-test('three consecutive no-change inputs block a fourth', async t => {
+test('three consecutive stale decisions on one target stop the run', async t => {
   const page = new Page()
-  const error = await t.throwsAsync(run(page, ['CLICK', 'CLICK', 'CLICK', 'CLICK']), {
+  page.guards = [false, false, false]
+  const fetch = mockFetch(['CLICK', 'CLICK', 'CLICK', 'CLICK'])
+  const error = await t.throwsAsync(run(page, [], { fetch }), { instanceOf: agent.BlockedError })
+  t.is(error.reason, 'stale_target')
+  t.is(error.trace.length, 3)
+  t.is(fetch.calls.length, 3)
+  t.deepEqual(page.inputs, [])
+})
+
+test('a successful action between stale decisions resets the stale count', async t => {
+  const page = new Page([state(), state(), state(), state('Results')])
+  page.guards = [false, false, false]
+  const result = await run(page, ['CLICK', 'WAIT', 'CLICK', 'CLICK', 'DONE'])
+  t.is(result.status, 'done')
+  t.is(result.trace.filter(entry => entry.stale).length, 3)
+})
+
+test('three consecutive no-change actions block a fourth', async t => {
+  const page = new Page()
+  const error = await t.throwsAsync(run(page, ['WAIT', 'WAIT', 'WAIT', 'WAIT']), {
     instanceOf: agent.BlockedError
   })
   t.is(error.reason, 'no_change')
-  t.is(page.inputs.length, 3)
+  t.is(error.trace.filter(entry => entry.pageChanged === false).length, 3)
+})
+
+test('an action that changed nothing is not offered again until the page changes', async t => {
+  const page = new Page([state(), state(), state('Changed')])
+  const fetch = mockFetch(['CLICK', 'TYPE_TEXT', 'DONE'])
+  await run(page, [], { fetch })
+  const decisionRequests = fetch.calls.filter(call => call.url.endsWith('/systemone'))
+  t.deepEqual(
+    decisionRequests.map(call => 'click_target' in call.body.questions),
+    [true, false, true]
+  )
+  t.false('CLICK' in decisionRequests[1].body.questions.operation.criteria)
 })
 
 for (const [reason, changes] of [
@@ -217,4 +248,32 @@ test('typing requires keyboard focus on every check after focusing', async t => 
   }
   await run(page, ['TYPE_TEXT', 'DONE'])
   t.deepEqual(requirements, [{}, { focused: true }, { focused: true }])
+})
+
+const populatedState = () => {
+  const populated = state('bmw x3')
+  populated.actions.unshift({
+    id: 'e0',
+    node: 1,
+    role: 'searchbox',
+    label: 'Submit Search',
+    kind: 'submit',
+    value: 'bmw x3'
+  })
+  return populated
+}
+
+test('SUBMIT presses Enter in the focused field', async t => {
+  const page = new Page([populatedState(), state('Results')])
+  const result = await run(page, ['SUBMIT', 'DONE'])
+  t.is(result.steps, 1)
+  t.deepEqual(page.inputs, [{ press: 'Enter' }])
+})
+
+test('SUBMIT is discarded when the field does not keep keyboard focus', async t => {
+  const page = new Page([populatedState()])
+  page.guards = [true, false]
+  const result = await run(page, ['SUBMIT', 'DONE'])
+  t.true(result.trace[0].stale)
+  t.deepEqual(page.inputs, [])
 })
