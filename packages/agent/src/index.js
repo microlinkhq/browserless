@@ -1,6 +1,6 @@
 'use strict'
 
-const { observe, execute, pageChanged } = require('./browser')
+const { observe, execute, settle, pageChanged } = require('./browser')
 const { decide, decideWithLanguageModel, fieldText } = require('./model')
 const { BlockedError, StaleDecisionError } = require('./errors')
 
@@ -161,6 +161,7 @@ const agent = async (page, goal, options = {}) => {
       }
       staleTarget = undefined
       steps++
+      if (decision.action.kind !== 'wait') await settle(page, decision.action)
       const next = await observe(page)
       entry.pageChanged = pageChanged(state, next)
       unchanged = entry.pageChanged ? 0 : unchanged + 1

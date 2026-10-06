@@ -2,7 +2,7 @@
 
 const { EventEmitter } = require('node:events')
 const { StaleDecisionError } = require('../../src/errors')
-const { selectContents } = require('../../src/browser')
+const { selectContents, settled } = require('../../src/browser')
 const { MockLanguageModelV4 } = require('ai/test')
 
 const state = (text = 'Search cars') => ({
@@ -30,6 +30,8 @@ class Page extends EventEmitter {
     this.inputs = []
     this.guards = []
     this.disposals = 0
+    this.settles = 0
+    this.clickErrors = []
     this.mouse = { move: async () => {}, wheel: async value => this.inputs.push(value) }
     this.keyboard = {
       sendCharacter: async text => this.inputs.push({ text }),
@@ -37,7 +39,11 @@ class Page extends EventEmitter {
     }
   }
 
-  async evaluate () {
+  async evaluate (fn) {
+    if (fn === settled) {
+      this.settles++
+      return
+    }
     const index = Math.min(this.reads++, this.states.length - 1)
     return this.states[index]
   }
@@ -52,7 +58,10 @@ class Page extends EventEmitter {
       focus: async () => {
         if (page.onFocus) page.onFocus()
       },
-      click: async () => page.inputs.push({ click: true }),
+      click: async () => {
+        if (page.clickErrors.length) throw new Error(page.clickErrors.shift())
+        page.inputs.push({ click: true })
+      },
       select: async value => page.inputs.push({ select: value })
     }
     return {

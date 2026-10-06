@@ -1,18 +1,38 @@
-/* global location, innerWidth, innerHeight, getSelection */
+/* global location, innerWidth, innerHeight, getSelection, requestAnimationFrame */
 'use strict'
 
 const snapshot = require('./snapshot')
 const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
+const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
+const DOCUMENT_READY_LIMIT_MS = 3000
+const DOCUMENT_READY_POLL_MS = 50
 
 const pageChanged = (before, after) =>
   JSON.stringify(before.marker) !== JSON.stringify(after.marker)
 
+const NAVIGATING = /Execution context was destroyed|Cannot find context with specified id/
+const TARGET_GONE = new RegExp(
+  `${NAVIGATING.source}|Node is detached from document|not clickable or not an Element`
+)
+
+const snapshotUnlessNavigating = page =>
+  page.evaluate(snapshot).catch(error => {
+    if (NAVIGATING.test(error.message)) return null
+    throw error
+  })
+
 const observe = async page => {
-  const state = await page.evaluate(snapshot)
-  if (!state) throw new BlockedError('unsupported_surface', 'No document body is available.')
-  return state
+  const deadline = Date.now() + DOCUMENT_READY_LIMIT_MS
+  while (true) {
+    const state = await snapshotUnlessNavigating(page)
+    if (state) return state
+    if (Date.now() >= deadline) {
+      throw new BlockedError('unsupported_surface', 'No document body is available.')
+    }
+    await new Promise(resolve => setTimeout(resolve, DOCUMENT_READY_POLL_MS))
+  }
 }
 
 // Geometry is resolved now, not from model-time coordinates. Form state is local
@@ -69,6 +89,48 @@ const selectContents = element => {
   else getSelection().selectAllChildren(element)
 }
 
+const settled = (action, limits) =>
+  new Promise(resolve => {
+    const field = window.__browserlessAgent?.nodes.get(action.node)
+    const autocomplete = action.kind === 'fill' && field?.getAttribute('role') === 'combobox'
+    const suggestionVisible = () => {
+      const ids = (field.getAttribute('aria-controls') || field.getAttribute('aria-owns') || '')
+        .split(/\s+/)
+        .filter(Boolean)
+      const roots = ids.length
+        ? ids.map(id => field.getRootNode().getElementById(id)).filter(Boolean)
+        : [document]
+      return roots
+        .flatMap(root => [...root.querySelectorAll('[role="option"]')])
+        .some(option => {
+          const r = option.getBoundingClientRect()
+          return (
+            r.width > 0 &&
+            r.height > 0 &&
+            r.bottom > 0 &&
+            r.top < innerHeight &&
+            option.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+          )
+        })
+    }
+    let frames = 0
+    let finished = false
+    const finish = () => {
+      finished = true
+      resolve()
+    }
+    const onFrame = () => {
+      if (finished) return
+      if (++frames >= limits.minFrames && (!autocomplete || suggestionVisible())) finish()
+      else requestAnimationFrame(onFrame)
+    }
+    setTimeout(finish, autocomplete ? limits.autocompleteMs : limits.defaultMs)
+    requestAnimationFrame(onFrame)
+  })
+
+// Navigation can destroy the page context mid-wait; the next observation handles that.
+const settle = (page, action) => page.evaluate(settled, action, SETTLE_LIMITS).catch(() => {})
+
 const execute = async (page, state, action, text, waitMs) => {
   if (action.kind === 'wait') {
     await new Promise(resolve => setTimeout(resolve, waitMs))
@@ -110,9 +172,20 @@ const execute = async (page, state, action, text, waitMs) => {
     } else if (action.kind === 'click') {
       await element.click()
     } else throw new TypeError('Unknown observed action.')
+  } catch (error) {
+    if (TARGET_GONE.test(error.message)) throw new StaleDecisionError()
+    throw error
   } finally {
-    await handle.dispose()
+    await handle.dispose().catch(() => {})
   }
 }
 
-module.exports = { observe, execute, pageChanged, targetFresh, selectContents }
+module.exports = {
+  observe,
+  execute,
+  settle,
+  settled,
+  pageChanged,
+  targetFresh,
+  selectContents
+}
