@@ -148,6 +148,21 @@ test('an extraction is recorded by how much it returned and a hash of it', t => 
   t.false('extracted' in record())
 })
 
+test('p90 is the value that nine in ten runs do not exceed', t => {
+  const oneToTen = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+  t.is(compare.percentile(oneToTen, 0.9), 9)
+  t.is(compare.percentile([...oneToTen, 11], 0.9), 10)
+  t.is(compare.percentile([300, 100, 200], 0.9), 300)
+  t.is(compare.percentile([42], 0.9), 42)
+  t.is(compare.percentile([], 0.9), undefined)
+})
+
+test('a setup with a faster median but a slower p90 ranks after the steadier one', t => {
+  const spiky = [100, 100, 100, 100, 9000].map(totalMs => finished('spiky', { totalMs }))
+  const steady = [500, 500, 500, 500, 500].map(totalMs => finished('steady', { totalMs }))
+  t.deepEqual(ranked([...spiky, ...steady]), ['steady', 'spiky'])
+})
+
 test('the median of an even count is the mean of the middle two', t => {
   t.is(compare.median([5, 1, 3]), 3)
   t.is(compare.median([4, 1, 3, 2]), 2.5)
@@ -208,7 +223,7 @@ test('with equal rates and agreement the faster ranks first, then the cheaper', 
   ])
 })
 
-test('medians and path agreement cover finished runs only; stale decisions cover all', t => {
+test('medians, p90 and path agreement cover finished runs only; total cost and stale decisions cover all', t => {
   const [summary] = compare.summarize([
     finished('a', { totalMs: 1000, decisionRequests: 2, usd: 0.001, staleDecisions: 1 }),
     finished('a', { totalMs: 3000, decisionRequests: 4, usd: 0.003, staleDecisions: 0 }),
@@ -230,10 +245,47 @@ test('medians and path agreement cover finished runs only; stale decisions cover
     pathAgreement: 1,
     distinctPaths: 1,
     medianDecisionRequests: 3,
-    medianTotalMs: 2000,
+    p90TotalMs: 3000,
     medianUsd: 0.002,
+    totalUsd: 0.904,
     staleDecisions: 6,
     failures: { step_budget: 1 }
+  })
+})
+
+test('p90 over ten finished runs is the ninth fastest, not the slowest', t => {
+  const times = [1000, 900, 800, 700, 600, 500, 400, 300, 200, 100]
+  const [summary] = compare.summarize(times.map(totalMs => finished('a', { totalMs })))
+  t.is(summary.p90TotalMs, 900)
+})
+
+test('p90 is unknown when a finished run did not report its time', t => {
+  const [summary] = compare.summarize([
+    finished('a', { totalMs: 1000 }),
+    finished('a', { totalMs: undefined })
+  ])
+  t.is(summary.p90TotalMs, undefined)
+  t.is(compare.summarize([finished('a', { status: 'no_change' })])[0].p90TotalMs, undefined)
+})
+
+test('total cost is rounded and never includes a number that is not finite', t => {
+  const totalOf = costs => compare.summarize(costs.map(usd => finished('a', { usd })))[0].totalUsd
+  t.is(totalOf([0.1, 0.2]), 0.3)
+  t.is(totalOf([0.1, NaN]), undefined)
+  t.is(totalOf([0.1, Infinity]), undefined)
+  t.is(totalOf([0, 0]), 0)
+})
+
+test('the cost of the whole comparison adds every setup, or is unknown when one is', t => {
+  const task = { url: 'https://a.test', goals: ['x'], runs: 1 }
+  const costOf = records => compare.report(task, 'out.jsonl', records).totalUsd
+  t.is(costOf([finished('a', { usd: 0.1 }), finished('b', { usd: 0.2 })]), 0.3)
+  t.is(costOf([finished('a', { usd: 0.1 }), finished('b', { usd: undefined })]), undefined)
+  t.like(compare.report(task, 'out.jsonl', [finished('a')]), {
+    url: 'https://a.test',
+    goals: ['x'],
+    runsPerSetup: 1,
+    file: 'out.jsonl'
   })
 })
 
@@ -243,7 +295,8 @@ test('a median is unknown when a finished run did not report the number', t => {
     finished('a', { usd: undefined })
   ])
   t.is(summary.medianUsd, undefined)
-  t.is(summary.medianTotalMs, 1000)
+  t.is(summary.p90TotalMs, 1000)
+  t.is(summary.totalUsd, undefined)
 })
 
 test('a run passes only when every goal was judged met', t => {
@@ -306,6 +359,10 @@ test('flags without a value are refused instead of becoming model ids or goals',
   t.is(compare.taskFrom({ ...task, runs: 3 }).runs, 3)
 })
 
+test('a model list with no id in it is refused', t => {
+  t.throws(() => compare.setupsFrom({ text: ',' }), { message: /^--text needs a value/ })
+})
+
 test('a model id given twice is one setup', t => {
   t.deepEqual(compare.setupsFrom({ text: 'a/one,a/one', decisions: ['none', 'none'] }), [
     { decisions: 'none', text: 'a/one' }
@@ -327,6 +384,7 @@ test('runs that cannot start are recorded and the remaining runs still happen', 
   const written = fs.readFileSync(out, 'utf8').trim().split('\n').map(JSON.parse)
   t.is(attempts, 4)
   t.is(result.file, out)
+  t.is(result.totalUsd, 0)
   t.deepEqual(
     written.map(({ text, run, status, error }) => ({ text, run, status, error })),
     ['a/one', 'b/two', 'a/one', 'b/two'].map((text, index) => ({

@@ -17,6 +17,7 @@ const UNEXPECTED_ERROR = 'error'
 const HASH_LENGTH = 12
 const RATE_DECIMALS = 2
 const USD_DECIMALS = 6
+const NINETIETH = 0.9
 const USAGE =
   'Usage: browserless exec scripts/compare.js --url=<url> --goal=<goal> [--goal=<next goal>] [--extract=<what to get>] [--decisions=<id>,none] [--text=<id>,<id>] [--runs=5] [--out=<file.jsonl>]'
 
@@ -40,6 +41,7 @@ const modelIds = (value, flag, fallback) => {
     .flatMap(item => item.split(','))
     .map(item => item.trim())
     .filter(Boolean)
+  if (ids.length === 0) throw new TypeError(`--${flag} needs a value. ${USAGE}`)
   return [...new Set(ids)]
 }
 
@@ -72,14 +74,19 @@ const agentOptions = setup => ({
 
 const sum = values => values.reduce((total, value) => total + value, 0)
 
-const sumWhenAllReported = values =>
-  values.every(value => typeof value === 'number') ? sum(values) : undefined
+const sumWhenAllReported = values => (values.every(Number.isFinite) ? sum(values) : undefined)
 
 const median = values => {
   if (values.length === 0) return undefined
   const sorted = [...values].sort((a, b) => a - b)
   const middle = Math.floor(sorted.length / 2)
   return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
+}
+
+const percentile = (values, fraction) => {
+  if (values.length === 0) return undefined
+  const sorted = [...values].sort((a, b) => a - b)
+  return sorted[Math.max(0, Math.ceil(sorted.length * fraction) - 1)]
 }
 
 const rounded = (value, decimals) =>
@@ -197,9 +204,9 @@ const summarizeSetup = records => {
   const done = records.filter(record => record.status === DONE)
   const judged = records.filter(record => record.passed !== undefined)
   const extracted = records.filter(record => record.extracted)
-  const medianOfDone = key => {
+  const ofDone = (key, measure) => {
     const values = done.map(record => record[key])
-    return values.every(Number.isFinite) ? median(values) : undefined
+    return values.every(Number.isFinite) ? measure(values) : undefined
   }
   return {
     decisions: records[0].decisions,
@@ -210,9 +217,10 @@ const summarizeSetup = records => {
     passRate: rate(judged.filter(record => record.passed).length, records.length),
     pathAgreement: mostCommonShare(done.map(record => record.path)),
     distinctPaths: new Set(done.map(record => record.path)).size,
-    medianDecisionRequests: medianOfDone('decisionRequests'),
-    medianTotalMs: medianOfDone('totalMs'),
-    medianUsd: rounded(medianOfDone('usd'), USD_DECIMALS),
+    medianDecisionRequests: ofDone('decisionRequests', median),
+    p90TotalMs: ofDone('totalMs', values => percentile(values, NINETIETH)),
+    medianUsd: rounded(ofDone('usd', median), USD_DECIMALS),
+    totalUsd: rounded(sumWhenAllReported(records.map(record => record.usd)), USD_DECIMALS),
     staleDecisions: sum(records.map(record => record.staleDecisions)),
     failures: counts(records.filter(record => record.status !== DONE).map(record => record.status)),
     ...(records.some(record => record.extracted !== undefined) && {
@@ -229,13 +237,25 @@ const betterFirst = (a, b) =>
   descending(a.doneRate, b.doneRate) ||
   descending(a.passRate, b.passRate) ||
   descending(a.pathAgreement, b.pathAgreement) ||
-  ascending(a.medianTotalMs, b.medianTotalMs) ||
+  ascending(a.p90TotalMs, b.p90TotalMs) ||
   ascending(a.medianUsd, b.medianUsd)
 
 const setupKey = record => `${record.decisions} + ${record.text}`
 
 const summarize = records =>
   Object.values(Object.groupBy(records, setupKey)).map(summarizeSetup).sort(betterFirst)
+
+const report = (task, file, records) => {
+  const ranking = summarize(records)
+  return {
+    url: task.url,
+    goals: task.goals,
+    runsPerSetup: task.runs,
+    file,
+    totalUsd: rounded(sumWhenAllReported(ranking.map(setup => setup.totalUsd)), USD_DECIMALS),
+    ranking
+  }
+}
 
 const messageOf = error =>
   error instanceof Error ? `${error.name}: ${error.message}` : String(error)
@@ -322,13 +342,7 @@ module.exports = async ({ browserless, opts }) => {
       debug('run', record)
     }
   }
-  return {
-    url: task.url,
-    goals: task.goals,
-    runsPerSetup: task.runs,
-    file,
-    ranking: summarize(records)
-  }
+  return report(task, file, records)
 }
 
 module.exports.setupsFrom = setupsFrom
@@ -336,4 +350,6 @@ module.exports.taskFrom = taskFrom
 module.exports.agentOptions = agentOptions
 module.exports.toRecord = toRecord
 module.exports.summarize = summarize
+module.exports.report = report
 module.exports.median = median
+module.exports.percentile = percentile

@@ -449,10 +449,16 @@ logged as it finishes:
 The printed `ranking` has one entry per setup, best first: by `doneRate`, then
 `passRate` (the share of all runs that finished and were judged met;
 `judgedRuns` says how many were judged at all), then `pathAgreement` (the share
-of finished runs that took the most common path), then `medianTotalMs`, then
-`medianUsd`. `dataAgreement` is the same share for the extracted data. Medians
-cover finished runs only, and a median is absent when one of them did not
-report the number. A run that fails is recorded and the remaining runs go on.
+of finished runs that took the most common path), then `p90TotalMs`, then
+`medianUsd`. `p90TotalMs` is the time that nine in ten finished runs did not
+exceed; with fewer than ten finished runs it is the slowest one. `dataAgreement` is the
+share of extractions that returned the most common data. Medians and
+`p90TotalMs` cover finished runs only, and each is absent when no run finished
+or one of them did not report the number. `totalUsd` is what every run of the setup cost, failed
+ones included, and the `totalUsd` next to `ranking` is the cost of the whole
+comparison; both are absent when any run did not report its cost, and neither
+includes the extraction request. A run that fails is recorded and the remaining
+runs go on.
 
 What it does not measure: the cost of the extraction request, and whether a
 finished run is correct. `passed` is a second model's opinion, and on the same
