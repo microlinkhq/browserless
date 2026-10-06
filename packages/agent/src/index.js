@@ -1,54 +1,77 @@
 'use strict'
 
-const { observe, execute } = require('./browser')
+const { observe, execute, pageChanged } = require('./browser')
 const { decide, fieldText } = require('./model')
 const { BlockedError, StaleDecisionError } = require('./errors')
-const activePages = new WeakSet()
-const MAX_STALE_DECISIONS_PER_TARGET = 3
-const DEFAULT_DECISION_MODEL = 'typesafe-ai/jev'
-const DEFAULT_TEXT_MODEL = 'inception/mercury-2.5'
+
+const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
+const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
+const DEFAULT_MODELS = { decisions: 'typesafe-ai/jev', text: 'inception/mercury-2.5' }
 const DEFAULT_REASONING = 'none'
 const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
+const MAX_UNCHANGED_ACTIONS = 3
+const MAX_STALE_DECISIONS_PER_TARGET = 3
+const VERIFICATION_WALL =
+  /\b(captcha|verify you are human|verification required|verifica que eres humano)\b/i
+
+const activePages = new WeakSet()
 
 const isModel = model =>
   (typeof model === 'string' && model.trim() !== '') ||
   typeof model?.specificationVersion === 'string'
 
-const actionKey = action => `${action.kind}:${action.node ?? action.id}:${action.value ?? ''}`
+const withDefaults = (options, defaults) =>
+  Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, options[key] ?? value]))
 
-const agent = async (page, goal, options = {}) => {
-  if (!page || typeof page.evaluate !== 'function' || typeof goal !== 'string' || !goal.trim()) {
-    throw new TypeError('agent requires a Puppeteer page and a nonempty goal.')
-  }
-  if (activePages.has(page)) throw new TypeError('An agent is already running on this page.')
-  const maxSteps = options.maxSteps ?? 60
-  const maxDecisions = options.maxDecisions ?? 120
-  const waitMs = options.waitMs ?? 100
-  const timeout = options.timeout ?? 25000
-  for (const [key, value] of Object.entries({ maxSteps, maxDecisions, waitMs, timeout })) {
-    const minimum = key === 'waitMs' ? 0 : 1
-    if (!Number.isSafeInteger(value) || value < minimum) {
+const resolveOptions = options => {
+  const limits = withDefaults(options, DEFAULT_LIMITS)
+  for (const [key, minimum] of Object.entries(MINIMUM_LIMITS)) {
+    if (!Number.isSafeInteger(limits[key]) || limits[key] < minimum) {
       throw new TypeError(`${key} must be an integer of at least ${minimum}.`)
     }
   }
-  const decisionModel = options.decisions ?? DEFAULT_DECISION_MODEL
-  const textModel = options.text ?? DEFAULT_TEXT_MODEL
-  for (const [key, model] of Object.entries({ decisions: decisionModel, text: textModel })) {
+  const models = withDefaults(options, DEFAULT_MODELS)
+  for (const [key, model] of Object.entries(models)) {
     if (!isModel(model)) throw new TypeError(`${key} must be a model id or an AI SDK model.`)
   }
   const reasoning = options.reasoning ?? DEFAULT_REASONING
   if (!REASONING_LEVELS.includes(reasoning)) {
     throw new TypeError(`reasoning must be one of: ${REASONING_LEVELS.join(', ')}.`)
   }
+  return { ...limits, models, reasoning }
+}
+
+const blockingSurface = state => {
+  if (VERIFICATION_WALL.test(state.text)) {
+    return ['captcha', 'A possible human-verification wall is visible; no bypass attempted.']
+  }
+  if (state.unsupported?.includes('password')) {
+    return ['login_wall', 'A visible password field requires manual login.']
+  }
+  if (state.unsupported?.length) {
+    return ['unsupported_surface', `Visible unsupported surface: ${state.unsupported.join(', ')}.`]
+  }
+}
+
+const actionKey = action => `${action.kind}:${action.node ?? action.id}:${action.value ?? ''}`
+
+const staleTargetKey = ({ operation, action }) => `${operation}:${action.node ?? action.id}`
+
+const agent = async (page, goal, options = {}) => {
+  if (!page || typeof page.evaluate !== 'function' || typeof goal !== 'string' || !goal.trim()) {
+    throw new TypeError('agent requires a Puppeteer page and a nonempty goal.')
+  }
+  if (activePages.has(page)) throw new TypeError('An agent is already running on this page.')
+  const { maxSteps, maxDecisions, waitMs, timeout, models, reasoning } = resolveOptions(options)
   const request = { timeout, signal: options.signal, reasoning }
   const trace = []
+  const ineffectiveActions = new Set()
   let steps = 0
   let decisions = 0
   let unchanged = 0
-  let popup = false
   let staleTarget
-  const ineffectiveActions = new Set()
   let staleDecisions = 0
+  let popup = false
   const onPopup = () => {
     popup = true
   }
@@ -67,29 +90,15 @@ const agent = async (page, goal, options = {}) => {
           'Popup tabs are not supported; the original page was retained.'
         )
       }
-      if (
-        /\b(captcha|verify you are human|verification required|verifica que eres humano)\b/i.test(
-          state.text
-        )
-      ) {
-        blocked('captcha', 'A possible human-verification wall is visible; no bypass attempted.')
-      }
-      if (state.unsupported?.includes('password')) {
-        blocked('login_wall', 'A visible password field requires manual login.')
-      }
-      if (state.unsupported?.length) {
-        blocked(
-          'unsupported_surface',
-          `Visible unsupported surface: ${state.unsupported.join(', ')}.`
-        )
-      }
+      const surface = blockingSurface(state)
+      if (surface) blocked(...surface)
       if (decisions >= maxDecisions) blocked('step_budget', 'Decision-request budget exhausted.')
       decisions++
       const offered = {
         ...state,
         actions: state.actions.filter(action => !ineffectiveActions.has(actionKey(action)))
       }
-      const decision = await decide(offered, goal, trace, decisionModel, request)
+      const decision = await decide(offered, goal, trace, models.decisions, request)
       const entry = { ...decision, action: decision.action?.id, step: steps, decision: decisions }
       trace.push(entry)
       if (decision.operation === 'DONE') return { status: 'done', steps, decisions, trace }
@@ -97,25 +106,24 @@ const agent = async (page, goal, options = {}) => {
         blocked('model_blocked', 'The model found no supported operation to progress.')
       }
       if (steps >= maxSteps) blocked('step_budget', 'Action budget exhausted.')
-      if (unchanged >= 3) {
+      if (unchanged >= MAX_UNCHANGED_ACTIONS) {
         blocked('no_change', 'Three consecutive actions did not change the observed page.')
       }
       let text
       if (decision.operation === 'TYPE_TEXT') {
-        text = await fieldText(goal, decision.action, state, trace, textModel, request)
+        text = await fieldText(goal, decision.action, state, trace, models.text, request)
         entry.text = text
       }
       options.signal?.throwIfAborted()
       if (popup) {
         blocked('unsupported_surface', 'A popup appeared during the decision; no input executed.')
       }
-      // The generative helper may be slow. Every action is guarded afterward.
       try {
         await execute(page, state, decision.action, text, waitMs)
       } catch (error) {
         if (!(error instanceof StaleDecisionError)) throw error
         entry.stale = true
-        const target = `${decision.operation}:${decision.action.node ?? decision.action.id}`
+        const target = staleTargetKey(decision)
         staleDecisions = target === staleTarget ? staleDecisions + 1 : 1
         staleTarget = target
         if (staleDecisions >= MAX_STALE_DECISIONS_PER_TARGET) {
@@ -130,7 +138,7 @@ const agent = async (page, goal, options = {}) => {
       staleTarget = undefined
       steps++
       const next = await observe(page)
-      entry.pageChanged = JSON.stringify(next.marker) !== JSON.stringify(state.marker)
+      entry.pageChanged = pageChanged(state, next)
       unchanged = entry.pageChanged ? 0 : unchanged + 1
       if (entry.pageChanged) ineffectiveActions.clear()
       else if (decision.action.kind !== 'wait') ineffectiveActions.add(actionKey(decision.action))
