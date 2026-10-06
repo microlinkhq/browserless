@@ -1,7 +1,7 @@
 'use strict'
 
-const { observe, execute, settle, pageChanged } = require('./browser')
-const { decide, decideWithLanguageModel, fieldText } = require('./model')
+const { observe, execute, settle, pageChanged, readStableContent } = require('./browser')
+const { decide, decideWithLanguageModel, fieldText, extractOutput } = require('./model')
 const { BlockedError, StaleDecisionError } = require('./errors')
 
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
@@ -69,11 +69,15 @@ const timed = async call => {
   return [value, Math.round(performance.now() - started)]
 }
 
-const agent = async (page, goal, options = {}) => {
-  if (!page || typeof page.evaluate !== 'function' || typeof goal !== 'string' || !goal.trim()) {
-    throw new TypeError('agent requires a Puppeteer page and a nonempty goal.')
+const isPage = page => typeof page?.evaluate === 'function'
+
+const isInstruction = text => typeof text === 'string' && text.trim() !== ''
+
+const goal = async (page, goal, options = {}) => {
+  if (!isPage(page) || !isInstruction(goal)) {
+    throw new TypeError('goal requires a Puppeteer page and a nonempty goal.')
   }
-  if (activePages.has(page)) throw new TypeError('An agent is already running on this page.')
+  if (activePages.has(page)) throw new TypeError('A goal is already running on this page.')
   const { maxSteps, maxDecisions, waitMs, timeout, models, reasoning } = resolveOptions(options)
   const request = { timeout, signal: options.signal, reasoning }
   const trace = []
@@ -178,5 +182,28 @@ const agent = async (page, goal, options = {}) => {
   }
 }
 
+const extract = async (page, instruction, schema, options = {}) => {
+  if (!isPage(page) || !isInstruction(instruction)) {
+    throw new TypeError('extract requires a Puppeteer page and a nonempty instruction.')
+  }
+  if (schema === undefined || schema === null) {
+    throw new TypeError('extract requires a schema describing the result.')
+  }
+  const { timeout, models, reasoning } = resolveOptions(options)
+  const request = { timeout, signal: options.signal, reasoning }
+  return extractOutput(instruction, await readStableContent(page), schema, models.text, request)
+}
+
+const agent = (page, defaults = {}) => {
+  if (!isPage(page)) throw new TypeError('agent requires a Puppeteer page.')
+  return Object.assign(page, {
+    goal: (text, options) => goal(page, text, { ...defaults, ...options }),
+    extract: (instruction, schema, options) =>
+      extract(page, instruction, schema, { ...defaults, ...options })
+  })
+}
+
 module.exports = agent
+module.exports.goal = goal
+module.exports.extract = extract
 module.exports.BlockedError = BlockedError

@@ -2,12 +2,16 @@
 'use strict'
 
 const snapshot = require('./snapshot')
+const pageContent = require('./content')
 const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
 const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
 const DOCUMENT_READY_LIMIT_MS = 3000
 const DOCUMENT_READY_POLL_MS = 50
+const CONTENT_CHARACTER_LIMIT = 60000
+const CONTENT_STABLE_POLL_MS = 250
+const CONTENT_STABLE_LIMIT_MS = 3000
 
 const pageChanged = (before, after) =>
   JSON.stringify(before.marker) !== JSON.stringify(after.marker)
@@ -89,6 +93,20 @@ const selectContents = element => {
   else getSelection().selectAllChildren(element)
 }
 
+const readContent = page => page.evaluate(pageContent, CONTENT_CHARACTER_LIMIT)
+
+const readStableContent = async page => {
+  const deadline = Date.now() + CONTENT_STABLE_LIMIT_MS
+  let content = await readContent(page)
+  while (Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, CONTENT_STABLE_POLL_MS))
+    const next = await readContent(page)
+    if (next.text === content.text) return next
+    content = next
+  }
+  return content
+}
+
 const settled = (action, limits) =>
   new Promise(resolve => {
     const field = window.__browserlessAgent?.nodes.get(action.node)
@@ -142,11 +160,12 @@ const execute = async (page, state, action, text, waitMs) => {
     await page.mouse.wheel({ deltaY: action.delta })
     return
   }
-  const handle = await page.evaluateHandle(
-    node => window.__browserlessAgent?.nodes.get(node) || null,
-    action.node
-  )
+  let handle
   try {
+    handle = await page.evaluateHandle(
+      node => window.__browserlessAgent?.nodes.get(node) || null,
+      action.node
+    )
     const element = handle.asElement()
     const assertFresh = async (requirements = {}) => {
       if (!(await element?.evaluate(targetFresh, state, action, requirements))) {
@@ -176,11 +195,14 @@ const execute = async (page, state, action, text, waitMs) => {
     if (TARGET_GONE.test(error.message)) throw new StaleDecisionError()
     throw error
   } finally {
-    await handle.dispose().catch(() => {})
+    await handle?.dispose().catch(() => {})
   }
 }
 
 module.exports = {
+  readContent,
+  readStableContent,
+  pageContent,
   observe,
   execute,
   settle,

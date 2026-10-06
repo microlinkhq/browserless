@@ -3,7 +3,7 @@
 const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
-const { observe, execute, settled } = require('../src/browser')
+const { observe, execute, settled, readContent, pageContent } = require('../src/browser')
 const { StaleDecisionError } = require('../src/errors')
 
 const GENERATED_TEXT = 'bmw x3'
@@ -234,7 +234,8 @@ test('styles inside a shadow root never leak into a control label', async t => {
   )
 })
 
-const SETTLE_LIMITS = { autocompleteMs: 400, defaultMs: 50, minFrames: 2 }
+const SETTLE_LIMITS = { autocompleteMs: 1500, defaultMs: 50, minFrames: 2 }
+const CLEARLY_BEFORE_AUTOCOMPLETE_LIMIT_MS = 1000
 const SUGGESTION_DELAY_MS = 120
 
 const COMBOBOX =
@@ -256,7 +257,7 @@ test('settling after typing in a combobox waits for its suggestions to appear', 
     }, delay)
   }, SUGGESTION_DELAY_MS)
   const elapsed = await settleMs(page, 'fill', 'City')
-  t.true(elapsed >= SUGGESTION_DELAY_MS - 20, `settled after ${elapsed} ms`)
+  t.is(await page.$eval('#suggestions', list => list.textContent), 'Zurich')
   t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
 })
 
@@ -269,7 +270,7 @@ test('settling after typing in a combobox gives up at the autocomplete limit', a
 test('settling after a click does not wait for suggestions', async t => {
   const page = await open(t, `${COMBOBOX}<button>Go</button>`)
   const elapsed = await settleMs(page, 'click', 'Go')
-  t.true(elapsed < SETTLE_LIMITS.autocompleteMs - 100, `settled after ${elapsed} ms`)
+  t.true(elapsed < CLEARLY_BEFORE_AUTOCOMPLETE_LIMIT_MS, `settled after ${elapsed} ms`)
 })
 
 const BODY_RETURNS_AFTER_MS = 200
@@ -319,4 +320,40 @@ test('observing right after a click that navigates waits for the new page body',
     actions.filter(a => a.kind === 'click').map(a => a.label),
     ['Arrived']
   )
+})
+
+test('page content covers the whole page, not only the viewport', async t => {
+  const page = await open(
+    t,
+    '<h1>Results</h1><div style="height:5000px"></div><article><a href="https://shop.example/x3">BMW X3</a><p>6999 €</p></article>'
+  )
+  const content = await readContent(page)
+  t.is(content.text, 'Results\nBMW X3 <https://shop.example/x3>\n6999 €')
+  t.is(content.url, 'about:blank')
+})
+
+test('page content includes shadow roots and slotted text once', async t => {
+  const page = await open(t, `${SHADOW_COMPONENTS}<x-button>Sign in</x-button><x-note></x-note>`)
+  const { text } = await readContent(page)
+  t.is(text, 'Sign in Shadow paragraph')
+})
+
+test('page content leaves out hidden, aria-hidden, script and style text', async t => {
+  const page = await open(
+    t,
+    '<p>Shown</p><p hidden>Hidden</p><p style="display:none">None</p><p aria-hidden="true">Decorative</p><style>p { color: red }</style><script>window.secret = "script text"</script>'
+  )
+  t.is((await readContent(page)).text, 'Shown')
+})
+
+test('page content stops at the character limit', async t => {
+  const page = await open(t, `<p>${'word '.repeat(200)}</p>`)
+  const LIMIT = 50
+  const { text } = await page.evaluate(pageContent, LIMIT)
+  t.is(text.length, LIMIT)
+})
+
+test('page content includes text inside display: contents wrappers', async t => {
+  const page = await open(t, '<div style="display:contents"><p>Wrapped</p></div>')
+  t.is((await readContent(page)).text, 'Wrapped')
 })

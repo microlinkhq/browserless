@@ -9,12 +9,19 @@ const {
   NoOutputGeneratedError
 } = require('ai')
 
-const { NEXT_ACTION, TARGET, TEXT_VALUE, LANGUAGE_DECISION } = require('./questions')
+const {
+  NEXT_ACTION,
+  TARGET,
+  TEXT_VALUE,
+  LANGUAGE_DECISION,
+  OUTPUT_EXTRACTION
+} = require('./questions')
 
 const PROBABILITY_SUM_TOLERANCE = 0.02
 const WINNER_TOLERANCE = 1e-6
 const TEXT_MAX_OUTPUT_TOKENS = 1024
 const DECISION_MAX_OUTPUT_TOKENS = 256
+const OUTPUT_MAX_OUTPUT_TOKENS = 4096
 const TEXT_MAX_LENGTH = 2000
 const MIN_DECIMALS_FOR_ROUNDING_TOLERANCE = 2
 const MAX_RETRIES = 0
@@ -246,7 +253,9 @@ const decideWithLanguageModel = async (state, goal, history, model, options) => 
   const { space, operations, request } = buildRequest(state, goal, history)
   const output = await askLanguageModel(request, Object.keys(operations), model, options)
   const operation = output?.operation
-  if (typeof operation !== 'string' || !Object.hasOwn(operations, operation)) { throw invalidDecision() }
+  if (typeof operation !== 'string' || !Object.hasOwn(operations, operation)) {
+    throw invalidDecision()
+  }
   const targets = space.targets[operation]
   if (!targets) return { operation, action: space.controls[operation] }
   if (typeof output.target !== 'string' || !Object.hasOwn(targets, output.target)) {
@@ -288,7 +297,27 @@ const fieldText = async (goal, action, state, history, model, options) => {
   return output.text
 }
 
+const invalidOutput = () => new TypeError('The page did not produce output matching the schema.')
+
+const extractOutput = (instruction, content, schema, model, options) =>
+  withinTimeout(options, abortSignal =>
+    generateObject(
+      {
+        model,
+        system: OUTPUT_EXTRACTION,
+        prompt: JSON.stringify({ instruction, page: content }),
+        output: Output.object({ schema }),
+        maxOutputTokens: OUTPUT_MAX_OUTPUT_TOKENS,
+        maxRetries: MAX_RETRIES,
+        reasoning: options.reasoning,
+        abortSignal
+      },
+      invalidOutput
+    )
+  )
+
 module.exports = {
+  extractOutput,
   validateChoice,
   actionSpace,
   buildRequest,
