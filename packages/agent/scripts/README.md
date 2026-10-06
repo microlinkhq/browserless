@@ -37,6 +37,7 @@ calls the text model, so every text model gets the same result.
 | Passed | Runs that finished and that the evaluator judged as met |
 | Same path | Share of finished runs that took the most common sequence of actions |
 | Decisions | Median decision requests of the finished runs |
+| Median ms | Time that half of the finished runs did not exceed. Computed from the run records; the script prints p90 only |
 | p90 ms | Time that nine in ten finished runs did not exceed. With fewer than ten finished runs it is the slowest one |
 | Total usd | Cost of every run of the setup. Entries up to 2026-10-06 exclude the extraction request; later ones include it. `not reported` when a failed run reported no cost |
 | Extracted | Runs where the extraction returned at least one value |
@@ -47,6 +48,69 @@ Rows are ordered as the script ranks them: done, passed, same path, p90.
 
 Add each new comparison below with its date, command and tables, newest first.
 Prices and models change, so an entry is only valid for its date.
+
+### 2026-10-06: the three leading text models and `gpt-5-nano`, 10 runs
+
+100 runs, 10 per setup, same Wikipedia task as the entry below. Reported cost:
+0.1294 usd over 79 runs; 21 failed runs reported none. Extraction cost is not
+included.
+
+```sh
+npm run compare -- \
+  --url=https://en.wikipedia.org/wiki/Main_Page \
+  --goal='Search for "Alan Turing" and open the Wikipedia article about him.' \
+  --extract='get the article title' \
+  --decisions=typesafe-ai/jev,none \
+  --text=openai/gpt-6-luna,zai/glm-5.3-flash,alibaba/qwen3.8-flash \
+  --runs=10
+
+npm run compare -- \
+  --url=https://en.wikipedia.org/wiki/Main_Page \
+  --goal='Search for "Alan Turing" and open the Wikipedia article about him.' \
+  --extract='get the article title' \
+  --decisions=typesafe-ai/jev,none \
+  --text=openai/gpt-5-nano \
+  --reasoning=minimal,low \
+  --runs=10
+```
+
+**`typesafe-ai/jev` decides; the text model types and writes the extraction rules**
+
+| Text model | Reasoning | Done | Passed | Same path | Decisions | Median ms | p90 ms | Total usd | Extracted | Failures |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `zai/glm-5.3-flash` | none | 10/10 | 10/10 | 100% | 4 | 3668 | 4406 | 0.01636 | 10/10 | |
+| `openai/gpt-5-nano` | minimal | 10/10 | 10/10 | 100% | 4 | 4558 | 6740 | 0.01566 | 10/10 | |
+| `openai/gpt-5-nano` | low | 10/10 | 10/10 | 100% | 4 | 6149 | 7491 | 0.01600 | 10/10 | |
+| `alibaba/qwen3.8-flash` | none | 10/10 | 10/10 | 100% | 4 | 4109 | 10633 | 0.01647 | 10/10 | |
+| `openai/gpt-6-luna` | none | 9/10 | 9/10 | 100% | 4 | 4395 | 10580 | not reported | 9/10 | 1 no valid typed value |
+
+**The text model decides everything (`--decisions=none`)**
+
+| Text model | Reasoning | Done | Passed | Same path | Decisions | Median ms | p90 ms | Total usd | Extracted | Failures |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `zai/glm-5.3-flash` | none | 10/10 | 10/10 | 90% | 4 | 6666 | 12921 | 0.02158 | 10/10 | |
+| `openai/gpt-6-luna` | none | 10/10 | 10/10 | 80% | 4 | 8574 | 10142 | 0.01002 | 10/10 | |
+| `alibaba/qwen3.8-flash` | none | 10/10 | 10/10 | 40% | 4 | 9115 | 20334 | 0.01888 | 10/10 | |
+| `openai/gpt-5-nano` | minimal | 0/10 | 0/10 | | | | | not reported | 0/10 | 10 invalid decisions |
+| `openai/gpt-5-nano` | low | 0/10 | 0/10 | | | | | not reported | 0/10 | 10 invalid decisions |
+
+What it shows:
+
+- With Jev deciding, `zai/glm-5.3-flash` is the steadiest: every run finished,
+  none took longer than 5 seconds. `openai/gpt-6-luna` and
+  `alibaba/qwen3.8-flash` each had two runs above 10 seconds, and
+  `openai/gpt-6-luna` failed one run because its typed value was refused.
+- With ten runs p90 now separates what the median hides: the three medians are
+  within 0.8 seconds, the p90 values are 4.4, 10.6 and 10.6 seconds.
+- As the decider, all three finished every run. `openai/gpt-6-luna` cost half
+  as much as `zai/glm-5.3-flash`; `alibaba/qwen3.8-flash` took a different
+  path in 6 of 10 runs.
+- `openai/gpt-5-nano` works once `--reasoning` is not `none`: as the typist it
+  finished every run, slower than the others, and `low` was slower than
+  `minimal` with no gain. As the decider it never returned a valid decision,
+  at either level.
+
+Limits: one task, one site, one day.
 
 ### 2026-10-06: eight low-cost text models on Wikipedia
 
