@@ -59,9 +59,11 @@ instead of through the gateway.
 
 It has been run live against Wallapop with `jev-latest` through
 `@ai-sdk/typesafe-ai` for decisions and `inception/mercury-2.5` through Vercel
-AI Gateway for text. Of the last six runs, five ended on the results for
-`bmw x3` sorted by lowest price in 9 to 16 decision requests (3.6 to 5.1 seconds
-on the four that were timed), and one failed on a text-model timeout. Earlier builds also
+AI Gateway for text. Of the last ten runs, seven ended on the results for
+`bmw x3` sorted by lowest price in 9 to 16 decision requests (3.6 to 5.2 seconds
+on the six that were timed), and three failed because the text model did not
+answer within the 25 second timeout on the gateway's free tier. Requests are
+not retried, so one such hang ends the run. Earlier builds also
 reported `done` before results had loaded or been sorted. `done` is the model's
 judgment, not a verified outcome. Decisions through the gateway
 (`typesafe-ai/jev`) have not been run: the free gateway tier refuses that model.
