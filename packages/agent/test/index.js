@@ -436,3 +436,40 @@ test('language model decisions are timed, including discarded stale ones', async
   t.true(result.trace[0].stale)
   t.true(result.trace.every(entry => Number.isInteger(entry.decisionMs) && entry.decisionMs >= 0))
 })
+
+test('the page is given time to settle after each executed input, not after waits or stale decisions', async t => {
+  const page = new Page([state(), state('Changed'), state('Changed again'), state('Results')])
+  page.guards = [false]
+  const result = await run(page, ['CLICK', 'CLICK', 'WAIT', 'DONE'])
+  t.deepEqual(
+    result.trace.map(entry => [entry.operation, !!entry.stale]),
+    [
+      ['CLICK', true],
+      ['CLICK', false],
+      ['WAIT', false],
+      ['DONE', false]
+    ]
+  )
+  t.is(page.settles, 1)
+})
+
+for (const message of [
+  'Node is detached from document',
+  'Node is either not clickable or not an Element',
+  'Execution context was destroyed, most likely because of a navigation.'
+]) {
+  test(`a target that vanishes during input is a stale decision: ${message}`, async t => {
+    const page = new Page([state(), state('Changed'), state('Results')])
+    page.clickErrors = [message]
+    const result = await run(page, ['CLICK', 'CLICK', 'DONE'])
+    t.true(result.trace[0].stale)
+    t.is(result.status, 'done')
+    t.deepEqual(page.inputs, [{ click: true }])
+  })
+}
+
+test('an unrelated input error still stops the run', async t => {
+  const page = new Page()
+  page.clickErrors = ['Protocol error: session closed']
+  await t.throwsAsync(run(page, ['CLICK']), { message: 'Protocol error: session closed' })
+})

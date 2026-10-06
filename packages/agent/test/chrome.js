@@ -1,8 +1,9 @@
 'use strict'
 
+const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
-const { observe, execute } = require('../src/browser')
+const { observe, execute, settled } = require('../src/browser')
 const { StaleDecisionError } = require('../src/errors')
 
 const GENERATED_TEXT = 'bmw x3'
@@ -230,5 +231,92 @@ test('styles inside a shadow root never leak into a control label', async t => {
   t.deepEqual(
     actions.filter(a => a.kind === 'click').map(a => a.label),
     ['Home']
+  )
+})
+
+const SETTLE_LIMITS = { autocompleteMs: 400, defaultMs: 50, minFrames: 2 }
+const SUGGESTION_DELAY_MS = 120
+
+const COMBOBOX =
+  '<input role="combobox" aria-label="City" aria-controls="suggestions"><ul id="suggestions"></ul>'
+
+const settleMs = async (page, kind, label) => {
+  const { actions } = await observe(page)
+  const action = actions.find(a => a.kind === kind && a.label === label)
+  const started = Date.now()
+  await page.evaluate(settled, action, SETTLE_LIMITS)
+  return Date.now() - started
+}
+
+test('settling after typing in a combobox waits for its suggestions to appear', async t => {
+  const page = await open(t, COMBOBOX)
+  await page.evaluate(delay => {
+    setTimeout(() => {
+      document.getElementById('suggestions').innerHTML = '<li role="option">Zurich</li>'
+    }, delay)
+  }, SUGGESTION_DELAY_MS)
+  const elapsed = await settleMs(page, 'fill', 'City')
+  t.true(elapsed >= SUGGESTION_DELAY_MS - 20, `settled after ${elapsed} ms`)
+  t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
+})
+
+test('settling after typing in a combobox gives up at the autocomplete limit', async t => {
+  const page = await open(t, COMBOBOX)
+  const elapsed = await settleMs(page, 'fill', 'City')
+  t.true(elapsed >= SETTLE_LIMITS.autocompleteMs - 20, `settled after ${elapsed} ms`)
+})
+
+test('settling after a click does not wait for suggestions', async t => {
+  const page = await open(t, `${COMBOBOX}<button>Go</button>`)
+  const elapsed = await settleMs(page, 'click', 'Go')
+  t.true(elapsed < SETTLE_LIMITS.autocompleteMs - 100, `settled after ${elapsed} ms`)
+})
+
+const BODY_RETURNS_AFTER_MS = 200
+
+test('observing a document that has no body yet waits for the body', async t => {
+  const page = await open(t, '<button>Ready</button>')
+  await page.evaluate(delay => {
+    const body = document.body
+    body.remove()
+    setTimeout(() => document.documentElement.append(body), delay)
+  }, BODY_RETURNS_AFTER_MS)
+  const { actions } = await observe(page)
+  t.deepEqual(
+    actions.filter(a => a.kind === 'click').map(a => a.label),
+    ['Ready']
+  )
+})
+
+test('observing a document that never gets a body is blocked', async t => {
+  const page = await open(t, '<button>Gone</button>')
+  await page.evaluate(() => document.body.remove())
+  const error = await t.throwsAsync(observe(page))
+  t.is(error.reason, 'unsupported_surface')
+})
+
+const BODY_SENT_AFTER_MS = 200
+
+const pageWithLateBody = async (t, body) => {
+  const server = createServer((request, response) => {
+    response.setHeader('content-type', 'text/html')
+    response.write('<!doctype html><html><head><title>Loading</title></head>')
+    setTimeout(() => response.end(`<body>${body}</body></html>`), BODY_SENT_AFTER_MS)
+  })
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+  t.teardown(() => server.close())
+  return `http://127.0.0.1:${server.address().port}/`
+}
+
+test('observing right after a click that navigates waits for the new page body', async t => {
+  const destination = await pageWithLateBody(t, '<button>Arrived</button>')
+  const page = await open(t, `<a href="${destination}">Leave</a>`)
+  const responded = page.waitForResponse(destination)
+  await act(page, 'click', 'Leave')
+  await responded
+  const { actions } = await observe(page)
+  t.deepEqual(
+    actions.filter(a => a.kind === 'click').map(a => a.label),
+    ['Arrived']
   )
 })
