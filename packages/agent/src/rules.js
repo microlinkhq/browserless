@@ -82,8 +82,7 @@ const filledAttr = (field, written, path) => {
 }
 
 const fillField = (field, written, path) => {
-  const isComplete = Array.isArray(field) || (hasLocation(field) && !isNested(field))
-  if (isComplete) return field
+  if (Array.isArray(field) || (hasLocation(field) && !isNested(field))) return field
   const type = field.type ?? (isPlainObject(written) ? written.type : undefined)
   return {
     ...(hasLocation(field) ? pick(field, LOCATION_KEYS) : writtenLocation(written, path)),
@@ -294,7 +293,7 @@ const hasEverySelector = rule => {
   return !isNested(rule) || Object.values(rule.attr).every(hasEverySelector)
 }
 
-const needSelectors = rules => !Object.values(rules).every(hasEverySelector)
+const isComplete = rules => Object.values(rules).every(hasEverySelector)
 
 const hasData = value => {
   if (value === null || value === undefined || value === '') return false
@@ -308,6 +307,6 @@ module.exports = {
   assertRules,
   fillFields,
   readingTextByDefault,
-  needSelectors,
+  isComplete,
   hasData
 }

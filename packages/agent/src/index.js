@@ -7,7 +7,7 @@ const {
   assertRules,
   fillFields,
   readingTextByDefault,
-  needSelectors,
+  isComplete,
   hasData
 } = require('./rules')
 const { BlockedError, StaleDecisionError } = require('./errors')
@@ -231,27 +231,21 @@ const withInfo = (summary, info) =>
   Object.defineProperty(Object.assign(info, summary), 'toJSON', { value: () => summary })
 
 const usableRules = async (page, written, fields) => {
-  let rules
-  let values
   try {
-    rules = readingTextByDefault(assertRules(written))
-    if (fields) rules = fillFields(fields, rules)
-    values = await applyRules(page, rules)
+    const readingText = readingTextByDefault(assertRules(written))
+    const rules = fields ? fillFields(fields, readingText) : readingText
+    if (hasData(await applyRules(page, rules))) return rules
   } catch (error) {
-    if (error instanceof TypeError) throw invalidRules(error)
-    throw error
+    throw error instanceof TypeError ? invalidRules(error) : error
   }
-  if (!hasData(values)) {
-    throw new TypeError('The rules the model wrote matched nothing on the page.')
-  }
-  return rules
+  throw new TypeError('The rules the model wrote matched nothing on the page.')
 }
 
 const rulesFor = async (page, instruction, fields, options) => {
   if (!isInstruction(instruction)) {
     throw new TypeError('extract requires rules or a nonempty instruction.')
   }
-  if (fields !== undefined && !needSelectors(assertRules(fields, 'rules'))) return fields
+  if (fields !== undefined && isComplete(assertRules(fields, 'rules'))) return fields
   const { timeout, models, reasoning } = resolveOptions(options)
   const request = { timeout, signal: options.signal, reasoning }
   const outline = await readStableOutline(page)
