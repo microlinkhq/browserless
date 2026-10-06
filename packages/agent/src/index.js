@@ -1,12 +1,13 @@
 'use strict'
 
-const { observe, execute, settle, pageChanged, readStableContent } = require('./browser')
-const { decide, decideWithLanguageModel, fieldText, extractOutput } = require('./model')
+const { observe, execute, settle, pageChanged, readStableOutline } = require('./browser')
+const { decide, decideWithLanguageModel, fieldText, writeRules, invalidRules } = require('./model')
+const { applyRules, assertRules, fillFields, readingTextByDefault, hasData } = require('./rules')
 const { BlockedError, StaleDecisionError } = require('./errors')
 
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
 const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
-const DEFAULT_TEXT_MODEL = 'openai/gpt-6-luna'
+const DEFAULT_TEXT_MODEL = 'alibaba/qwen3.8-flash'
 const DEFAULT_REASONING = 'none'
 const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
 const MAX_UNCHANGED_ACTIONS = 3
@@ -182,28 +183,58 @@ const goal = async (page, goal, options = {}) => {
   }
 }
 
-const extract = async (page, instruction, schema, options = {}) => {
+const usableRules = async (page, written, fields) => {
+  let rules
+  let values
+  try {
+    rules = readingTextByDefault(assertRules(written))
+    if (fields) rules = fillFields(fields, rules)
+    values = await applyRules(page, rules)
+  } catch (error) {
+    if (error instanceof TypeError) throw invalidRules(error)
+    throw error
+  }
+  if (!hasData(values)) {
+    throw new TypeError('The rules the model wrote matched nothing on the page.')
+  }
+  return rules
+}
+
+const rules = async (page, instruction, options = {}) => {
   if (!isPage(page) || !isInstruction(instruction)) {
-    throw new TypeError('extract requires a Puppeteer page and a nonempty instruction.')
+    throw new TypeError('rules requires a Puppeteer page and a nonempty instruction.')
   }
-  if (schema === undefined || schema === null) {
-    throw new TypeError('extract requires a schema describing the result.')
-  }
+  const { fields } = options
+  if (fields !== undefined) assertRules(fields, 'fields')
   const { timeout, models, reasoning } = resolveOptions(options)
   const request = { timeout, signal: options.signal, reasoning }
-  return extractOutput(instruction, await readStableContent(page), schema, models.text, request)
+  const outline = await readStableOutline(page)
+  const written = await writeRules(instruction, outline, fields, models.text, request)
+  return usableRules(page, written, fields)
+}
+
+const extract = async (page, input, options = {}) => {
+  if (!isPage(page)) throw new TypeError('extract requires a Puppeteer page.')
+  const { extractor = applyRules } = options
+  return extractor(page, typeof input === 'string' ? await rules(page, input, options) : input)
 }
 
 const agent = (page, defaults = {}) => {
   if (!isPage(page)) throw new TypeError('agent requires a Puppeteer page.')
+  const existingExtract = typeof page.extract === 'function' ? page.extract.bind(page) : undefined
+  const extractor = defaults.extractor ?? (existingExtract && ((_, data) => existingExtract(data)))
+  const settings = extractor ? { ...defaults, extractor } : defaults
+  const withSettings = options => ({ ...settings, ...options })
   return Object.assign(page, {
-    goal: (text, options) => goal(page, text, { ...defaults, ...options }),
-    extract: (instruction, schema, options) =>
-      extract(page, instruction, schema, { ...defaults, ...options })
+    goal: (text, options) => goal(page, text, withSettings(options)),
+    rules: (instruction, options) => rules(page, instruction, withSettings(options)),
+    extract: (input, options) => extract(page, input, withSettings(options))
   })
 }
 
 module.exports = agent
 module.exports.goal = goal
+module.exports.rules = rules
 module.exports.extract = extract
+module.exports.applyRules = applyRules
 module.exports.BlockedError = BlockedError

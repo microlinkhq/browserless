@@ -9,19 +9,13 @@ const {
   NoOutputGeneratedError
 } = require('ai')
 
-const {
-  NEXT_ACTION,
-  TARGET,
-  TEXT_VALUE,
-  LANGUAGE_DECISION,
-  OUTPUT_EXTRACTION
-} = require('./questions')
+const { NEXT_ACTION, TARGET, TEXT_VALUE, LANGUAGE_DECISION, RULES_WRITER } = require('./questions')
 
 const PROBABILITY_SUM_TOLERANCE = 0.02
 const WINNER_TOLERANCE = 1e-6
 const TEXT_MAX_OUTPUT_TOKENS = 1024
 const DECISION_MAX_OUTPUT_TOKENS = 256
-const OUTPUT_MAX_OUTPUT_TOKENS = 4096
+const RULES_MAX_OUTPUT_TOKENS = 2048
 const TEXT_MAX_LENGTH = 2000
 const MIN_DECIMALS_FOR_ROUNDING_TOLERANCE = 2
 const MAX_RETRIES = 0
@@ -215,7 +209,7 @@ const generateObject = async (request, invalidOutput) => {
     return output
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error) || NoOutputGeneratedError.isInstance(error)) {
-      throw invalidOutput()
+      throw invalidOutput(error)
     }
     throw error
   }
@@ -297,27 +291,29 @@ const fieldText = async (goal, action, state, history, model, options) => {
   return output.text
 }
 
-const invalidOutput = () => new TypeError('The page did not produce output matching the schema.')
+const invalidRules = cause =>
+  new TypeError('The model did not write usable extraction rules.', { cause })
 
-const extractOutput = (instruction, content, schema, model, options) =>
+const writeRules = (instruction, outline, fields, model, options) =>
   withinTimeout(options, abortSignal =>
     generateObject(
       {
         model,
-        system: OUTPUT_EXTRACTION,
-        prompt: JSON.stringify({ instruction, page: content }),
-        output: Output.object({ schema }),
-        maxOutputTokens: OUTPUT_MAX_OUTPUT_TOKENS,
+        system: RULES_WRITER,
+        prompt: JSON.stringify({ instruction, fields, page: outline }),
+        output: Output.json(),
+        maxOutputTokens: RULES_MAX_OUTPUT_TOKENS,
         maxRetries: MAX_RETRIES,
         reasoning: options.reasoning,
         abortSignal
       },
-      invalidOutput
+      invalidRules
     )
   )
 
 module.exports = {
-  extractOutput,
+  writeRules,
+  invalidRules,
   validateChoice,
   actionSpace,
   buildRequest,

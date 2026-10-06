@@ -1,18 +1,34 @@
 import type { Page } from 'puppeteer' with { 'resolution-mode': 'import' }
-import type { Experimental_DecisionModel, FlexibleSchema, LanguageModel } from 'ai' with { 'resolution-mode': 'import' }
+import type { Experimental_DecisionModel, LanguageModel } from 'ai' with { 'resolution-mode': 'import' }
 
 declare function agent<PAGE extends Page>(page: PAGE, defaults?: agent.Options): PAGE & agent.Methods
 
 declare namespace agent {
   type BlockedReason = 'captcha' | 'login_wall' | 'unsupported_surface' | 'step_budget' | 'no_change' | 'stale_target' | 'model_blocked'
   type Reasoning = 'provider-default' | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+  interface Rule {
+    selector?: string | string[]
+    selectorAll?: string | string[]
+    attr?: string | string[] | Rules
+    type?: string
+  }
+  type Rules = Record<string, Rule | Rule[]>
+  type Data = Record<string, unknown>
+  type Extractor = (page: Page, rules: Rules) => Promise<Data>
   interface Methods {
     goal(goal: string, options?: Options): Promise<Result>
-    extract<OUTPUT>(instruction: string, schema: FlexibleSchema<OUTPUT>, options?: Options): Promise<OUTPUT>
+    rules(instruction: string, options?: ExtractOptions): Promise<Rules>
+    extract(rules: Rules, options?: Options): Promise<Data>
+    extract(instruction: string, options?: ExtractOptions): Promise<Data>
   }
+  interface ExtractOptions extends Options { fields?: Rules }
   function goal(page: Page, goal: string, options?: Options): Promise<Result>
-  function extract<OUTPUT>(page: Page, instruction: string, schema: FlexibleSchema<OUTPUT>, options?: Options): Promise<OUTPUT>
+  function rules(page: Page, instruction: string, options?: ExtractOptions): Promise<Rules>
+  function extract(page: Page, rules: Rules, options?: Options): Promise<Data>
+  function extract(page: Page, instruction: string, options?: ExtractOptions): Promise<Data>
+  const applyRules: Extractor
   interface Options {
+    extractor?: Extractor
     decisions?: Experimental_DecisionModel
     text?: LanguageModel
     reasoning?: Reasoning

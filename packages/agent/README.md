@@ -20,32 +20,29 @@ export AI_GATEWAY_API_KEY=...
 import puppeteer from 'puppeteer'
 import agent from '@browserless/agent'
 
-import { z } from 'zod'
-
 const browser = await puppeteer.launch()
 const page = agent(await browser.newPage())
 
 await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' })
 await page.goal('busca el bmw x3 más barato')
-const { products } = await page.extract(
-  'get the top 5 results',
-  z.object({ products: z.array(z.object({ name: z.string(), price: z.number() })) })
-)
+const { products } = await page.extract('get the search results', {
+  fields: { products: { attr: { name: {}, price: { type: 'number' }, url: { type: 'url' } } } }
+})
 await browser.close()
 ```
 
-`agent(page, defaults?)` adds two methods to the Puppeteer page it is given and
-returns the same page:
+`agent(page, defaults?)` adds three methods to the Puppeteer page it is given
+and returns the same page:
 
 - `page.goal(goal, options?)` drives the page, over as many steps as it takes,
   until the model reports the goal is met.
-- `page.extract(instruction, schema, options?)` reads the current page and
-  returns data in the shape of the schema. It does not navigate.
+- `page.extract(...)` returns data from the current page. It does not navigate.
+- `page.rules(instruction, options?)` returns the extraction rules a
+  model writes for the current page, to save and reuse.
 
-`defaults` apply to both; options passed to a call override them. The same
-functions are exported for use without touching the page:
-`agent.goal(page, goal, options?)` and
-`agent.extract(page, instruction, schema, options?)`.
+`defaults` apply to all three; options passed to a call override them. The same
+functions are exported for use without touching the page: `agent.goal(page, …)`,
+`agent.extract(page, …)` and `agent.rules(page, …)`.
 
 Import compatibility is CommonJS plus the Node ESM default import, with
 TypeScript declarations.
@@ -73,9 +70,10 @@ The CLI exits with code 1 when the agent throws, including a `BlockedError`.
 
 ### Examples
 
-Every file in `examples/` is an exec script. Each runs one `page.goal`, then one
-`page.extract`, prints a short summary (status, final URL, extracted output,
-operations, `decisionMs`) and saves `<name>.png`.
+Every file in `examples/` is an exec script. Each runs one `page.goal`, has the
+model write extraction rules for the page it ended on, runs them, prints a
+short summary (status, final URL, rules, extracted output, operations,
+`decisionMs`) and saves `<name>.png`.
 
 | Script | Goal |
 | --- | --- |
@@ -84,11 +82,11 @@ operations, `decisionMs`) and saves `<name>.png`.
 | `examples/google-flights.js` | Find one-way Zurich to London flights 30 days from today |
 | `examples/hacker-news.js` | Open the comments of the first story on the front page |
 | `examples/github.js` | Open the open issues of this repository |
-| `examples/run.js` | Any page: `--url=<url> --goal=<goal>` |
+| `examples/run.js` | Any page: `--url=<url> --goal=<goal> --extract=<what to get>` |
 
 ```sh
 browserless exec examples/wikipedia.js
-browserless exec examples/run.js --url=https://en.wikipedia.org/wiki/Main_Page --goal='Find and open the Wikipedia article about Alan Turing.'
+browserless exec examples/run.js --url=https://en.wikipedia.org/wiki/Main_Page --goal='Find and open the Wikipedia article about Alan Turing.' --extract='get the article title'
 ```
 
 Flags, all optional: `--text=<model id>` picks the language model, `--no-jev`
@@ -110,8 +108,8 @@ instead of `bmw x3`. Notes from those runs:
   for text, seven of ten runs ended on the results for `bmw x3` sorted by lowest
   price in 9 to 16 decisions, and three failed on text-model timeouts that were
   probably the gateway free tier's limit of 5 requests per minute.
-- The default text model `openai/gpt-6-luna` and Jev through the gateway
-  (`typesafe-ai/jev`) have not been run: the gateway free tier refuses both.
+- Jev through the gateway (`typesafe-ai/jev`) has not been run: the gateway free
+  tier refuses it.
 
 ## API
 
@@ -144,7 +142,7 @@ each decision still spends a request.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `decisions` | none | Decision model such as `'typesafe-ai/jev'`: an AI Gateway model id or an AI SDK decision model. When omitted, the text model makes the decisions |
-| `text` | `'openai/gpt-6-luna'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
+| `text` | `'alibaba/qwen3.8-flash'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
 | `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
 | `maxDecisions` | `120` | Maximum decision requests, including discarded stale decisions |
@@ -152,33 +150,113 @@ each decision still spends a request.
 | `timeout` | `25000` | Milliseconds per model request |
 | `signal` | none | AbortSignal; checked before decisions and input |
 
-The default text model needs paid AI Gateway credits: the gateway's free tier
-refuses `openai/gpt-6-luna`. On the free tier, pass a model it allows, such as
-`text: 'inception/mercury-2.5'`.
+The gateway's free tier allows the default text model, at 5 requests per minute.
 
 Model requests are never retried: this keeps request accounting exact. A reply
 that arrives after `timeout` is discarded even if the model ignored the abort. A final
 DONE observation can succeed after the last permitted action; no extra input is
 allowed. Concurrent agent calls on the same Page are rejected.
 
-### `await page.extract(instruction, schema, options?)`
+### `await page.extract(rules | instruction, options?)`
 
-Reads the page it is called on and returns an object in the shape of `schema`,
-which is anything the AI SDK accepts as an object schema; a `zod` schema also
-validates the reply. One request to the language model in `text`; `reasoning`,
-`timeout` and `signal` apply.
+Data comes out of the page through rules, in the format of the Microlink
+[`data`](https://microlink.io/docs/api/parameters/data) parameter. A rule has:
 
-- The model receives the text of the whole document, not only the viewport, up
-  to 60,000 characters, including open shadow roots, with each link followed by
-  its URL. Content that only loads on scroll is not there until something
-  scrolls to it.
-- The page is read once its text has stopped changing, waiting up to 3 seconds.
-- A reply that does not match the schema throws
-  `The page did not produce output matching the schema.`
-- The values are written by a language model. It is told to copy them from the
-  page and never invent them, but nothing checks that it did. On one Wallapop
-  run a script found all five extracted names, prices and URLs in the page
-  text.
+| Property | Meaning |
+| --- | --- |
+| `selector` | CSS selector for one element |
+| `selectorAll` | CSS selector for every matching element; the field is a list |
+| `attr` | What to read: `text`, `html` (default), `val`, `href`, `src`, any attribute name, a list of those to try in order, or an object of nested rules relative to the matched element |
+| `type` | `number`, `url`, `image`, `date` or `string`. Without a type, text that is exactly a number or `true`/`false` is converted and everything else stays a string |
+
+`extract` can be called at three levels:
+
+```js
+// 1. Rules: no model involved.
+await page.extract({
+  stories: {
+    selectorAll: '.athing',
+    attr: {
+      title: { selector: '.titleline > a', attr: 'text' },
+      href: { selector: '.titleline > a', attr: 'href', type: 'url' }
+    }
+  }
+})
+
+// 2. Instruction: the model writes the rules, then they run.
+await page.extract('get the stories with their title and link')
+
+// 3. Instruction plus fields: you name the fields and types, the model fills in the selectors.
+await page.extract('get the stories', {
+  fields: { stories: { attr: { title: {}, href: { type: 'url' } } } }
+})
+```
+
+The values always come from the DOM. A language model only ever writes
+selectors, so it cannot invent a value: a wrong selector gives a missing field,
+`null` inside a list item, or the wrong element's text.
+
+`page.rules(instruction, { fields }?)` does the model step alone and returns the
+rules, so they can be stored and passed to `page.extract(rules)` later without
+a model call:
+
+```js
+const rules = await page.rules('get the search results')
+const data = await page.extract(rules)
+```
+
+How rules are written:
+
+- One request to the language model in `text`; `reasoning`, `timeout` and
+  `signal` apply. It receives an outline of the page: tags, ids, classes,
+  `data-*` and a few other attributes, and short text, indented by nesting. Of
+  several similar siblings it sees the first three and a count of the rest.
+  The outline is taken once it has stopped changing, waiting up to 3 seconds,
+  and is capped at 60,000 characters.
+- A rule the model writes without `attr` reads the text, not the HTML.
+- Rules from the model may only contain `selector`, `selectorAll`, `attr` and
+  `type`. Anything else, including `evaluate`, is rejected, so a model never
+  supplies code.
+- With `fields`, the result has exactly your field names and nesting. A rule you
+  wrote with its own selector is kept untouched; otherwise the model supplies
+  the selector, your `type` and `attr` win over the model's, and a reply that
+  omits a field or nests where you did not throws.
+- The model sees only what the outline shows: text is clipped at 80
+  characters, and of several siblings with the same classes and the same
+  children it sees three.
+- The rules are tried on the page with the built-in engine before they are
+  returned. An invalid selector throws
+  `The model did not write usable extraction rules.` and rules that give no
+  value at all throw `The rules the model wrote matched nothing on the page.`
+- A selector can still be wrong for one field, or brittle. On Wallapop the model
+  used generated class names such as `retrieval-item-card-module_…__ckj4h`,
+  which will break when the site is rebuilt. An instruction like "top 5" is not
+  honored: rules select every match.
+
+The engine that runs rules is replaceable:
+
+```js
+agent(page, { extractor: (page, rules) => myEngine(page, rules) })
+```
+
+When the page already has an `extract` method, as it does inside a Microlink
+function, `agent(page)` keeps it and uses it as the engine. Otherwise a small
+built-in engine evaluates the rules in the page (`agent.applyRules`). It follows
+the Microlink rule format for the properties above, with these differences:
+
+- No `evaluate` rules, and `type` is one name, not a name with options.
+- It reads the live DOM, not the fetched HTML, and does not look inside shadow
+  roots.
+- Selectors are plain CSS: jQuery extensions such as `:contains()` and `:eq()`
+  are invalid.
+- A rule without a selector reads the rendered text or the HTML of the whole
+  page; there is no readability pass, Markdown or JSON mode.
+- `number` reads the first number in the text and accepts `.` or `,` as decimal
+  or thousands separator, decided by position: `16.690 €` is 16690, `1.234,50`
+  is 1234.5, `4.5` is 4.5, `0.125` is 0.125. A single separator followed by
+  exactly three digits is read as thousands, so `3.142` is 3142.
+- `date` returns an ISO string and needs a four-digit year in the text.
+- Only `number`, `url`, `image`, `date` and `string` are known types.
 
 ## Models
 
@@ -189,7 +267,7 @@ which reads `AI_GATEWAY_API_KEY`:
 ```js
 const page = agent(await browser.newPage(), {
   decisions: 'typesafe-ai/jev',
-  text: 'openai/gpt-6-luna'
+  text: 'alibaba/qwen3.8-flash'
 })
 ```
 

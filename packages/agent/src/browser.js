@@ -2,16 +2,16 @@
 'use strict'
 
 const snapshot = require('./snapshot')
-const pageContent = require('./content')
+const pageOutline = require('./outline')
 const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
 const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
 const DOCUMENT_READY_LIMIT_MS = 3000
 const DOCUMENT_READY_POLL_MS = 50
-const CONTENT_CHARACTER_LIMIT = 60000
-const CONTENT_STABLE_POLL_MS = 250
-const CONTENT_STABLE_LIMIT_MS = 3000
+const OUTLINE_LIMITS = { characters: 60000, text: 80, attribute: 80, siblings: 3 }
+const OUTLINE_STABLE_POLL_MS = 250
+const OUTLINE_STABLE_LIMIT_MS = 3000
 
 const pageChanged = (before, after) =>
   JSON.stringify(before.marker) !== JSON.stringify(after.marker)
@@ -93,18 +93,18 @@ const selectContents = element => {
   else getSelection().selectAllChildren(element)
 }
 
-const readContent = page => page.evaluate(pageContent, CONTENT_CHARACTER_LIMIT)
+const readOutline = page => page.evaluate(pageOutline, OUTLINE_LIMITS)
 
-const readStableContent = async page => {
-  const deadline = Date.now() + CONTENT_STABLE_LIMIT_MS
-  let content = await readContent(page)
+const readStableOutline = async page => {
+  const deadline = Date.now() + OUTLINE_STABLE_LIMIT_MS
+  let current = await readOutline(page)
   while (Date.now() < deadline) {
-    await new Promise(resolve => setTimeout(resolve, CONTENT_STABLE_POLL_MS))
-    const next = await readContent(page)
-    if (next.text === content.text) return next
-    content = next
+    await new Promise(resolve => setTimeout(resolve, OUTLINE_STABLE_POLL_MS))
+    const next = await readOutline(page)
+    if (next.outline === current.outline) return next
+    current = next
   }
-  return content
+  return current
 }
 
 const settled = (action, limits) =>
@@ -200,9 +200,8 @@ const execute = async (page, state, action, text, waitMs) => {
 }
 
 module.exports = {
-  readContent,
-  readStableContent,
-  pageContent,
+  readStableOutline,
+  pageOutline,
   observe,
   execute,
   settle,
