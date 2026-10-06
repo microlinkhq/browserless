@@ -37,17 +37,22 @@ const timingOf = (calls, evaluationCalls, totalMs) => {
 const createInfo = ({ goal, state, trace, calls, totalMs, evaluator, timeout }) => {
   const goalCalls = [...calls]
   const request = state && evaluationRequest(state, goal, trace)
+  const evaluationCalls = []
   let result
   const evaluate = async signal => {
-    const evaluationCalls = []
-    if (!request) return { evaluationCalls }
-    return evaluateGoal(request, evaluator, {
-      timeout,
-      signal,
-      onCall: metrics => evaluationCalls.push(metrics)
-    }).then(accuracy => ({ accuracy, evaluationCalls }))
+    if (!request) return {}
+    try {
+      const accuracy = await evaluateGoal(request, evaluator, {
+        timeout,
+        signal,
+        onCall: metrics => evaluationCalls.push(metrics)
+      })
+      return { accuracy }
+    } catch (error) {
+      return { error }
+    }
   }
-  const report = ({ accuracy, evaluationCalls = [], error }) => ({
+  const report = ({ accuracy, error }) => ({
     accuracy,
     cost: costOf([...goalCalls, ...evaluationCalls]),
     timing: timingOf(goalCalls, evaluationCalls, totalMs),
@@ -55,9 +60,9 @@ const createInfo = ({ goal, state, trace, calls, totalMs, evaluator, timeout }) 
   })
   return ({ signal } = {}) => {
     if (!result) {
-      const pending = evaluate(signal).then(report, error => {
-        if (result === pending) result = undefined
-        return report({ error })
+      const pending = evaluate(signal).then(outcome => {
+        if (outcome.error && result === pending) result = undefined
+        return report(outcome)
       })
       result = pending
     }
