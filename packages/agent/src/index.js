@@ -18,8 +18,9 @@ const agent = async (page, goal, options = {}) => {
   const waitMs = options.waitMs ?? 100
   const timeout = options.timeout ?? 25000
   for (const [key, value] of Object.entries({ maxSteps, maxDecisions, waitMs, timeout })) {
-    if (!Number.isSafeInteger(value) || value < (key === 'waitMs' ? 0 : 1)) {
-      throw new TypeError(`${key} must be a positive integer.`)
+    const minimum = key === 'waitMs' ? 0 : 1
+    if (!Number.isSafeInteger(value) || value < minimum) {
+      throw new TypeError(`${key} must be an integer of at least ${minimum}.`)
     }
   }
   const config = provider(

@@ -191,6 +191,30 @@ test('select uses Puppeteer select with observed value', async t => {
   t.deepEqual(page.inputs, [{ select: 'cheap' }])
 })
 
+test('WAIT on a page that keeps changing waits and is never stale', async t => {
+  const page = new Page([state('Loading 1'), state('Loading 2'), state('Results')])
+  const result = await run(page, ['WAIT', 'WAIT', 'DONE'])
+  t.is(result.status, 'done')
+  t.is(result.steps, 2)
+  t.deepEqual(
+    result.trace.map(entry => [entry.operation, !!entry.stale]),
+    [
+      ['WAIT', false],
+      ['WAIT', false],
+      ['DONE', false]
+    ]
+  )
+})
+
+test('invalid options name the accepted range', async t => {
+  await t.throwsAsync(run(new Page(), [], { waitMs: -1 }), {
+    message: 'waitMs must be an integer of at least 0.'
+  })
+  await t.throwsAsync(run(new Page(), [], { maxSteps: 0 }), {
+    message: 'maxSteps must be an integer of at least 1.'
+  })
+})
+
 test('invalid options and missing providers fail before browser input', async t => {
   await t.throwsAsync(run(new Page(), [], { maxSteps: 0 }), { instanceOf: TypeError })
   await t.throwsAsync(agent(new Page(), 'cars', { decisions: {} }), { instanceOf: TypeError })

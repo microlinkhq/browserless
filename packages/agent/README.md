@@ -220,7 +220,9 @@ hosts, and the keyboard-focus guard. Clicks, selects, scrolling and the full
 loop are not exercised in real Chrome. No paid-provider benchmark is claimed.
 
 This directory is picked up by the existing `packages/*` workspace and release
-globs. No CI, root config or existing package is changed. The owner must publish
+globs. No CI workflow or root config is changed. `@browserless/cli` gains the
+`exec` command and a real test script, so CI now tests that package too. The
+owner must publish
 `@browserless/agent` to npm with public access after review. No publishing or
 merging is performed by this patch.
 
