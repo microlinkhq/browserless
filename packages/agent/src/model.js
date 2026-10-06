@@ -9,11 +9,12 @@ const {
   NoOutputGeneratedError
 } = require('ai')
 
-const { NEXT_ACTION, TARGET, TEXT_VALUE } = require('./questions')
+const { NEXT_ACTION, TARGET, TEXT_VALUE, LANGUAGE_DECISION } = require('./questions')
 
 const PROBABILITY_SUM_TOLERANCE = 0.02
 const WINNER_TOLERANCE = 1e-6
 const TEXT_MAX_OUTPUT_TOKENS = 1024
+const DECISION_MAX_OUTPUT_TOKENS = 256
 const TEXT_MAX_LENGTH = 2000
 const MIN_DECIMALS_FOR_ROUNDING_TOLERANCE = 2
 const MAX_RETRIES = 0
@@ -49,10 +50,10 @@ const isWinningDistribution = (answer, ids, rounding) => {
   return probabilities[answer.choice] >= Math.max(...values) - WINNER_TOLERANCE
 }
 
+const invalidDecision = () => new TypeError('Invalid decisions response; no action executed.')
+
 const validateChoice = (answer, ids, rounding) => {
-  if (!isWinningDistribution(answer, ids, rounding)) {
-    throw new TypeError('Invalid decisions response; no action executed.')
-  }
+  if (!isWinningDistribution(answer, ids, rounding)) throw invalidDecision()
   const { choice, probabilities } = answer
   return { choice, probabilities, confidence: probabilities[choice] }
 }
@@ -201,16 +202,54 @@ const decide = async (state, goal, history, model, options) => {
 const invalidFieldValue = () =>
   new TypeError('Text helper returned no valid field value; nothing typed.')
 
-const generateFieldValue = async request => {
+const generateObject = async (request, invalidOutput) => {
   try {
     const { output } = await generateText(request)
     return output
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error) || NoOutputGeneratedError.isInstance(error)) {
-      throw invalidFieldValue()
+      throw invalidOutput()
     }
     throw error
   }
+}
+
+const languageDecisionSchema = operations =>
+  jsonSchema({
+    type: 'object',
+    properties: {
+      operation: { type: 'string', enum: operations },
+      target: { type: ['string', 'null'] }
+    },
+    required: ['operation', 'target'],
+    additionalProperties: false
+  })
+
+const decideWithLanguageModel = async (state, goal, history, model, options) => {
+  const { space, operations, request } = buildRequest(state, goal, history)
+  const output = await withinTimeout(options, abortSignal =>
+    generateObject(
+      {
+        model,
+        system: LANGUAGE_DECISION,
+        prompt: JSON.stringify(request),
+        output: Output.object({ schema: languageDecisionSchema(Object.keys(operations)) }),
+        maxOutputTokens: DECISION_MAX_OUTPUT_TOKENS,
+        maxRetries: MAX_RETRIES,
+        reasoning: options.reasoning,
+        abortSignal
+      },
+      invalidDecision
+    )
+  )
+  const operation = output?.operation
+  if (typeof operation !== 'string' || !Object.hasOwn(operations, operation)) { throw invalidDecision() }
+  const targets = space.targets[operation]
+  if (!targets) return { operation, action: space.controls[operation] }
+  if (typeof output.target !== 'string' || !Object.hasOwn(targets, output.target)) {
+    throw invalidDecision()
+  }
+  return { operation, action: targets[output.target] }
 }
 
 const isFieldValue = output =>
@@ -223,24 +262,34 @@ const isFieldValue = output =>
 
 const fieldText = async (goal, action, state, history, model, options) => {
   const output = await withinTimeout(options, abortSignal =>
-    generateFieldValue({
-      model,
-      system: TEXT_VALUE,
-      prompt: JSON.stringify({
-        goal,
-        field: { label: action.label, role: action.role, value: action.value },
-        page: { title: state.title, text: state.text },
-        recent_actions: history.slice(-TEXT_HISTORY_LENGTH)
-      }),
-      output: Output.object({ schema: FIELD_VALUE_SCHEMA }),
-      maxOutputTokens: TEXT_MAX_OUTPUT_TOKENS,
-      maxRetries: MAX_RETRIES,
-      reasoning: options.reasoning,
-      abortSignal
-    })
+    generateObject(
+      {
+        model,
+        system: TEXT_VALUE,
+        prompt: JSON.stringify({
+          goal,
+          field: { label: action.label, role: action.role, value: action.value },
+          page: { title: state.title, text: state.text },
+          recent_actions: history.slice(-TEXT_HISTORY_LENGTH)
+        }),
+        output: Output.object({ schema: FIELD_VALUE_SCHEMA }),
+        maxOutputTokens: TEXT_MAX_OUTPUT_TOKENS,
+        maxRetries: MAX_RETRIES,
+        reasoning: options.reasoning,
+        abortSignal
+      },
+      invalidFieldValue
+    )
   )
   if (!isFieldValue(output)) throw invalidFieldValue()
   return output.text
 }
 
-module.exports = { validateChoice, actionSpace, buildRequest, decide, fieldText }
+module.exports = {
+  validateChoice,
+  actionSpace,
+  buildRequest,
+  decide,
+  decideWithLanguageModel,
+  fieldText
+}

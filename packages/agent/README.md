@@ -54,8 +54,8 @@ browserless exec agent-example.js
 The CLI prints the returned trace as JSON and exits with code 1 when the agent
 throws, including a `BlockedError`. `examples/wallapop.js` is this script; in
 this repository `npm start` runs it. It needs `AI_GATEWAY_API_KEY` for the text
-model; when `TYPESAFE_API_KEY` is set it calls Jev directly with that key
-instead of through the gateway.
+model. When `TYPESAFE_API_KEY` is set, Jev makes the decisions, called directly
+with that key; otherwise, or with `--no-jev`, the text model decides.
 
 It has been run live against Wallapop with `jev-latest` through
 `@ai-sdk/typesafe-ai` for decisions and `inception/mercury-2.5` through Vercel
@@ -65,8 +65,10 @@ on the six that were timed), and three failed because the text model did not
 answer within the 25 second timeout on the gateway's free tier. Requests are
 not retried, so one such hang ends the run. Earlier builds also
 reported `done` before results had loaded or been sorted. `done` is the model's
-judgment, not a verified outcome. Decisions through the gateway
-(`typesafe-ai/jev`) have not been run: the free gateway tier refuses that model.
+judgment, not a verified outcome. Several of those timeouts were probably the
+free tier's limit of 5 requests per minute, hit by running back to back.
+Decisions through the gateway (`typesafe-ai/jev`) have not been run: the free
+gateway tier refuses that model.
 
 ## API
 
@@ -98,8 +100,8 @@ each decision still spends a request.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `decisions` | `'typesafe-ai/jev'` | Decision model: an AI Gateway model id or an AI SDK decision model |
-| `text` | `'inception/mercury-2.5'` | Text model: an AI Gateway model id or an AI SDK language model, only used for TYPE_TEXT |
+| `decisions` | none | Decision model such as `'typesafe-ai/jev'`: an AI Gateway model id or an AI SDK decision model. When omitted, the text model makes the decisions |
+| `text` | `'inception/mercury-2.5'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
 | `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
 | `maxDecisions` | `120` | Maximum decision requests, including discarded stale decisions |
@@ -149,6 +151,32 @@ declared. This package allows 0.02, widened only for the rounding of a provider
 that declares two or more decimals. Unused speculative heads cannot
 drive input and are not consumed. `confidence` in the trace is the probability
 of the chosen option.
+
+### Without a decision model
+
+`decisions` is optional. Without it, the language model in `text` receives the
+same state and the same questions and returns `{ "operation", "target" }`. The
+operation must be one of the offered operations and the target one of the
+targets offered for it, or the run stops before any input. A target sent for an
+operation that has none, such as WAIT or DONE, is ignored. There are no
+probabilities on this path, so `confidence` and `probabilities` are absent from
+the trace.
+
+```js
+await agent(page, goal)                                   // language model decides
+await agent(page, goal, { decisions: 'typesafe-ai/jev' }) // Jev decides
+```
+
+Every trace entry has `decisionMs`, the time its decision took (the model
+request plus building and checking it), and `textMs` when a value was generated, so the two setups can be compared on the
+same goal. Measured on the Wallapop example: Jev answered in about 250 ms per
+decision (33 decisions over two runs, median 245 and 255 ms), while
+`inception/mercury-2.5` took 1.1 to 1.7 seconds for each of the three decisions
+it completed. That second figure is only three samples: the gateway's free tier
+allows 5 requests per minute for that model and then stops answering, so no run
+without Jev has completed.
+
+### Text values
 
 The text model is called with `generateText` and a JSON object output only for
 TYPE_TEXT. It must return exactly `{ "text": "..." }` with a nonempty string of

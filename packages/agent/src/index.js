@@ -1,12 +1,12 @@
 'use strict'
 
 const { observe, execute, pageChanged } = require('./browser')
-const { decide, fieldText } = require('./model')
+const { decide, decideWithLanguageModel, fieldText } = require('./model')
 const { BlockedError, StaleDecisionError } = require('./errors')
 
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
 const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
-const DEFAULT_MODELS = { decisions: 'typesafe-ai/jev', text: 'inception/mercury-2.5' }
+const DEFAULT_TEXT_MODEL = 'inception/mercury-2.5'
 const DEFAULT_REASONING = 'none'
 const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
 const MAX_UNCHANGED_ACTIONS = 3
@@ -30,9 +30,15 @@ const resolveOptions = options => {
       throw new TypeError(`${key} must be an integer of at least ${minimum}.`)
     }
   }
-  const models = withDefaults(options, DEFAULT_MODELS)
+  const models = {
+    decisions: options.decisions ?? undefined,
+    text: options.text ?? DEFAULT_TEXT_MODEL
+  }
   for (const [key, model] of Object.entries(models)) {
-    if (!isModel(model)) throw new TypeError(`${key} must be a model id or an AI SDK model.`)
+    const required = key === 'text'
+    if ((required || model !== undefined) && !isModel(model)) {
+      throw new TypeError(`${key} must be a model id or an AI SDK model.`)
+    }
   }
   const reasoning = options.reasoning ?? DEFAULT_REASONING
   if (!REASONING_LEVELS.includes(reasoning)) {
@@ -56,6 +62,12 @@ const blockingSurface = state => {
 const actionKey = action => `${action.kind}:${action.node ?? action.id}:${action.value ?? ''}`
 
 const staleTargetKey = ({ operation, action }) => `${operation}:${action.node ?? action.id}`
+
+const timed = async call => {
+  const started = performance.now()
+  const value = await call()
+  return [value, Math.round(performance.now() - started)]
+}
 
 const agent = async (page, goal, options = {}) => {
   if (!page || typeof page.evaluate !== 'function' || typeof goal !== 'string' || !goal.trim()) {
@@ -98,8 +110,18 @@ const agent = async (page, goal, options = {}) => {
         ...state,
         actions: state.actions.filter(action => !ineffectiveActions.has(actionKey(action)))
       }
-      const decision = await decide(offered, goal, trace, models.decisions, request)
-      const entry = { ...decision, action: decision.action?.id, step: steps, decision: decisions }
+      const [decision, decisionMs] = await timed(() =>
+        models.decisions
+          ? decide(offered, goal, trace, models.decisions, request)
+          : decideWithLanguageModel(offered, goal, trace, models.text, request)
+      )
+      const entry = {
+        ...decision,
+        action: decision.action?.id,
+        step: steps,
+        decision: decisions,
+        decisionMs
+      }
       trace.push(entry)
       if (decision.operation === 'DONE') return { status: 'done', steps, decisions, trace }
       if (decision.operation === 'BLOCKED') {
@@ -111,7 +133,9 @@ const agent = async (page, goal, options = {}) => {
       }
       let text
       if (decision.operation === 'TYPE_TEXT') {
-        text = await fieldText(goal, decision.action, state, trace, models.text, request)
+        ;[text, entry.textMs] = await timed(() =>
+          fieldText(goal, decision.action, state, trace, models.text, request)
+        )
         entry.text = text
       }
       options.signal?.throwIfAborted()
