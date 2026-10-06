@@ -3,6 +3,7 @@
 const { EventEmitter } = require('node:events')
 const { StaleDecisionError } = require('../../src/errors')
 const { selectContents } = require('../../src/browser')
+const { MockLanguageModelV4 } = require('ai/test')
 
 const state = (text = 'Search cars') => ({
   url: 'https://example.com',
@@ -64,22 +65,43 @@ class Page extends EventEmitter {
 }
 
 const answer = (choice, ids) => ({
+  type: 'choice',
   choice,
-  confidence: 1,
   probabilities: Object.fromEntries(ids.map(id => [id, Number(choice === id)]))
 })
-const mockFetch = (operations, { targets = {}, text = '{"text":"bmw x3"}', onRequest } = {}) => {
+
+const decisionModel = doDecide => ({
+  specificationVersion: 'v4',
+  provider: 'fixture',
+  modelId: 'fixture-decisions',
+  supportedQuestionTypes: ['choice'],
+  doDecide
+})
+
+const textModel = text =>
+  new MockLanguageModelV4({
+    doGenerate: async () => ({
+      content: [{ type: 'text', text }],
+      finishReason: { unified: 'stop', raw: 'stop' },
+      usage: {
+        inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+        outputTokens: { total: 1, text: 1, reasoning: 0 }
+      },
+      warnings: []
+    })
+  })
+
+const mockModels = (
+  operations,
+  { targets = {}, text = '{"text":"bmw x3"}', onDecide, onText } = {}
+) => {
   const calls = []
-  const fetch = async (url, request) => {
-    const body = JSON.parse(request.body)
-    calls.push({ url, body })
-    if (onRequest) onRequest(body)
-    if (url.endsWith('/chat/completions')) {
-      return { ok: true, json: async () => ({ choices: [{ message: { content: text } }] }) }
-    }
+  const decisions = decisionModel(async ({ state, questions }) => {
+    calls.push({ kind: 'decide', state, questions })
+    if (onDecide) onDecide({ state, questions })
     const operation = operations.shift()
-    const answers = { operation: answer(operation, Object.keys(body.questions.operation.criteria)) }
-    for (const [key, question] of Object.entries(body.questions)) {
+    const answers = { operation: answer(operation, Object.keys(questions.operation.criteria)) }
+    for (const [key, question] of Object.entries(questions)) {
       if (key !== 'operation') {
         answers[key] = answer(
           targets[key] || Object.keys(question.criteria)[0],
@@ -87,11 +109,16 @@ const mockFetch = (operations, { targets = {}, text = '{"text":"bmw x3"}', onReq
         )
       }
     }
-    return { ok: true, json: async () => ({ answers }) }
+    return { answers, warnings: [] }
+  })
+  const textGenerator = textModel(text)
+  const generate = textGenerator.doGenerate
+  textGenerator.doGenerate = async options => {
+    calls.push({ kind: 'text', options })
+    if (onText) onText(options)
+    return generate(options)
   }
-  fetch.calls = calls
-  return fetch
+  return { decisions, text: textGenerator, calls }
 }
 
-const provider = { apiKey: 'fixture-key', baseUrl: 'https://fixture.invalid/v1', model: 'fixture' }
-module.exports = { Page, state, answer, mockFetch, provider, StaleDecisionError }
+module.exports = { Page, state, answer, decisionModel, textModel, mockModels, StaleDecisionError }

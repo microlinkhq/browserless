@@ -5,7 +5,9 @@ async function check () {
   const browser = await puppeteer.launch()
   const page = await browser.newPage()
   const result: agent.Result = await agent(page, 'find cars', {
-    decisions: { apiKey: 'key', baseUrl: 'https://fixture.invalid/v1', model: 'fixture' },
+    decisions: 'typesafe-ai/jev',
+    text: 'inception/mercury-2.5',
+    reasoning: 'none',
     maxSteps: 60
   })
   const reason: agent.BlockedReason = new agent.BlockedError('captcha', 'Verify').reason

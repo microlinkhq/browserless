@@ -1,35 +1,71 @@
 'use strict'
 
 const test = require('ava')
-const {
-  validateChoice,
-  actionSpace,
-  buildRequest,
-  decide,
-  fieldText,
-  provider: validateProvider
-} = require('../src/model')
-const { state, answer, mockFetch, provider } = require('./fixtures/page')
-const http = fetch => ({ fetch, timeout: 1000 })
+const { validateChoice, actionSpace, buildRequest, decide, fieldText } = require('../src/model')
+const { APICallError } = require('ai')
+const { state, answer, decisionModel, textModel, mockModels } = require('./fixtures/page')
+
+const retryableFailure = () =>
+  new APICallError({
+    message: 'provider unavailable',
+    url: 'https://fixture.invalid',
+    requestBodyValues: {},
+    statusCode: 503,
+    isRetryable: true
+  })
+
+const afterMs = (ms, value) => new Promise(resolve => setTimeout(() => resolve(value), ms))
+
+const mockAnswers = () => ({
+  operation: answer('CLICK', OPERATIONS),
+  click_target: answer('1', ['1']),
+  type_text_target: answer('1', ['1'])
+})
+
+const REQUEST = { timeout: 1000, reasoning: 'none' }
+const OPERATIONS = ['TYPE_TEXT', 'CLICK', 'WAIT', 'DONE', 'BLOCKED']
 
 test('strict choice contract accepts a normalized winning member', t => {
-  t.is(validateChoice(answer('a', ['a', 'b']), ['a', 'b']).choice, 'a')
+  t.deepEqual(validateChoice(answer('a', ['a', 'b']), ['a', 'b']), {
+    choice: 'a',
+    probabilities: { a: 1, b: 0 },
+    confidence: 1
+  })
+})
+
+test('confidence is the probability of the chosen member', t => {
+  const uncertain = { choice: 'a', probabilities: { a: 0.6, b: 0.4 } }
+  t.is(validateChoice(uncertain, ['a', 'b']).confidence, 0.6)
 })
 
 for (const [name, bad] of Object.entries({
   missing: {},
   unknown: answer('c', ['a', 'b']),
-  missingProbability: { choice: 'a', confidence: 1, probabilities: { a: 1 } },
-  extraProbability: { choice: 'a', confidence: 1, probabilities: { a: 1, b: 0, c: 0 } },
-  nonFinite: { choice: 'a', confidence: 1, probabilities: { a: Infinity, b: 0 } },
-  negative: { choice: 'a', confidence: 1, probabilities: { a: 1.1, b: -0.1 } },
-  boolean: { choice: 'a', confidence: true, probabilities: { a: 1, b: 0 } },
-  sum: { choice: 'a', confidence: 0.8, probabilities: { a: 0.8, b: 0.1 } },
-  notWinner: { choice: 'a', confidence: 0.2, probabilities: { a: 0.2, b: 0.8 } }
+  noProbabilities: { choice: 'a' },
+  missingProbability: { choice: 'a', probabilities: { a: 1 } },
+  extraProbability: { choice: 'a', probabilities: { a: 1, b: 0, c: 0 } },
+  nonFinite: { choice: 'a', probabilities: { a: Infinity, b: 0 } },
+  negative: { choice: 'a', probabilities: { a: 1.1, b: -0.1 } },
+  sum: { choice: 'a', probabilities: { a: 0.8, b: 0.1 } },
+  notWinner: { choice: 'a', probabilities: { a: 0.2, b: 0.8 } }
 })) {
   test(`contract fails closed: ${name}`, t =>
     t.throws(() => validateChoice(bad, ['a', 'b']), { instanceOf: TypeError }))
 }
+
+test('probability sum tolerance grows with the rounding the provider reports', t => {
+  const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+  const rounded = {
+    choice: 'a',
+    probabilities: Object.fromEntries(ids.map(id => [id, id === 'a' ? 0.5 : 0.05]))
+  }
+  rounded.probabilities.b = 0.14
+  t.throws(() => validateChoice(rounded, ids), { instanceOf: TypeError })
+  t.is(validateChoice(rounded, ids, { probabilityDecimals: 2 }).choice, 'a')
+  t.throws(() => validateChoice(rounded, ids, { probabilityDecimals: 3 }), {
+    instanceOf: TypeError
+  })
+})
 
 test('three ID layers: one model index for two actions on one DOM node', t => {
   const space = actionSpace(state().actions)
@@ -53,32 +89,92 @@ test('select options have distinct indices for the same retained node', t => {
 })
 
 test('one speculative request consumes only the operation-selected head', async t => {
-  const fetch = mockFetch(['CLICK'])
-  const original = fetch
-  const corruptUnused = async (...args) => {
-    const response = await original(...args)
-    const result = await response.json()
-    result.answers.type_text_target = { choice: 'selector:body', confidence: NaN }
-    return { ok: true, json: async () => result }
-  }
-  const result = await decide(state(), 'find cars', [], provider, http(corruptUnused))
+  const calls = []
+  const model = decisionModel(async ({ questions }) => {
+    calls.push(questions)
+    return {
+      answers: {
+        operation: answer('CLICK', OPERATIONS),
+        click_target: answer('1', ['1']),
+        type_text_target: { type: 'choice', choice: '1' }
+      },
+      warnings: []
+    }
+  })
+  const result = await decide(state(), 'find cars', [], model, REQUEST)
   t.is(result.action.id, 'e2')
-  t.is(fetch.calls.length, 1)
-  t.truthy(fetch.calls[0].body.questions.type_text_target)
-  t.truthy(fetch.calls[0].body.questions.click_target)
+  t.is(calls.length, 1)
+  t.truthy(calls[0].type_text_target)
+  t.truthy(calls[0].click_target)
 })
 
 test('selected malformed head blocks rather than running a different head', async t => {
-  const fetch = async () => ({
-    ok: true,
-    json: async () => ({
-      answers: {
-        operation: answer('CLICK', ['TYPE_TEXT', 'CLICK', 'WAIT', 'DONE', 'BLOCKED']),
-        click_target: answer('99', ['99'])
-      }
-    })
+  const model = decisionModel(async () => ({
+    answers: {
+      operation: answer('CLICK', OPERATIONS),
+      click_target: { type: 'choice', choice: '1' },
+      type_text_target: answer('1', ['1'])
+    },
+    warnings: []
+  }))
+  await t.throwsAsync(decide(state(), 'cars', [], model, REQUEST), {
+    message: 'Invalid decisions response; no action executed.'
   })
-  await t.throwsAsync(decide(state(), 'cars', [], provider, http(fetch)), { instanceOf: TypeError })
+})
+
+test('a choice outside the offered targets is rejected', async t => {
+  const model = decisionModel(async () => ({
+    answers: {
+      operation: answer('CLICK', OPERATIONS),
+      click_target: answer('99', ['99']),
+      type_text_target: answer('1', ['1'])
+    },
+    warnings: []
+  }))
+  await t.throwsAsync(decide(state(), 'cars', [], model, REQUEST))
+})
+
+test('a decision carries confidences derived from the winning probabilities', async t => {
+  const model = decisionModel(async () => ({
+    answers: {
+      operation: {
+        type: 'choice',
+        choice: 'CLICK',
+        probabilities: { TYPE_TEXT: 0.2, CLICK: 0.7, WAIT: 0.1, DONE: 0, BLOCKED: 0 }
+      },
+      click_target: answer('1', ['1']),
+      type_text_target: answer('1', ['1'])
+    },
+    rounding: { probabilityDecimals: 2 },
+    warnings: []
+  }))
+  const decision = await decide(state(), 'cars', [], model, REQUEST)
+  t.is(decision.confidence, 0.7)
+  t.is(decision.targetConfidence, 1)
+})
+
+test('a failing decision model is not retried and never produces a decision', async t => {
+  let calls = 0
+  const model = decisionModel(async () => {
+    calls++
+    throw retryableFailure()
+  })
+  await t.throwsAsync(decide(state(), 'cars', [], model, REQUEST), {
+    message: /provider unavailable/
+  })
+  t.is(calls, 1)
+})
+
+test('a decision request that outlives the timeout is aborted', async t => {
+  const model = decisionModel(
+    ({ abortSignal }) =>
+      new Promise((resolve, reject) =>
+        abortSignal.addEventListener('abort', () => reject(abortSignal.reason))
+      )
+  )
+  await t.throwsAsync(decide(state(), 'cars', [], model, { timeout: 20 }), {
+    name: 'TimeoutError'
+  })
 })
 
 for (const content of [
@@ -86,122 +182,59 @@ for (const content of [
   '{"text":null}',
   '{"text":""}',
   '{"text":"x","code":"click()"}',
+  '["x"]',
   'not json',
   JSON.stringify({ text: 'x'.repeat(2001) })
 ]) {
-  test(`text helper rejects ${content.slice(0, 35)}`, async t => {
+  test(`text model output is rejected: ${content.slice(0, 35)}`, async t => {
     await t.throwsAsync(
-      fieldText(
-        'cars',
-        state().actions[0],
-        state(),
-        [],
-        provider,
-        http(mockFetch([], { text: content }))
-      ),
-      { instanceOf: TypeError }
+      fieldText('cars', state().actions[0], state(), [], textModel(content), REQUEST),
+      { message: 'Text helper returned no valid field value; nothing typed.' }
     )
   })
 }
 
-test('text helper returns only a validated field value', async t => {
+test('text model returns only a validated field value', async t => {
   t.is(
-    await fieldText('cars', state().actions[0], state(), [], provider, http(mockFetch([]))),
-    'bmw x3'
-  )
-})
-
-for (const [setting, expected] of [
-  [undefined, { enabled: false }],
-  ['none', { enabled: false }],
-  ['low', { effort: 'low' }],
-  ['default', undefined]
-]) {
-  test(`text helper reasoning setting ${setting} is sent to the provider`, async t => {
-    const fetch = mockFetch([])
     await fieldText(
       'cars',
       state().actions[0],
       state(),
       [],
-      { ...provider, reasoning: setting },
-      http(fetch)
-    )
-    t.deepEqual(fetch.calls[0].body.reasoning, expected)
+      textModel('{"text":"bmw x3"}'),
+      REQUEST
+    ),
+    'bmw x3'
+  )
+})
+
+test('text model receives the goal, field, reasoning level and a single attempt', async t => {
+  const models = mockModels([])
+  await fieldText('cars', state().actions[0], state(), [], models.text, {
+    timeout: 1000,
+    reasoning: 'low'
   })
-}
-
-test('unknown text helper reasoning setting is rejected before any request', async t => {
-  const fetch = mockFetch([])
-  await t.throwsAsync(
-    fieldText(
-      'cars',
-      state().actions[0],
-      state(),
-      [],
-      { ...provider, reasoning: 'high' },
-      http(fetch)
-    ),
-    { message: /reasoning must be one of: none, low, default/ }
-  )
-  t.is(fetch.calls.length, 0)
+  const [{ options }] = models.calls
+  t.is(options.reasoning, 'low')
+  t.is(options.maxOutputTokens, 1024)
+  t.is(options.responseFormat.type, 'json')
+  const user = options.prompt.find(message => message.role === 'user')
+  const context = JSON.parse(user.content[0].text)
+  t.is(context.goal, 'cars')
+  t.deepEqual(context.field, { label: 'Search', role: 'searchbox', value: '' })
+  t.is(models.calls.length, 1)
 })
 
-test('provider configuration must be explicit and secure', t => {
-  for (const config of [
-    {},
-    { apiKey: 'x' },
-    { ...provider, baseUrl: 'http://fixture.invalid' },
-    { ...provider, baseUrl: 'https://user:pass@fixture.invalid' }
-  ]) {
-    t.throws(() => validateProvider(config), { instanceOf: TypeError })
-  }
-  t.deepEqual(validateProvider(provider), provider)
-})
-
-test('HTTP failure never produces a decision', async t => {
-  await t.throwsAsync(
-    decide(
-      state(),
-      'cars',
-      [],
-      provider,
-      http(async () => ({ ok: false, status: 503 }))
-    ),
-    { message: /HTTP 503/ }
-  )
-})
-
-test('HTTP failure releases the response body', async t => {
-  let cancelled = 0
-  const bodies = [
-    {
-      cancel: async () => {
-        cancelled++
-        throw new Error('already closed')
-      }
-    },
-    {
-      cancel: () => {
-        cancelled++
-        throw new Error('locked')
-      }
-    },
-    { pipe: () => {} }
-  ]
-  for (const body of bodies) {
-    await t.throwsAsync(
-      decide(
-        state(),
-        'cars',
-        [],
-        provider,
-        http(async () => ({ ok: false, status: 503, body }))
-      ),
-      { message: /HTTP 503/ }
-    )
-  }
-  t.is(cancelled, 2)
+test('a failing text model is not retried', async t => {
+  const models = mockModels([], {
+    onText: () => {
+      throw retryableFailure()
+    }
+  })
+  await t.throwsAsync(fieldText('cars', state().actions[0], state(), [], models.text, REQUEST), {
+    message: /provider unavailable/
+  })
+  t.is(models.calls.length, 1)
 })
 
 test('recent actions tell the model which decisions were discarded as stale', t => {
@@ -209,9 +242,9 @@ test('recent actions tell the model which decisions were discarded as stale', t 
     { operation: 'TYPE_TEXT', action: 'e1', text: 'bmw x3', stale: true },
     { operation: 'CLICK', action: 'e2', pageChanged: true }
   ]
-  t.deepEqual(buildRequest(state(), 'cars', history, 'fixture').body.state.recent_actions, [
-    { operation: 'TYPE_TEXT', action: 'e1', text: 'bmw x3', stale: true, page_changed: undefined },
-    { operation: 'CLICK', action: 'e2', text: undefined, stale: undefined, page_changed: true }
+  t.deepEqual(buildRequest(state(), 'cars', history).request.state.recent_actions, [
+    { operation: 'TYPE_TEXT', action: 'e1', text: 'bmw x3', stale: true },
+    { operation: 'CLICK', action: 'e2', page_changed: true }
   ])
 })
 
@@ -225,10 +258,63 @@ test('SUBMIT is offered with its own target question and a description', t => {
     kind: 'submit',
     value: 'bmw x3'
   })
-  const { body, space } = buildRequest(populated, 'cars', [], 'fixture')
-  t.regex(body.questions.operation.criteria.SUBMIT, /Press Enter/)
-  t.regex(body.questions.operation.criteria.CLICK, /Click an element/)
-  t.deepEqual(Object.keys(body.questions.submit_target.criteria), ['1'])
+  const { request, space } = buildRequest(populated, 'cars', [])
+  t.regex(request.questions.operation.criteria.SUBMIT, /Press Enter/)
+  t.regex(request.questions.operation.criteria.CLICK, /Click an element/)
+  t.deepEqual(Object.keys(request.questions.submit_target.criteria), ['1'])
   t.is(space.targets.SUBMIT['1'].id, 'e3')
-  t.deepEqual(body.state.elements[0].operations, ['TYPE_TEXT', 'CLICK', 'SUBMIT'])
+  t.deepEqual(request.state.elements[0].operations, ['TYPE_TEXT', 'CLICK', 'SUBMIT'])
+})
+
+test('rounding only widens the tolerance when it is an integer of two or more decimals', t => {
+  const ids = ['a', 'b', 'c']
+  const inflated = { choice: 'a', probabilities: { a: 0.6, b: 0.3, c: 0.3 } }
+  for (const probabilityDecimals of [0, 1, -1, NaN, null, 1.5, -Infinity]) {
+    t.throws(() => validateChoice(inflated, ids, { probabilityDecimals }), {
+      instanceOf: TypeError
+    })
+  }
+})
+
+test('a decision that arrives after the timeout is discarded', async t => {
+  const model = decisionModel(() => afterMs(60, { answers: mockAnswers(), warnings: [] }))
+  await t.throwsAsync(decide(state(), 'cars', [], model, { timeout: 20 }), {
+    name: 'TimeoutError'
+  })
+})
+
+test('a text value that arrives after the timeout is discarded', async t => {
+  const models = mockModels([])
+  const generate = models.text.doGenerate
+  models.text.doGenerate = async options => afterMs(60, await generate(options))
+  await t.throwsAsync(
+    fieldText('cars', state().actions[0], state(), [], models.text, { timeout: 20 }),
+    { name: 'TimeoutError' }
+  )
+})
+
+test('the caller signal reaches both models and aborts them', async t => {
+  const controller = new AbortController()
+  controller.abort()
+  const request = { timeout: 1000, signal: controller.signal }
+  const models = mockModels(['CLICK'])
+  await t.throwsAsync(decide(state(), 'cars', [], models.decisions, request), {
+    name: 'AbortError'
+  })
+  await t.throwsAsync(fieldText('cars', state().actions[0], state(), [], models.text, request), {
+    name: 'AbortError'
+  })
+})
+
+test('a text reply without output is rejected as an invalid field value', async t => {
+  const model = textModel('{"text":"bmw x3"}')
+  const generate = model.doGenerate
+  model.doGenerate = async options => ({
+    ...(await generate(options)),
+    content: [],
+    finishReason: { unified: 'tool-calls', raw: 'tool_calls' }
+  })
+  await t.throwsAsync(fieldText('cars', state().actions[0], state(), [], model, REQUEST), {
+    message: 'Text helper returned no valid field value; nothing typed.'
+  })
 })
