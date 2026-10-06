@@ -808,3 +808,13 @@ test('BLOCKED on a page that stays the same ends the run', async t => {
   t.is(models.calls.length, 1)
   t.deepEqual(page.inputs, [])
 })
+
+test('a page change seen after BLOCKED offers ineffective actions again and resets the no-change count', async t => {
+  const settling = { ...state('Menu closing'), actions: state().actions }
+  const page = new Page([state(), state(), state(), settling, state('Results')])
+  const models = mockModels(['CLICK', 'WAIT', 'BLOCKED', 'CLICK', 'DONE'])
+  const result = await run(page, [], { models })
+  t.is(result.status, 'done')
+  const offersClick = models.calls.map(call => 'click_target' in call.questions)
+  t.deepEqual(offersClick, [true, false, false, true, true])
+})

@@ -137,6 +137,8 @@ const goal = async (page, goal, options = {}) => {
           blocked('model_blocked', 'The model found no supported operation to progress.')
         }
         entry.pageChanged = true
+        unchanged = 0
+        ineffectiveActions.clear()
         state = recheck
         continue
       }
