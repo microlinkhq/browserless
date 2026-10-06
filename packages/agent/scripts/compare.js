@@ -6,10 +6,12 @@ const path = require('path')
 const os = require('os')
 const fs = require('fs')
 
+const { REASONING_LEVELS } = require('../src/model')
 const agent = require('..')
 
 const DEFAULT_DECISIONS = 'typesafe-ai/jev'
 const DEFAULT_TEXT = 'openai/gpt-6-luna'
+const DEFAULT_REASONING = 'none'
 const DEFAULT_RUNS = 5
 const LANGUAGE_MODEL_DECIDES = 'none'
 const DONE = 'done'
@@ -19,7 +21,7 @@ const RATE_DECIMALS = 2
 const USD_DECIMALS = 6
 const NINETIETH = 0.9
 const USAGE =
-  'Usage: browserless exec scripts/compare.js --url=<url> --goal=<goal> [--goal=<next goal>] [--extract=<what to get>] [--decisions=<id>,none] [--text=<id>,<id>] [--runs=5] [--out=<file.jsonl>]'
+  'Usage: browserless exec scripts/compare.js --url=<url> --goal=<goal> [--goal=<next goal>] [--extract=<what to get>] [--decisions=<id>,none] [--text=<id>,<id>] [--reasoning=none,low] [--runs=5] [--out=<file.jsonl>]'
 
 const isText = value => typeof value === 'string' && value.trim() !== ''
 
@@ -45,12 +47,24 @@ const modelIds = (value, flag, fallback) => {
   return [...new Set(ids)]
 }
 
-const setupsFrom = ({ decisions, text }) =>
+const reasoningLevels = reasoning => {
+  const levels = modelIds(reasoning, 'reasoning', DEFAULT_REASONING)
+  const unknown = levels.find(level => !REASONING_LEVELS.includes(level))
+  if (unknown !== undefined) {
+    throw new TypeError(`--reasoning ${unknown} is not one of: ${REASONING_LEVELS.join(', ')}.`)
+  }
+  return levels
+}
+
+const setupsFrom = ({ decisions, text, reasoning }) =>
   modelIds(decisions, 'decisions', DEFAULT_DECISIONS).flatMap(decisionModel =>
-    modelIds(text, 'text', DEFAULT_TEXT).map(textModel => ({
-      decisions: decisionModel,
-      text: textModel
-    }))
+    modelIds(text, 'text', DEFAULT_TEXT).flatMap(textModel =>
+      reasoningLevels(reasoning).map(level => ({
+        decisions: decisionModel,
+        text: textModel,
+        reasoning: level
+      }))
+    )
   )
 
 const runCount = runs => {
@@ -69,7 +83,8 @@ const taskFrom = ({ url, goal, extract, runs = DEFAULT_RUNS }) => {
 
 const agentOptions = setup => ({
   decisions: setup.decisions === LANGUAGE_MODEL_DECIDES ? false : setup.decisions,
-  text: setup.text
+  text: setup.text,
+  reasoning: setup.reasoning
 })
 
 const sum = values => values.reduce((total, value) => total + value, 0)
@@ -175,9 +190,11 @@ const toRecord = ({ setup, run, goals = [], extraction, finalUrl, navigationErro
   const infos = goals.map(goal => goal.info ?? {})
   const status = statusOf(goals, runError)
   const error = runError ?? goals.find(goal => goal.status !== DONE)?.error
+  const reportedByEveryGoal = read => (runError ? undefined : sumWhenAllReported(infos.map(read)))
   return {
     decisions: setup.decisions,
     text: setup.text,
+    reasoning: setup.reasoning,
     run,
     status,
     ...(error && { error }),
@@ -190,13 +207,24 @@ const toRecord = ({ setup, run, goals = [], extraction, finalUrl, navigationErro
     minConfidence: lowest(trace.flatMap(entry => [entry.confidence, entry.targetConfidence])),
     ...accuracyOf(goals, status),
     calls: sum(infos.map(info => info.cost?.calls ?? 0)),
-    inputTokens: sumWhenAllReported(infos.map(info => info.cost?.inputTokens)),
-    outputTokens: sumWhenAllReported(infos.map(info => info.cost?.outputTokens)),
-    usd: rounded(sumWhenAllReported(infos.map(info => info.cost?.usd)), USD_DECIMALS),
-    totalMs: sumWhenAllReported(infos.map(info => info.timing?.totalMs)),
-    modelMs: sumWhenAllReported(infos.map(info => info.timing?.modelMs)),
+    inputTokens: reportedByEveryGoal(info => info.cost?.inputTokens),
+    outputTokens: reportedByEveryGoal(info => info.cost?.outputTokens),
+    usd: rounded(
+      reportedByEveryGoal(info => info.cost?.usd),
+      USD_DECIMALS
+    ),
+    totalMs: reportedByEveryGoal(info => info.timing?.totalMs),
+    modelMs: reportedByEveryGoal(info => info.timing?.modelMs),
     finalUrl,
     ...(extraction && extractionFields(extraction))
+  }
+}
+
+const reportedCost = records => {
+  const reported = records.map(record => record.usd).filter(Number.isFinite)
+  return {
+    reportedUsd: rounded(sum(reported), USD_DECIMALS),
+    runsWithoutCost: records.length - reported.length
   }
 }
 
@@ -211,6 +239,7 @@ const summarizeSetup = records => {
   return {
     decisions: records[0].decisions,
     text: records[0].text,
+    reasoning: records[0].reasoning,
     runs: records.length,
     doneRate: rate(done.length, records.length),
     judgedRuns: judged.length,
@@ -221,6 +250,7 @@ const summarizeSetup = records => {
     p90TotalMs: ofDone('totalMs', values => percentile(values, NINETIETH)),
     medianUsd: rounded(ofDone('usd', median), USD_DECIMALS),
     totalUsd: rounded(sumWhenAllReported(records.map(record => record.usd)), USD_DECIMALS),
+    ...reportedCost(records),
     staleDecisions: sum(records.map(record => record.staleDecisions)),
     failures: counts(records.filter(record => record.status !== DONE).map(record => record.status)),
     ...(records.some(record => record.extracted !== undefined) && {
@@ -240,7 +270,7 @@ const betterFirst = (a, b) =>
   ascending(a.p90TotalMs, b.p90TotalMs) ||
   ascending(a.medianUsd, b.medianUsd)
 
-const setupKey = record => `${record.decisions} + ${record.text}`
+const setupKey = record => JSON.stringify([record.decisions, record.text, record.reasoning])
 
 const summarize = records =>
   Object.values(Object.groupBy(records, setupKey)).map(summarizeSetup).sort(betterFirst)
@@ -253,6 +283,7 @@ const report = (task, file, records) => {
     runsPerSetup: task.runs,
     file,
     totalUsd: rounded(sumWhenAllReported(ranking.map(setup => setup.totalUsd)), USD_DECIMALS),
+    ...reportedCost(records),
     ranking
   }
 }

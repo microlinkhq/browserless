@@ -8,7 +8,7 @@ const fs = require('fs')
 
 const compare = require('../scripts/compare')
 
-const SETUP = { decisions: 'typesafe-ai/jev', text: 'openai/gpt-6-luna' }
+const SETUP = { decisions: 'typesafe-ai/jev', text: 'openai/gpt-6-luna', reasoning: 'none' }
 
 const info = ({ passed = true, probability = 0.9, usd = 0.001, totalMs = 1000 } = {}) => ({
   accuracy: { passed, probability },
@@ -38,11 +38,90 @@ const record = (overrides = {}) =>
 
 test('every decision model is paired with every text model', t => {
   t.deepEqual(compare.setupsFrom({ decisions: 'typesafe-ai/jev,none', text: 'a/one, b/two' }), [
-    { decisions: 'typesafe-ai/jev', text: 'a/one' },
-    { decisions: 'typesafe-ai/jev', text: 'b/two' },
-    { decisions: 'none', text: 'a/one' },
-    { decisions: 'none', text: 'b/two' }
+    { decisions: 'typesafe-ai/jev', text: 'a/one', reasoning: 'none' },
+    { decisions: 'typesafe-ai/jev', text: 'b/two', reasoning: 'none' },
+    { decisions: 'none', text: 'a/one', reasoning: 'none' },
+    { decisions: 'none', text: 'b/two', reasoning: 'none' }
   ])
+})
+
+test('every reasoning level is one more setup per pair of models', t => {
+  t.deepEqual(compare.setupsFrom({ text: 'a/one,b/two', reasoning: 'none, low' }), [
+    { decisions: 'typesafe-ai/jev', text: 'a/one', reasoning: 'none' },
+    { decisions: 'typesafe-ai/jev', text: 'a/one', reasoning: 'low' },
+    { decisions: 'typesafe-ai/jev', text: 'b/two', reasoning: 'none' },
+    { decisions: 'typesafe-ai/jev', text: 'b/two', reasoning: 'low' }
+  ])
+  t.throws(() => compare.setupsFrom({ reasoning: true }), { message: /^--reasoning needs a value/ })
+  t.is(
+    compare.setupsFrom({ decisions: 'a/x,none', text: 'a/one,b/two', reasoning: 'none,low,high' })
+      .length,
+    12
+  )
+})
+
+test('a reasoning level given twice is one setup and an unknown level is refused before any run', t => {
+  t.deepEqual(
+    compare.setupsFrom({ reasoning: 'low,low, none' }).map(setup => setup.reasoning),
+    ['low', 'none']
+  )
+  t.throws(() => compare.setupsFrom({ reasoning: 'none,LOW' }), {
+    message: /^--reasoning LOW is not one of: provider-default, none, minimal, low/
+  })
+})
+
+test('setups whose names would read the same when joined stay separate', t => {
+  const records = [
+    compare.toRecord({
+      setup: { decisions: 'a + b', text: 'c', reasoning: 'none' },
+      run: 1,
+      goals: [doneGoal()]
+    }),
+    compare.toRecord({
+      setup: { decisions: 'a', text: 'b + c', reasoning: 'none' },
+      run: 1,
+      goals: [doneGoal()]
+    })
+  ]
+  t.is(compare.summarize(records).length, 2)
+})
+
+test('the reasoning level reaches the agent and the record, and splits the ranking', t => {
+  const low = { ...SETUP, reasoning: 'low' }
+  t.is(compare.agentOptions(low).reasoning, 'low')
+  const records = [
+    compare.toRecord({ setup: SETUP, run: 1, goals: [doneGoal()] }),
+    compare.toRecord({ setup: low, run: 1, goals: [doneGoal({ status: 'no_change' })] })
+  ]
+  t.deepEqual(
+    records.map(({ reasoning }) => reasoning),
+    ['none', 'low']
+  )
+  t.deepEqual(
+    compare
+      .summarize(records)
+      .map(({ reasoning, runs, doneRate }) => ({ reasoning, runs, doneRate })),
+    [
+      { reasoning: 'none', runs: 1, doneRate: 1 },
+      { reasoning: 'low', runs: 1, doneRate: 0 }
+    ]
+  )
+})
+
+test('the cost that was reported is kept apart from the total, with the runs that gave none', t => {
+  const records = [
+    finished('a', { usd: 0.1 }),
+    finished('a', { usd: 0.2 }),
+    finished('a', { usd: undefined, status: 'error' }),
+    finished('b', { usd: 0.4 })
+  ]
+  const task = { url: 'https://a.test', goals: ['x'], runs: 3 }
+  const result = compare.report(task, 'out.jsonl', records)
+  t.like(result, { totalUsd: undefined, reportedUsd: 0.7, runsWithoutCost: 1 })
+  const a = result.ranking.find(setup => setup.text === 'a')
+  const b = result.ranking.find(setup => setup.text === 'b')
+  t.like(a, { totalUsd: undefined, reportedUsd: 0.3, runsWithoutCost: 1 })
+  t.like(b, { totalUsd: 0.4, reportedUsd: 0.4, runsWithoutCost: 0 })
 })
 
 test('without model flags the one setup is the package defaults', t => {
@@ -50,9 +129,10 @@ test('without model flags the one setup is the package defaults', t => {
 })
 
 test('none as the decision model lets the language model decide', t => {
-  t.deepEqual(compare.agentOptions({ decisions: 'none', text: 'a/one' }), {
+  t.deepEqual(compare.agentOptions({ decisions: 'none', text: 'a/one', reasoning: 'low' }), {
     decisions: false,
-    text: 'a/one'
+    text: 'a/one',
+    reasoning: 'low'
   })
   t.deepEqual(compare.agentOptions(SETUP), SETUP)
 })
@@ -339,6 +419,11 @@ test('a run that could not start is an error record and keeps the navigation err
     path: ''
   })
   t.is(compare.toRecord({ setup: SETUP, run: 3, runError: 'x' }).passed, undefined)
+  t.is(compare.toRecord({ setup: SETUP, run: 3, runError: 'x' }).usd, undefined)
+  t.is(
+    compare.toRecord({ setup: SETUP, run: 3, runError: 'x', goals: [doneGoal()] }).usd,
+    undefined
+  )
   t.is(record({ navigationError: 'TimeoutError: slow' }).navigationError, 'TimeoutError: slow')
   t.is(record({ navigationError: 'TimeoutError: slow' }).status, 'done')
 })
@@ -365,7 +450,7 @@ test('a model list with no id in it is refused', t => {
 
 test('a model id given twice is one setup', t => {
   t.deepEqual(compare.setupsFrom({ text: 'a/one,a/one', decisions: ['none', 'none'] }), [
-    { decisions: 'none', text: 'a/one' }
+    { decisions: 'none', text: 'a/one', reasoning: 'none' }
   ])
 })
 
@@ -384,7 +469,7 @@ test('runs that cannot start are recorded and the remaining runs still happen', 
   const written = fs.readFileSync(out, 'utf8').trim().split('\n').map(JSON.parse)
   t.is(attempts, 4)
   t.is(result.file, out)
-  t.is(result.totalUsd, 0)
+  t.like(result, { totalUsd: undefined, reportedUsd: 0, runsWithoutCost: 4 })
   t.deepEqual(
     written.map(({ text, run, status, error }) => ({ text, run, status, error })),
     ['a/one', 'b/two', 'a/one', 'b/two'].map((text, index) => ({

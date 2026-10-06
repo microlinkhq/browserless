@@ -20,6 +20,7 @@ const {
 
 const PROBABILITY_SUM_TOLERANCE = 0.02
 const WINNER_TOLERANCE = 1e-6
+const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
 const TEXT_MAX_OUTPUT_TOKENS = 1024
 const DECISION_MAX_OUTPUT_TOKENS = 256
 const RULES_MAX_OUTPUT_TOKENS = 2048
@@ -405,6 +406,7 @@ const evaluateGoal = async (request, model, options) => {
 }
 
 module.exports = {
+  REASONING_LEVELS,
   evaluateGoal,
   evaluationRequest,
   writeRules,

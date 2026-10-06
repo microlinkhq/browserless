@@ -425,7 +425,12 @@ DEBUG=browserless:agent:compare npm run compare -- \
 
 `--decisions` and `--text` take comma-separated model ids and every decision
 model is paired with every text model; `none` makes the text model take the
-decisions. `--goal` can be repeated for goals that run one after another.
+decisions. `--reasoning` takes comma-separated reasoning levels for the text
+model (default `none`) and each level is one more setup per pair of models, so
+`--reasoning=none,low` measures whether reasoning helps, and a model that
+refuses `none` can be run with `minimal`. An unknown level is refused before
+any run. `--goal` can be repeated for goals
+that run one after another.
 `--extract` is optional. `--out=<file.jsonl>` chooses where the records go;
 the default is a new file in the temporary directory, printed as `file`.
 
@@ -434,7 +439,7 @@ logged as it finishes:
 
 | Field | Meaning |
 | --- | --- |
-| `decisions`, `text`, `run` | The setup and the run number |
+| `decisions`, `text`, `reasoning`, `run` | The setup and the run number |
 | `status`, `error`, `goalsDone` | `done`, or the `BlockedError` reason, or `error` for anything else, including a run that could not start; how many goals finished |
 | `navigationError` | Present when loading `--url` reported an error, such as a timeout. The run continues on whatever loaded |
 | `path` | The operations and targets that ran, such as `CLICK e17 > DONE`; goals are separated by a vertical bar |
@@ -457,7 +462,9 @@ share of extractions that returned the most common data. Medians and
 or one of them did not report the number. `totalUsd` is what every run of the setup cost, failed
 ones included, and the `totalUsd` next to `ranking` is the cost of the whole
 comparison; both are absent when any run did not report its cost, and neither
-includes the extraction request. A run that fails is recorded and the remaining
+includes the extraction request. `reportedUsd` is the sum of the costs that
+were reported and `runsWithoutCost` counts the runs that reported none, such
+as a run that ended on an error. A run that fails is recorded and the remaining
 runs go on.
 
 Results of past comparisons are collected in [scripts/README.md](scripts/README.md).

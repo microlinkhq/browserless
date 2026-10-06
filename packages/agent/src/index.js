@@ -1,7 +1,14 @@
 'use strict'
 
 const { observe, execute, settle, pageChanged, readStableOutline } = require('./browser')
-const { decide, decideWithLanguageModel, fieldText, writeRules, invalidRules } = require('./model')
+const {
+  decide,
+  decideWithLanguageModel,
+  fieldText,
+  writeRules,
+  invalidRules,
+  REASONING_LEVELS
+} = require('./model')
 const {
   applyRules,
   assertRules,
@@ -19,7 +26,6 @@ const DEFAULT_TEXT_MODEL = 'openai/gpt-6-luna'
 const DEFAULT_DECISION_MODEL = 'typesafe-ai/jev'
 const DEFAULT_EVALUATOR = 'typesafe-ai/jev'
 const DEFAULT_REASONING = 'none'
-const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
 const MAX_UNCHANGED_ACTIONS = 3
 const MAX_STALE_DECISIONS_PER_TARGET = 3
 const BLOCKED_RECHECK_MS = 300
