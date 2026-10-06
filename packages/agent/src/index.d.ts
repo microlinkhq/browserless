@@ -31,6 +31,7 @@ declare namespace agent {
     extractor?: Extractor
     decisions?: Experimental_DecisionModel
     text?: LanguageModel
+    evaluator?: Experimental_DecisionModel
     reasoning?: Reasoning
     maxSteps?: number
     maxDecisions?: number
@@ -53,12 +54,46 @@ declare namespace agent {
     stale?: boolean
     pageChanged?: boolean
   }
-  interface Result { status: 'done'; steps: number; decisions: number; trace: TraceEntry[] }
+  interface Summary { status: 'done'; steps: number; decisions: number; trace: TraceEntry[] }
+  interface Accuracy {
+    passed: boolean
+    probability: number
+  }
+  interface Cost {
+    calls: number
+    inputTokens: number | undefined
+    outputTokens: number | undefined
+    cachedInputTokens: number
+    cacheWriteTokens: number
+    reasoningTokens: number
+    usd: number | undefined
+    generationIds: string[]
+  }
+  interface Timing {
+    totalMs: number
+    modelMs: number
+    otherMs: number
+    evaluationMs: number
+  }
+  interface Info {
+    accuracy: Accuracy | undefined
+    cost: Cost
+    timing: Timing
+    error?: Error
+  }
+  interface InfoOptions {
+    signal?: AbortSignal
+  }
+  type InfoFunction = (options?: InfoOptions) => Promise<Info>
+  interface Result extends Summary, InfoFunction {
+    toJSON(): Summary
+  }
   class BlockedError extends Error {
     constructor(reason: BlockedReason, message: string, trace?: TraceEntry[])
     code: 'BLOCKED'
     reason: BlockedReason
     trace: TraceEntry[]
+    info?: InfoFunction
   }
 }
 

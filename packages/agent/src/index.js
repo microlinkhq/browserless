@@ -4,10 +4,12 @@ const { observe, execute, settle, pageChanged, readStableOutline } = require('./
 const { decide, decideWithLanguageModel, fieldText, writeRules, invalidRules } = require('./model')
 const { applyRules, assertRules, fillFields, readingTextByDefault, hasData } = require('./rules')
 const { BlockedError, StaleDecisionError } = require('./errors')
+const { createInfo } = require('./info')
 
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
 const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
 const DEFAULT_TEXT_MODEL = 'openai/gpt-6-luna'
+const DEFAULT_EVALUATOR = 'typesafe-ai/jev'
 const DEFAULT_REASONING = 'none'
 const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
 const MAX_UNCHANGED_ACTIONS = 3
@@ -81,8 +83,28 @@ const goal = async (page, goal, options = {}) => {
   }
   if (activePages.has(page)) throw new TypeError('A goal is already running on this page.')
   const { maxSteps, maxDecisions, waitMs, timeout, models, reasoning } = resolveOptions(options)
-  const request = { timeout, signal: options.signal, reasoning }
+  const evaluator = options.evaluator ?? DEFAULT_EVALUATOR
+  if (!isModel(evaluator)) throw new TypeError('evaluator must be a model id or an AI SDK model.')
+  const calls = []
+  const request = {
+    timeout,
+    signal: options.signal,
+    reasoning,
+    onCall: metrics => calls.push(metrics)
+  }
   const trace = []
+  const started = performance.now()
+  let state
+  const runInfo = () =>
+    createInfo({
+      goal,
+      state,
+      trace,
+      calls,
+      totalMs: Math.round(performance.now() - started),
+      evaluator,
+      timeout
+    })
   const ineffectiveActions = new Set()
   let steps = 0
   let decisions = 0
@@ -99,7 +121,7 @@ const goal = async (page, goal, options = {}) => {
   activePages.add(page)
   page.on('popup', onPopup)
   try {
-    let state = await observe(page)
+    state = await observe(page)
     while (true) {
       options.signal?.throwIfAborted()
       if (popup) {
@@ -129,7 +151,9 @@ const goal = async (page, goal, options = {}) => {
         decisionMs
       }
       trace.push(entry)
-      if (decision.operation === 'DONE') return { status: 'done', steps, decisions, trace }
+      if (decision.operation === 'DONE') {
+        return withInfo({ status: 'done', steps, decisions, trace }, runInfo())
+      }
       if (decision.operation === 'BLOCKED') {
         await new Promise(resolve => setTimeout(resolve, BLOCKED_RECHECK_MS))
         const recheck = await observe(page)
@@ -185,13 +209,19 @@ const goal = async (page, goal, options = {}) => {
       state = next
     }
   } catch (error) {
-    if (error instanceof BlockedError && error.trace.length === 0) error.trace = trace
+    if (error instanceof BlockedError) {
+      if (error.trace.length === 0) error.trace = trace
+      error.info = runInfo()
+    }
     throw error
   } finally {
     page.off('popup', onPopup)
     activePages.delete(page)
   }
 }
+
+const withInfo = (summary, info) =>
+  Object.defineProperty(Object.assign(info, summary), 'toJSON', { value: () => summary })
 
 const usableRules = async (page, written, fields) => {
   let rules

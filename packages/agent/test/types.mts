@@ -11,6 +11,17 @@ async function check () {
   })
   await page.goto('https://example.com')
   const result: agent.Result = await page.goal('find cars', { maxSteps: 60 })
+  const info: agent.Info = await result({ signal: AbortSignal.timeout(5000) })
+  const failure: Error | undefined = info.error
+  const ids: string[] = info.cost.generationIds
+  const usd: number | undefined = info.cost.usd
+  // @ts-expect-error usd is undefined when a call had no gateway cost
+  const strictUsd: number = info.cost.usd
+  const passed: boolean | undefined = info.accuracy?.passed
+  const summary: agent.Summary = result.toJSON()
+  const status: 'done' = result.status
+  const judged: agent.Result = await page.goal('find cars', { evaluator: 'typesafe-ai/jev' })
+  const fromError: agent.InfoFunction | undefined = new agent.BlockedError('captcha', 'Verify').info
   const fields: agent.Rules = { cars: { attr: { title: {}, price: { type: 'number' } } } }
   const rules: agent.Rules = await page.rules('get the cars', { fields })
   const fromRules: agent.Data = await page.extract(rules)
@@ -19,7 +30,7 @@ async function check () {
   // @ts-expect-error a rule has no evaluate property
   void page.extract({ title: { selector: 'h1', evaluate: '() => 1' } })
   const reason: agent.BlockedReason = new agent.BlockedError('captcha', 'Verify').reason
-  void [result, fromRules, fromInstruction, same, reason]
+  void [result, fromRules, fromInstruction, same, reason, usd, passed, summary, status, judged, fromError, strictUsd, failure, ids]
   await browser.close()
 }
 void check
