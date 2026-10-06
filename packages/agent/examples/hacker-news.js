@@ -1,15 +1,18 @@
 'use strict'
 
-module.exports = require('./task')({
-  name: 'hacker-news',
-  url: 'https://news.ycombinator.com',
-  goal: 'Open the comments page of the first story on the front page.',
-  extract: {
-    instruction: 'get the story title, its points and the authors of the comments',
+const agent = require('..')
+
+module.exports = async ({ page, browserless }) => {
+  agent(page, { decisions: 'typesafe-ai/jev' })
+
+  await browserless.goto(page, { url: 'https://news.ycombinator.com' })
+  await page.goal('Open the comments page of the first story on the front page.')
+
+  return page.extract('get the story title, its points and the comments', {
     fields: {
       title: { type: 'string' },
       points: { type: 'number' },
-      commenters: { type: 'string' }
+      comments: { attr: { author: { type: 'string' }, text: { type: 'string' } } }
     }
-  }
-})
+  })
+}

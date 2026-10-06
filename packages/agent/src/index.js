@@ -12,6 +12,7 @@ const DEFAULT_REASONING = 'none'
 const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
 const MAX_UNCHANGED_ACTIONS = 3
 const MAX_STALE_DECISIONS_PER_TARGET = 3
+const BLOCKED_RECHECK_MS = 300
 const VERIFICATION_WALL =
   /\b(captcha|verify you are human|verification required|verifica que eres humano)\b/i
 
@@ -130,7 +131,14 @@ const goal = async (page, goal, options = {}) => {
       trace.push(entry)
       if (decision.operation === 'DONE') return { status: 'done', steps, decisions, trace }
       if (decision.operation === 'BLOCKED') {
-        blocked('model_blocked', 'The model found no supported operation to progress.')
+        await new Promise(resolve => setTimeout(resolve, BLOCKED_RECHECK_MS))
+        const recheck = await observe(page)
+        if (!pageChanged(state, recheck)) {
+          blocked('model_blocked', 'The model found no supported operation to progress.')
+        }
+        entry.pageChanged = true
+        state = recheck
+        continue
       }
       if (steps >= maxSteps) blocked('step_budget', 'Action budget exhausted.')
       if (unchanged >= MAX_UNCHANGED_ACTIONS) {
