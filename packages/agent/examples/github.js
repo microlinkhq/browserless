@@ -6,6 +6,6 @@ module.exports = require('./task')({
   goal: 'Open the list of open issues of this repository.',
   extract: {
     instruction: 'get the open issues listed on the page',
-    fields: { issues: { attr: { title: {}, url: { type: 'url' } } } }
+    fields: { issues: { attr: { title: { type: 'string' }, url: { type: 'url' } } } }
   }
 })

@@ -7,7 +7,7 @@ const { BlockedError, StaleDecisionError } = require('./errors')
 
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
 const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
-const DEFAULT_TEXT_MODEL = 'alibaba/qwen3.8-flash'
+const DEFAULT_TEXT_MODEL = 'openai/gpt-6-luna'
 const DEFAULT_REASONING = 'none'
 const REASONING_LEVELS = ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh']
 const MAX_UNCHANGED_ACTIONS = 3
