@@ -133,14 +133,53 @@ way:
 
 ### `await page.goal(goal, options?)`
 
-Returns `{ status: 'done', steps, decisions, trace }` when the model reports
-visible satisfaction of the goal. DONE is a model judgment, not an independent
+Resolves to a function carrying `{ status: 'done', steps, decisions, trace }`
+when the model reports visible satisfaction of the goal. DONE is a model judgment, not an independent
 proof of correctness. Each trace entry has the operation, snapshot action ID,
 operation confidence/probabilities, selected target confidence/probabilities,
 step/request counts, stale status and whether the page changed. Text-entry
 values are recorded too; treat traces as private data.
 
-Throws `agent.BlockedError` with `code: 'BLOCKED'`, `reason`, and `trace` for:
+Call the result to get what the run cost, how long it took, and a model's
+verdict on whether the goal was met:
+
+```js
+const info = await page.goal('Open the comments page of the first story on the front page.')
+const { accuracy, cost, timing } = await info()
+// example values:
+// accuracy → { passed: true, probability: 0.92 }
+// cost     → { calls: 4, inputTokens: 8982, outputTokens: 500, cachedInputTokens: 1800,
+//              cacheWriteTokens: 600, reasoningTokens: 43, usd: 0.000306424,
+//              generationIds: ['gen_01M492ME3C…', …] }
+// timing   → { totalMs: 2410, modelMs: 1530, otherMs: 880, evaluationMs: 310 }
+```
+
+`cost` and `timing` come from what each model call already returned, with no
+extra request: tokens from the AI SDK `usage`, dollars from the AI Gateway
+`providerMetadata.gateway.cost`, and `generationIds` to look calls up in the
+gateway. `usd`, `inputTokens` and `outputTokens` are `undefined` when any call
+did not report them, such as a model outside the gateway, so a total is never
+understated. The cache and reasoning breakdowns count only the calls that report
+them; decision models report none. `otherMs` is the run time not spent waiting
+on a model: observing, acting, settling and waits.
+
+`accuracy` is the one extra request: the `evaluator` model reads the final page,
+its fields, and the actions taken, without the run's own DONE, and answers
+whether the goal is met. `probability` is its probability that it is. It is a
+second model judgment, not ground truth: the default evaluator,
+`'typesafe-ai/jev'`, is the same model the examples pass as `decisions`. Its cost is included in `cost` and its time
+in `evaluationMs`, not `totalMs`. Calling `info()` sends the page text and typed
+values to the evaluator's provider.
+
+The first call runs the evaluation and later calls return the same object. If
+the evaluation fails, `info()` still resolves with `cost` and `timing`, `accuracy`
+is `undefined`, `error` holds the reason, and the next call tries again. Pass
+`info({ signal })` to cancel it. `JSON.stringify(result)` still gives
+`{ status, steps, decisions, trace }`, also after spreading the result.
+
+Throws `agent.BlockedError` with `code: 'BLOCKED'`, `reason`, `trace` and an
+`info()` function for the run so far (its `accuracy` is `undefined` when no page
+was observed), for:
 
 | Reason | Meaning |
 | --- | --- |
@@ -161,6 +200,7 @@ each decision still spends a request.
 | --- | --- | --- |
 | `decisions` | none | Decision model such as `'typesafe-ai/jev'`: an AI Gateway model id or an AI SDK decision model. When omitted, the text model makes the decisions |
 | `text` | `'openai/gpt-6-luna'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is omitted |
+| `evaluator` | `'typesafe-ai/jev'` | Decision model that `info()` asks whether the goal was met: an AI Gateway model id or an AI SDK decision model |
 | `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
 | `maxDecisions` | `120` | Maximum decision requests, including discarded stale decisions |

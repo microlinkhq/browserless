@@ -9,7 +9,14 @@ const {
   NoOutputGeneratedError
 } = require('ai')
 
-const { NEXT_ACTION, TARGET, TEXT_VALUE, LANGUAGE_DECISION, RULES_WRITER } = require('./questions')
+const {
+  NEXT_ACTION,
+  TARGET,
+  TEXT_VALUE,
+  LANGUAGE_DECISION,
+  RULES_WRITER,
+  GOAL_EVALUATION
+} = require('./questions')
 
 const PROBABILITY_SUM_TOLERANCE = 0.02
 const WINNER_TOLERANCE = 1e-6
@@ -53,8 +60,8 @@ const isWinningDistribution = (answer, ids, rounding) => {
 
 const invalidDecision = () => new TypeError('Invalid decisions response; no action executed.')
 
-const validateChoice = (answer, ids, rounding) => {
-  if (!isWinningDistribution(answer, ids, rounding)) throw invalidDecision()
+const validateChoice = (answer, ids, rounding, invalid = invalidDecision) => {
+  if (!isWinningDistribution(answer, ids, rounding)) throw invalid()
   const { choice, probabilities } = answer
   return { choice, probabilities, confidence: probabilities[choice] }
 }
@@ -109,6 +116,19 @@ const actionSpace = actions => {
 
 const withoutUndefined = value => JSON.parse(JSON.stringify(value))
 
+const pageOf = state => ({ url: state.url, title: state.title, text: state.text })
+
+const recentActions = history =>
+  history
+    .slice(-DECISION_HISTORY_LENGTH)
+    .map(({ operation, action, text, stale, pageChanged }) => ({
+      operation,
+      action,
+      text,
+      stale,
+      page_changed: pageChanged
+    }))
+
 const buildRequest = (state, goal, history) => {
   const space = actionSpace(state.actions)
   const operations = Object.fromEntries(
@@ -146,17 +166,9 @@ const buildRequest = (state, goal, history) => {
     operations,
     request: withoutUndefined({
       state: {
-        page: { url: state.url, title: state.title, text: state.text },
+        page: pageOf(state),
         elements: space.elements,
-        recent_actions: history
-          .slice(-DECISION_HISTORY_LENGTH)
-          .map(({ operation, action, text, stale, pageChanged }) => ({
-            operation,
-            action,
-            text,
-            stale,
-            page_changed: pageChanged
-          }))
+        recent_actions: recentActions(history)
       },
       questions
     })
@@ -173,10 +185,39 @@ const withinTimeout = async (options, call) => {
   return result
 }
 
+const gatewayCost = providerMetadata => {
+  const usd = Number.parseFloat(providerMetadata?.gateway?.cost)
+  return Number.isFinite(usd) ? usd : undefined
+}
+
+const callMetrics = (kind, result, ms) => {
+  const usage = result?.totalUsage ?? result?.usage ?? {}
+  return {
+    kind,
+    ms,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens,
+    cacheWriteTokens: usage.inputTokenDetails?.cacheWriteTokens,
+    reasoningTokens: usage.outputTokenDetails?.reasoningTokens,
+    usd: gatewayCost(result?.providerMetadata),
+    generationId: result?.providerMetadata?.gateway?.generationId
+  }
+}
+
+const metered = async (options, kind, call) => {
+  const started = performance.now()
+  const result = await call()
+  options.onCall?.(callMetrics(kind, result, Math.round(performance.now() - started)))
+  return result
+}
+
 const decide = async (state, goal, history, model, options) => {
   const { space, operations, request } = buildRequest(state, goal, history)
   const { answers, rounding } = await withinTimeout(options, abortSignal =>
-    decideWithModel({ model, ...request, maxRetries: MAX_RETRIES, abortSignal })
+    metered(options, 'decision', () =>
+      decideWithModel({ model, ...request, maxRetries: MAX_RETRIES, abortSignal })
+    )
   )
   const answer = validateChoice(answers?.operation, Object.keys(operations), rounding)
   const operation = answer.choice
@@ -203,9 +244,9 @@ const decide = async (state, goal, history, model, options) => {
 const invalidFieldValue = () =>
   new TypeError('Text helper returned no valid field value; nothing typed.')
 
-const generateObject = async (request, invalidOutput) => {
+const generateObject = async (request, invalidOutput, options, kind) => {
   try {
-    const { output } = await generateText(request)
+    const { output } = await metered(options, kind, () => generateText(request))
     return output
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error) || NoOutputGeneratedError.isInstance(error)) {
@@ -239,7 +280,9 @@ const askLanguageModel = (request, operationIds, model, options) =>
         reasoning: options.reasoning,
         abortSignal
       },
-      invalidDecision
+      invalidDecision,
+      options,
+      'decision'
     )
   )
 
@@ -284,7 +327,9 @@ const fieldText = async (goal, action, state, history, model, options) => {
         reasoning: options.reasoning,
         abortSignal
       },
-      invalidFieldValue
+      invalidFieldValue,
+      options,
+      'text'
     )
   )
   if (!isFieldValue(output)) throw invalidFieldValue()
@@ -307,11 +352,61 @@ const writeRules = (instruction, outline, fields, model, options) =>
         reasoning: options.reasoning,
         abortSignal
       },
-      invalidRules
+      invalidRules,
+      options,
+      'rules'
     )
   )
 
+const GOAL_VERDICTS = {
+  yes: 'Every requirement of the goal is visibly satisfied on the current page.',
+  no: 'At least one requirement of the goal is not visibly satisfied on the current page.'
+}
+
+const FINAL_OPERATIONS = ['DONE', 'BLOCKED']
+
+const actionsTaken = history => {
+  let end = history.length
+  while (end > 0 && FINAL_OPERATIONS.includes(history[end - 1].operation)) end--
+  return history.slice(0, end)
+}
+
+const invalidEvaluation = () => new TypeError('Invalid evaluation response; no verdict given.')
+
+const evaluationRequest = (state, goal, history) =>
+  withoutUndefined({
+    state: {
+      page: pageOf(state),
+      elements: actionSpace(state.actions).elements,
+      recent_actions: recentActions(actionsTaken(history))
+    },
+    questions: {
+      passed: {
+        type: 'choice',
+        criteria: GOAL_VERDICTS,
+        instructions: { goal, rules: GOAL_EVALUATION }
+      }
+    }
+  })
+
+const evaluateGoal = async (request, model, options) => {
+  const { answers, rounding } = await withinTimeout(options, abortSignal =>
+    metered(options, 'evaluation', () =>
+      decideWithModel({ model, ...request, maxRetries: MAX_RETRIES, abortSignal })
+    )
+  )
+  const { choice, probabilities } = validateChoice(
+    answers?.passed,
+    Object.keys(GOAL_VERDICTS),
+    rounding,
+    invalidEvaluation
+  )
+  return { passed: choice === 'yes', probability: probabilities.yes }
+}
+
 module.exports = {
+  evaluateGoal,
+  evaluationRequest,
   writeRules,
   invalidRules,
   validateChoice,
