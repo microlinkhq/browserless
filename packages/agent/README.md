@@ -168,13 +168,35 @@ await agent(page, goal, { decisions: 'typesafe-ai/jev' }) // Jev decides
 ```
 
 Every trace entry has `decisionMs`, the time its decision took (the model
-request plus building and checking it), and `textMs` when a value was generated, so the two setups can be compared on the
-same goal. Measured on the Wallapop example: Jev answered in about 250 ms per
-decision (33 decisions over two runs, median 245 and 255 ms), while
-`inception/mercury-2.5` took 1.1 to 1.7 seconds for each of the three decisions
-it completed. That second figure is only three samples: the gateway's free tier
-allows 5 requests per minute for that model and then stops answering, so no run
-without Jev has completed.
+request plus building and checking it), and `textMs` when a value was generated,
+so the two setups can be compared on the same goal.
+
+### Benchmark
+
+`scripts/benchmark.js` runs the goal live with Jev, records every decision
+request, and replays the same requests to Jev and to each language model, so
+every decider answers identical inputs. It needs `TYPESAFE_API_KEY` and
+`AI_GATEWAY_API_KEY`:
+
+```sh
+npm run benchmark -- --samples=10 --models=amazon/nova-micro,mistral/mistral-nemo
+```
+
+`--perMinute` (default 5) paces each language model for the gateway's free
+tier. Result of one run on the Wallapop goal, 10 requests recorded from two live
+Jev runs that both ended on the results sorted by lowest price:
+
+| Decider | Answered | Median | p90 | Same operation as Jev | Same operation and target |
+| --- | --- | --- | --- | --- | --- |
+| `jev-latest` (direct) | 10/10 | 254 ms | 284 ms | reference | reference |
+| `amazon/nova-micro` | 8/10 | 694 ms | 959 ms | 2 | 1 |
+| `alibaba/qwen3.7-flash` | 7/10 | 1421 ms | 1666 ms | 6 | 6 |
+| `mistral/mistral-nemo` | 10/10 | 1336 ms | 3291 ms | 5 | 2 |
+
+The unanswered requests were free-tier rate-limit errors. Agreement with Jev is
+not correctness: it shows how often a model picked the step of a run that is
+known to have worked. These are the small models the free tier allows, one run
+each; larger models were not measured.
 
 ### Text values
 

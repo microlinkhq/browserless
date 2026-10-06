@@ -225,15 +225,14 @@ const languageDecisionSchema = operations =>
     additionalProperties: false
   })
 
-const decideWithLanguageModel = async (state, goal, history, model, options) => {
-  const { space, operations, request } = buildRequest(state, goal, history)
-  const output = await withinTimeout(options, abortSignal =>
+const askLanguageModel = (request, operationIds, model, options) =>
+  withinTimeout(options, abortSignal =>
     generateObject(
       {
         model,
         system: LANGUAGE_DECISION,
         prompt: JSON.stringify(request),
-        output: Output.object({ schema: languageDecisionSchema(Object.keys(operations)) }),
+        output: Output.object({ schema: languageDecisionSchema(operationIds) }),
         maxOutputTokens: DECISION_MAX_OUTPUT_TOKENS,
         maxRetries: MAX_RETRIES,
         reasoning: options.reasoning,
@@ -242,6 +241,10 @@ const decideWithLanguageModel = async (state, goal, history, model, options) => 
       invalidDecision
     )
   )
+
+const decideWithLanguageModel = async (state, goal, history, model, options) => {
+  const { space, operations, request } = buildRequest(state, goal, history)
+  const output = await askLanguageModel(request, Object.keys(operations), model, options)
   const operation = output?.operation
   if (typeof operation !== 'string' || !Object.hasOwn(operations, operation)) { throw invalidDecision() }
   const targets = space.targets[operation]
@@ -291,5 +294,6 @@ module.exports = {
   buildRequest,
   decide,
   decideWithLanguageModel,
+  askLanguageModel,
   fieldText
 }
