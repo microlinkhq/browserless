@@ -7,4 +7,9 @@ const flat = ({ accuracy, cost, timing, error }) => ({
   ...(error && { error: error.message })
 })
 
-module.exports = { flat }
+const succeeded = result => {
+  if (result.status === 'error') throw result.error
+  return result
+}
+
+module.exports = { flat, succeeded }

@@ -115,9 +115,8 @@ module.exports = async ({ page, browserless, opts }) => {
         decisions: recordingDecisionModel(jev, recorded),
         text: opts.text
       })
-      .then(
-        result => result.status,
-        error => `${error.name}: ${error.message}`.slice(0, 120)
+      .then(({ status, error }) =>
+        status === 'success' ? status : `${error.name}: ${error.message}`.slice(0, 120)
       )
     liveRuns.push({ status, decisions: recorded.length - before, finalUrl: page.url() })
   }

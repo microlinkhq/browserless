@@ -34,7 +34,7 @@ const timingOf = (calls, evaluationCalls, totalMs) => {
   }
 }
 
-const createInfo = ({ goal, state, trace, calls, totalMs, evaluator, timeout }) => {
+const createProfiling = ({ goal, state, trace, calls, totalMs, evaluator, timeout }) => {
   const goalCalls = [...calls]
   const request = state && evaluationRequest(state, goal, trace)
   const evaluationCalls = []
@@ -70,9 +70,9 @@ const createInfo = ({ goal, state, trace, calls, totalMs, evaluator, timeout }) 
   }
 }
 
-const createExtractInfo = ({ rules, calls, totalMs }) => {
+const createExtractProfiling = ({ rules, calls, totalMs }) => {
   const report = { rules, cost: costOf(calls), timing: timingOf(calls, [], totalMs) }
   return async () => report
 }
 
-module.exports = { createInfo, createExtractInfo, costOf, timingOf }
+module.exports = { createProfiling, createExtractProfiling, costOf, timingOf }

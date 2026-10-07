@@ -2,7 +2,7 @@
 
 const agent = require('..')
 const debug = require('debug-logfmt')('browserless:agent')
-const { flat } = require('./util')
+const { flat, succeeded } = require('./util')
 
 module.exports = async ({ page, browserless, opts }) => {
   const { url, goal, extract } = opts
@@ -15,7 +15,9 @@ module.exports = async ({ page, browserless, opts }) => {
 
   await browserless.goto(page, { url })
   const reached = await page.goal(goal)
-  debug('goal', flat(await reached()))
+  debug('goal', { status: reached.status, ...flat(await reached.profiling()) })
+  succeeded(reached)
 
-  return page.extract(extract)
+  const { data } = succeeded(await page.extract(extract))
+  return data
 }

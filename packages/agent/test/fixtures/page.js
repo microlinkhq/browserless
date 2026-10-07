@@ -191,7 +191,14 @@ const languageDecider = (
   return { text: model, calls }
 }
 
+const orThrow = async pending => {
+  const result = await pending
+  if (result.status === 'error') throw result.error
+  return result
+}
+
 module.exports = {
+  orThrow,
   RULES,
   DATA,
   PAGE_OUTLINE,

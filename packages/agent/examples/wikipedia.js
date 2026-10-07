@@ -2,7 +2,7 @@
 
 const agent = require('..')
 const debug = require('debug-logfmt')('browserless:agent')
-const { flat } = require('./util')
+const { flat, succeeded } = require('./util')
 
 module.exports = async ({ page, browserless }) => {
   agent(page)
@@ -11,10 +11,14 @@ module.exports = async ({ page, browserless }) => {
   const opened = await page.goal(
     'Search for "Gödel\'s incompleteness theorems" and open that article.'
   )
-  debug('open article', flat(await opened()))
+  debug('open article', { status: opened.status, ...flat(await opened.profiling()) })
+  succeeded(opened)
 
-  return page.extract('get the article title and its first paragraph', {
-    title: { type: 'string' },
-    firstParagraph: { type: 'string' }
-  })
+  const { data } = succeeded(
+    await page.extract('get the article title and its first paragraph', {
+      title: { type: 'string' },
+      firstParagraph: { type: 'string' }
+    })
+  )
+  return data
 }

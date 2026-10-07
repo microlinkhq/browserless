@@ -27,10 +27,10 @@ model.evaluateGoal = async (request, evaluator, options) => {
   if (attempts === 1) throw new Error('aborted after the reply was billed')
   return { passed: true, probability: 0.92 }
 }
-const { createInfo } = require('../src/info')
+const { createProfiling } = require('../src/profiling')
 
 test('an evaluation billed before it failed stays in cost and timing, also after a retry', async t => {
-  const info = createInfo({
+  const info = createProfiling({
     goal: 'open the comments',
     state: { url: 'https://example.com', title: 'HN', text: 'comments', actions: [] },
     trace: [],

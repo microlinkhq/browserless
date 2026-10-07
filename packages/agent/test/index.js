@@ -4,6 +4,7 @@ const test = require('ava')
 const agent = require('..')
 const { execute } = require('../src/browser')
 const {
+  orThrow,
   Page,
   state,
   mockModels,
@@ -12,8 +13,12 @@ const {
   DATA,
   PAGE_OUTLINE
 } = require('./fixtures/page')
+const goal = (...args) => orThrow(agent.goal(...args))
+
+const extract = (...args) => orThrow(agent.extract(...args))
+
 const run = (page, operations, { models = mockModels(operations), ...options } = {}) =>
-  agent.goal(page, 'find cheapest bmw x3', {
+  goal(page, 'find cheapest bmw x3', {
     decisions: models.decisions,
     text: models.text,
     waitMs: 0,
@@ -23,7 +28,7 @@ const run = (page, operations, { models = mockModels(operations), ...options } =
 test('DONE returns trace and does not touch the page', async t => {
   const page = new Page()
   const result = await run(page, ['DONE'])
-  t.is(result.status, 'done')
+  t.is(result.status, 'success')
   t.is(result.steps, 0)
   t.is(result.decisions, 1)
   t.is(result.trace[0].confidence, 1)
@@ -156,7 +161,7 @@ test('a successful action between stale decisions resets the stale count', async
   const page = new Page([state(), state(), state(), state('Results')])
   page.guards = [false, false, false]
   const result = await run(page, ['CLICK', 'WAIT', 'CLICK', 'CLICK', 'DONE'])
-  t.is(result.status, 'done')
+  t.is(result.status, 'success')
   t.is(result.trace.filter(entry => entry.stale).length, 3)
 })
 
@@ -225,7 +230,7 @@ test('select uses Puppeteer select with observed value', async t => {
 test('WAIT on a page that keeps changing waits and is never stale', async t => {
   const page = new Page([state('Loading 1'), state('Loading 2'), state('Results')])
   const result = await run(page, ['WAIT', 'WAIT', 'DONE'])
-  t.is(result.status, 'done')
+  t.is(result.status, 'success')
   t.is(result.steps, 2)
   t.deepEqual(
     result.trace.map(entry => [entry.operation, !!entry.stale]),
@@ -248,10 +253,10 @@ test('invalid options name the accepted range', async t => {
 
 test('invalid models and reasoning levels fail before any model call', async t => {
   const models = mockModels(['DONE'])
-  await t.throwsAsync(agent.goal(new Page(), 'cars', { decisions: {} }), {
+  await t.throwsAsync(goal(new Page(), 'cars', { decisions: {} }), {
     message: 'decisions must be a model id or an AI SDK model.'
   })
-  await t.throwsAsync(agent.goal(new Page(), 'cars', { text: '' }), {
+  await t.throwsAsync(goal(new Page(), 'cars', { text: '' }), {
     message: 'text must be a model id or an AI SDK model.'
   })
   await t.throwsAsync(run(new Page(), [], { models, reasoning: 'extreme' }), {
@@ -284,7 +289,7 @@ test('concurrent runs on one page are rejected and the first can finish', async 
   const first = run(page, [], { models })
   await t.throwsAsync(run(page, ['DONE']), { message: /already running/ })
   release()
-  t.is((await first).status, 'done')
+  t.is((await first).status, 'success')
 })
 
 test('a discarded stale decision is reported to the next decision request', async t => {
@@ -344,7 +349,7 @@ test('SUBMIT is discarded when the field does not keep keyboard focus', async t 
 })
 
 const runWithoutDecisionModel = (page, language, options = {}) =>
-  agent.goal(page, 'find cheapest bmw x3', {
+  goal(page, 'find cheapest bmw x3', {
     decisions: false,
     text: language.text,
     waitMs: 0,
@@ -371,8 +376,8 @@ const captureDefaultDecisionModel = t => {
 test.serial('without a decisions option the decision model is typesafe-ai/jev', async t => {
   const requested = captureDefaultDecisionModel(t)
   const { text } = mockModels(['DONE'])
-  const result = await agent.goal(new Page(), GOAL, { text, waitMs: 0 })
-  t.is(result.status, 'done')
+  const result = await goal(new Page(), GOAL, { text, waitMs: 0 })
+  t.is(result.status, 'success')
   t.deepEqual(requested, ['typesafe-ai/jev'])
 })
 
@@ -381,8 +386,8 @@ test.serial(
   async t => {
     const requested = captureDefaultDecisionModel(t)
     const { text } = mockModels(['DONE'])
-    await agent.goal(new Page(), GOAL, { decisions: null, text, waitMs: 0 })
-    await agent.goal(new Page(), GOAL, { decisions: undefined, text, waitMs: 0 })
+    await goal(new Page(), GOAL, { decisions: null, text, waitMs: 0 })
+    await goal(new Page(), GOAL, { decisions: undefined, text, waitMs: 0 })
     await agent(new Page(), { text, waitMs: 0 }).goal(GOAL)
     t.deepEqual(requested, ['typesafe-ai/jev', 'typesafe-ai/jev', 'typesafe-ai/jev'])
   }
@@ -408,7 +413,7 @@ test.serial(
 test('a default decision model survives a call that gives undefined decisions', async t => {
   const models = mockModels(['DONE'])
   const page = agent(new Page(), { decisions: models.decisions, text: models.text, waitMs: 0 })
-  t.is((await page.goal(GOAL, { decisions: undefined })).status, 'done')
+  t.is((await page.goal(GOAL, { decisions: undefined })).status, 'success')
   t.deepEqual(
     models.calls.map(call => call.kind),
     ['decide']
@@ -419,7 +424,7 @@ test('decisions set to false in a call overrides a default decision model', asyn
   const models = mockModels(['DONE'])
   const language = languageDecider(['DONE'])
   const page = agent(new Page(), { decisions: models.decisions, text: language.text, waitMs: 0 })
-  t.is((await page.goal(GOAL, { decisions: false })).status, 'done')
+  t.is((await page.goal(GOAL, { decisions: false })).status, 'success')
   t.deepEqual(models.calls, [])
   t.deepEqual(
     language.calls.map(call => call.kind),
@@ -431,7 +436,7 @@ for (const decisions of ['', ' ', true, 0, {}, []]) {
   test(`decisions ${JSON.stringify(decisions)} is refused before the page is touched`, async t => {
     const page = new Page()
     const { text } = mockModels(['DONE'])
-    await t.throwsAsync(agent.goal(page, GOAL, { decisions, text }), {
+    await t.throwsAsync(goal(page, GOAL, { decisions, text }), {
       message: 'decisions must be a model id or an AI SDK model.'
     })
     t.deepEqual(page.inputs, [])
@@ -443,7 +448,7 @@ test('decisions set to false lets the language model choose the operation and ta
   const page = new Page([state(), state('Results')])
   const language = languageDecider(['CLICK', 'DONE'])
   const result = await runWithoutDecisionModel(page, language)
-  t.is(result.status, 'done')
+  t.is(result.status, 'success')
   t.deepEqual(page.inputs, [{ click: true }])
   t.deepEqual(
     language.calls.map(call => call.kind),
@@ -525,7 +530,7 @@ test('a target sent for an operation without targets is ignored', async t => {
   const page = new Page()
   const language = languageDecider([{ operation: 'DONE', target: '1' }])
   const result = await runWithoutDecisionModel(page, language)
-  t.is(result.status, 'done')
+  t.is(result.status, 'success')
   t.deepEqual(page.inputs, [])
 })
 
@@ -564,7 +569,7 @@ for (const message of [
     page.clickErrors = [message]
     const result = await run(page, ['CLICK', 'CLICK', 'DONE'])
     t.true(result.trace[0].stale)
-    t.is(result.status, 'done')
+    t.is(result.status, 'success')
     t.deepEqual(page.inputs, [{ click: true }])
   })
 }
@@ -586,14 +591,14 @@ test('a page that navigates while the target is looked up gives a stale decision
 const INSTRUCTION = 'get the title'
 
 const writtenRules = async (page, instruction, rules, options) => {
-  await agent.extract(page, instruction, rules, options)
+  await extract(page, instruction, rules, options)
   return page.appliedRules.at(-1)
 }
 
 test('extract with rules runs them without any model request', async t => {
   const page = new Page()
   const models = mockModels([])
-  t.deepEqual((await agent.extract(page, RULES, { text: models.text })).toJSON(), DATA)
+  t.deepEqual((await extract(page, RULES, { text: models.text })).data, DATA)
   t.deepEqual(page.appliedRules, [RULES])
   t.is(models.calls.length, 0)
 })
@@ -601,10 +606,7 @@ test('extract with rules runs them without any model request', async t => {
 test('extract with an instruction has the model write rules, then runs them', async t => {
   const page = new Page()
   const models = mockModels([])
-  t.deepEqual(
-    (await agent.extract(page, INSTRUCTION, undefined, { text: models.text })).toJSON(),
-    DATA
-  )
+  t.deepEqual((await extract(page, INSTRUCTION, undefined, { text: models.text })).data, DATA)
   t.deepEqual(page.appliedRules, [RULES, RULES])
   const [request] = models.calls
   t.is(request.kind, 'rules')
@@ -663,7 +665,7 @@ for (const [name, reply] of Object.entries({
   test(`rules written by the model are rejected when they contain ${name}`, async t => {
     const page = new Page()
     const models = mockModels([], { rules: reply })
-    await t.throwsAsync(agent.extract(page, INSTRUCTION, undefined, { text: models.text }), {
+    await t.throwsAsync(extract(page, INSTRUCTION, undefined, { text: models.text }), {
       message: 'The model did not write usable extraction rules.'
     })
     t.deepEqual(page.appliedRules, [])
@@ -672,13 +674,13 @@ for (const [name, reply] of Object.entries({
 
 test('rules passed by the caller are validated before they run', async t => {
   const page = new Page()
-  await t.throwsAsync(agent.extract(page, { title: { selector: '' } }), {
+  await t.throwsAsync(extract(page, { title: { selector: '' } }), {
     message: 'Invalid rule `data.title`: selector must be a CSS selector or a list of them.'
   })
-  await t.throwsAsync(agent.extract(page, { title: { selector: 'h1', evaluate: 'x' } }), {
+  await t.throwsAsync(extract(page, { title: { selector: 'h1', evaluate: 'x' } }), {
     message: 'Invalid rule `data.title`: `evaluate` is not supported.'
   })
-  await t.throwsAsync(agent.extract({}, RULES), { message: 'extract requires a Puppeteer page.' })
+  await t.throwsAsync(extract({}, RULES), { message: 'extract requires a Puppeteer page.' })
   t.deepEqual(page.appliedRules, [])
 })
 
@@ -691,7 +693,7 @@ test('the model reads the page outline once it has stopped changing', async t =>
     loaded
   ]
   const models = mockModels([])
-  await agent.extract(page, INSTRUCTION, undefined, { text: models.text })
+  await extract(page, INSTRUCTION, undefined, { text: models.text })
   const user = models.calls[0].options.prompt.find(message => message.role === 'user')
   t.deepEqual(JSON.parse(user.content[0].text).page, loaded)
 })
@@ -703,7 +705,7 @@ test('a custom extractor runs the rules instead of the default engine', async t 
     received.push([target, rules])
     return { title: 'From the custom engine' }
   }
-  t.deepEqual((await agent.extract(page, RULES, { extractor })).toJSON(), {
+  t.deepEqual((await extract(page, RULES, { extractor })).data, {
     title: 'From the custom engine'
   })
   t.deepEqual(received, [[page, RULES]])
@@ -726,10 +728,10 @@ test('agent adds goal and extract to the page, with shared defaults', async t =>
     text: models.text,
     waitMs: 0
   })
-  t.is((await page.goal('find cheapest bmw x3')).status, 'done')
+  t.is((await page.goal('find cheapest bmw x3')).status, 'success')
   t.deepEqual(page.inputs, [{ click: true }])
-  t.deepEqual((await page.extract(INSTRUCTION)).toJSON(), DATA)
-  t.deepEqual((await page.extract(RULES)).toJSON(), DATA)
+  t.deepEqual((await page.extract(INSTRUCTION)).data, DATA)
+  t.deepEqual((await page.extract(RULES)).data, DATA)
 })
 
 test('a page that already has extract keeps it as the rules engine', async t => {
@@ -741,8 +743,8 @@ test('a page that already has extract keeps it as the rules engine', async t => 
   }
   const models = mockModels([])
   const page = agent(browserPage, { text: models.text })
-  t.deepEqual((await page.extract(RULES)).toJSON(), { title: 'From the page' })
-  t.deepEqual((await page.extract(INSTRUCTION)).toJSON(), { title: 'From the page' })
+  t.deepEqual((await page.extract(RULES)).data, { title: 'From the page' })
+  t.deepEqual((await page.extract(INSTRUCTION)).data, { title: 'From the page' })
   t.deepEqual(calls, [
     [browserPage, RULES],
     [browserPage, RULES]
@@ -753,10 +755,10 @@ test('a page that already has extract keeps it as the rules engine', async t => 
 test('options passed to a page method override the defaults', async t => {
   const models = mockModels(['CLICK'])
   const page = agent(new Page(), { decisions: models.decisions, text: models.text, waitMs: 0 })
-  const error = await t.throwsAsync(page.goal('find cars', { maxDecisions: 1, maxSteps: 1 }), {
-    instanceOf: agent.BlockedError
-  })
-  t.is(error.reason, 'step_budget')
+  const result = await page.goal('find cars', { maxDecisions: 1, maxSteps: 1 })
+  t.is(result.status, 'error')
+  t.true(result.error instanceof agent.BlockedError)
+  t.is(result.error.reason, 'step_budget')
 })
 
 test('agent requires a Puppeteer page', t => {
@@ -768,7 +770,7 @@ test('rules the model wrote are tried on the page before a custom engine runs th
   const models = mockModels([])
   const received = []
   const extractor = async (target, rules) => received.push(rules)
-  await agent.extract(page, INSTRUCTION, undefined, { text: models.text, extractor })
+  await extract(page, INSTRUCTION, undefined, { text: models.text, extractor })
   t.deepEqual(page.appliedRules, [RULES])
   t.deepEqual(received, [RULES])
 })
@@ -777,7 +779,7 @@ test('rules written by the model that match nothing are rejected', async t => {
   const page = new Page()
   page.data = {}
   const models = mockModels([])
-  await t.throwsAsync(agent.extract(page, INSTRUCTION, undefined, { text: models.text }), {
+  await t.throwsAsync(extract(page, INSTRUCTION, undefined, { text: models.text }), {
     message: 'The rules the model wrote matched nothing on the page.'
   })
 })
@@ -786,7 +788,7 @@ test('rules written by the model with an invalid selector are rejected', async t
   const page = new Page()
   page.invalidSelectors = ['#4 9977979 a']
   const models = mockModels([])
-  await t.throwsAsync(agent.extract(page, INSTRUCTION, undefined, { text: models.text }), {
+  await t.throwsAsync(extract(page, INSTRUCTION, undefined, { text: models.text }), {
     message: 'The model did not write usable extraction rules.'
   })
 })
@@ -794,7 +796,7 @@ test('rules written by the model with an invalid selector are rejected', async t
 test('rules passed by the caller with an invalid selector name it', async t => {
   const page = new Page()
   page.invalidSelectors = ['#4 9977979 a']
-  await t.throwsAsync(agent.extract(page, RULES), {
+  await t.throwsAsync(extract(page, RULES), {
     message: 'Invalid CSS selector: #4 9977979 a'
   })
 })
@@ -842,7 +844,7 @@ test('rules that only produce empty items count as matching nothing', async t =>
   const page = new Page()
   page.data = { products: [{ name: null }, { name: null }] }
   const models = mockModels([])
-  await t.throwsAsync(agent.extract(page, INSTRUCTION, undefined, { text: models.text }), {
+  await t.throwsAsync(extract(page, INSTRUCTION, undefined, { text: models.text }), {
     message: 'The rules the model wrote matched nothing on the page.'
   })
 })
@@ -851,7 +853,7 @@ test('a custom extractor receives rules the built-in engine would refuse', async
   const hostRules = { title: { evaluate: '() => document.title', type: ['string', 'x'] } }
   const received = []
   const extractor = async (page, rules) => received.push(rules)
-  await agent.extract(new Page(), hostRules, { extractor })
+  await extract(new Page(), hostRules, { extractor })
   t.deepEqual(received, [hostRules])
 })
 
@@ -860,7 +862,7 @@ test('options after an instruction go in third position', async t => {
   controller.abort()
   const models = mockModels([])
   await t.throwsAsync(
-    agent.extract(new Page(), INSTRUCTION, undefined, {
+    extract(new Page(), INSTRUCTION, undefined, {
       text: models.text,
       signal: controller.signal
     }),
@@ -876,7 +878,7 @@ for (const [name, misplaced] of Object.entries({
   test(`options passed where rules belong are refused: ${name}`, async t => {
     const page = new Page()
     const [key] = Object.keys(misplaced)
-    await t.throwsAsync(agent.extract(page, INSTRUCTION, misplaced), {
+    await t.throwsAsync(extract(page, INSTRUCTION, misplaced), {
       message: `Invalid rule \`rules.${key}\`: a rule must be an object.`
     })
     t.deepEqual(page.appliedRules, [])
@@ -889,10 +891,7 @@ test('an instruction with rules that already have every selector makes no model 
   const complete = {
     products: { selectorAll: 'article', attr: { name: { selector: 'h3', attr: 'text' } } }
   }
-  t.deepEqual(
-    (await agent.extract(page, INSTRUCTION, complete, { text: models.text })).toJSON(),
-    DATA
-  )
+  t.deepEqual((await extract(page, INSTRUCTION, complete, { text: models.text })).data, DATA)
   t.deepEqual(page.appliedRules, [complete])
   t.is(models.calls.length, 0)
 })
@@ -909,10 +908,9 @@ test('the page method takes rules second and options third', async t => {
 
 test('invalid fields name the problem before any model call', async t => {
   const models = mockModels([])
-  await t.throwsAsync(
-    agent.extract(new Page(), INSTRUCTION, { title: 'h1' }, { text: models.text }),
-    { message: 'Invalid rule `rules.title`: a rule must be an object.' }
-  )
+  await t.throwsAsync(extract(new Page(), INSTRUCTION, { title: 'h1' }, { text: models.text }), {
+    message: 'Invalid rule `rules.title`: a rule must be an object.'
+  })
   t.is(models.calls.length, 0)
 })
 
@@ -933,7 +931,7 @@ test('BLOCKED on a page that is still changing is asked again instead of ending 
   const page = new Page([settling, state('Form ready'), state('Results')])
   const models = mockModels(['BLOCKED', 'CLICK', 'DONE'])
   const result = await run(page, [], { models })
-  t.is(result.status, 'done')
+  t.is(result.status, 'success')
   t.deepEqual(
     result.trace.map(entry => entry.operation),
     ['BLOCKED', 'CLICK', 'DONE']
@@ -956,7 +954,218 @@ test('a page change seen after BLOCKED offers ineffective actions again and rese
   const page = new Page([state(), state(), state(), settling, state('Results')])
   const models = mockModels(['CLICK', 'WAIT', 'BLOCKED', 'CLICK', 'DONE'])
   const result = await run(page, [], { models })
-  t.is(result.status, 'done')
+  t.is(result.status, 'success')
   const offersClick = models.calls.map(call => 'click_target' in call.questions)
   t.deepEqual(offersClick, [true, false, false, true, true])
+})
+
+test('a goal that is met resolves with success, the run and a profiling function', async t => {
+  const models = mockModels(['CLICK', 'DONE'])
+  const result = await agent.goal(new Page([state(), state('Results')]), 'find cars', {
+    decisions: models.decisions,
+    text: models.text,
+    waitMs: 0
+  })
+  t.deepEqual(Object.keys(result), ['status', 'steps', 'decisions', 'trace', 'profiling'])
+  t.like(result, { status: 'success', steps: 1, decisions: 2 })
+  t.is(result.trace.length, 2)
+  t.is(typeof result.profiling, 'function')
+  t.false('error' in result)
+  t.deepEqual(Object.keys(JSON.parse(JSON.stringify(result))), [
+    'status',
+    'steps',
+    'decisions',
+    'trace'
+  ])
+})
+
+test('a goal that stops resolves with error instead of throwing, and keeps the run', async t => {
+  const models = mockModels(['CLICK', 'CLICK'])
+  const result = await agent.goal(new Page([state(), state('Results')]), 'find cars', {
+    decisions: models.decisions,
+    text: models.text,
+    waitMs: 0,
+    maxSteps: 1
+  })
+  t.deepEqual(Object.keys(result), ['status', 'error', 'steps', 'decisions', 'trace', 'profiling'])
+  t.is(result.status, 'error')
+  t.true(result.error instanceof agent.BlockedError)
+  t.is(result.error.reason, 'step_budget')
+  t.is(result.steps, 1)
+  t.is(result.trace, result.error.trace)
+  t.is(typeof result.profiling, 'function')
+})
+
+test('a model failure during a goal is an error result too, not only a blocked run', async t => {
+  const models = mockModels(['DONE'])
+  models.decisions.doDecide = async () => {
+    throw new Error('provider down')
+  }
+  const result = await agent.goal(new Page(), 'find cars', {
+    decisions: models.decisions,
+    text: models.text,
+    waitMs: 0
+  })
+  t.is(result.status, 'error')
+  t.is(result.error.message, 'provider down')
+  t.deepEqual(result.trace, [])
+})
+
+test('calling goal or extract wrong still throws', async t => {
+  await t.throwsAsync(agent.goal({}, 'find cars'), { instanceOf: TypeError })
+  await t.throwsAsync(agent.goal(new Page(), ''), { instanceOf: TypeError })
+  await t.throwsAsync(agent.goal(new Page(), 'find cars', { maxSteps: 0 }), {
+    instanceOf: TypeError
+  })
+  await t.throwsAsync(agent.extract({}, RULES), { instanceOf: TypeError })
+  await t.throwsAsync(agent.extract(new Page(), ''), { instanceOf: TypeError })
+  await t.throwsAsync(agent.extract(new Page(), { title: 'h1' }), { instanceOf: TypeError })
+  await t.throwsAsync(agent.extract(new Page(), INSTRUCTION, { title: 'h1' }), {
+    instanceOf: TypeError
+  })
+  await t.throwsAsync(agent.extract(new Page(), INSTRUCTION, undefined, { reasoning: 'extreme' }), {
+    instanceOf: TypeError
+  })
+})
+
+test('an extraction resolves with success, the data and a profiling function', async t => {
+  const result = await agent.extract(new Page(), RULES)
+  t.deepEqual(Object.keys(result), ['status', 'data', 'profiling'])
+  t.is(result.status, 'success')
+  t.deepEqual(result.data, DATA)
+  t.is(typeof result.profiling, 'function')
+  t.deepEqual(JSON.parse(JSON.stringify(result)), { status: 'success', data: DATA })
+})
+
+test('an extraction that fails resolves with error instead of throwing', async t => {
+  const page = new Page()
+  page.data = {}
+  const models = mockModels([])
+  const result = await agent.extract(page, INSTRUCTION, undefined, { text: models.text })
+  t.deepEqual(Object.keys(result), ['status', 'error', 'profiling'])
+  t.is(result.status, 'error')
+  t.is(result.error.message, 'The rules the model wrote matched nothing on the page.')
+  t.false('data' in result)
+  const failing = await agent.extract(new Page(), RULES, {
+    extractor: async () => {
+      throw new Error('engine down')
+    }
+  })
+  t.like(failing, { status: 'error' })
+  t.is(failing.error.message, 'engine down')
+})
+
+test('whatever a custom engine returns is the data, unchanged', async t => {
+  for (const value of [['a', 'b'], 'text', 42, null, undefined, { name: 'x', length: 2 }]) {
+    const result = await agent.extract(new Page(), RULES, { extractor: async () => value })
+    t.is(result.status, 'success')
+    t.is(result.data, value)
+  }
+})
+
+test('a custom engine receives rules in its own format without being checked here', async t => {
+  const hostRules = { title: { selector: 'h1', evaluate: '() => 1' } }
+  const received = []
+  const result = await agent.extract(new Page(), hostRules, {
+    extractor: async (page, rules) => {
+      received.push(rules)
+      return { title: 1 }
+    }
+  })
+  t.is(result.status, 'success')
+  t.deepEqual(received, [hostRules])
+})
+
+const direct = (page, operations, { models = mockModels(operations), ...options } = {}) =>
+  agent.goal(page, 'find cars', {
+    decisions: models.decisions,
+    text: models.text,
+    waitMs: 0,
+    ...options
+  })
+
+test('an aborted goal resolves with the abort as its error, it does not reject', async t => {
+  const controller = new AbortController()
+  const models = mockModels(['CLICK'], { onDecide: () => controller.abort() })
+  const page = new Page()
+  const result = await direct(page, [], { models, signal: controller.signal })
+  t.is(result.status, 'error')
+  t.is(result.error.name, 'AbortError')
+  t.deepEqual(page.inputs, [])
+})
+
+test('an aborted extraction resolves with the abort as its error, it does not reject', async t => {
+  const controller = new AbortController()
+  controller.abort()
+  const models = mockModels([])
+  const result = await agent.extract(new Page(), INSTRUCTION, undefined, {
+    text: models.text,
+    signal: controller.signal
+  })
+  t.is(result.status, 'error')
+  t.is(result.error.name, 'AbortError')
+})
+
+test('something thrown that is not an error becomes one, with the original as its cause', async t => {
+  const models = mockModels(['DONE'])
+  models.decisions.doDecide = async () => {
+    throw 'boom' // eslint-disable-line no-throw-literal
+  }
+  const result = await direct(new Page(), [], { models })
+  t.is(result.status, 'error')
+  t.true(result.error instanceof Error)
+  t.is(result.error.message, 'boom')
+  t.is(result.error.cause, 'boom')
+  const extracted = await agent.extract(new Page(), RULES, {
+    extractor: async () => {
+      throw null // eslint-disable-line no-throw-literal
+    }
+  })
+  t.true(extracted.error instanceof Error)
+  t.is(extracted.error.cause, null)
+})
+
+test('a second goal while one is running rejects, it is not an error result', async t => {
+  const page = new Page()
+  let release
+  const pending = new Promise(resolve => {
+    release = resolve
+  })
+  const models = mockModels(['DONE'])
+  const decide = models.decisions.doDecide
+  models.decisions.doDecide = async options => {
+    await pending
+    return decide(options)
+  }
+  const first = direct(page, [], { models })
+  await t.throwsAsync(direct(page, ['DONE']), {
+    message: 'A goal is already running on this page.'
+  })
+  release()
+  t.is((await first).status, 'success')
+})
+
+test('after a goal ends in error the page takes another goal and no listener is left', async t => {
+  const page = new Page([state(), state('Results')])
+  const failed = await direct(page, ['CLICK', 'CLICK'], { maxSteps: 1 })
+  t.is(failed.status, 'error')
+  t.is(page.listenerCount('popup'), 0)
+  const models = mockModels(['DONE'])
+  models.decisions.doDecide = async () => {
+    throw new Error('provider down')
+  }
+  t.is((await direct(page, [], { models })).status, 'error')
+  t.is(page.listenerCount('popup'), 0)
+  t.is((await direct(page, ['DONE'])).status, 'success')
+})
+
+test('decorating a page twice does not make its own extract the rules engine', async t => {
+  const page = agent(agent(new Page()))
+  const result = await page.extract(RULES)
+  t.is(result.status, 'success')
+  t.deepEqual(result.data, DATA)
+  page.invalidSelectors = ['h1[']
+  const failed = await page.extract(RULES)
+  t.is(failed.status, 'error')
+  t.false('data' in failed)
 })

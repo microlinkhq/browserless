@@ -10,7 +10,6 @@ const {
   REASONING_LEVELS
 } = require('./model')
 const {
-  isPlainObject,
   applyRules,
   assertRules,
   fillFields,
@@ -19,7 +18,7 @@ const {
   hasData
 } = require('./rules')
 const { BlockedError, StaleDecisionError } = require('./errors')
-const { createInfo, createExtractInfo } = require('./info')
+const { createProfiling, createExtractProfiling } = require('./profiling')
 
 const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
 const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
@@ -27,6 +26,8 @@ const DEFAULT_TEXT_MODEL = 'openai/gpt-6-luna'
 const DEFAULT_DECISION_MODEL = 'typesafe-ai/jev'
 const DEFAULT_EVALUATOR = 'typesafe-ai/jev'
 const DEFAULT_REASONING = 'none'
+const SUCCESS = 'success'
+const ERROR = 'error'
 const MAX_UNCHANGED_ACTIONS = 3
 const MAX_STALE_DECISIONS_PER_TARGET = 3
 const BLOCKED_RECHECK_MS = 300
@@ -34,6 +35,7 @@ const VERIFICATION_WALL =
   /\b(captcha|verify you are human|verification required|verifica que eres humano)\b/i
 
 const activePages = new WeakSet()
+const ownExtractMethods = new WeakSet()
 
 const isModel = model =>
   (typeof model === 'string' && model.trim() !== '') ||
@@ -92,6 +94,9 @@ const timed = async call => {
   return [value, Math.round(performance.now() - started)]
 }
 
+const asError = thrown =>
+  thrown instanceof Error ? thrown : new Error(String(thrown), { cause: thrown })
+
 const isPage = page => typeof page?.evaluate === 'function'
 
 const isInstruction = text => typeof text === 'string' && text.trim() !== ''
@@ -114,8 +119,8 @@ const goal = async (page, goal, options = {}) => {
   const trace = []
   const started = performance.now()
   let state
-  const runInfo = () =>
-    createInfo({
+  const profiling = () =>
+    createProfiling({
       goal,
       state,
       trace,
@@ -171,7 +176,7 @@ const goal = async (page, goal, options = {}) => {
       }
       trace.push(entry)
       if (decision.operation === 'DONE') {
-        return withInfo({ status: 'done', steps, decisions, trace }, runInfo())
+        return { status: SUCCESS, steps, decisions, trace, profiling: profiling() }
       }
       if (decision.operation === 'BLOCKED') {
         await new Promise(resolve => setTimeout(resolve, BLOCKED_RECHECK_MS))
@@ -228,42 +233,12 @@ const goal = async (page, goal, options = {}) => {
       state = next
     }
   } catch (error) {
-    if (error instanceof BlockedError) {
-      if (error.trace.length === 0) error.trace = trace
-      error.info = runInfo()
-    }
-    throw error
+    if (error instanceof BlockedError && error.trace.length === 0) error.trace = trace
+    return { status: ERROR, error: asError(error), steps, decisions, trace, profiling: profiling() }
   } finally {
     page.off('popup', onPopup)
     activePages.delete(page)
   }
-}
-
-const FUNCTION_OWN_KEYS = ['length', 'name']
-
-const hasOwnSerialization = values => typeof values?.toJSON === 'function'
-
-const carryFields = (info, fields) => {
-  for (const key of FUNCTION_OWN_KEYS) delete info[key]
-  for (const key of Reflect.ownKeys(fields)) {
-    const descriptor = Object.getOwnPropertyDescriptor(fields, key)
-    Object.defineProperty(info, key, { ...descriptor, configurable: true })
-  }
-  const overwrittenByToJSON = Object.hasOwn(fields, 'toJSON') ? { toJSON: fields.toJSON } : {}
-  return () => ({ ...info, ...overwrittenByToJSON })
-}
-
-const withInfo = (values, info) => {
-  const carried = isPlainObject(values) && !hasOwnSerialization(values)
-  const toJSON = carried
-    ? carryFields(info, values)
-    : () => (hasOwnSerialization(values) ? values.toJSON() : values)
-  return Object.defineProperty(info, 'toJSON', { value: toJSON })
-}
-
-const attachInfo = (error, info) => {
-  const canCarry = error instanceof Error && Object.isExtensible(error) && !('info' in error)
-  if (canCarry) error.info = info
 }
 
 const usableRules = async (page, written, fields) => {
@@ -277,55 +252,76 @@ const usableRules = async (page, written, fields) => {
   throw new TypeError('The rules the model wrote matched nothing on the page.')
 }
 
-const rulesFor = async (page, instruction, fields, options, onCall) => {
-  if (!isInstruction(instruction)) {
-    throw new TypeError('extract requires rules or a nonempty instruction.')
-  }
-  if (fields !== undefined && isComplete(assertRules(fields, 'rules'))) return fields
-  const { timeout, models, reasoning } = resolveOptions(options)
-  const request = { timeout, signal: options.signal, reasoning, onCall }
+const rulesFor = async (
+  page,
+  instruction,
+  fields,
+  { timeout, models, reasoning, signal },
+  onCall
+) => {
+  if (fields !== undefined && isComplete(fields)) return fields
+  const request = { timeout, signal, reasoning, onCall }
   const outline = await readStableOutline(page)
   const written = await writeRules(instruction, outline, fields, models.text, request)
   return usableRules(page, written, fields)
 }
 
-const extract = async (page, input, ...rest) => {
-  if (!isPage(page)) throw new TypeError('extract requires a Puppeteer page.')
+const extractArguments = (input, rest) => {
   const fromInstruction = typeof input === 'string'
   const [fields, options = {}] = fromInstruction ? rest : [undefined, rest[0]]
+  if (!fromInstruction) {
+    const usesBuiltInEngine = options.extractor === undefined
+    return { rules: usesBuiltInEngine ? assertRules(input) : input, options }
+  }
+  if (!isInstruction(input)) {
+    throw new TypeError('extract requires rules or a nonempty instruction.')
+  }
+  if (fields !== undefined) assertRules(fields, 'rules')
+  return { instruction: input, fields, options, resolved: resolveOptions(options) }
+}
+
+const extract = async (page, input, ...rest) => {
+  if (!isPage(page)) throw new TypeError('extract requires a Puppeteer page.')
+  const { instruction, fields, rules, options, resolved } = extractArguments(input, rest)
   const { extractor = applyRules } = options
   const calls = []
   const started = performance.now()
-  const used = { rules: fromInstruction ? undefined : input }
-  const info = () =>
-    createExtractInfo({
+  const used = { rules }
+  const profiling = () =>
+    createExtractProfiling({
       rules: used.rules,
       calls,
       totalMs: Math.round(performance.now() - started)
     })
   try {
-    if (fromInstruction) {
-      used.rules = await rulesFor(page, input, fields, options, metrics => calls.push(metrics))
+    if (instruction !== undefined) {
+      const request = { ...resolved, signal: options.signal }
+      used.rules = await rulesFor(page, instruction, fields, request, metrics =>
+        calls.push(metrics)
+      )
     }
-    return withInfo(await extractor(page, used.rules), info())
+    const data = await extractor(page, used.rules)
+    return { status: SUCCESS, data, profiling: profiling() }
   } catch (error) {
-    attachInfo(error, info())
-    throw error
+    return { status: ERROR, error: asError(error), profiling: profiling() }
   }
 }
 
 const agent = (page, defaults = {}) => {
   if (!isPage(page)) throw new TypeError('agent requires a Puppeteer page.')
-  const existingExtract = typeof page.extract === 'function' ? page.extract.bind(page) : undefined
-  const extractor = defaults.extractor ?? (existingExtract && ((_, data) => existingExtract(data)))
+  const isHostEngine = typeof page.extract === 'function' && !ownExtractMethods.has(page.extract)
+  const hostExtract = isHostEngine ? page.extract.bind(page) : undefined
+  const extractor = defaults.extractor ?? (hostExtract && ((_, rules) => hostExtract(rules)))
   const settings = extractor ? { ...defaults, extractor } : defaults
   const withSettings = options => ({ ...settings, ...withoutNullish(options) })
+  const extractMethod = (input, ...rest) =>
+    typeof input === 'string'
+      ? extract(page, input, rest[0], withSettings(rest[1]))
+      : extract(page, input, withSettings(rest[0]))
+  ownExtractMethods.add(extractMethod)
   return Object.assign(page, {
     goal: (text, options) => goal(page, text, withSettings(options)),
-    extract: (input, ...rest) =>
-      typeof input === 'string'
-        ? extract(page, input, rest[0], withSettings(rest[1]))
-        : extract(page, input, withSettings(rest[0]))
+    extract: extractMethod
   })
 }
 

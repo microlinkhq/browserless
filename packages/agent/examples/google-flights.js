@@ -2,7 +2,7 @@
 
 const agent = require('..')
 const debug = require('debug-logfmt')('browserless:agent')
-const { flat } = require('./util')
+const { flat, succeeded } = require('./util')
 
 const DAYS_AHEAD = 30
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -24,13 +24,18 @@ module.exports = async ({ page, browserless }) => {
   const consented = await page.goal(
     'If a cookie consent page is shown, scroll down and reject all cookies.'
   )
-  debug('reject cookies', flat(await consented()))
+  debug('reject cookies', { status: consented.status, ...flat(await consented.profiling()) })
+  succeeded(consented)
   const found = await page.goal(
     `Find one-way flights from Zurich to London on ${departure}, for one adult in economy. Stop when matching flight options are visible.`
   )
-  debug('find flights', flat(await found()))
+  debug('find flights', { status: found.status, ...flat(await found.profiling()) })
+  succeeded(found)
 
-  return page.extract('get the flights listed on the page', {
-    flights: { attr: Object.fromEntries(FLIGHT_FIELDS.map(name => [name, { type: 'string' }])) }
-  })
+  const { data } = succeeded(
+    await page.extract('get the flights listed on the page', {
+      flights: { attr: Object.fromEntries(FLIGHT_FIELDS.map(name => [name, { type: 'string' }])) }
+    })
+  )
+  return data
 }

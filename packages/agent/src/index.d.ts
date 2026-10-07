@@ -51,7 +51,6 @@ declare namespace agent {
     stale?: boolean
     pageChanged?: boolean
   }
-  interface Summary { status: 'done'; steps: number; decisions: number; trace: TraceEntry[] }
   interface Accuracy {
     passed: boolean
     probability: number
@@ -72,32 +71,37 @@ declare namespace agent {
     otherMs: number
     evaluationMs: number
   }
-  interface Info {
+  interface Profiling {
     accuracy: Accuracy | undefined
     cost: Cost
     timing: Timing
     error?: Error
   }
-  interface InfoOptions {
+  interface ProfilingOptions {
     signal?: AbortSignal
   }
-  type InfoFunction = (options?: InfoOptions) => Promise<Info>
-  interface Result extends Summary, InfoFunction {
-    toJSON(): Summary
+  type ProfilingFunction = (options?: ProfilingOptions) => Promise<Profiling>
+  interface Run {
+    steps: number
+    decisions: number
+    trace: TraceEntry[]
+    profiling: ProfilingFunction
   }
-  interface ExtractInfo {
+  type Result = (Run & { status: 'success' }) | (Run & { status: 'error'; error: Error })
+  interface ExtractProfiling {
     rules: Rules | undefined
     cost: Cost
     timing: Timing
   }
-  type ExtractInfoFunction = () => Promise<ExtractInfo>
-  type Extracted = Data & ExtractInfoFunction & { toJSON(): Data }
+  type ExtractProfilingFunction = () => Promise<ExtractProfiling>
+  type Extracted =
+    | { status: 'success'; data: Data; profiling: ExtractProfilingFunction }
+    | { status: 'error'; error: Error; profiling: ExtractProfilingFunction }
   class BlockedError extends Error {
     constructor(reason: BlockedReason, message: string, trace?: TraceEntry[])
     code: 'BLOCKED'
     reason: BlockedReason
     trace: TraceEntry[]
-    info?: InfoFunction
   }
 }
 

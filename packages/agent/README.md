@@ -24,13 +24,16 @@ const browser = await puppeteer.launch()
 const page = agent(await browser.newPage())
 
 await page.goto('https://wallapop.com', { waitUntil: 'networkidle2' })
-const searched = await page.goal('busca el bmw x3 más barato')
-const { products } = await page.extract('get the search results', {
-  products: {
-    attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
-  }
-})
-const { accuracy, cost, timing } = await searched() // optional: one extra request, for accuracy
+const { status, profiling } = await page.goal('busca el bmw x3 más barato')
+if (status === 'success') {
+  const { data } = await page.extract('get the search results', {
+    products: {
+      attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
+    }
+  })
+  console.log(data.products)
+}
+const { accuracy, cost, timing } = await profiling() // optional: one extra request, for accuracy
 await browser.close()
 ```
 
@@ -68,15 +71,18 @@ module.exports = async ({ page: browserPage, browserless }) => {
 browserless exec agent-example.js
 ```
 
-The CLI exits with code 1 when the agent throws, including a `BlockedError`.
+A goal or an extraction that fails does not throw: the script gets
+`status: 'error'` with `error` and decides what to do. The CLI exits with code 1
+only when the script itself throws, so a script that should fail the command
+throws that `error`.
 
 ### Examples
 
 Every file in `examples/` is an exec script: it navigates, gives
 the page one or more goals, and returns the extracted data, which the CLI
-prints. Jev is used through the gateway, so `AI_GATEWAY_API_KEY` is the only
+prints. A goal or an extraction that fails makes the script throw its error. Jev is used through the gateway, so `AI_GATEWAY_API_KEY` is the only
 key needed. With `DEBUG=browserless:agent`, each goal also logs one line with
-its `accuracy`, `cost` and `timing`. The examples call `info()` for every goal
+its `status`, `accuracy`, `cost` and `timing`. The examples call `profiling()` for every goal
 whether or not the line is printed, so each goal makes the one evaluation
 request.
 
@@ -101,22 +107,27 @@ can be watched. Without it the browser runs headless.
 ```js
 const agent = require('@browserless/agent')
 const debug = require('debug-logfmt')('browserless:agent')
-const { flat } = require('./util')
+const { flat, succeeded } = require('./util')
 
 module.exports = async ({ page, browserless }) => {
   agent(page)
 
   await browserless.goto(page, { url: 'https://wallapop.com' })
   const searched = await page.goal('busca "bmw x3"')
-  debug('search', flat(await searched()))
+  debug('search', { status: searched.status, ...flat(await searched.profiling()) })
+  succeeded(searched)
   const sorted = await page.goal('ordena los resultados de más barato a más caro')
-  debug('sort', flat(await sorted()))
+  debug('sort', { status: sorted.status, ...flat(await sorted.profiling()) })
+  succeeded(sorted)
 
-  return page.extract('get the search results', {
-    products: {
-      attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
-    }
-  })
+  const { data } = succeeded(
+    await page.extract('get the search results', {
+      products: {
+        attr: { name: { type: 'string' }, price: { type: 'number' }, url: { type: 'url' } }
+      }
+    })
+  )
+  return data
 }
 ```
 
@@ -140,19 +151,30 @@ way:
 
 ### `await page.goal(goal, options?)`
 
-Resolves to a function carrying `{ status: 'done', steps, decisions, trace }`
-when the model reports visible satisfaction of the goal. DONE is a model judgment, not an independent
-proof of correctness. Each trace entry has the operation, snapshot action ID,
-operation confidence/probabilities, selected target confidence/probabilities,
-step/request counts, stale status and whether the page changed. Text-entry
-values are recorded too; treat traces as private data.
-
-Call the result to get what the run cost, how long it took, and a model's
-verdict on whether the goal was met:
+Resolves to `{ status, steps, decisions, trace, profiling }`, plus `error` when
+`status` is `'error'`:
 
 ```js
-const info = await page.goal('Open the comments page of the first story on the front page.')
-const { accuracy, cost, timing } = await info()
+const { status, error, profiling } = await page.goal('Open the comments page of the first story.')
+```
+
+`status` is `'success'` when the model reports visible satisfaction of the goal,
+and `'error'` when the run stopped for any other reason; `error` then says why.
+`goal` does not throw for a run that fails. It throws only when it is called
+wrong: no page, an empty goal, an invalid option, or a goal already running on
+the page. Success is a model
+judgment, not an independent proof of correctness. Each trace entry has the
+operation, snapshot action ID, operation confidence/probabilities, selected
+target confidence/probabilities, step/request counts, stale status and whether
+the page changed. Text-entry values are recorded too; treat traces as private
+data.
+
+Call `profiling` to get what the run cost, how long it took, and a model's
+verdict on whether the goal was met. It is there for failed runs too:
+
+```js
+const { profiling } = await page.goal('Open the comments page of the first story on the front page.')
+const { accuracy, cost, timing } = await profiling()
 // example values:
 // accuracy → { passed: true, probability: 0.92 }
 // cost     → { calls: 4, inputTokens: 8982, outputTokens: 500, cachedInputTokens: 1800,
@@ -175,18 +197,19 @@ its fields, and the actions taken, without the run's own DONE, and answers
 whether the goal is met. `probability` is its probability that it is. It is a
 second model judgment, not ground truth: the default evaluator,
 `'typesafe-ai/jev'`, is the same model that takes the decisions by default. Its cost is included in `cost` and its time
-in `evaluationMs`, not `totalMs`. Calling `info()` sends the page text and typed
+in `evaluationMs`, not `totalMs`. Calling `profiling()` sends the page text and typed
 values to the evaluator's provider.
 
 The first call runs the evaluation and later calls return the same object. If
-the evaluation fails, `info()` still resolves with `cost` and `timing`, `accuracy`
+the evaluation fails, `profiling()` still resolves with `cost` and `timing`, `accuracy`
 is `undefined`, `error` holds the reason, and the next call tries again. Pass
-`info({ signal })` to cancel it. `JSON.stringify(result)` still gives
-`{ status, steps, decisions, trace }`, also after spreading the result.
+`profiling({ signal })` to cancel it. `JSON.stringify(result)` gives the result
+without the function.
 
-Throws `agent.BlockedError` with `code: 'BLOCKED'`, `reason`, `trace` and an
-`info()` function for the run so far (its `accuracy` is `undefined` when no page
-was observed), for:
+When the agent itself stops the run, `error` is an `agent.BlockedError` with
+`code: 'BLOCKED'`, `reason` and `trace` (`accuracy` is `undefined` when no page
+was observed). Any other failure, such as a model reply that was refused or a
+provider that did not answer, is in `error` as it was thrown. The reasons:
 
 | Reason | Meaning |
 | --- | --- |
@@ -198,8 +221,11 @@ was observed), for:
 | `stale_target` | Three consecutive decisions chose the same target and it failed its freshness check each time |
 | `model_blocked` | The provider selected BLOCKED |
 
-Configuration, malformed responses, network/provider failures and aborts reject
-with their original errors; they do not become invented successful results.
+Malformed responses, network/provider failures and aborts resolve with
+`status: 'error'` and the original error in `error`; they never become invented
+successful results. Something thrown that is not an `Error` is wrapped in one,
+with the original as its `cause`. Invalid configuration rejects before the run
+starts.
 Stale decisions are discarded and re-observed without spending an action, but
 each decision still spends a request.
 
@@ -207,7 +233,7 @@ each decision still spends a request.
 | --- | --- | --- |
 | `decisions` | `'typesafe-ai/jev'` | Decision model: an AI Gateway model id or an AI SDK decision model. `false` makes the text model take the decisions |
 | `text` | `'openai/gpt-6-luna'` | Language model: an AI Gateway model id or an AI SDK language model. Writes the value for TYPE_TEXT, and makes the decisions when `decisions` is `false` |
-| `evaluator` | `'typesafe-ai/jev'` | Decision model that `info()` asks whether the goal was met: an AI Gateway model id or an AI SDK decision model |
+| `evaluator` | `'typesafe-ai/jev'` | Decision model that `profiling()` asks whether the goal was met: an AI Gateway model id or an AI SDK decision model |
 | `reasoning` | `'none'` | Reasoning level for the text model: `provider-default`, `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
 | `maxSteps` | `60` | Maximum successful input actions |
 | `maxDecisions` | `120` | Maximum decision requests, including discarded stale decisions |
@@ -264,28 +290,27 @@ Options go last: `page.extract(rules, options?)` and
 that already have a selector for every field run as they are, with no model
 request. Options passed where the rules belong throw.
 
-What `extract` resolves to is the data, and it can also be called for the
-cost of getting it, the same way as the result of `goal`:
+`extract` resolves to `{ status, data, profiling }`, or to
+`{ status: 'error', error, profiling }` when it failed:
 
 ```js
-const found = await page.extract('get the stories', {
+const { status, data, error, profiling } = await page.extract('get the stories', {
   stories: { attr: { title: { type: 'string' }, href: { type: 'url' } } }
 })
-found.stories // the data, as before; JSON.stringify(found) and { ...found } give the data too
-const { rules, cost, timing } = await found()
+const { rules, cost, timing } = await profiling()
 ```
 
+Like `goal`, it does not throw for an extraction that fails, only when it is
+called wrong: no page, an empty instruction, an invalid option next to an
+instruction, or rules the built-in engine cannot run. Rules passed on their own
+to a custom engine are not checked here; rules passed with an instruction always
+are, since this package fills them in. `data` is whatever the rules engine
+returned.
 `rules` are the rules that ran, so the ones a model wrote can be stored and
 passed to `page.extract(rules)` next time without a request. `cost` and
 `timing` have the same fields as for `goal`; with rules of your own they report
-no request and no cost. No extra request is made and there is no `accuracy`.
-When `extract` throws, the error has the same `info()` for what was spent
-before it failed.
-
-Fields are read as properties when the data is a plain object, which is what
-the built-in engine returns. A custom engine that returns a list or any other
-value is read with `found.toJSON()`. One name is taken: `found.toJSON` is always
-the function, so a field called `toJSON` is only in `found.toJSON()`.
+no request and no cost. `profiling` makes no extra request and has no
+`accuracy`.
 
 The values always come from the DOM. A language model only ever writes
 selectors, so it cannot invent a value: a wrong selector gives a missing field,
@@ -306,14 +331,14 @@ How rules are written:
 - With rules of your own, the result has exactly your field names and nesting. A rule you
   wrote with its own selector is kept untouched; otherwise the model supplies
   the selector, your `type` and `attr` win over the model's, and a reply that
-  omits a field or nests where you did not throws.
+  omits a field or nests where you did not is an error.
 - The model sees only what the outline shows: text is clipped at 80
   characters, and of several siblings with the same classes and the same
   children it sees three.
 - The rules are tried on the page with the built-in engine before they are
-  returned. An invalid selector throws
+  returned. An invalid selector is the error
   `The model did not write usable extraction rules.` and rules that give no
-  value at all throw `The rules the model wrote matched nothing on the page.`
+  value at all are `The rules the model wrote matched nothing on the page.`
 - A selector can still be wrong for one field, or brittle. On Wallapop the model
   used generated class names such as `retrieval-item-card-module_…__ckj4h`,
   which will break when the site is rebuilt. An instruction like "top 5" is not
@@ -469,9 +494,9 @@ logged as it finishes:
 | `path` | The operations and targets that ran, such as `CLICK e17 > DONE`; goals are separated by a vertical bar |
 | `decisionRequests`, `staleDecisions`, `actionsWithoutPageChange` | How much work the run took and how much of it was wasted |
 | `minConfidence` | The lowest confidence of any decision, in the operation or in its target; absent when the text model decides |
-| `passed`, `probability` | The evaluator's judgment from `info()`: `passed` needs every goal judged met, `probability` is the lowest. Absent when the run did not finish or a goal was not judged |
-| `calls`, `inputTokens`, `outputTokens`, `usd` | Cost of the goals from `info()`, which includes the evaluator's request, plus the extraction request with `--extract`. Absent when any request did not report it |
-| `totalMs`, `modelMs` | Time of the goals from `info()`, without the evaluator's request |
+| `passed`, `probability` | The evaluator's judgment from `profiling()`: `passed` needs every goal judged met, `probability` is the lowest. Absent when the run did not finish or a goal was not judged |
+| `calls`, `inputTokens`, `outputTokens`, `usd` | Cost of the goals from `profiling()`, which includes the evaluator's request, plus the extraction request with `--extract`. Absent when any request did not report it |
+| `totalMs`, `modelMs` | Time of the goals from `profiling()`, without the evaluator's request |
 | `finalUrl` | Where the run ended |
 | `extracted`, `extractError`, `extractMs`, `extractUsd`, `dataValues`, `dataHash` | With `--extract`, after every goal finished: whether it returned at least one value, how many non-empty values, and a hash of the data that ignores key order |
 

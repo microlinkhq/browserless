@@ -294,30 +294,30 @@ const report = (task, file, records) => {
 const messageOf = error =>
   error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
-const infoOf = error => (typeof error?.info === 'function' ? error.info() : undefined)
-
 const measureGoal = async (page, goal, options) => {
-  try {
-    const result = await agent.goal(page, goal, options)
-    return { goal, status: result.status, trace: result.trace, info: await result() }
-  } catch (error) {
-    return {
-      goal,
-      status: error?.reason ?? UNEXPECTED_ERROR,
-      error: messageOf(error),
-      trace: error?.trace ?? [],
-      info: await infoOf(error)
-    }
+  const { status, error, trace, profiling } = await agent.goal(page, goal, options)
+  return {
+    goal,
+    status: status === 'success' ? DONE : error?.reason ?? UNEXPECTED_ERROR,
+    ...(status === 'error' && { error: messageOf(error) }),
+    trace,
+    info: await profiling()
   }
 }
 
 const measureExtraction = async (page, instruction, options) => {
   const started = performance.now()
-  const outcome = await agent.extract(page, instruction, undefined, options).then(
-    async extracted => ({ data: extracted.toJSON(), info: await extracted() }),
-    async error => ({ error: messageOf(error), info: await infoOf(error) })
+  const { status, data, error, profiling } = await agent.extract(
+    page,
+    instruction,
+    undefined,
+    options
   )
-  return { ...outcome, ms: Math.round(performance.now() - started) }
+  return {
+    ...(status === 'success' ? { data } : { error: messageOf(error) }),
+    info: await profiling(),
+    ms: Math.round(performance.now() - started)
+  }
 }
 
 const measureTask = async (browserless, page, task, setup) => {
