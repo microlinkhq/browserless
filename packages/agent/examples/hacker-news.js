@@ -9,7 +9,7 @@ module.exports = async ({ page, browserless }) => {
 
   await browserless.goto(page, { url: 'https://news.ycombinator.com' })
   const opened = await page.goal('Open the comments page of the first story on the front page.')
-  if (debug.enabled) debug('open comments', flat(await opened()))
+  debug('open comments', flat(await opened()))
 
   return page.extract('get the story title, its points and the comments', {
     title: { type: 'string' },

@@ -11,7 +11,7 @@ module.exports = async ({ page, browserless }) => {
   const opened = await page.goal(
     'Search for "Gödel\'s incompleteness theorems" and open that article.'
   )
-  if (debug.enabled) debug('open article', flat(await opened()))
+  debug('open article', flat(await opened()))
 
   return page.extract('get the article title and its first paragraph', {
     title: { type: 'string' },

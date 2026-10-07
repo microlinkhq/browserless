@@ -76,8 +76,9 @@ Every file in `examples/` is an exec script: it navigates, gives
 the page one or more goals, and returns the extracted data, which the CLI
 prints. Jev is used through the gateway, so `AI_GATEWAY_API_KEY` is the only
 key needed. With `DEBUG=browserless:agent`, each goal also logs one line with
-its `accuracy`, `cost` and `timing`; without it, `info()` is never called, so no
-evaluation is paid for.
+its `accuracy`, `cost` and `timing`. The examples call `info()` for every goal
+whether or not the line is printed, so each goal makes the one evaluation
+request.
 
 | Script | Steps |
 | --- | --- |
@@ -107,9 +108,9 @@ module.exports = async ({ page, browserless }) => {
 
   await browserless.goto(page, { url: 'https://wallapop.com' })
   const searched = await page.goal('busca "bmw x3"')
-  if (debug.enabled) debug('search', flat(await searched()))
+  debug('search', flat(await searched()))
   const sorted = await page.goal('ordena los resultados de más barato a más caro')
-  if (debug.enabled) debug('sort', flat(await sorted()))
+  debug('sort', flat(await sorted()))
 
   return page.extract('get the search results', {
     products: {

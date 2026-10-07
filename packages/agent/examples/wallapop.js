@@ -9,9 +9,9 @@ module.exports = async ({ page, browserless }) => {
 
   await browserless.goto(page, { url: 'https://wallapop.com' })
   const searched = await page.goal('busca "bmw x3"')
-  if (debug.enabled) debug('search', flat(await searched()))
+  debug('search', flat(await searched()))
   const sorted = await page.goal('ordena los resultados de más barato a más caro')
-  if (debug.enabled) debug('sort', flat(await sorted()))
+  debug('sort', flat(await sorted()))
 
   return page.extract('get the search results', {
     products: {

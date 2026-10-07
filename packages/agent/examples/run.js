@@ -15,7 +15,7 @@ module.exports = async ({ page, browserless, opts }) => {
 
   await browserless.goto(page, { url })
   const reached = await page.goal(goal)
-  if (debug.enabled) debug('goal', flat(await reached()))
+  debug('goal', flat(await reached()))
 
   return page.extract(extract)
 }

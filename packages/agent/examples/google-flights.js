@@ -24,11 +24,11 @@ module.exports = async ({ page, browserless }) => {
   const consented = await page.goal(
     'If a cookie consent page is shown, scroll down and reject all cookies.'
   )
-  if (debug.enabled) debug('reject cookies', flat(await consented()))
+  debug('reject cookies', flat(await consented()))
   const found = await page.goal(
     `Find one-way flights from Zurich to London on ${departure}, for one adult in economy. Stop when matching flight options are visible.`
   )
-  if (debug.enabled) debug('find flights', flat(await found()))
+  debug('find flights', flat(await found()))
 
   return page.extract('get the flights listed on the page', {
     flights: { attr: Object.fromEntries(FLIGHT_FIELDS.map(name => [name, { type: 'string' }])) }
