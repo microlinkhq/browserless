@@ -959,6 +959,15 @@ test('a page change seen after BLOCKED offers ineffective actions again and rese
   t.deepEqual(offersClick, [true, false, false, true, true])
 })
 
+test('a page change seen after BLOCKED ends a streak of stale decisions on one target', async t => {
+  const changed = { ...state('Changed'), actions: state().actions }
+  const page = new Page([state(), state(), state(), changed, changed])
+  page.guards = [false, false, false]
+  const result = await run(page, ['CLICK', 'CLICK', 'BLOCKED', 'CLICK', 'DONE'])
+  t.is(result.status, 'success')
+  t.is(result.trace.filter(entry => entry.stale).length, 3)
+})
+
 test('a goal that is met resolves with success, the run and a profiling function', async t => {
   const models = mockModels(['CLICK', 'DONE'])
   const result = await agent.goal(new Page([state(), state('Results')]), 'find cars', {

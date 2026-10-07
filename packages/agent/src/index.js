@@ -186,6 +186,7 @@ const goal = async (page, goal, options = {}) => {
         }
         entry.pageChanged = true
         unchanged = 0
+        staleTarget = undefined
         ineffectiveActions.clear()
         state = recheck
         continue
