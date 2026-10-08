@@ -409,10 +409,10 @@ module.exports = function snapshot () {
       if (own) return own.trim()
       const svg = element.querySelector('svg')
       if (!svg) return ''
-      const title = svg.querySelector('title')?.textContent.trim()
-      if (title) return title
+      const fromSvg = name(svg).replace(/\s+/g, ' ').trim()
+      if (fromSvg) return fromSvg
       if (svg.id) return svg.id
-      const token = [...svg.classList].find(name => name.includes('-'))
+      const token = [...svg.classList].find(className => className.includes('icon'))
       return token ? token.split('-').pop() : ''
     }
     const icons = []

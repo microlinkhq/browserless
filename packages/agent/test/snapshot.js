@@ -196,7 +196,8 @@ test('an in-flow icon control is named from the icon, not the row', t => {
     `<body>
       <h1>Repos</h1>
       <div style="cursor:pointer"><svg id="star"><title>Star</title></svg></div>
-      <div style="cursor:pointer"><svg class="ruyi-icon-gear"></svg></div>
+      <div style="cursor:pointer"><svg class="w-4 ruyi-icon-bell"></svg></div>
+      <div style="cursor:pointer"><svg aria-label="Pin"></svg></div>
       <div hidden style="cursor:pointer"><svg><title>Hidden</title></svg></div>
       <div aria-disabled="true" style="cursor:pointer"><svg><title>Disabled</title></svg></div>
       <div style="cursor:pointer">Not an icon</div>
@@ -206,7 +207,9 @@ test('an in-flow icon control is named from the icon, not the row', t => {
     .actions.filter(action => action.kind === 'click')
     .map(action => action.label)
   t.true(clicks.includes('Star'))
-  t.true(clicks.includes('gear'))
+  t.true(clicks.includes('bell'))
+  t.true(clicks.includes('Pin'))
+  t.false(clicks.includes('4'))
   t.false(clicks.includes('Hidden'))
   t.false(clicks.includes('Disabled'))
   t.false(clicks.includes('Not an icon'))
