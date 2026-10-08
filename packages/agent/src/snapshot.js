@@ -48,7 +48,7 @@ module.exports = function snapshot () {
       }
       return hit
     }
-    cache.centerHits = element => {
+    cache.centerHits = (element, extra) => {
       const rect = element.getBoundingClientRect()
       const x = rect.x + rect.width / 2
       const y = rect.y + rect.height / 2
@@ -56,7 +56,7 @@ module.exports = function snapshot () {
         return false
       }
       const hit = cache.elementFromPoint(x, y)
-      return !!hit && cache.contains(element, hit)
+      return !!hit && (cache.contains(element, hit) || (!!extra && cache.contains(extra, hit)))
     }
     cache.activeElement = () => {
       let active = document.activeElement
@@ -97,10 +97,14 @@ module.exports = function snapshot () {
       }
       return e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
     }
+    const painted = element =>
+      !!element?.isConnected &&
+      !cache.closest(element, '[inert]') &&
+      element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
     cache.toggleLabel = input => {
       if (!['checkbox', 'radio'].includes(input?.type)) return null
       return (
-        [...(input.labels || [])].find(label => visibleNow(label) && cache.centerHits(label)) ||
+        [...(input.labels || [])].find(label => painted(label) && cache.centerHits(label, input)) ||
         null
       )
     }
@@ -187,7 +191,7 @@ module.exports = function snapshot () {
         .map(e => [identity(e), e.value, e.checked, e.selectedIndex, e.disabled, e.readOnly])
     ]
     cache.guard = e => {
-      if (!e?.isConnected || !visibleNow(e)) return null
+      if (!e?.isConnected || (!visibleNow(e) && !cache.toggleLabel(e))) return null
       const scope =
         cache.closest(e, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') || flatParent(e)
       return [

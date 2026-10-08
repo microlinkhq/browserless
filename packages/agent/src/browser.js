@@ -162,6 +162,14 @@ const settle = (page, action) =>
     .evaluate(settled, action, SETTLE_LIMITS)
     .catch(() => {})
 
+const clickLabelIfCovered = input => {
+  const cache = window.__browserlessAgent
+  const label = cache?.toggleLabel?.(input)
+  if (!label || cache.centerHits(input)) return false
+  label.click()
+  return true
+}
+
 const execute = async (page, state, action, text, waitMs) => {
   if (action.kind === 'wait') {
     await new Promise(resolve => setTimeout(resolve, waitMs))
@@ -202,13 +210,7 @@ const execute = async (page, state, action, text, waitMs) => {
     } else if (action.kind === 'select') {
       await element.select(action.value)
     } else if (action.kind === 'click') {
-      const clickedLabel = await element.evaluate(input => {
-        const cache = window.__browserlessAgent
-        const label = cache.toggleLabel(input)
-        if (!label || cache.centerHits(input)) return false
-        label.click()
-        return true
-      })
+      const clickedLabel = await element.evaluate(clickLabelIfCovered)
       if (!clickedLabel) await element.click()
     } else throw new TypeError('Unknown observed action.')
   } catch (error) {
@@ -229,5 +231,6 @@ module.exports = {
   settled,
   pageChanged,
   targetFresh,
-  selectContents
+  selectContents,
+  clickLabelIfCovered
 }

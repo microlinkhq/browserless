@@ -282,6 +282,41 @@ test('a covered transparent checkbox is not offered', async t => {
   t.false(actions.some(item => item.label === 'Menu'))
 })
 
+test('a checkbox stacked over its label is still offered', async t => {
+  const page = await open(
+    t,
+    `<style>
+      body { margin: 0; }
+      .row { position: relative; width: 80px; height: 32px; }
+      label { display: block; width: 80px; height: 32px; }
+      input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+    </style>
+    <div class="row"><label for="menu">Menu</label><input id="menu" type="checkbox"></div>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  await execute(page, state, action, undefined, 0)
+  t.true(await page.$eval('input', element => element.checked))
+})
+
+test('an aria-hidden label still offers its transparent checkbox', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label aria-hidden="true"><input type="checkbox"><span>Menu</span></label>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  t.truthy(state.guards[action.node])
+  await page.$eval('input', element => {
+    element.checked = true
+  })
+  await t.throwsAsync(execute(page, state, action, undefined, 0), {
+    instanceOf: StaleDecisionError
+  })
+})
+
 test('a control covered by another element is not offered', async t => {
   const page = await open(
     t,
