@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.6](https://github.com/microlinkhq/browserless/compare/v14.0.5...v14.0.6) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** do not name an unlabeled select from its options ([#969](https://github.com/microlinkhq/browserless/issues/969)) ([ab210ef](https://github.com/microlinkhq/browserless/commit/ab210efd2a38a0b2288559728a877cf348cfdd09))
+
 ## [14.0.5](https://github.com/microlinkhq/browserless/compare/v14.0.4...v14.0.5) (2026-10-08)
 
 ### Bug Fixes
