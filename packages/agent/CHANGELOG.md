@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.14](https://github.com/microlinkhq/browserless/compare/v14.0.13...v14.0.14) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** wait for a delayed same-tab navigation before observing ([#979](https://github.com/microlinkhq/browserless/issues/979)) ([7f10496](https://github.com/microlinkhq/browserless/commit/7f1049602cf982314a588eaedd04c7822e2ca110))
+
 ## [14.0.13](https://github.com/microlinkhq/browserless/compare/v14.0.12...v14.0.13) (2026-10-08)
 
 ### Bug Fixes
