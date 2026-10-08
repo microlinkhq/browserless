@@ -213,6 +213,21 @@ test('an in-flow icon control is named from the icon, not the row', t => {
   t.false(clicks.includes('Repos'))
 })
 
+test('an icon inside an indexed control is not a second action', t => {
+  const { observe } = dom(
+    `<body>
+      <a href="/home"><span style="cursor:pointer"><svg><title>Star</title></svg></span> Home</a>
+      <div style="cursor:pointer"><svg><title>Gear</title></svg></div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.false(clicks.includes('Star'))
+  t.true(clicks.includes('Gear'))
+  t.true(clicks.some(label => label.includes('Home')))
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'

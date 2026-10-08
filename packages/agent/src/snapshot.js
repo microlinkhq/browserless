@@ -295,7 +295,17 @@ module.exports = function snapshot () {
     for (const element of queryAll('div,span')) {
       if (collected.has(element) || getComputedStyle(element).cursor !== 'pointer') continue
       if (!visible(element) || element.matches(':disabled')) continue
-      if (cache.closest(element, '[aria-disabled="true"]') || element.querySelector(selector)) { continue }
+      if (cache.closest(element, '[aria-disabled="true"]') || element.querySelector(selector)) {
+        continue
+      }
+      let insideIndexed = false
+      for (let current = flatParent(element); current; current = flatParent(current)) {
+        if (collected.has(current) || current.matches(selector)) {
+          insideIndexed = true
+          break
+        }
+      }
+      if (insideIndexed) continue
       const rect = element.getBoundingClientRect()
       const x = rect.x + rect.width / 2
       const y = rect.y + rect.height / 2
