@@ -203,6 +203,11 @@ test('a button is named from its text, and an input button from its value', t =>
   )
 })
 
+test('an image input is named from its alt text', t => {
+  const { observe } = dom('<body><input type="image" alt="Search" value="go"></body>')
+  t.is(observe().actions.find(action => action.kind === 'click').label, 'Search')
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
