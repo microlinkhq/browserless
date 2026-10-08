@@ -1,4 +1,4 @@
-/* global location, scrollX, scrollY, innerWidth, innerHeight */
+/* global getComputedStyle, location, scrollX, scrollY, innerWidth, innerHeight */
 // Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See README.md.
 module.exports = function snapshot () {
   return (() => {
@@ -278,6 +278,63 @@ module.exports = function snapshot () {
           actions.push({ ...base, kind: 'submit', value, label: 'Submit ' + base.label })
         }
       }
+    }
+    const collected = new Set(actions.map(action => cache.nodes.get(action.node)))
+    const pointer = element => getComputedStyle(element).cursor === 'pointer'
+    const inLayer = element => {
+      for (let current = element; current; current = flatParent(current)) {
+        const position = getComputedStyle(current).position
+        if (position && position !== 'static') return true
+      }
+      return false
+    }
+    const inPointerList = element => {
+      const parent = flatParent(element)
+      if (!parent?.matches('ul,ol,[role="list"],[role="listbox"],[role="menu"],[role="tablist"]')) {
+        return false
+      }
+      return [...parent.children].filter(pointer).length >= 2
+    }
+    const candidates = []
+    for (const element of queryAll('li,div,span,td,dd,p')) {
+      if (collected.has(element) || !visible(element) || !pointer(element)) continue
+      if (element.matches(':disabled') || cache.closest(element, '[aria-disabled="true"]')) continue
+      if (element.querySelector(selector)) continue
+      const rect = element.getBoundingClientRect()
+      const x = rect.x + rect.width / 2
+      const y = rect.y + rect.height / 2
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        x < 0 ||
+        y < 0 ||
+        x >= innerWidth ||
+        y >= innerHeight
+      ) {
+        continue
+      }
+      const hit = cache.elementFromPoint(x, y)
+      if (hit && !cache.contains(element, hit)) continue
+      if (!inLayer(element) && !inPointerList(element)) continue
+      const label = (name(element) || '').replace(/\s+/g, ' ').trim().slice(0, 120)
+      if (!label) continue
+      candidates.push({ element, rect, label })
+    }
+    const rows = candidates.filter(
+      ({ element }) =>
+        !candidates.some(
+          other => other.element !== element && cache.contains(element, other.element)
+        )
+    )
+    for (const { element, rect, label } of rows.slice(0, 40)) {
+      actions.push({
+        node: identity(element),
+        role: 'button',
+        label,
+        rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
+        kind: 'click',
+        value: ''
+      })
     }
     const words = []
     const range = document.createRange()

@@ -191,6 +191,42 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('pointer rows in a layer or a pointer list are clickable; a lone pointer div is not', t => {
+  const { observe } = dom(
+    `<body>
+      <button>Search</button>
+      <input aria-label="City">
+      <div style="position:absolute">
+        <div style="cursor:pointer"><span>Beijingbei</span><span>beijingbei</span></div>
+      </div>
+      <div style="cursor:pointer">Not a suggestion</div>
+      <ul>
+        <li style="cursor:pointer">One</li>
+        <li style="cursor:pointer">Two</li>
+      </ul>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.includes('Search'))
+  t.true(clicks.some(label => label.includes('Beijingbei') && label.includes('beijingbei')))
+  t.true(clicks.includes('One'))
+  t.true(clicks.includes('Two'))
+  t.false(clicks.includes('Not a suggestion'))
+})
+
+test('custom pointer rows are capped at 40', t => {
+  const items = Array.from(
+    { length: 41 },
+    (_, index) => `<li style="cursor:pointer">Row ${index}</li>`
+  )
+  const { observe } = dom(`<body><ul>${items.join('')}</ul></body>`)
+  const rows = observe().actions.filter(action => action.label.startsWith('Row '))
+  t.is(rows.length, 40)
+  t.true(rows.every(action => action.role === 'button' && action.kind === 'click'))
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
