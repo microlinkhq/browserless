@@ -49,14 +49,18 @@ module.exports = function snapshot () {
       return hit
     }
     cache.centerHits = (element, extra) => {
-      const rect = element.getBoundingClientRect()
-      const x = rect.x + rect.width / 2
-      const y = rect.y + rect.height / 2
-      if (!rect.width || !rect.height || x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) {
-        return false
+      const boxes = [...element.getClientRects(), element.getBoundingClientRect()]
+      for (const rect of boxes) {
+        if (rect.width <= 0 || rect.height <= 0) continue
+        const x = rect.x + rect.width / 2
+        const y = rect.y + rect.height / 2
+        if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue
+        const hit = cache.elementFromPoint(x, y)
+        if (hit && (cache.contains(element, hit) || (!!extra && cache.contains(extra, hit)))) {
+          return true
+        }
       }
-      const hit = cache.elementFromPoint(x, y)
-      return !!hit && (cache.contains(element, hit) || (!!extra && cache.contains(extra, hit)))
+      return false
     }
     // A wrapping inline link's box center can fall in the gap between line fragments.
     cache.hitPoint = element => {

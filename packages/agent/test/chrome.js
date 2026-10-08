@@ -319,6 +319,25 @@ test('a transparent indeterminate switch keeps mixed and its role', async t => {
   t.is(action.checked, 'mixed')
 })
 
+test('a covered checkbox click reaches the label pointer handler', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}
+     <label><input type="checkbox"><span>Menu</span><i id="cap"></i></label>
+     <style>#cap { position: absolute; left: 0; top: 0; width: 32px; height: 32px; }</style>
+     <script>
+       window.pointers = 0
+       document.querySelector('label').addEventListener('pointerdown', () => { window.pointers++ })
+     </script>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  await execute(page, state, action, undefined, 0)
+  t.true(await page.$eval('input', element => element.checked))
+  t.is(await page.evaluate(() => window.pointers), 1)
+})
+
 test('a transparent checkbox is offered and toggled through its label', async t => {
   const page = await open(
     t,

@@ -154,9 +154,7 @@ const settle = (page, action) =>
 const clickLabelIfCovered = input => {
   const cache = window.__browserlessAgent
   const label = cache?.toggleLabel?.(input)
-  if (!label || cache.centerHits(input)) return false
-  label.click()
-  return true
+  return !!label && !cache.centerHits(input)
 }
 
 const execute = async (page, state, action, text, waitMs) => {
@@ -200,8 +198,18 @@ const execute = async (page, state, action, text, waitMs) => {
     } else if (action.kind === 'select') {
       await element.select(action.value)
     } else if (action.kind === 'click') {
-      const clickedLabel = await element.evaluate(clickLabelIfCovered)
-      if (!clickedLabel) await element.click()
+      const useLabel = await element.evaluate(clickLabelIfCovered)
+      if (!useLabel) await element.click()
+      else {
+        const labelHandle = await element.evaluateHandle(input =>
+          window.__browserlessAgent.toggleLabel(input)
+        )
+        try {
+          await labelHandle.asElement().click()
+        } finally {
+          await labelHandle.dispose()
+        }
+      }
     } else throw new TypeError('Unknown observed action.')
   } catch (error) {
     if (TARGET_GONE.test(error.message)) throw new StaleDecisionError()
