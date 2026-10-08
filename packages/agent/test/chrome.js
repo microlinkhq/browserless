@@ -262,7 +262,7 @@ test('styles inside a shadow root never leak into a control label', async t => {
 
 const SETTLE_LIMITS = { autocompleteMs: 1500, defaultMs: 50, minFrames: 2 }
 const CLEARLY_BEFORE_AUTOCOMPLETE_LIMIT_MS = 1000
-const SUGGESTION_DELAY_MS = 120
+const SUGGESTION_DELAY_MS = 200
 
 const COMBOBOX =
   '<input role="combobox" aria-label="City" aria-controls="suggestions"><ul id="suggestions"></ul>'
@@ -276,16 +276,26 @@ const settleMs = async (page, kind, label, before) => {
   return Date.now() - started
 }
 
-const showSuggestion = page =>
-  page.evaluate(delay => {
-    setTimeout(() => {
-      document.getElementById('suggestions').innerHTML = '<li role="option">Zurich</li>'
-    }, delay)
+// Arm the insert from the world that settles, on the first read of the field,
+// so the option cannot exist before that read no matter how slow the runner is.
+const revealSuggestionWhenRead = page =>
+  agentWorld(page).evaluate(delay => {
+    const field = document.querySelector('[role="combobox"]')
+    const original = field.getAttribute.bind(field)
+    field.getAttribute = name => {
+      if (!field.dataset.revealArmed) {
+        field.dataset.revealArmed = '1'
+        setTimeout(() => {
+          document.getElementById('suggestions').innerHTML = '<li role="option">Zurich</li>'
+        }, delay)
+      }
+      return original(name)
+    }
   }, SUGGESTION_DELAY_MS)
 
 test('settling after typing in a combobox waits for its suggestions to appear', async t => {
   const page = await open(t, COMBOBOX)
-  const elapsed = await settleMs(page, 'fill', 'City', () => showSuggestion(page))
+  const elapsed = await settleMs(page, 'fill', 'City', () => revealSuggestionWhenRead(page))
   t.is(await page.$eval('#suggestions', list => list.textContent), 'Zurich')
   t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
 })
@@ -295,9 +305,9 @@ test('settling after typing in a combobox ignores options already on screen', as
     t,
     '<div role="option">Leftover</div><input role="combobox" aria-label="City"><ul id="suggestions"></ul>'
   )
-  const elapsed = await settleMs(page, 'fill', 'City', () => showSuggestion(page))
+  const elapsed = await settleMs(page, 'fill', 'City', () => revealSuggestionWhenRead(page))
   t.is(await page.$eval('#suggestions', list => list.textContent), 'Zurich')
-  t.true(elapsed >= SUGGESTION_DELAY_MS - 20, `settled after ${elapsed} ms`)
+  t.true(elapsed >= SUGGESTION_DELAY_MS - 40, `settled after ${elapsed} ms`)
   t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
 })
 
