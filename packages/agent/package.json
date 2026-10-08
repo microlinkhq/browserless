@@ -2,7 +2,7 @@
   "name": "@browserless/agent",
   "description": "Drive a Puppeteer page toward a natural-language goal using finite decisions.",
   "homepage": "https://browserless.js.org",
-  "version": "14.0.12",
+  "version": "14.0.13",
   "main": "src",
   "author": {
     "email": "hello@microlink.io",

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.13](https://github.com/microlinkhq/browserless/compare/v14.0.12...v14.0.13) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** observe a control again only after it stops being busy ([#978](https://github.com/microlinkhq/browserless/issues/978)) ([22b2f49](https://github.com/microlinkhq/browserless/commit/22b2f4947fe61e70e30713a6c6eb23d572fd5550))
+
 ## [14.0.12](https://github.com/microlinkhq/browserless/compare/v14.0.11...v14.0.12) (2026-10-08)
 
 ### Bug Fixes
