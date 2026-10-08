@@ -102,7 +102,7 @@ module.exports = function snapshot () {
           .map(l => name(l, seen))
           .filter(Boolean)
           .join(' ') ||
-        (['button', 'submit', 'reset'].includes(e.type) ? e.value : '') ||
+        (e.tagName === 'INPUT' && ['button', 'submit', 'reset'].includes(e.type) ? e.value : '') ||
         e.getAttribute('alt') ||
         (e.tagName === 'INPUT'
           ? ''
