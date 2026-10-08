@@ -65,20 +65,18 @@ const targetFresh = (element, state, action, requirements = {}) => {
     return false
   }
   if (requirements.focused && cache.activeElement() !== element) return false
-  const r = element.getBoundingClientRect()
-  const x = r.x + r.width / 2
-  const y = r.y + r.height / 2
-  if (
-    !r.width ||
-    !r.height ||
-    x < 0 ||
-    y < 0 ||
-    x >= innerWidth ||
-    y >= innerHeight ||
-    !cache.contains(element, cache.elementFromPoint(x, y))
-  ) {
-    return false
-  }
+  const rect = element.getBoundingClientRect()
+  const x = rect.x + rect.width / 2
+  const y = rect.y + rect.height / 2
+  const ownHit =
+    rect.width &&
+    rect.height &&
+    x >= 0 &&
+    y >= 0 &&
+    x < innerWidth &&
+    y < innerHeight &&
+    cache.contains(element, cache.elementFromPoint(x, y))
+  if (!ownHit && !cache.toggleLabel(element)) return false
   if (
     action.kind === 'fill' &&
     (element.readOnly || element.getAttribute('aria-readonly') === 'true')
@@ -204,7 +202,14 @@ const execute = async (page, state, action, text, waitMs) => {
     } else if (action.kind === 'select') {
       await element.select(action.value)
     } else if (action.kind === 'click') {
-      await element.click()
+      const clickedLabel = await element.evaluate(input => {
+        const cache = window.__browserlessAgent
+        const label = cache.toggleLabel(input)
+        if (!label || cache.centerHits(input)) return false
+        label.click()
+        return true
+      })
+      if (!clickedLabel) await element.click()
     } else throw new TypeError('Unknown observed action.')
   } catch (error) {
     if (TARGET_GONE.test(error.message)) throw new StaleDecisionError()

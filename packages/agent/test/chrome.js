@@ -253,6 +253,35 @@ test('submitting is discarded when the page moves focus to another control', asy
   t.is(await page.evaluate(() => window.submissions), 0)
 })
 
+const TRANSPARENT_TOGGLE = `<style>
+  body { margin: 0; }
+  label { position: relative; display: inline-block; }
+  input { position: absolute; opacity: 0; width: 32px; height: 32px; margin: 0; }
+  span { display: inline-block; width: 32px; height: 32px; }
+</style>`
+
+test('a transparent checkbox is offered and toggled through its label', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label><input type="checkbox"><span>Menu</span></label>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  t.is(action.role, 'checkbox')
+  await execute(page, state, action, undefined, 0)
+  t.true(await page.$eval('input', element => element.checked))
+})
+
+test('a covered transparent checkbox is not offered', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label><input type="checkbox"><span>Menu</span></label><div style="position:fixed;inset:0"></div>`
+  )
+  const { actions } = await observe(page)
+  t.false(actions.some(item => item.label === 'Menu'))
+})
+
 test('a control covered by another element is not offered', async t => {
   const page = await open(
     t,

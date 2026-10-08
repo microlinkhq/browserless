@@ -48,6 +48,16 @@ module.exports = function snapshot () {
       }
       return hit
     }
+    cache.centerHits = element => {
+      const rect = element.getBoundingClientRect()
+      const x = rect.x + rect.width / 2
+      const y = rect.y + rect.height / 2
+      if (!rect.width || !rect.height || x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) {
+        return false
+      }
+      const hit = cache.elementFromPoint(x, y)
+      return !!hit && cache.contains(element, hit)
+    }
     cache.activeElement = () => {
       let active = document.activeElement
       while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement
@@ -86,6 +96,13 @@ module.exports = function snapshot () {
         if (current.matches('[aria-hidden="true"],[inert]')) return false
       }
       return e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    }
+    cache.toggleLabel = input => {
+      if (!['checkbox', 'radio'].includes(input?.type)) return null
+      return (
+        [...(input.labels || [])].find(label => visibleNow(label) && cache.centerHits(label)) ||
+        null
+      )
     }
     const name = (e, seen = new Set()) => {
       if (!e || seen.has(e)) return ''
@@ -278,6 +295,23 @@ module.exports = function snapshot () {
           actions.push({ ...base, kind: 'submit', value, label: 'Submit ' + base.label })
         }
       }
+    }
+    const collected = new Set(actions.map(action => cache.nodes.get(action.node)))
+    for (const input of queryAll('input[type="checkbox"],input[type="radio"]')) {
+      if (collected.has(input) || !safe(input) || input.matches(':disabled')) continue
+      if (cache.closest(input, '[aria-disabled="true"]')) continue
+      const label = cache.toggleLabel(input)
+      if (!label) continue
+      const rect = label.getBoundingClientRect()
+      actions.push({
+        node: identity(input),
+        role: input.type,
+        label: name(input) || name(label) || input.type,
+        rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
+        kind: 'click',
+        checked: String(input.checked),
+        value: String(input.value)
+      })
     }
     const words = []
     const range = document.createRange()
