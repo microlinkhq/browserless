@@ -539,6 +539,31 @@ test('settling after typing finds suggestions outside an empty aria-controls roo
   t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
 })
 
+test('settling after typing finds a portal option when aria-controls already has one', async t => {
+  const page = await open(
+    t,
+    '<input role="combobox" aria-label="City" aria-controls="box"><span id="box" role="listbox"><span role="option">Old</span></span><ul id="portal"></ul>'
+  )
+  const elapsed = await settleMs(page, 'fill', 'City', () =>
+    agentWorld(page).evaluate(delay => {
+      const field = document.querySelector('[role="combobox"]')
+      const original = field.getAttribute.bind(field)
+      field.getAttribute = name => {
+        if (!field.dataset.revealArmed) {
+          field.dataset.revealArmed = '1'
+          setTimeout(() => {
+            document.getElementById('portal').innerHTML = '<li role="option">Zurich</li>'
+          }, delay)
+        }
+        return original(name)
+      }
+    }, SUGGESTION_DELAY_MS)
+  )
+  t.is(await page.$eval('#portal', list => list.textContent), 'Zurich')
+  t.true(elapsed >= SUGGESTION_DELAY_MS - 40, `settled after ${elapsed} ms`)
+  t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
+})
+
 test('settling after typing in a combobox gives up at the autocomplete limit', async t => {
   const page = await open(t, COMBOBOX)
   const elapsed = await settleMs(page, 'fill', 'City')

@@ -126,8 +126,8 @@ const settled = (action, limits) =>
           )
         })
       const owned = roots.flatMap(listed)
-      // A combobox can point aria-controls at an empty listbox while the options render elsewhere.
-      return owned.length || !ids.length ? owned : listed(document)
+      // Options can render outside an aria-controls root, including after that root already has an option.
+      return ids.length ? [...owned, ...listed(document)] : owned
     }
     // Options already on screen are not this field's new suggestions.
     const alreadyVisible = new Set(autocomplete ? visibleOptions() : [])
