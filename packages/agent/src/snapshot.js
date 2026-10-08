@@ -354,8 +354,18 @@ module.exports = function snapshot () {
     const height = document.documentElement.scrollHeight
     const pageKey = cache.pageKey()
     const guards = {}
+    const scopes = {}
     for (const a of actions) {
-      if (!(a.node in guards)) guards[a.node] = cache.guard(cache.nodes.get(a.node))
+      if (a.node in guards) continue
+      const element = cache.nodes.get(a.node)
+      guards[a.node] = cache.guard(element)
+      const scope =
+        cache.closest(element, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') ||
+        flatParent(element)
+      scopes[a.node] =
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 1000)
+          : scope?.textContent?.slice(0, 1000)) || ''
     }
     // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
     const semantics = actions.map(({ rect, ...action }) => action)
@@ -395,6 +405,7 @@ module.exports = function snapshot () {
       marker,
       pageKey,
       guards,
+      scopes,
       omittedActions
     }
   })()

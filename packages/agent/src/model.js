@@ -345,7 +345,14 @@ const fieldText = async (goal, action, state, history, model, options) => {
         system: TEXT_VALUE,
         prompt: JSON.stringify({
           goal,
-          field: { label: action.label, role: action.role, value: action.value },
+          field: {
+            id: action.id,
+            node: action.node,
+            label: action.label,
+            role: action.role,
+            value: action.value,
+            context: state.scopes?.[action.node] ?? ''
+          },
           page: { title: state.title, text: state.text },
           recent_actions: history.slice(-TEXT_HISTORY_LENGTH)
         }),
