@@ -1,0 +1,61 @@
+{
+  "name": "@browserless/agent",
+  "description": "Drive a Puppeteer page toward a natural-language goal using finite decisions.",
+  "homepage": "https://browserless.js.org",
+  "version": "0.1.0",
+  "main": "src",
+  "author": {
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
+  },
+  "repository": {
+    "directory": "packages/agent",
+    "type": "git",
+    "url": "git+https://github.com/microlinkhq/browserless.git#master"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless/issues"
+  },
+  "keywords": [
+    "agent",
+    "ai-sdk",
+    "browserless",
+    "jev",
+    "puppeteer"
+  ],
+  "dependencies": {
+    "ai": "7",
+    "debug-logfmt": "~1.4.15"
+  },
+  "devDependencies": {
+    "@ai-sdk/typesafe-ai": "~3.0.13",
+    "@browserless/cli": "workspace:*",
+    "ava": "5",
+    "jsdom": "26",
+    "puppeteer": "25"
+  },
+  "engines": {
+    "node": ">= 24"
+  },
+  "files": [
+    "examples",
+    "src",
+    "LICENSE.md"
+  ],
+  "scripts": {
+    "test": "ava",
+    "start": "browserless exec examples/wallapop.js --no-headless",
+    "benchmark": "browserless exec scripts/benchmark.js",
+    "compare": "browserless exec scripts/compare.js"
+  },
+  "license": "MIT",
+  "ava": {
+    "timeout": "30s",
+    "workerThreads": false
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "types": "src/index.d.ts"
+}

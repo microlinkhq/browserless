@@ -1,0 +1,333 @@
+'use strict'
+
+const { observe, execute, settle, pageChanged, readStableOutline } = require('./browser')
+const {
+  decide,
+  decideWithLanguageModel,
+  fieldText,
+  writeRules,
+  invalidRules,
+  REASONING_LEVELS
+} = require('./model')
+const {
+  applyRules,
+  assertRules,
+  fillFields,
+  readingTextByDefault,
+  isComplete,
+  hasData
+} = require('./rules')
+const { BlockedError, StaleDecisionError } = require('./errors')
+const { createProfiling, createExtractProfiling } = require('./profiling')
+
+const DEFAULT_LIMITS = { maxSteps: 60, maxDecisions: 120, waitMs: 100, timeout: 25000 }
+const MINIMUM_LIMITS = { maxSteps: 1, maxDecisions: 1, waitMs: 0, timeout: 1 }
+const DEFAULT_TEXT_MODEL = 'openai/gpt-6-luna'
+const DEFAULT_DECISION_MODEL = 'typesafe-ai/jev'
+const DEFAULT_EVALUATOR = 'typesafe-ai/jev'
+const DEFAULT_REASONING = 'none'
+const SUCCESS = 'success'
+const ERROR = 'error'
+const MAX_UNCHANGED_ACTIONS = 3
+const MAX_STALE_DECISIONS_PER_TARGET = 3
+const BLOCKED_RECHECK_MS = 300
+const VERIFICATION_WALL =
+  /\b(captcha|verify you are human|verification required|verifica que eres humano)\b/i
+
+const activePages = new WeakSet()
+const ownExtractMethods = new WeakSet()
+
+const isModel = model =>
+  (typeof model === 'string' && model.trim() !== '') ||
+  typeof model?.specificationVersion === 'string'
+
+const withoutNullish = (options = {}) =>
+  Object.fromEntries(Object.entries(options).filter(([, value]) => value != null))
+
+const withDefaults = (options, defaults) =>
+  Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, options[key] ?? value]))
+
+const resolveOptions = options => {
+  const limits = withDefaults(options, DEFAULT_LIMITS)
+  for (const [key, minimum] of Object.entries(MINIMUM_LIMITS)) {
+    if (!Number.isSafeInteger(limits[key]) || limits[key] < minimum) {
+      throw new TypeError(`${key} must be an integer of at least ${minimum}.`)
+    }
+  }
+  const decisions = options.decisions ?? DEFAULT_DECISION_MODEL
+  const models = {
+    decisions: decisions === false ? undefined : decisions,
+    text: options.text ?? DEFAULT_TEXT_MODEL
+  }
+  for (const [key, model] of Object.entries(models)) {
+    const required = key === 'text'
+    if ((required || model !== undefined) && !isModel(model)) {
+      throw new TypeError(`${key} must be a model id or an AI SDK model.`)
+    }
+  }
+  const reasoning = options.reasoning ?? DEFAULT_REASONING
+  if (!REASONING_LEVELS.includes(reasoning)) {
+    throw new TypeError(`reasoning must be one of: ${REASONING_LEVELS.join(', ')}.`)
+  }
+  return { ...limits, models, reasoning }
+}
+
+const blockingSurface = state => {
+  if (VERIFICATION_WALL.test(state.text)) {
+    return ['captcha', 'A possible human-verification wall is visible; no bypass attempted.']
+  }
+  if (state.unsupported?.includes('password')) {
+    return ['login_wall', 'A visible password field requires manual login.']
+  }
+  if (state.unsupported?.length) {
+    return ['unsupported_surface', `Visible unsupported surface: ${state.unsupported.join(', ')}.`]
+  }
+}
+
+const actionKey = action => `${action.kind}:${action.node ?? action.id}:${action.value ?? ''}`
+
+const staleTargetKey = ({ operation, action }) => `${operation}:${action.node ?? action.id}`
+
+const timed = async call => {
+  const started = performance.now()
+  const value = await call()
+  return [value, Math.round(performance.now() - started)]
+}
+
+const asError = thrown =>
+  thrown instanceof Error ? thrown : new Error(String(thrown), { cause: thrown })
+
+const isPage = page => typeof page?.evaluate === 'function'
+
+const isInstruction = text => typeof text === 'string' && text.trim() !== ''
+
+const goal = async (page, goal, options = {}) => {
+  if (!isPage(page) || !isInstruction(goal)) {
+    throw new TypeError('goal requires a Puppeteer page and a nonempty goal.')
+  }
+  if (activePages.has(page)) throw new TypeError('A goal is already running on this page.')
+  const { maxSteps, maxDecisions, waitMs, timeout, models, reasoning } = resolveOptions(options)
+  const evaluator = options.evaluator ?? DEFAULT_EVALUATOR
+  if (!isModel(evaluator)) throw new TypeError('evaluator must be a model id or an AI SDK model.')
+  const calls = []
+  const request = {
+    timeout,
+    signal: options.signal,
+    reasoning,
+    onCall: metrics => calls.push(metrics)
+  }
+  const trace = []
+  const started = performance.now()
+  let state
+  const profiling = () =>
+    createProfiling({
+      goal,
+      state,
+      trace,
+      calls,
+      totalMs: Math.round(performance.now() - started),
+      evaluator,
+      timeout
+    })
+  const ineffectiveActions = new Set()
+  let steps = 0
+  let decisions = 0
+  let unchanged = 0
+  let staleTarget
+  let staleDecisions = 0
+  let popup = false
+  const onPopup = () => {
+    popup = true
+  }
+  const blocked = (reason, message) => {
+    throw new BlockedError(reason, message, trace)
+  }
+  activePages.add(page)
+  page.on('popup', onPopup)
+  try {
+    state = await observe(page)
+    while (true) {
+      options.signal?.throwIfAborted()
+      if (popup) {
+        blocked(
+          'unsupported_surface',
+          'Popup tabs are not supported; the original page was retained.'
+        )
+      }
+      const surface = blockingSurface(state)
+      if (surface) blocked(...surface)
+      if (decisions >= maxDecisions) blocked('step_budget', 'Decision-request budget exhausted.')
+      decisions++
+      const offered = {
+        ...state,
+        actions: state.actions.filter(action => !ineffectiveActions.has(actionKey(action)))
+      }
+      const [decision, decisionMs] = await timed(() =>
+        models.decisions
+          ? decide(offered, goal, trace, models.decisions, request)
+          : decideWithLanguageModel(offered, goal, trace, models.text, request)
+      )
+      const entry = {
+        ...decision,
+        action: decision.action?.id,
+        step: steps,
+        decision: decisions,
+        decisionMs
+      }
+      trace.push(entry)
+      if (decision.operation === 'DONE') {
+        return { status: SUCCESS, steps, decisions, trace, profiling: profiling() }
+      }
+      if (decision.operation === 'BLOCKED') {
+        await new Promise(resolve => setTimeout(resolve, BLOCKED_RECHECK_MS))
+        const recheck = await observe(page)
+        if (!pageChanged(state, recheck)) {
+          blocked('model_blocked', 'The model found no supported operation to progress.')
+        }
+        entry.pageChanged = true
+        unchanged = 0
+        staleTarget = undefined
+        ineffectiveActions.clear()
+        state = recheck
+        continue
+      }
+      if (steps >= maxSteps) blocked('step_budget', 'Action budget exhausted.')
+      if (unchanged >= MAX_UNCHANGED_ACTIONS) {
+        blocked('no_change', 'Three consecutive actions did not change the observed page.')
+      }
+      let text
+      if (decision.operation === 'TYPE_TEXT') {
+        ;[text, entry.textMs] = await timed(() =>
+          fieldText(goal, decision.action, state, trace, models.text, request)
+        )
+        entry.text = text
+      }
+      options.signal?.throwIfAborted()
+      if (popup) {
+        blocked('unsupported_surface', 'A popup appeared during the decision; no input executed.')
+      }
+      try {
+        await execute(page, state, decision.action, text, waitMs)
+      } catch (error) {
+        if (!(error instanceof StaleDecisionError)) throw error
+        entry.stale = true
+        const target = staleTargetKey(decision)
+        staleDecisions = target === staleTarget ? staleDecisions + 1 : 1
+        staleTarget = target
+        if (staleDecisions >= MAX_STALE_DECISIONS_PER_TARGET) {
+          blocked(
+            'stale_target',
+            `${MAX_STALE_DECISIONS_PER_TARGET} consecutive decisions chose a target that failed its freshness check.`
+          )
+        }
+        state = await observe(page)
+        continue
+      }
+      staleTarget = undefined
+      steps++
+      if (decision.action.kind !== 'wait') await settle(page, decision.action)
+      const next = await observe(page)
+      entry.pageChanged = pageChanged(state, next)
+      unchanged = entry.pageChanged ? 0 : unchanged + 1
+      if (entry.pageChanged) ineffectiveActions.clear()
+      else if (decision.action.kind !== 'wait') ineffectiveActions.add(actionKey(decision.action))
+      state = next
+    }
+  } catch (error) {
+    if (error instanceof BlockedError && error.trace.length === 0) error.trace = trace
+    return { status: ERROR, error: asError(error), steps, decisions, trace, profiling: profiling() }
+  } finally {
+    page.off('popup', onPopup)
+    activePages.delete(page)
+  }
+}
+
+const usableRules = async (page, written, fields) => {
+  try {
+    const readingText = readingTextByDefault(assertRules(written))
+    const rules = fields ? fillFields(fields, readingText) : readingText
+    if (hasData(await applyRules(page, rules))) return rules
+  } catch (error) {
+    throw error instanceof TypeError ? invalidRules(error) : error
+  }
+  throw new TypeError('The rules the model wrote matched nothing on the page.')
+}
+
+const rulesFor = async (
+  page,
+  instruction,
+  fields,
+  { timeout, models, reasoning, signal },
+  onCall
+) => {
+  if (fields !== undefined && isComplete(fields)) return fields
+  const request = { timeout, signal, reasoning, onCall }
+  const outline = await readStableOutline(page)
+  const written = await writeRules(instruction, outline, fields, models.text, request)
+  return usableRules(page, written, fields)
+}
+
+const extractArguments = (input, rest) => {
+  const fromInstruction = typeof input === 'string'
+  const [fields, options = {}] = fromInstruction ? rest : [undefined, rest[0]]
+  if (!fromInstruction) {
+    const usesBuiltInEngine = options.extractor === undefined
+    return { rules: usesBuiltInEngine ? assertRules(input) : input, options }
+  }
+  if (!isInstruction(input)) {
+    throw new TypeError('extract requires rules or a nonempty instruction.')
+  }
+  if (fields !== undefined) assertRules(fields, 'rules')
+  return { instruction: input, fields, options, resolved: resolveOptions(options) }
+}
+
+const extract = async (page, input, ...rest) => {
+  if (!isPage(page)) throw new TypeError('extract requires a Puppeteer page.')
+  const { instruction, fields, rules, options, resolved } = extractArguments(input, rest)
+  const { extractor = applyRules } = options
+  const calls = []
+  const started = performance.now()
+  const used = { rules }
+  const profiling = () =>
+    createExtractProfiling({
+      rules: used.rules,
+      calls,
+      totalMs: Math.round(performance.now() - started)
+    })
+  try {
+    if (instruction !== undefined) {
+      const request = { ...resolved, signal: options.signal }
+      used.rules = await rulesFor(page, instruction, fields, request, metrics =>
+        calls.push(metrics)
+      )
+    }
+    const data = await extractor(page, used.rules)
+    return { status: SUCCESS, data, profiling: profiling() }
+  } catch (error) {
+    return { status: ERROR, error: asError(error), profiling: profiling() }
+  }
+}
+
+const agent = (page, defaults = {}) => {
+  if (!isPage(page)) throw new TypeError('agent requires a Puppeteer page.')
+  const isHostEngine = typeof page.extract === 'function' && !ownExtractMethods.has(page.extract)
+  const hostExtract = isHostEngine ? page.extract.bind(page) : undefined
+  const extractor = defaults.extractor ?? (hostExtract && ((_, rules) => hostExtract(rules)))
+  const settings = extractor ? { ...defaults, extractor } : defaults
+  const withSettings = options => ({ ...settings, ...withoutNullish(options) })
+  const extractMethod = (input, ...rest) =>
+    typeof input === 'string'
+      ? extract(page, input, rest[0], withSettings(rest[1]))
+      : extract(page, input, withSettings(rest[0]))
+  ownExtractMethods.add(extractMethod)
+  return Object.assign(page, {
+    goal: (text, options) => goal(page, text, withSettings(options)),
+    extract: extractMethod
+  })
+}
+
+module.exports = agent
+module.exports.goal = goal
+module.exports.extract = extract
+module.exports.applyRules = applyRules
+module.exports.BlockedError = BlockedError

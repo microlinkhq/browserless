@@ -62,9 +62,11 @@ const isPageReady = ({ title = '', bodyText = '', url = '', isWhite = false } = 
 const run = async () => {
   if (cli.input.length === 0) return cli.showHelp()
   spinner.start()
-  const [command, rawUrl] = cli.input
-  const url = new URL(rawUrl).toString()
+  const [command, input] = cli.input
   const fn = require(`./commands/${command}`)
+  const target = fn.resolveFile
+    ? { file: fn.resolveFile(input) }
+    : { url: new URL(input).toString() }
   const launchOpts = { headless }
 
   if (command === 'capture') {
@@ -87,7 +89,7 @@ const run = async () => {
   const browserless = await browser.createContext(
     launchOpts.timeout != null ? { timeout: launchOpts.timeout } : undefined
   )
-  return fn({ url, browserless, opts: parsedOpts, isPageReady })
+  return fn({ ...target, browserless, opts: parsedOpts, isPageReady })
 }
 
 run()
