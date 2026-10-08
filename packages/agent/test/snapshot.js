@@ -191,6 +191,18 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('a button is named from its text, and an input button from its value', t => {
+  const { observe } = dom(
+    '<body><button name="published" value="0">Save draft</button><input type="submit" value="Go"></body>'
+  )
+  t.deepEqual(
+    observe()
+      .actions.filter(action => action.kind === 'click')
+      .map(action => action.label),
+    ['Save draft', 'Go']
+  )
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
