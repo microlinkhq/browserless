@@ -674,6 +674,25 @@ test('a same-document fragment link does not wait for navigation', async t => {
   t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
 })
 
+test('a base target of _blank does not wait for navigation', async t => {
+  const server = createServer((request, response) => {
+    response.setHeader('content-type', 'text/html')
+    response.end('<base target="_blank"><a href="https://example.com/next">Leave</a>')
+  })
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+  t.teardown(() => server.close())
+  const page = await browser.newPage()
+  t.teardown(() => page.close())
+  await page.emulateFocusedPage(true)
+  await page.goto(`http://127.0.0.1:${server.address().port}/`)
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Leave')
+  await execute(page, state, action, undefined, 0)
+  const started = Date.now()
+  await settle(page, action)
+  t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
+})
+
 test('settling a button does not wait for navigation', async t => {
   const page = await open(t, '<button type="button">Stay</button>')
   const state = await observe(page)

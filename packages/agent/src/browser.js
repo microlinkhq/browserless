@@ -156,13 +156,17 @@ const waitForNavigation = (action, limitMs, pollMs) =>
   new Promise(resolve => {
     const element = window.__browserlessAgent?.nodes.get(action.node)
     if (element?.tagName !== 'A' || element.hasAttribute('download')) return resolve()
-    const target = (element.getAttribute('target') || '').toLowerCase()
+    const raw =
+      element.getAttribute('target') ||
+      document.querySelector('base[target]')?.getAttribute('target') ||
+      ''
+    const keyword = raw.toLowerCase()
     const sameTab =
-      !target ||
-      target === '_self' ||
-      target === '_parent' ||
-      target === '_top' ||
-      target === window.name
+      !raw ||
+      keyword === '_self' ||
+      keyword === '_parent' ||
+      keyword === '_top' ||
+      raw === window.name
     if (!sameTab) return resolve()
     let next
     try {
