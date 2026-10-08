@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.12](https://github.com/microlinkhq/browserless/compare/v14.0.11...v14.0.12) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** find listbox options that render outside aria-controls ([#977](https://github.com/microlinkhq/browserless/issues/977)) ([5cd1023](https://github.com/microlinkhq/browserless/commit/5cd10238b4e67861bff91f2c5aedccc75cb6d34a))
+
 ## [14.0.11](https://github.com/microlinkhq/browserless/compare/v14.0.10...v14.0.11) (2026-10-08)
 
 ### Bug Fixes
