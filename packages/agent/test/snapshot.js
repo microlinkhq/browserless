@@ -41,6 +41,13 @@ const dom = html => {
   return { window, observe, fresh }
 }
 
+test('snapshot text follows document order and skips aria-hidden copy', t => {
+  const { observe } = dom(
+    '<body><p>before <a href="/a">link</a> after</p><p aria-hidden="true">Hidden copy</p></body>'
+  )
+  t.is(observe().text, 'before\nlink\nafter')
+})
+
 test('snapshot uses visible indexed controls, viewport text, and persistent live refs', t => {
   const { window, observe } = dom(
     '<body><button id="a">Search</button><button hidden>Hidden</button><button disabled>Disabled</button><div aria-hidden="true"><button>Aria hidden</button></div><p>Cars</p></body>'

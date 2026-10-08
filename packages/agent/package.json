@@ -47,6 +47,7 @@
     "test": "ava",
     "start": "browserless exec examples/wallapop.js --no-headless",
     "benchmark": "browserless exec scripts/benchmark.js",
+    "perf": "node scripts/perf-baseline.js",
     "compare": "browserless exec scripts/compare.js"
   },
   "license": "MIT",
