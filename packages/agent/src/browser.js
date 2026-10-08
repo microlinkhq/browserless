@@ -7,6 +7,8 @@ const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
 const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
+const BUSY_LIMIT_MS = 3000
+const BUSY_POLL_MS = 50
 const DOCUMENT_READY_LIMIT_MS = 3000
 const DOCUMENT_READY_POLL_MS = 50
 const OUTLINE_LIMITS = { characters: 60000, text: 80, attribute: 80, siblings: 3 }
@@ -148,10 +150,43 @@ const settled = (action, limits) =>
   })
 
 // Navigation can destroy the page context mid-wait; the next observation handles that.
-const settle = (page, action) =>
-  agentWorld(page)
+const untilIdle = (action, limitMs, pollMs) =>
+  new Promise(resolve => {
+    const started = Date.now()
+    const field = window.__browserlessAgent?.nodes.get(action.node)
+    const roots = [document]
+    for (const root of roots) {
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot) roots.push(element.shadowRoot)
+      }
+    }
+    const all = selector => roots.flatMap(root => [...root.querySelectorAll(selector)])
+    const shown = element =>
+      element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    const busy = () => {
+      if (field?.isConnected && field.matches(':disabled')) return true
+      if (all('[aria-busy="true"]').some(shown)) return true
+      return all('progress,[role="progressbar"]').some(element => {
+        if (!shown(element)) return false
+        if (element.tagName === 'PROGRESS') return element.position < 0
+        return element.getAttribute('aria-valuenow') == null
+      })
+    }
+    const poll = () => {
+      if (!busy() || Date.now() - started >= limitMs) resolve()
+      else setTimeout(poll, pollMs)
+    }
+    poll()
+  })
+
+const settle = async (page, action) => {
+  await agentWorld(page)
     .evaluate(settled, action, SETTLE_LIMITS)
     .catch(() => {})
+  await agentWorld(page)
+    .evaluate(untilIdle, action, BUSY_LIMIT_MS, BUSY_POLL_MS)
+    .catch(() => {})
+}
 
 const clickLabelIfCovered = input => {
   const cache = window.__browserlessAgent
@@ -221,6 +256,7 @@ module.exports = {
   execute,
   settle,
   settled,
+  untilIdle,
   pageChanged,
   targetFresh,
   selectContents,
