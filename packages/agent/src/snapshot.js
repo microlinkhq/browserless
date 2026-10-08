@@ -1,4 +1,4 @@
-/* global location, scrollX, scrollY, innerWidth, innerHeight, NodeFilter */
+/* global location, scrollX, scrollY, innerWidth, innerHeight */
 // Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See README.md.
 module.exports = function snapshot () {
   return (() => {
@@ -54,9 +54,39 @@ module.exports = function snapshot () {
       return active
     }
     const safe = e => !['password', 'file', 'hidden'].includes(e.type)
-    const visible = e =>
-      !cache.closest(e, '[aria-hidden="true"],[inert]') &&
-      e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    const hiddenMemo = new WeakMap()
+    const visibleMemo = new WeakMap()
+    const hiddenAncestor = element => {
+      const seen = []
+      for (let current = element; current; current = flatParent(current)) {
+        if (hiddenMemo.has(current)) {
+          const found = hiddenMemo.get(current)
+          for (const item of seen) hiddenMemo.set(item, found)
+          return found
+        }
+        seen.push(current)
+        if (current.matches('[aria-hidden="true"],[inert]')) {
+          for (const item of seen) hiddenMemo.set(item, current)
+          return current
+        }
+      }
+      for (const item of seen) hiddenMemo.set(item, null)
+      return null
+    }
+    const visible = e => {
+      if (visibleMemo.has(e)) return visibleMemo.get(e)
+      const shown =
+        !hiddenAncestor(e) && e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+      visibleMemo.set(e, shown)
+      return shown
+    }
+    // cache.guard runs again at input time, so it must not reuse this snapshot's memos.
+    const visibleNow = e => {
+      for (let current = e; current; current = flatParent(current)) {
+        if (current.matches('[aria-hidden="true"],[inert]')) return false
+      }
+      return e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    }
     const name = (e, seen = new Set()) => {
       if (!e || seen.has(e)) return ''
       seen.add(e)
@@ -140,7 +170,7 @@ module.exports = function snapshot () {
         .map(e => [identity(e), e.value, e.checked, e.selectedIndex, e.disabled, e.readOnly])
     ]
     cache.guard = e => {
-      if (!e?.isConnected || !visible(e)) return null
+      if (!e?.isConnected || !visibleNow(e)) return null
       const scope =
         cache.closest(e, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') || flatParent(e)
       return [
@@ -252,37 +282,65 @@ module.exports = function snapshot () {
     const words = []
     const range = document.createRange()
     let length = 0
-    for (const root of roots) {
-      const walker = document.createTreeWalker(
-        root === document ? document.body : root,
-        NodeFilter.SHOW_TEXT
-      )
-      let node
-      while ((node = walker.nextNode()) && length < 6000) {
-        const value = node.textContent.trim()
-        const parent = node.parentElement || root.host
-        if (
-          !value ||
-          !parent ||
-          parent.closest('script,style,noscript,template') ||
-          !visible(parent)
-        ) {
-          continue
-        }
+    const TEXT_SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'])
+    const intersectsViewport = rect =>
+      rect.width > 0 &&
+      rect.height > 0 &&
+      rect.bottom > 0 &&
+      rect.top < innerHeight &&
+      rect.right > 0 &&
+      rect.left < innerWidth
+    const outsideViewport = rect =>
+      rect.width > 0 &&
+      rect.height > 0 &&
+      (rect.bottom <= 0 || rect.top >= innerHeight || rect.right <= 0 || rect.left >= innerWidth)
+    const fullyInside = rect =>
+      rect.top >= 0 &&
+      rect.left >= 0 &&
+      rect.bottom <= innerHeight &&
+      rect.right <= innerWidth &&
+      rect.width > 0 &&
+      rect.height > 0
+    const pushText = (node, skipRect) => {
+      if (length >= 6000 || node.nodeType !== 3) return
+      const value = node.textContent.trim()
+      if (!value) return
+      if (!skipRect) {
         range.selectNodeContents(node)
-        const r = range.getBoundingClientRect()
-        if (
-          r.width > 0 &&
-          r.height > 0 &&
-          r.bottom > 0 &&
-          r.top < innerHeight &&
-          r.right > 0 &&
-          r.left < innerWidth
-        ) {
-          words.push(value)
-          length += value.length
-        }
+        if (!intersectsViewport(range.getBoundingClientRect())) return
       }
+      words.push(value)
+      length += value.length
+    }
+    // Off-screen subtrees are skipped. A fixed node inside one of those subtrees is not read.
+    const collectText = element => {
+      if (length >= 6000 || TEXT_SKIP.has(element.tagName)) return
+      const rect = element.getBoundingClientRect()
+      if (outsideViewport(rect)) return
+      const inside = fullyInside(rect)
+      if (!intersectsViewport(rect) || !visible(element)) {
+        for (const node of element.childNodes) {
+          if (node.nodeType === 1) collectText(node)
+        }
+        return
+      }
+      for (const node of element.childNodes) {
+        if (length >= 6000) return
+        if (node.nodeType === 3) pushText(node, inside)
+        else if (node.nodeType === 1) collectText(node)
+      }
+    }
+    for (const root of roots) {
+      if (length >= 6000) break
+      if (root === document) {
+        if (document.body) collectText(document.body)
+        continue
+      }
+      const host = root.host
+      if (host && visible(host)) {
+        for (const node of root.childNodes) pushText(node)
+      }
+      for (const child of root.children) collectText(child)
     }
     const unsupported = []
     for (const e of queryAll('iframe,canvas,input[type="password"],input[type="file"]')) {

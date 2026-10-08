@@ -123,6 +123,20 @@ const countClicks = page =>
     )
   })
 
+test('viewport text keeps what is on screen, including a fixed banner', async t => {
+  const page = await open(
+    t,
+    `<p>Visible intro</p>
+     <div style="position:fixed;top:8px;left:8px">Fixed banner</div>
+     <div style="height:4000px"></div>
+     <p>Below the fold paragraph</p>`
+  )
+  const { text } = await observe(page)
+  t.true(text.includes('Visible intro'))
+  t.true(text.includes('Fixed banner'))
+  t.false(text.includes('Below the fold paragraph'))
+})
+
 test('controls inside open shadow roots are observed with their slotted label', async t => {
   const page = await open(t, `${SHADOW_COMPONENTS}<x-button>Sign in</x-button><x-note></x-note>`)
   const state = await observe(page)
