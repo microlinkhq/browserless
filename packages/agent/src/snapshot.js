@@ -412,7 +412,9 @@ module.exports = function snapshot () {
       const fromSvg = name(svg).replace(/\s+/g, ' ').trim()
       if (fromSvg) return fromSvg
       if (svg.id) return svg.id
-      const token = [...svg.classList].find(className => className.includes('icon'))
+      const token = [...svg.classList]
+        .filter(className => className.includes('icon') && className.split('-').pop() !== 'icon')
+        .sort((a, b) => b.length - a.length)[0]
       return token ? token.split('-').pop() : ''
     }
     const icons = []
