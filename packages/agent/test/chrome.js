@@ -3,7 +3,7 @@
 const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
-const { observe, execute, settled, pageOutline, agentWorld } = require('../src/browser')
+const { observe, execute, settle, settled, pageOutline, agentWorld } = require('../src/browser')
 const { applyRules } = require('../src/rules')
 const { StaleDecisionError } = require('../src/errors')
 
@@ -351,6 +351,37 @@ test('observing a document that has no body yet waits for the body', async t => 
     actions.filter(a => a.kind === 'click').map(a => a.label),
     ['Ready']
   )
+})
+
+test('a delayed same-tab navigation is not observed on the old document', async t => {
+  const destination = await pageWithLateBody(t, '<button>Arrived</button>')
+  const page = await open(
+    t,
+    `<a id="leave" href="${destination}">Leave</a>
+     <script>
+       document.getElementById('leave').addEventListener('click', event => {
+         event.preventDefault()
+         const href = event.currentTarget.href
+         setTimeout(() => { location.href = href }, 400)
+       })
+     </script>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Leave')
+  await execute(page, state, action, undefined, 0)
+  await settle(page, action)
+  const next = await observe(page)
+  t.true(next.actions.some(item => item.label === 'Arrived'))
+  t.false(next.actions.some(item => item.label === 'Leave'))
+})
+
+test('settling a button does not wait for navigation', async t => {
+  const page = await open(t, '<button type="button">Stay</button>')
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Stay')
+  const started = Date.now()
+  await settle(page, action)
+  t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
 })
 
 test('observing a document that never gets a body is blocked', async t => {

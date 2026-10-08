@@ -7,6 +7,8 @@ const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
 const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
+const NAVIGATION_LIMIT_MS = 1500
+const NAVIGATION_POLL_MS = 50
 const DOCUMENT_READY_LIMIT_MS = 3000
 const DOCUMENT_READY_POLL_MS = 50
 const OUTLINE_LIMITS = { characters: 60000, text: 80, attribute: 80, siblings: 3 }
@@ -159,10 +161,44 @@ const settled = (action, limits) =>
   })
 
 // Navigation can destroy the page context mid-wait; the next observation handles that.
-const settle = (page, action) =>
-  agentWorld(page)
+const waitForNavigation = (action, limitMs, pollMs) =>
+  new Promise(resolve => {
+    const element = window.__browserlessAgent?.nodes.get(action.node)
+    if (element?.tagName !== 'A' || element.hasAttribute('download')) return resolve()
+    const target = (element.getAttribute('target') || '').toLowerCase()
+    const sameTab =
+      !target ||
+      target === '_self' ||
+      target === '_parent' ||
+      target === '_top' ||
+      target === window.name
+    if (!sameTab) return resolve()
+    let next
+    try {
+      next = new URL(element.href, location.href)
+    } catch {
+      return resolve()
+    }
+    if ((next.protocol !== 'http:' && next.protocol !== 'https:') || next.href === location.href) {
+      return resolve()
+    }
+    const origin = location.href
+    const started = Date.now()
+    const poll = () => {
+      if (location.href !== origin || Date.now() - started >= limitMs) resolve()
+      else setTimeout(poll, pollMs)
+    }
+    poll()
+  })
+
+const settle = async (page, action) => {
+  await agentWorld(page)
     .evaluate(settled, action, SETTLE_LIMITS)
     .catch(() => {})
+  await agentWorld(page)
+    .evaluate(waitForNavigation, action, NAVIGATION_LIMIT_MS, NAVIGATION_POLL_MS)
+    .catch(() => {})
+}
 
 const execute = async (page, state, action, text, waitMs) => {
   if (action.kind === 'wait') {
