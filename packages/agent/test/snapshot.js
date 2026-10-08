@@ -191,6 +191,76 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('pointer rows in a layer or a pointer list are clickable; a lone pointer div is not', t => {
+  const { observe } = dom(
+    `<body>
+      <button>Search</button>
+      <input aria-label="City">
+      <div style="position:absolute">
+        <div style="cursor:pointer"><span>Beijingbei</span><span>beijingbei</span></div>
+      </div>
+      <div style="cursor:pointer">Not a suggestion</div>
+      <ul>
+        <li style="cursor:pointer">One</li>
+        <li style="cursor:pointer">Two</li>
+      </ul>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.includes('Search'))
+  t.true(clicks.some(label => label.includes('Beijingbei') && label.includes('beijingbei')))
+  t.true(clicks.includes('One'))
+  t.true(clicks.includes('Two'))
+  t.false(clicks.includes('Not a suggestion'))
+})
+
+test('inherited pointer and a relative body do not split or invent rows', t => {
+  const { observe } = dom(
+    `<body style="position:relative">
+      <div style="cursor:pointer">Plain</div>
+      <div style="position:absolute">
+        <div style="cursor:pointer"><span style="cursor:pointer">Beijingbei</span><span style="cursor:pointer">beijingbei</span></div>
+      </div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.false(clicks.includes('Plain'))
+  t.false(clicks.includes('Beijingbei'))
+  t.true(clicks.some(label => label.includes('Beijingbei') && label.includes('beijingbei')))
+})
+
+test('rows stay when the list and its text share a pointer cursor', t => {
+  // jsdom does not inherit cursor, so the rule sets the value a browser inherits from the list.
+  const { observe } = dom(
+    `<body>
+      <style>ul, ul li, ul li span { cursor: pointer }</style>
+      <ul><li><span>One</span><span>uno</span></li><li>Two</li></ul>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.some(label => label.includes('One') && label.includes('uno')))
+  t.true(clicks.includes('Two'))
+  t.false(clicks.includes('One'))
+  t.false(clicks.includes('uno'))
+})
+
+test('custom pointer rows are capped at 40', t => {
+  const items = Array.from(
+    { length: 41 },
+    (_, index) => `<li style="cursor:pointer">Row ${index}</li>`
+  )
+  const { observe } = dom(`<body><ul>${items.join('')}</ul></body>`)
+  const rows = observe().actions.filter(action => action.label.startsWith('Row '))
+  t.is(rows.length, 40)
+  t.true(rows.every(action => action.role === 'button' && action.kind === 'click'))
+})
+
 test('same-labeled fields keep distinct scope text off the action list', t => {
   const { observe } = dom(
     '<body><article><h2>Passenger 1</h2><input aria-label="First name"></article><article><h2>Passenger 2</h2><input aria-label="First name"></article></body>'
