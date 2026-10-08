@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.5](https://github.com/microlinkhq/browserless/compare/v14.0.4...v14.0.5) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** keep a literal arrow in an ordinary control label ([#967](https://github.com/microlinkhq/browserless/issues/967)) ([164be05](https://github.com/microlinkhq/browserless/commit/164be0519410f1622e224a0070b34c9d9de84793))
+* **agent:** name a button from its text, not its value ([#968](https://github.com/microlinkhq/browserless/issues/968)) ([96c16a7](https://github.com/microlinkhq/browserless/commit/96c16a7f789a8e5d43b284b613612a31c90581be))
+
 ## [14.0.4](https://github.com/microlinkhq/browserless/compare/v14.0.3...v14.0.4) (2026-10-08)
 
 ### Bug Fixes
