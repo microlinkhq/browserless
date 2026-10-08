@@ -324,11 +324,11 @@ module.exports = function snapshot () {
       const rect = label.getBoundingClientRect()
       actions.push({
         node: identity(input),
-        role: input.type,
-        label: name(input) || name(label) || input.type,
+        role: role(input),
+        label: name(input) || name(label) || role(input),
         rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
         kind: 'click',
-        checked: String(input.checked),
+        checked: input.type === 'checkbox' && input.indeterminate ? 'mixed' : String(input.checked),
         value: String(input.value)
       })
     }

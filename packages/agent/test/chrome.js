@@ -306,6 +306,19 @@ const TRANSPARENT_TOGGLE = `<style>
   span { display: inline-block; width: 32px; height: 32px; }
 </style>`
 
+test('a transparent indeterminate switch keeps mixed and its role', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label><input type="checkbox" role="switch"><span>Menu</span></label>`
+  )
+  await page.$eval('input', element => {
+    element.indeterminate = true
+  })
+  const action = (await observe(page)).actions.find(item => item.label === 'Menu')
+  t.is(action.role, 'switch')
+  t.is(action.checked, 'mixed')
+})
+
 test('a transparent checkbox is offered and toggled through its label', async t => {
   const page = await open(
     t,
