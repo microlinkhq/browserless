@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.8](https://github.com/microlinkhq/browserless/compare/v14.0.7...v14.0.8) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** report aria-pressed so a toggle is not clicked blind ([#971](https://github.com/microlinkhq/browserless/issues/971)) ([e2978bd](https://github.com/microlinkhq/browserless/commit/e2978bdce61d30b6414b6c133d1ca1d24ef821f3))
+
 ## [14.0.7](https://github.com/microlinkhq/browserless/compare/v14.0.6...v14.0.7) (2026-10-08)
 
 ### Bug Fixes
