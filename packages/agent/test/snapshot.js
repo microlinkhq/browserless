@@ -203,6 +203,156 @@ test('an indeterminate checkbox is mixed, and clearing it fails freshness', t =>
   t.false(fresh(box, current, action))
 })
 
+test('aria-pressed is reported, and changing it fails freshness', t => {
+  const { window, observe, fresh } = dom(
+    '<button id="nonstop" aria-pressed="false">Nonstop only</button>'
+  )
+  const current = observe()
+  const action = current.actions.find(item => item.label === 'Nonstop only')
+  const button = window.document.getElementById('nonstop')
+  t.is(action.pressed, 'false')
+  t.true(fresh(button, current, action))
+  button.setAttribute('aria-pressed', 'true')
+  t.false(fresh(button, current, action))
+  const next = observe()
+  t.is(next.actions.find(item => item.label === 'Nonstop only').pressed, 'true')
+  t.not(JSON.stringify(current.marker), JSON.stringify(next.marker))
+})
+
+test('a self reference in aria-labelledby keeps the element text', t => {
+  const { observe } = dom(
+    `<body>
+      <span id="f1">report.pdf</span>
+      <button id="e1" aria-labelledby="e1 f1">Edit</button>
+      <button id="d1" aria-labelledby="d1 f1">Delete</button>
+    </body>`
+  )
+  t.deepEqual(
+    observe()
+      .actions.filter(action => action.kind === 'click')
+      .map(action => action.label),
+    ['Edit report.pdf', 'Delete report.pdf']
+  )
+})
+
+test('an unlabeled select is not named by its options', t => {
+  const { observe } = dom(
+    `<body>
+      <select><option>North</option><option>South</option></select>
+      <select aria-label="Region"><option>North</option><option>South</option></select>
+    </body>`
+  )
+  t.deepEqual(
+    observe()
+      .actions.filter(action => action.kind === 'select')
+      .map(action => action.label),
+    ['combobox → South', 'Region → South']
+  )
+})
+
+test('a button is named from its text, and an input button from its value', t => {
+  const { observe } = dom(
+    '<body><button name="published" value="0">Save draft</button><input type="submit" value="Go"></body>'
+  )
+  t.deepEqual(
+    observe()
+      .actions.filter(action => action.kind === 'click')
+      .map(action => action.label),
+    ['Save draft', 'Go']
+  )
+})
+
+test('an image input is named from its alt text', t => {
+  const { observe } = dom('<body><input type="image" alt="Search" value="go"></body>')
+  t.is(observe().actions.find(action => action.kind === 'click').label, 'Search')
+})
+
+test('pointer rows in a layer or a pointer list are clickable; a lone pointer div is not', t => {
+  const { observe } = dom(
+    `<body>
+      <button>Search</button>
+      <input aria-label="City">
+      <div style="position:absolute">
+        <div style="cursor:pointer"><span>Beijingbei</span><span>beijingbei</span></div>
+      </div>
+      <div style="cursor:pointer">Not a suggestion</div>
+      <ul>
+        <li style="cursor:pointer">One</li>
+        <li style="cursor:pointer">Two</li>
+      </ul>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.includes('Search'))
+  t.true(clicks.some(label => label.includes('Beijingbei') && label.includes('beijingbei')))
+  t.true(clicks.includes('One'))
+  t.true(clicks.includes('Two'))
+  t.false(clicks.includes('Not a suggestion'))
+})
+
+test('inherited pointer and a relative body do not split or invent rows', t => {
+  const { observe } = dom(
+    `<body style="position:relative">
+      <div style="cursor:pointer">Plain</div>
+      <div style="position:absolute">
+        <div style="cursor:pointer"><span style="cursor:pointer">Beijingbei</span><span style="cursor:pointer">beijingbei</span></div>
+      </div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.false(clicks.includes('Plain'))
+  t.false(clicks.includes('Beijingbei'))
+  t.true(clicks.some(label => label.includes('Beijingbei') && label.includes('beijingbei')))
+})
+
+test('rows stay when the list and its text share a pointer cursor', t => {
+  // jsdom does not inherit cursor, so the rule sets the value a browser inherits from the list.
+  const { observe } = dom(
+    `<body>
+      <style>ul, ul li, ul li span { cursor: pointer }</style>
+      <ul><li><span>One</span><span>uno</span></li><li>Two</li></ul>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.some(label => label.includes('One') && label.includes('uno')))
+  t.true(clicks.includes('Two'))
+  t.false(clicks.includes('One'))
+  t.false(clicks.includes('uno'))
+})
+
+test('custom pointer rows are capped at 40', t => {
+  const items = Array.from(
+    { length: 41 },
+    (_, index) => `<li style="cursor:pointer">Row ${index}</li>`
+  )
+  const { observe } = dom(`<body><ul>${items.join('')}</ul></body>`)
+  const rows = observe().actions.filter(action => action.label.startsWith('Row '))
+  t.is(rows.length, 40)
+  t.true(rows.every(action => action.role === 'button' && action.kind === 'click'))
+})
+
+test('same-labeled fields keep distinct scope text off the action list', t => {
+  const { observe } = dom(
+    '<body><article><h2>Passenger 1</h2><input aria-label="First name"></article><article><h2>Passenger 2</h2><input aria-label="First name"></article></body>'
+  )
+  const { actions, scopes } = observe()
+  const fields = actions.filter(a => a.kind === 'fill')
+  t.deepEqual(
+    fields.map(a => a.label),
+    ['First name', 'First name']
+  )
+  t.false(fields.some(a => 'context' in a))
+  t.true(scopes[fields[0].node].includes('Passenger 1'))
+  t.true(scopes[fields[1].node].includes('Passenger 2'))
+  t.not(scopes[fields[0].node], scopes[fields[1].node])
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
