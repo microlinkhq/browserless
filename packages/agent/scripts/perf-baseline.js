@@ -136,37 +136,37 @@ const measure = async page => {
 const main = async () => {
   const pages = { listings: listings(), grid: grid(), long: longDocument() }
   const server = await listen(pages)
-  const { port } = server.address()
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-dev-shm-usage']
-  })
   try {
-    const page = await browser.newPage()
-    await page.setViewport({ width: 1280, height: 800 })
-    const report = {}
-    for (const name of Object.keys(pages)) {
-      await page.goto(`http://127.0.0.1:${port}/${name}`, { waitUntil: 'load' })
-      report[name] = await measure(page)
-    }
-    for (const url of [
-      'https://news.ycombinator.com',
-      'https://en.wikipedia.org/wiki/Alan_Turing'
-    ]) {
-      try {
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 })
-        report[url] = await measure(page)
-      } catch (error) {
-        report[url] = { error: error.message }
-      }
-    }
-    console.log(JSON.stringify(report, null, 2))
-  } finally {
+    const { port } = server.address()
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-dev-shm-usage']
+    })
     try {
-      await browser.close()
+      const page = await browser.newPage()
+      await page.setViewport({ width: 1280, height: 800 })
+      const report = {}
+      for (const name of Object.keys(pages)) {
+        await page.goto(`http://127.0.0.1:${port}/${name}`, { waitUntil: 'load' })
+        report[name] = await measure(page)
+      }
+      for (const url of [
+        'https://news.ycombinator.com',
+        'https://en.wikipedia.org/wiki/Alan_Turing'
+      ]) {
+        try {
+          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 })
+          report[url] = await measure(page)
+        } catch (error) {
+          report[url] = { error: error.message }
+        }
+      }
+      console.log(JSON.stringify(report, null, 2))
     } finally {
-      server.close()
+      await browser.close()
     }
+  } finally {
+    server.close()
   }
 }
 

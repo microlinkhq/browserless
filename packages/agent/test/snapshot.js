@@ -41,6 +41,16 @@ const dom = html => {
   return { window, observe, fresh }
 }
 
+test('a control hidden after observe is no longer fresh', t => {
+  const { window, observe, fresh } = dom('<body><button id="a">Open</button></body>')
+  const current = observe()
+  const element = window.document.getElementById('a')
+  const action = current.actions[0]
+  t.true(fresh(element, current, action))
+  element.setAttribute('aria-hidden', 'true')
+  t.false(fresh(element, current, action))
+})
+
 test('snapshot text follows document order and skips aria-hidden copy', t => {
   const { observe } = dom(
     '<body><p>before <a href="/a">link</a> after</p><p aria-hidden="true">Hidden copy</p></body>'

@@ -80,6 +80,13 @@ module.exports = function snapshot () {
       visibleMemo.set(e, shown)
       return shown
     }
+    // cache.guard runs again at input time, so it must not reuse this snapshot's memos.
+    const visibleNow = e => {
+      for (let current = e; current; current = flatParent(current)) {
+        if (current.matches('[aria-hidden="true"],[inert]')) return false
+      }
+      return e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    }
     const name = (e, seen = new Set()) => {
       if (!e || seen.has(e)) return ''
       seen.add(e)
@@ -163,7 +170,7 @@ module.exports = function snapshot () {
         .map(e => [identity(e), e.value, e.checked, e.selectedIndex, e.disabled, e.readOnly])
     ]
     cache.guard = e => {
-      if (!e?.isConnected || !visible(e)) return null
+      if (!e?.isConnected || !visibleNow(e)) return null
       const scope =
         cache.closest(e, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') || flatParent(e)
       return [
