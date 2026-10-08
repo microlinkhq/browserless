@@ -58,6 +58,14 @@ test('input types that cannot take inserted text are never fill targets', async 
   )
 })
 
+test('an empty fill clears the selected field', async t => {
+  const page = await open(t, '<input aria-label="Search" value="old">')
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'fill' && item.label === 'Search')
+  await execute(page, state, action, '', 0)
+  t.is(await page.$eval('input', element => element.value), '')
+})
+
 test('typing replaces the existing value of an input', async t => {
   const page = await open(t, '<input aria-label="Search" value="old">')
   await fill(page, 'Search')
@@ -238,6 +246,44 @@ const SEARCH_FORM = `<form><input aria-label="Search" value="bmw x3"></form><inp
   })
 </script>`
 
+test('an svg scope still observes an html control inside it', async t => {
+  const page = await open(
+    t,
+    '<svg role="row" width="80" height="40"><foreignObject width="80" height="40"><button>Go</button></foreignObject></svg>'
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Go')
+  t.truthy(action)
+  t.true(Array.isArray(state.guards[action.node]))
+})
+
+test('a form field named innerText still observes, and a visible text change is stale', async t => {
+  const page = await open(
+    t,
+    `<form>
+      <p id="note">Visible note</p>
+      <p hidden id="secret">Hidden</p>
+      <input name="innerText" aria-label="Shadow">
+      <input name="innerText" aria-label="Again">
+      <button id="save" type="button">Save</button>
+    </form>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(a => a.kind === 'click' && a.label === 'Save')
+  t.truthy(action)
+  await page.$eval('#secret', element => {
+    element.textContent = 'Still hidden'
+  })
+  await execute(page, state, action, undefined, 0)
+  t.is(await page.$eval('#save', element => element.textContent), 'Save')
+  await page.$eval('#note', element => {
+    element.textContent = 'Changed note'
+  })
+  await t.throwsAsync(execute(page, state, action, undefined, 0), {
+    instanceOf: StaleDecisionError
+  })
+})
+
 test('submitting a populated field sends Enter to its form', async t => {
   const page = await open(t, SEARCH_FORM)
   await act(page, 'submit', 'Submit Search')
@@ -292,6 +338,149 @@ test('a control that disables itself is observed after it is enabled again', asy
   t.true(next.text.includes('Saved'))
   t.true(Date.now() - started >= 350, `observed after ${Date.now() - started} ms`)
   t.false(await page.$eval('#save', element => element.disabled))
+})
+
+const TRANSPARENT_TOGGLE = `<style>
+  body { margin: 0; }
+  label { position: relative; display: inline-block; }
+  input { position: absolute; opacity: 0; width: 32px; height: 32px; margin: 0; }
+  span { display: inline-block; width: 32px; height: 32px; }
+</style>`
+
+test('a transparent indeterminate switch keeps mixed and its role', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label><input type="checkbox" role="switch"><span>Menu</span></label>`
+  )
+  await page.$eval('input', element => {
+    element.indeterminate = true
+  })
+  const action = (await observe(page)).actions.find(item => item.label === 'Menu')
+  t.is(action.role, 'switch')
+  t.is(action.checked, 'mixed')
+})
+
+test('a covered checkbox click reaches the label pointer handler', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}
+     <label><input type="checkbox"><span>Menu</span><i id="cap"></i></label>
+     <style>#cap { position: absolute; left: 0; top: 0; width: 32px; height: 32px; }</style>
+     <script>
+       window.pointers = 0
+       document.querySelector('label').addEventListener('pointerdown', () => { window.pointers++ })
+     </script>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  await execute(page, state, action, undefined, 0)
+  t.true(await page.$eval('input', element => element.checked))
+  t.is(await page.evaluate(() => window.pointers), 1)
+})
+
+test('a transparent checkbox is offered and toggled through its label', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label><input type="checkbox"><span>Menu</span></label>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  t.is(action.role, 'checkbox')
+  await execute(page, state, action, undefined, 0)
+  t.true(await page.$eval('input', element => element.checked))
+})
+
+test('a covered transparent checkbox is not offered', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label><input type="checkbox"><span>Menu</span></label><div style="position:fixed;inset:0"></div>`
+  )
+  const { actions } = await observe(page)
+  t.false(actions.some(item => item.label === 'Menu'))
+})
+
+test('a checkbox stacked over its label is still offered', async t => {
+  const page = await open(
+    t,
+    `<style>
+      body { margin: 0; }
+      .row { position: relative; width: 80px; height: 32px; }
+      label { display: block; width: 80px; height: 32px; }
+      input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+    </style>
+    <div class="row"><label for="menu">Menu</label><input id="menu" type="checkbox"></div>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  await execute(page, state, action, undefined, 0)
+  t.true(await page.$eval('input', element => element.checked))
+})
+
+test('an aria-hidden label still offers its transparent checkbox', async t => {
+  const page = await open(
+    t,
+    `${TRANSPARENT_TOGGLE}<label aria-hidden="true"><input type="checkbox"><span>Menu</span></label>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Menu')
+  t.truthy(action)
+  t.truthy(state.guards[action.node])
+  await page.$eval('input', element => {
+    element.checked = true
+  })
+  await t.throwsAsync(execute(page, state, action, undefined, 0), {
+    instanceOf: StaleDecisionError
+  })
+})
+
+const WRAPPING_LINK = `<style>
+  body { margin: 0; }
+  p { width: 140px; margin: 8px; font: 16px/20px sans-serif; }
+</style>
+<p><a id="link" href="#done">alpha bravo charlie delta echo foxtrot</a></p>`
+
+test('a wrapping link stays clickable when its box center misses the text', async t => {
+  const page = await open(t, WRAPPING_LINK)
+  const geometry = await page.evaluate(() => {
+    const link = document.getElementById('link')
+    const box = link.getBoundingClientRect()
+    const center = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)
+    const fragments = [...link.getClientRects()].map(rect => {
+      const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+      return hit === link || link.contains(hit)
+    })
+    return {
+      rects: link.getClientRects().length,
+      centerMisses: center !== link && !link.contains(center),
+      fragmentHits: fragments.some(Boolean)
+    }
+  })
+  t.deepEqual(geometry, { rects: geometry.rects, centerMisses: true, fragmentHits: true })
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label.includes('alpha'))
+  t.truthy(action)
+  await page.evaluate(() => {
+    window.clicked = 0
+    document.getElementById('link').addEventListener('click', event => {
+      event.preventDefault()
+      window.clicked++
+    })
+  })
+  await execute(page, state, action, undefined, 0)
+  t.is(await page.evaluate(() => window.clicked), 1)
+  await page.evaluate(() => {
+    const cover = document.createElement('div')
+    cover.style.cssText = 'position:fixed;inset:0'
+    document.body.append(cover)
+  })
+  t.false(
+    (await observe(page)).actions.some(
+      item => item.kind === 'click' && item.label.includes('alpha')
+    )
+  )
 })
 
 test('a control covered by another element is not offered', async t => {
@@ -362,6 +551,56 @@ test('settling after typing in a combobox ignores options already on screen', as
   )
   const elapsed = await settleMs(page, 'fill', 'City', () => revealSuggestionWhenRead(page))
   t.is(await page.$eval('#suggestions', list => list.textContent), 'Zurich')
+  t.true(elapsed >= SUGGESTION_DELAY_MS - 40, `settled after ${elapsed} ms`)
+  t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
+})
+
+test('settling after typing finds suggestions outside an empty aria-controls root', async t => {
+  const page = await open(
+    t,
+    '<input role="combobox" aria-label="City" aria-controls="empty"><span id="empty" role="listbox"></span><ul id="portal"></ul>'
+  )
+  const elapsed = await settleMs(page, 'fill', 'City', () =>
+    agentWorld(page).evaluate(delay => {
+      const field = document.querySelector('[role="combobox"]')
+      const original = field.getAttribute.bind(field)
+      field.getAttribute = name => {
+        if (!field.dataset.revealArmed) {
+          field.dataset.revealArmed = '1'
+          setTimeout(() => {
+            document.getElementById('portal').innerHTML = '<li role="option">Zurich</li>'
+          }, delay)
+        }
+        return original(name)
+      }
+    }, SUGGESTION_DELAY_MS)
+  )
+  t.is(await page.$eval('#portal', list => list.textContent), 'Zurich')
+  t.true(elapsed >= SUGGESTION_DELAY_MS - 40, `settled after ${elapsed} ms`)
+  t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
+})
+
+test('settling after typing finds a portal option when aria-controls already has one', async t => {
+  const page = await open(
+    t,
+    '<input role="combobox" aria-label="City" aria-controls="box"><span id="box" role="listbox"><span role="option">Old</span></span><ul id="portal"></ul>'
+  )
+  const elapsed = await settleMs(page, 'fill', 'City', () =>
+    agentWorld(page).evaluate(delay => {
+      const field = document.querySelector('[role="combobox"]')
+      const original = field.getAttribute.bind(field)
+      field.getAttribute = name => {
+        if (!field.dataset.revealArmed) {
+          field.dataset.revealArmed = '1'
+          setTimeout(() => {
+            document.getElementById('portal').innerHTML = '<li role="option">Zurich</li>'
+          }, delay)
+        }
+        return original(name)
+      }
+    }, SUGGESTION_DELAY_MS)
+  )
+  t.is(await page.$eval('#portal', list => list.textContent), 'Zurich')
   t.true(elapsed >= SUGGESTION_DELAY_MS - 40, `settled after ${elapsed} ms`)
   t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
 })

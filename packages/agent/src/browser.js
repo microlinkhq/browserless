@@ -1,4 +1,4 @@
-/* global location, innerWidth, innerHeight, getSelection, requestAnimationFrame */
+/* global location, innerHeight, getSelection, requestAnimationFrame */
 'use strict'
 
 const snapshot = require('./snapshot')
@@ -67,20 +67,7 @@ const targetFresh = (element, state, action, requirements = {}) => {
     return false
   }
   if (requirements.focused && cache.activeElement() !== element) return false
-  const r = element.getBoundingClientRect()
-  const x = r.x + r.width / 2
-  const y = r.y + r.height / 2
-  if (
-    !r.width ||
-    !r.height ||
-    x < 0 ||
-    y < 0 ||
-    x >= innerWidth ||
-    y >= innerHeight ||
-    !cache.contains(element, cache.elementFromPoint(x, y))
-  ) {
-    return false
-  }
+  if (!cache.hitPoint(element) && !cache.toggleLabel(element)) return false
   if (
     action.kind === 'fill' &&
     (element.readOnly || element.getAttribute('aria-readonly') === 'true')
@@ -129,9 +116,8 @@ const settled = (action, limits) =>
       const roots = ids.length
         ? ids.map(id => field.getRootNode().getElementById(id)).filter(Boolean)
         : [document]
-      return roots
-        .flatMap(root => [...root.querySelectorAll('[role="option"]')])
-        .filter(option => {
+      const listed = root =>
+        [...root.querySelectorAll('[role="option"]')].filter(option => {
           const r = option.getBoundingClientRect()
           return (
             r.width > 0 &&
@@ -141,6 +127,9 @@ const settled = (action, limits) =>
             option.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
           )
         })
+      const owned = roots.flatMap(listed)
+      // Options can render outside an aria-controls root, including after that root already has an option.
+      return ids.length ? [...owned, ...listed(document)] : owned
     }
     // Options already on screen are not this field's new suggestions.
     const alreadyVisible = new Set(autocomplete ? visibleOptions() : [])
@@ -199,6 +188,13 @@ const settle = async (page, action) => {
     .catch(() => {})
 }
 
+const clickLabelIfCovered = input => {
+  const cache = window.__browserlessAgent
+  const label = cache?.toggleLabel?.(input)
+  if (!label || cache.centerHits(input)) return null
+  return cache.centerHits(label, input)
+}
+
 const execute = async (page, state, action, text, waitMs) => {
   if (action.kind === 'wait') {
     await new Promise(resolve => setTimeout(resolve, waitMs))
@@ -232,14 +228,17 @@ const execute = async (page, state, action, text, waitMs) => {
       await focusForKeyboard()
       await element.evaluate(selectContents)
       await assertFresh(KEYBOARD_TARGET)
-      await page.keyboard.sendCharacter(text)
+      if (text) await page.keyboard.sendCharacter(text)
+      else await page.keyboard.press('Backspace')
     } else if (action.kind === 'submit') {
       await focusForKeyboard()
       await page.keyboard.press('Enter')
     } else if (action.kind === 'select') {
       await element.select(action.value)
     } else if (action.kind === 'click') {
-      await element.click()
+      const point = await element.evaluate(clickLabelIfCovered)
+      if (point) await page.mouse.click(point.x, point.y)
+      else await element.click()
     } else throw new TypeError('Unknown observed action.')
   } catch (error) {
     if (TARGET_GONE.test(error.message)) throw new StaleDecisionError()
@@ -260,5 +259,6 @@ module.exports = {
   untilIdle,
   pageChanged,
   targetFresh,
-  selectContents
+  selectContents,
+  clickLabelIfCovered
 }
