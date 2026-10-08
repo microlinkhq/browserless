@@ -191,6 +191,28 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('an in-flow icon control is named from the icon, not the row', t => {
+  const { observe } = dom(
+    `<body>
+      <h1>Repos</h1>
+      <div style="cursor:pointer"><svg id="star"><title>Star</title></svg></div>
+      <div style="cursor:pointer"><svg class="ruyi-icon-gear"></svg></div>
+      <div hidden style="cursor:pointer"><svg><title>Hidden</title></svg></div>
+      <div aria-disabled="true" style="cursor:pointer"><svg><title>Disabled</title></svg></div>
+      <div style="cursor:pointer">Not an icon</div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.includes('Star'))
+  t.true(clicks.includes('gear'))
+  t.false(clicks.includes('Hidden'))
+  t.false(clicks.includes('Disabled'))
+  t.false(clicks.includes('Not an icon'))
+  t.false(clicks.includes('Repos'))
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'

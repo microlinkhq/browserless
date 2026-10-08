@@ -1,4 +1,4 @@
-/* global location, scrollX, scrollY, innerWidth, innerHeight */
+/* global getComputedStyle, location, scrollX, scrollY, innerWidth, innerHeight */
 // Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See README.md.
 module.exports = function snapshot () {
   return (() => {
@@ -278,6 +278,56 @@ module.exports = function snapshot () {
           actions.push({ ...base, kind: 'submit', value, label: 'Submit ' + base.label })
         }
       }
+    }
+    const iconName = element => {
+      const own = element.getAttribute('aria-label') || element.getAttribute('title')
+      if (own) return own.trim()
+      const svg = element.querySelector('svg')
+      if (!svg) return ''
+      const title = svg.querySelector('title')?.textContent.trim()
+      if (title) return title
+      if (svg.id) return svg.id
+      const token = [...svg.classList].find(name => name.includes('-'))
+      return token ? token.split('-').pop() : ''
+    }
+    const collected = new Set(actions.map(action => cache.nodes.get(action.node)))
+    const icons = []
+    for (const element of queryAll('div,span')) {
+      if (collected.has(element) || getComputedStyle(element).cursor !== 'pointer') continue
+      if (!visible(element) || element.matches(':disabled')) continue
+      if (cache.closest(element, '[aria-disabled="true"]') || element.querySelector(selector)) { continue }
+      const rect = element.getBoundingClientRect()
+      const x = rect.x + rect.width / 2
+      const y = rect.y + rect.height / 2
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        x < 0 ||
+        y < 0 ||
+        x >= innerWidth ||
+        y >= innerHeight
+      ) {
+        continue
+      }
+      const hit = cache.elementFromPoint(x, y)
+      if (hit && !cache.contains(element, hit)) continue
+      const label = iconName(element).slice(0, 120)
+      if (!label) continue
+      icons.push({ element, rect, label })
+    }
+    const leaves = icons.filter(
+      ({ element }) =>
+        !icons.some(other => other.element !== element && cache.contains(element, other.element))
+    )
+    for (const { element, rect, label } of leaves.slice(0, 40)) {
+      actions.push({
+        node: identity(element),
+        role: 'button',
+        label,
+        rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
+        kind: 'click',
+        value: ''
+      })
     }
     const words = []
     const range = document.createRange()
