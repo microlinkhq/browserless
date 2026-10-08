@@ -191,6 +191,22 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('same-labeled fields keep distinct scope text off the action list', t => {
+  const { observe } = dom(
+    '<body><article><h2>Passenger 1</h2><input aria-label="First name"></article><article><h2>Passenger 2</h2><input aria-label="First name"></article></body>'
+  )
+  const { actions, scopes } = observe()
+  const fields = actions.filter(a => a.kind === 'fill')
+  t.deepEqual(
+    fields.map(a => a.label),
+    ['First name', 'First name']
+  )
+  t.false(fields.some(a => 'context' in a))
+  t.true(scopes[fields[0].node].includes('Passenger 1'))
+  t.true(scopes[fields[1].node].includes('Passenger 2'))
+  t.not(scopes[fields[0].node], scopes[fields[1].node])
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'

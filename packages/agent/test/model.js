@@ -236,8 +236,40 @@ test('text model receives the goal, field, reasoning level and a single attempt'
   const user = options.prompt.find(message => message.role === 'user')
   const context = JSON.parse(user.content[0].text)
   t.is(context.goal, 'cars')
-  t.deepEqual(context.field, { label: 'Search', role: 'searchbox', value: '' })
+  t.deepEqual(context.field, {
+    id: 'e1',
+    node: 1,
+    label: 'Search',
+    role: 'searchbox',
+    value: '',
+    context: ''
+  })
   t.is(models.calls.length, 1)
+})
+
+test('same-labeled fields are distinct in the text-helper prompt', async t => {
+  const page = state()
+  page.scopes = { 10: 'Passenger 1\nFirst name', 20: 'Passenger 2\nFirst name' }
+  const first = {
+    id: 'e1',
+    node: 10,
+    role: 'textbox',
+    label: 'First name',
+    kind: 'fill',
+    value: ''
+  }
+  const second = { ...first, id: 'e2', node: 20 }
+  const promptFor = async action => {
+    const models = mockModels([])
+    await fieldText('book two passengers', action, page, [], models.text, REQUEST)
+    const user = models.calls[0].options.prompt.find(message => message.role === 'user')
+    return JSON.parse(user.content[0].text).field
+  }
+  const [left, right] = await Promise.all([promptFor(first), promptFor(second)])
+  t.notDeepEqual(left, right)
+  t.is(left.context, 'Passenger 1\nFirst name')
+  t.is(right.id, 'e2')
+  t.is(right.node, 20)
 })
 
 test('a failing text model is not retried', async t => {
