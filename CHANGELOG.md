@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.4](https://github.com/microlinkhq/browserless/compare/v14.0.3...v14.0.4) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** index pointer rows the element table could not see ([#966](https://github.com/microlinkhq/browserless/issues/966)) ([25a9564](https://github.com/microlinkhq/browserless/commit/25a9564a4877f661604c364ae430696635a7e549))
+* **agent:** tell the text helper which same-labeled field it is filling ([#965](https://github.com/microlinkhq/browserless/issues/965)) ([8b92ba1](https://github.com/microlinkhq/browserless/commit/8b92ba16d03e3f736f2dcb701f88169c6202e10a))
+
+## [14.0.3](https://github.com/microlinkhq/browserless/compare/v14.0.2...v14.0.3) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** read form text through the native innerText getter ([#964](https://github.com/microlinkhq/browserless/issues/964)) ([bb5f1fc](https://github.com/microlinkhq/browserless/commit/bb5f1fc698edf27c8c82489ca27ec53f8bf9aa42))
+
 ## [14.0.2](https://github.com/microlinkhq/browserless/compare/v14.0.1...v14.0.2) (2026-10-08)
 
 ### Performance Improvements
