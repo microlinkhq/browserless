@@ -353,7 +353,6 @@ module.exports = function snapshot () {
     const text = words.join('\n').slice(0, 6000)
     const height = document.documentElement.scrollHeight
     const pageKey = cache.pageKey()
-    const readInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText').get
     const guards = {}
     const scopes = {}
     for (const a of actions) {
@@ -363,7 +362,10 @@ module.exports = function snapshot () {
       const scope =
         cache.closest(element, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') ||
         flatParent(element)
-      scopes[a.node] = (scope && readInnerText.call(scope).slice(0, 1000)) || ''
+      scopes[a.node] =
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 1000)
+          : scope?.textContent?.slice(0, 1000)) || ''
     }
     // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
     const semantics = actions.map(({ rect, ...action }) => action)
