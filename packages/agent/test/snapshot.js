@@ -228,6 +228,22 @@ test('an icon inside an indexed control is not a second action', t => {
   t.true(clicks.some(label => label.includes('Home')))
 })
 
+test('an icon beside a button in a skipped gridcell is still offered', t => {
+  const { observe } = dom(
+    `<body>
+      <div role="gridcell">
+        <button type="button">Edit</button>
+        <span style="cursor:pointer"><svg><title>Star</title></svg></span>
+      </div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.includes('Edit'))
+  t.true(clicks.includes('Star'))
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
