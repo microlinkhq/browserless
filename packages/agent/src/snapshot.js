@@ -280,11 +280,16 @@ module.exports = function snapshot () {
       }
     }
     const collected = new Set(actions.map(action => cache.nodes.get(action.node)))
-    const pointer = element => getComputedStyle(element).cursor === 'pointer'
+    const pointer = element => {
+      if (getComputedStyle(element).cursor !== 'pointer') return false
+      const parent = flatParent(element)
+      return !parent || getComputedStyle(parent).cursor !== 'pointer'
+    }
     const inLayer = element => {
       for (let current = element; current; current = flatParent(current)) {
+        if (current === document.body || current === document.documentElement) return false
         const position = getComputedStyle(current).position
-        if (position && position !== 'static') return true
+        if (position === 'absolute' || position === 'fixed' || position === 'sticky') return true
       }
       return false
     }

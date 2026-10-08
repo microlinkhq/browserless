@@ -216,6 +216,23 @@ test('pointer rows in a layer or a pointer list are clickable; a lone pointer di
   t.false(clicks.includes('Not a suggestion'))
 })
 
+test('inherited pointer and a relative body do not split or invent rows', t => {
+  const { observe } = dom(
+    `<body style="position:relative">
+      <div style="cursor:pointer">Plain</div>
+      <div style="position:absolute">
+        <div style="cursor:pointer"><span style="cursor:pointer">Beijingbei</span><span style="cursor:pointer">beijingbei</span></div>
+      </div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.false(clicks.includes('Plain'))
+  t.false(clicks.includes('Beijingbei'))
+  t.true(clicks.some(label => label.includes('Beijingbei') && label.includes('beijingbei')))
+})
+
 test('custom pointer rows are capped at 40', t => {
   const items = Array.from(
     { length: 41 },
