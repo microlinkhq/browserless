@@ -26,8 +26,7 @@
   ],
   "dependencies": {
     "ai": "~7.0.128",
-    "debug-logfmt": "~1.4.15",
-    "zod": "^4.1.8"
+    "debug-logfmt": "~1.4.15"
   },
   "devDependencies": {
     "@ai-sdk/typesafe-ai": "~3.0.13",
@@ -54,9 +53,6 @@
   "ava": {
     "timeout": "30s",
     "workerThreads": false
-  },
-  "peerDependencies": {
-    "browserless": ">=13"
   },
   "publishConfig": {
     "access": "public"

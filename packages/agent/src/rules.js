@@ -82,7 +82,8 @@ const filledAttr = (field, written, path) => {
 }
 
 const fillField = (field, written, path) => {
-  if (Array.isArray(field) || (hasLocation(field) && !isNested(field))) return field
+  if (Array.isArray(field)) return field.map(alternative => fillField(alternative, written, path))
+  if (hasLocation(field) && !isNested(field)) return field
   const type = field.type ?? (isPlainObject(written) ? written.type : undefined)
   return {
     ...(hasLocation(field) ? pick(field, LOCATION_KEYS) : writtenLocation(written, path)),
@@ -287,11 +288,10 @@ const readingText = rule => {
 const readingTextByDefault = rules =>
   Object.fromEntries(Object.entries(rules).map(([name, rule]) => [name, readingText(rule)]))
 
-const hasEverySelector = rule => {
-  if (Array.isArray(rule)) return true
-  if (!hasLocation(rule)) return false
-  return !isNested(rule) || Object.values(rule.attr).every(hasEverySelector)
-}
+const hasEverySelector = rule =>
+  Array.isArray(rule)
+    ? rule.every(hasEverySelector)
+    : hasLocation(rule) && (!isNested(rule) || Object.values(rule.attr).every(hasEverySelector))
 
 const isComplete = rules => Object.values(rules).every(hasEverySelector)
 

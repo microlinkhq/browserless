@@ -818,6 +818,22 @@ test('a rule the caller wrote in full is kept exactly, alternatives included', a
   t.deepEqual(filled, { heading: alternatives, title: { selector: 'h1' } })
 })
 
+test('an alternative without a selector is filled by the model', async t => {
+  const models = mockModels([], {
+    rules: JSON.stringify({ title: { selector: 'h1', attr: 'text' } })
+  })
+  t.deepEqual(
+    await writtenRules(
+      new Page(),
+      'get the data',
+      { title: [{ type: 'string' }] },
+      { text: models.text }
+    ),
+    { title: [{ selector: 'h1', attr: 'text', type: 'string' }] }
+  )
+  t.is(models.calls.length, 1)
+})
+
 for (const [name, fields, written] of [
   ['omits a field', { price: { type: 'number' } }, { other: { selector: 'p', attr: 'text' } }],
   ['writes no selector', { price: {} }, { price: { attr: 'text' } }],

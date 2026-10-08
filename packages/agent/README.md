@@ -9,10 +9,10 @@ is the model's own judgment and runs are not fully reliable.
 
 ## Usage
 
-Requires Node.js >=24 and browserless >=13. After the package is published:
+Requires Node.js >=24. After the package is published:
 
 ```sh
-npm install @browserless/agent browserless puppeteer
+npm install @browserless/agent puppeteer
 export AI_GATEWAY_API_KEY=...
 ```
 
