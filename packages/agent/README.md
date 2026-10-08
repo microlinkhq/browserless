@@ -398,7 +398,8 @@ const page = agent(await browser.newPage(), {
 ```
 
 The decision model answers typed questions with `experimental_decide`, an AI SDK
-API that may still change. One request carries
+API that may still change. `ai` stays at 7.0.128: 7.0.133 wraps `state` before
+the model sees it. One request carries
 `state: { page, elements, recent_actions }` and one `choice` question for the
 operation plus one per operation that has targets. The AI SDK rejects answers
 that miss a question or pick an option that was not offered. This package then
