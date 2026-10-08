@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.1](https://github.com/microlinkhq/browserless/compare/v14.0.0...v14.0.1) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** hide the node map and stop when a field value is missing ([#962](https://github.com/microlinkhq/browserless/issues/962)) ([8b18674](https://github.com/microlinkhq/browserless/commit/8b186743962e540f58579614c86d22e1421e7518))
+
 ## [14.0.0](https://github.com/microlinkhq/browserless/compare/v13.16.4...v14.0.0) (2026-10-08)
 
 ### ⚠ BREAKING CHANGES
