@@ -262,6 +262,7 @@ module.exports = {
   execute,
   settle,
   settled,
+  waitForNavigation,
   pageChanged,
   targetFresh,
   selectContents
