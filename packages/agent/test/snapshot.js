@@ -191,6 +191,77 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('an in-flow icon control is named from the icon, not the row', t => {
+  const { observe } = dom(
+    `<body>
+      <h1>Repos</h1>
+      <div style="cursor:pointer"><svg id="star"><title>Star</title></svg></div>
+      <div style="cursor:pointer"><svg class="icon w-4 ruyi-icon-bell"></svg></div>
+      <div style="cursor:pointer"><svg aria-label="Pin"></svg></div>
+      <div hidden style="cursor:pointer"><svg><title>Hidden</title></svg></div>
+      <div aria-disabled="true" style="cursor:pointer"><svg><title>Disabled</title></svg></div>
+      <div style="cursor:pointer">Not an icon</div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.includes('Star'))
+  t.true(clicks.includes('bell'))
+  t.false(clicks.includes('icon'))
+  t.true(clicks.includes('Pin'))
+  t.false(clicks.includes('4'))
+  t.false(clicks.includes('Hidden'))
+  t.false(clicks.includes('Disabled'))
+  t.false(clicks.includes('Not an icon'))
+  t.false(clicks.includes('Repos'))
+})
+
+test('an icon inside an indexed control is not a second action', t => {
+  const { observe } = dom(
+    `<body>
+      <a href="/home"><span style="cursor:pointer"><svg><title>Star</title></svg></span> Home</a>
+      <div style="cursor:pointer"><svg><title>Gear</title></svg></div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.false(clicks.includes('Star'))
+  t.true(clicks.includes('Gear'))
+  t.true(clicks.some(label => label.includes('Home')))
+})
+
+test('an icon beside a button in a skipped gridcell is still offered', t => {
+  const { observe } = dom(
+    `<body>
+      <div role="gridcell">
+        <button type="button">Edit</button>
+        <span style="cursor:pointer"><svg><title>Star</title></svg></span>
+      </div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.includes('Edit'))
+  t.true(clicks.includes('Star'))
+})
+
+test('an icon inside a disabled control is not offered', t => {
+  const { observe } = dom(
+    `<body>
+      <button type="button" disabled><span style="cursor:pointer"><svg><title>Star</title></svg></span></button>
+      <div style="cursor:pointer"><svg><title>Gear</title></svg></div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.false(clicks.includes('Star'))
+  t.true(clicks.includes('Gear'))
+})
+
 test('an indeterminate checkbox is mixed, and clearing it fails freshness', t => {
   const { window, observe, fresh } = dom('<input id="all" type="checkbox" aria-label="All">')
   const box = window.document.getElementById('all')

@@ -403,6 +403,68 @@ module.exports = function snapshot () {
         value: ''
       })
     }
+    for (const action of actions) collected.add(cache.nodes.get(action.node))
+    const iconName = element => {
+      const own = element.getAttribute('aria-label') || element.getAttribute('title')
+      if (own) return own.trim()
+      const svg = element.querySelector('svg')
+      if (!svg) return ''
+      const fromSvg = name(svg).replace(/\s+/g, ' ').trim()
+      if (fromSvg) return fromSvg
+      if (svg.id) return svg.id
+      const token = [...svg.classList]
+        .filter(className => className.includes('icon') && className.split('-').pop() !== 'icon')
+        .sort((a, b) => b.length - a.length)[0]
+      return token ? token.split('-').pop() : ''
+    }
+    const icons = []
+    for (const element of queryAll('div,span')) {
+      if (collected.has(element) || getComputedStyle(element).cursor !== 'pointer') continue
+      if (!visible(element) || element.matches(':disabled')) continue
+      if (cache.closest(element, '[aria-disabled="true"]') || element.querySelector(selector)) {
+        continue
+      }
+      let insideIndexed = false
+      for (let current = flatParent(element); current; current = flatParent(current)) {
+        if (collected.has(current) || (current.matches(selector) && current.matches(':disabled'))) {
+          insideIndexed = true
+          break
+        }
+      }
+      if (insideIndexed) continue
+      const rect = element.getBoundingClientRect()
+      const x = rect.x + rect.width / 2
+      const y = rect.y + rect.height / 2
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        x < 0 ||
+        y < 0 ||
+        x >= innerWidth ||
+        y >= innerHeight
+      ) {
+        continue
+      }
+      const hit = cache.elementFromPoint(x, y)
+      if (hit && !cache.contains(element, hit)) continue
+      const label = iconName(element).slice(0, 120)
+      if (!label) continue
+      icons.push({ element, rect, label })
+    }
+    const leaves = icons.filter(
+      ({ element }) =>
+        !icons.some(other => other.element !== element && cache.contains(element, other.element))
+    )
+    for (const { element, rect, label } of leaves.slice(0, 40)) {
+      actions.push({
+        node: identity(element),
+        role: 'button',
+        label,
+        rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
+        kind: 'click',
+        value: ''
+      })
+    }
     const words = []
     const range = document.createRange()
     let length = 0
