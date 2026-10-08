@@ -257,6 +257,7 @@ module.exports = {
   execute,
   settle,
   settled,
+  untilIdle,
   pageChanged,
   targetFresh,
   selectContents
