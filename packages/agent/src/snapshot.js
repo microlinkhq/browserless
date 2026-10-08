@@ -57,10 +57,10 @@ module.exports = function snapshot () {
         if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue
         const hit = cache.elementFromPoint(x, y)
         if (hit && (cache.contains(element, hit) || (!!extra && cache.contains(extra, hit)))) {
-          return true
+          return { x, y }
         }
       }
-      return false
+      return null
     }
     // A wrapping inline link's box center can fall in the gap between line fragments.
     cache.hitPoint = element => {
