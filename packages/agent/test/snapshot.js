@@ -244,6 +244,20 @@ test('an icon beside a button in a skipped gridcell is still offered', t => {
   t.true(clicks.includes('Star'))
 })
 
+test('an icon inside a disabled control is not offered', t => {
+  const { observe } = dom(
+    `<body>
+      <button type="button" disabled><span style="cursor:pointer"><svg><title>Star</title></svg></span></button>
+      <div style="cursor:pointer"><svg><title>Gear</title></svg></div>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.false(clicks.includes('Star'))
+  t.true(clicks.includes('Gear'))
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'

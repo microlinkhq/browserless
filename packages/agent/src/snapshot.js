@@ -300,7 +300,7 @@ module.exports = function snapshot () {
       }
       let insideIndexed = false
       for (let current = flatParent(element); current; current = flatParent(current)) {
-        if (collected.has(current)) {
+        if (collected.has(current) || (current.matches(selector) && current.matches(':disabled'))) {
           insideIndexed = true
           break
         }
