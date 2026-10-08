@@ -48,6 +48,20 @@ module.exports = function snapshot () {
       }
       return hit
     }
+    cache.centerHits = (element, extra) => {
+      const boxes = [...element.getClientRects(), element.getBoundingClientRect()]
+      for (const rect of boxes) {
+        if (rect.width <= 0 || rect.height <= 0) continue
+        const x = rect.x + rect.width / 2
+        const y = rect.y + rect.height / 2
+        if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue
+        const hit = cache.elementFromPoint(x, y)
+        if (hit && (cache.contains(element, hit) || (!!extra && cache.contains(extra, hit)))) {
+          return { x, y }
+        }
+      }
+      return null
+    }
     // A wrapping inline link's box center can fall in the gap between line fragments.
     cache.hitPoint = element => {
       const boxes = [...element.getClientRects(), element.getBoundingClientRect()]
@@ -99,6 +113,17 @@ module.exports = function snapshot () {
         if (current.matches('[aria-hidden="true"],[inert]')) return false
       }
       return e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    }
+    const painted = element =>
+      !!element?.isConnected &&
+      !cache.closest(element, '[inert]') &&
+      element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    cache.toggleLabel = input => {
+      if (!['checkbox', 'radio'].includes(input?.type)) return null
+      return (
+        [...(input.labels || [])].find(label => painted(label) && cache.centerHits(label, input)) ||
+        null
+      )
     }
     const name = (e, seen = new Set()) => {
       if (!e || seen.has(e)) return ''
@@ -193,7 +218,7 @@ module.exports = function snapshot () {
     // A named form control shadows the form's own innerText property.
     const readInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText').get
     cache.guard = e => {
-      if (!e?.isConnected || !visibleNow(e)) return null
+      if (!e?.isConnected || (!visibleNow(e) && !cache.toggleLabel(e))) return null
       const scope =
         cache.closest(e, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') || flatParent(e)
       return [
@@ -295,6 +320,22 @@ module.exports = function snapshot () {
       }
     }
     const collected = new Set(actions.map(action => cache.nodes.get(action.node)))
+    for (const input of queryAll('input[type="checkbox"],input[type="radio"]')) {
+      if (collected.has(input) || !safe(input) || input.matches(':disabled')) continue
+      if (cache.closest(input, '[aria-disabled="true"]')) continue
+      const label = cache.toggleLabel(input)
+      if (!label) continue
+      const rect = label.getBoundingClientRect()
+      actions.push({
+        node: identity(input),
+        role: role(input),
+        label: name(input) || name(label) || role(input),
+        rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
+        kind: 'click',
+        checked: input.type === 'checkbox' && input.indeterminate ? 'mixed' : String(input.checked),
+        value: String(input.value)
+      })
+    }
     const listSelector = 'ul,ol,[role="list"],[role="listbox"],[role="menu"],[role="tablist"]'
     const pointer = element => {
       if (getComputedStyle(element).cursor !== 'pointer') return false

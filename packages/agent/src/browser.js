@@ -65,7 +65,7 @@ const targetFresh = (element, state, action, requirements = {}) => {
     return false
   }
   if (requirements.focused && cache.activeElement() !== element) return false
-  if (!cache.hitPoint(element)) return false
+  if (!cache.hitPoint(element) && !cache.toggleLabel(element)) return false
   if (
     action.kind === 'fill' &&
     (element.readOnly || element.getAttribute('aria-readonly') === 'true')
@@ -151,6 +151,13 @@ const settle = (page, action) =>
     .evaluate(settled, action, SETTLE_LIMITS)
     .catch(() => {})
 
+const clickLabelIfCovered = input => {
+  const cache = window.__browserlessAgent
+  const label = cache?.toggleLabel?.(input)
+  if (!label || cache.centerHits(input)) return null
+  return cache.centerHits(label, input)
+}
+
 const execute = async (page, state, action, text, waitMs) => {
   if (action.kind === 'wait') {
     await new Promise(resolve => setTimeout(resolve, waitMs))
@@ -192,7 +199,9 @@ const execute = async (page, state, action, text, waitMs) => {
     } else if (action.kind === 'select') {
       await element.select(action.value)
     } else if (action.kind === 'click') {
-      await element.click()
+      const point = await element.evaluate(clickLabelIfCovered)
+      if (point) await page.mouse.click(point.x, point.y)
+      else await element.click()
     } else throw new TypeError('Unknown observed action.')
   } catch (error) {
     if (TARGET_GONE.test(error.message)) throw new StaleDecisionError()
@@ -212,5 +221,6 @@ module.exports = {
   settled,
   pageChanged,
   targetFresh,
-  selectContents
+  selectContents,
+  clickLabelIfCovered
 }
