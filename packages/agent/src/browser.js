@@ -7,6 +7,8 @@ const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
 const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
+const BUSY_LIMIT_MS = 3000
+const BUSY_POLL_MS = 50
 const DOCUMENT_READY_LIMIT_MS = 3000
 const DOCUMENT_READY_POLL_MS = 50
 const OUTLINE_LIMITS = { characters: 60000, text: 80, attribute: 80, siblings: 3 }
@@ -159,10 +161,32 @@ const settled = (action, limits) =>
   })
 
 // Navigation can destroy the page context mid-wait; the next observation handles that.
-const settle = (page, action) =>
-  agentWorld(page)
+const untilIdle = (action, limitMs, pollMs) =>
+  new Promise(resolve => {
+    const started = Date.now()
+    const field = window.__browserlessAgent?.nodes.get(action.node)
+    const busy = () => {
+      if (field?.isConnected && field.matches(':disabled')) return true
+      if (document.querySelector('[aria-busy="true"]')) return true
+      return [...document.querySelectorAll('progress,[role="progressbar"]')].some(element =>
+        element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+      )
+    }
+    const poll = () => {
+      if (!busy() || Date.now() - started >= limitMs) resolve()
+      else setTimeout(poll, pollMs)
+    }
+    poll()
+  })
+
+const settle = async (page, action) => {
+  await agentWorld(page)
     .evaluate(settled, action, SETTLE_LIMITS)
     .catch(() => {})
+  await agentWorld(page)
+    .evaluate(untilIdle, action, BUSY_LIMIT_MS, BUSY_POLL_MS)
+    .catch(() => {})
+}
 
 const execute = async (page, state, action, text, waitMs) => {
   if (action.kind === 'wait') {

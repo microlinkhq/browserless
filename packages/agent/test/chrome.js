@@ -3,7 +3,7 @@
 const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
-const { observe, execute, settled, pageOutline, agentWorld } = require('../src/browser')
+const { observe, execute, settle, settled, pageOutline, agentWorld } = require('../src/browser')
 const { applyRules } = require('../src/rules')
 const { StaleDecisionError } = require('../src/errors')
 
@@ -251,6 +251,32 @@ test('submitting is discarded when the page moves focus to another control', asy
   )
   await t.throwsAsync(act(page, 'submit', 'Submit Search'), { instanceOf: StaleDecisionError })
   t.is(await page.evaluate(() => window.submissions), 0)
+})
+
+test('a control that disables itself is observed after it is enabled again', async t => {
+  const page = await open(
+    t,
+    `<button id="save" type="button">Save</button><p id="done" hidden>Saved</p>
+     <script>
+       document.getElementById('save').addEventListener('click', () => {
+         const button = document.getElementById('save')
+         button.disabled = true
+         setTimeout(() => {
+           button.disabled = false
+           document.getElementById('done').hidden = false
+         }, 400)
+       })
+     </script>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Save')
+  const started = Date.now()
+  await execute(page, state, action, undefined, 0)
+  await settle(page, action)
+  const next = await observe(page)
+  t.true(next.text.includes('Saved'))
+  t.true(Date.now() - started >= 350, `observed after ${Date.now() - started} ms`)
+  t.false(await page.$eval('#save', element => element.disabled))
 })
 
 test('a control covered by another element is not offered', async t => {
