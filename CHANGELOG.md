@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.2](https://github.com/microlinkhq/browserless/compare/v14.0.1...v14.0.2) (2026-10-08)
+
+### Performance Improvements
+
+* **agent:** skip off-screen subtrees when reading page text ([#963](https://github.com/microlinkhq/browserless/issues/963)) ([ec2ce8c](https://github.com/microlinkhq/browserless/commit/ec2ce8c915205892fd69dca38569c3de460efa69))
+
 ## [14.0.1](https://github.com/microlinkhq/browserless/compare/v14.0.0...v14.0.1) (2026-10-08)
 
 ### Bug Fixes
