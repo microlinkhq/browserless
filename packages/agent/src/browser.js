@@ -114,9 +114,8 @@ const settled = (action, limits) =>
       const roots = ids.length
         ? ids.map(id => field.getRootNode().getElementById(id)).filter(Boolean)
         : [document]
-      return roots
-        .flatMap(root => [...root.querySelectorAll('[role="option"]')])
-        .filter(option => {
+      const listed = root =>
+        [...root.querySelectorAll('[role="option"]')].filter(option => {
           const r = option.getBoundingClientRect()
           return (
             r.width > 0 &&
@@ -126,6 +125,9 @@ const settled = (action, limits) =>
             option.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
           )
         })
+      const owned = roots.flatMap(listed)
+      // Options can render outside an aria-controls root, including after that root already has an option.
+      return ids.length ? [...owned, ...listed(document)] : owned
     }
     // Options already on screen are not this field's new suggestions.
     const alreadyVisible = new Set(autocomplete ? visibleOptions() : [])
