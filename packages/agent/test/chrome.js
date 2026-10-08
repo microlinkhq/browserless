@@ -253,6 +253,21 @@ test('submitting is discarded when the page moves focus to another control', asy
   t.is(await page.evaluate(() => window.submissions), 0)
 })
 
+test('a static meter does not hold the next observation', async t => {
+  const page = await open(
+    t,
+    `<progress value="70" max="100"></progress>
+     <div aria-busy="true" hidden></div>
+     <button id="stay" type="button">Stay</button>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Stay')
+  const started = Date.now()
+  await execute(page, state, action, undefined, 0)
+  await settle(page, action)
+  t.true(Date.now() - started < 1000, `settled after ${Date.now() - started} ms`)
+})
+
 test('a control that disables itself is observed after it is enabled again', async t => {
   const page = await open(
     t,

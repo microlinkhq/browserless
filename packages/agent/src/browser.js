@@ -165,12 +165,23 @@ const untilIdle = (action, limitMs, pollMs) =>
   new Promise(resolve => {
     const started = Date.now()
     const field = window.__browserlessAgent?.nodes.get(action.node)
+    const roots = [document]
+    for (const root of roots) {
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot) roots.push(element.shadowRoot)
+      }
+    }
+    const all = selector => roots.flatMap(root => [...root.querySelectorAll(selector)])
+    const shown = element =>
+      element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
     const busy = () => {
       if (field?.isConnected && field.matches(':disabled')) return true
-      if (document.querySelector('[aria-busy="true"]')) return true
-      return [...document.querySelectorAll('progress,[role="progressbar"]')].some(element =>
-        element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
-      )
+      if (all('[aria-busy="true"]').some(shown)) return true
+      return all('progress,[role="progressbar"]').some(element => {
+        if (!shown(element)) return false
+        if (element.tagName === 'PROGRESS') return element.position < 0
+        return element.getAttribute('aria-valuenow') == null
+      })
     }
     const poll = () => {
       if (!busy() || Date.now() - started >= limitMs) resolve()
