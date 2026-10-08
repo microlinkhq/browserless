@@ -330,20 +330,21 @@ test('settling after typing finds suggestions outside an empty aria-controls roo
     t,
     '<input role="combobox" aria-label="City" aria-controls="empty"><span id="empty" role="listbox"></span><ul id="portal"></ul>'
   )
-  await agentWorld(page).evaluate(delay => {
-    const field = document.querySelector('[role="combobox"]')
-    const original = field.getAttribute.bind(field)
-    field.getAttribute = name => {
-      if (!field.dataset.revealArmed) {
-        field.dataset.revealArmed = '1'
-        setTimeout(() => {
-          document.getElementById('portal').innerHTML = '<li role="option">Zurich</li>'
-        }, delay)
+  const elapsed = await settleMs(page, 'fill', 'City', () =>
+    agentWorld(page).evaluate(delay => {
+      const field = document.querySelector('[role="combobox"]')
+      const original = field.getAttribute.bind(field)
+      field.getAttribute = name => {
+        if (!field.dataset.revealArmed) {
+          field.dataset.revealArmed = '1'
+          setTimeout(() => {
+            document.getElementById('portal').innerHTML = '<li role="option">Zurich</li>'
+          }, delay)
+        }
+        return original(name)
       }
-      return original(name)
-    }
-  }, SUGGESTION_DELAY_MS)
-  const elapsed = await settleMs(page, 'fill', 'City')
+    }, SUGGESTION_DELAY_MS)
+  )
   t.is(await page.$eval('#portal', list => list.textContent), 'Zurich')
   t.true(elapsed >= SUGGESTION_DELAY_MS - 40, `settled after ${elapsed} ms`)
   t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
