@@ -191,6 +191,18 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('an indeterminate checkbox is mixed, and clearing it fails freshness', t => {
+  const { window, observe, fresh } = dom('<input id="all" type="checkbox" aria-label="All">')
+  const box = window.document.getElementById('all')
+  box.indeterminate = true
+  const current = observe()
+  const action = current.actions.find(item => item.label === 'All')
+  t.is(action.checked, 'mixed')
+  t.true(fresh(box, current, action))
+  box.indeterminate = false
+  t.false(fresh(box, current, action))
+})
+
 test('aria-pressed is reported, and changing it fails freshness', t => {
   const { window, observe, fresh } = dom(
     '<button id="nonstop" aria-pressed="false">Nonstop only</button>'

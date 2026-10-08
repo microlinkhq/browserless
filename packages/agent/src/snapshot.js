@@ -189,6 +189,7 @@ module.exports = function snapshot () {
         name(e),
         e.value ?? null,
         e.checked ?? null,
+        e.indeterminate === true,
         e.selectedIndex ?? null,
         e.readOnly ?? null,
         e.matches(':disabled'),
@@ -259,7 +260,9 @@ module.exports = function snapshot () {
         const value = e.getAttribute('aria-' + key)
         if (value !== null) base[key] = value
       }
-      if (['checkbox', 'radio'].includes(e.type)) base.checked = String(e.checked)
+      if (['checkbox', 'radio'].includes(e.type)) {
+        base.checked = e.type === 'checkbox' && e.indeterminate ? 'mixed' : String(e.checked)
+      }
       if (e.tagName === 'SELECT') {
         for (const o of e.options) {
           if (!o.selected && !o.disabled && !o.closest('optgroup[disabled]')) {
