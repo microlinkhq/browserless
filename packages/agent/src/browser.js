@@ -1,4 +1,4 @@
-/* global location, innerWidth, innerHeight, getSelection, requestAnimationFrame */
+/* global location, innerHeight, getSelection, requestAnimationFrame */
 'use strict'
 
 const snapshot = require('./snapshot')
@@ -65,20 +65,7 @@ const targetFresh = (element, state, action, requirements = {}) => {
     return false
   }
   if (requirements.focused && cache.activeElement() !== element) return false
-  const r = element.getBoundingClientRect()
-  const x = r.x + r.width / 2
-  const y = r.y + r.height / 2
-  if (
-    !r.width ||
-    !r.height ||
-    x < 0 ||
-    y < 0 ||
-    x >= innerWidth ||
-    y >= innerHeight ||
-    !cache.contains(element, cache.elementFromPoint(x, y))
-  ) {
-    return false
-  }
+  if (!cache.hitPoint(element)) return false
   if (
     action.kind === 'fill' &&
     (element.readOnly || element.getAttribute('aria-readonly') === 'true')

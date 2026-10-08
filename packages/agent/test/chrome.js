@@ -299,6 +299,53 @@ test('submitting is discarded when the page moves focus to another control', asy
   t.is(await page.evaluate(() => window.submissions), 0)
 })
 
+const WRAPPING_LINK = `<style>
+  body { margin: 0; }
+  p { width: 140px; margin: 8px; font: 16px/20px sans-serif; }
+</style>
+<p><a id="link" href="#done">alpha bravo charlie delta echo foxtrot</a></p>`
+
+test('a wrapping link stays clickable when its box center misses the text', async t => {
+  const page = await open(t, WRAPPING_LINK)
+  const geometry = await page.evaluate(() => {
+    const link = document.getElementById('link')
+    const box = link.getBoundingClientRect()
+    const center = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)
+    const fragments = [...link.getClientRects()].map(rect => {
+      const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+      return hit === link || link.contains(hit)
+    })
+    return {
+      rects: link.getClientRects().length,
+      centerMisses: center !== link && !link.contains(center),
+      fragmentHits: fragments.some(Boolean)
+    }
+  })
+  t.deepEqual(geometry, { rects: geometry.rects, centerMisses: true, fragmentHits: true })
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label.includes('alpha'))
+  t.truthy(action)
+  await page.evaluate(() => {
+    window.clicked = 0
+    document.getElementById('link').addEventListener('click', event => {
+      event.preventDefault()
+      window.clicked++
+    })
+  })
+  await execute(page, state, action, undefined, 0)
+  t.is(await page.evaluate(() => window.clicked), 1)
+  await page.evaluate(() => {
+    const cover = document.createElement('div')
+    cover.style.cssText = 'position:fixed;inset:0'
+    document.body.append(cover)
+  })
+  t.false(
+    (await observe(page)).actions.some(
+      item => item.kind === 'click' && item.label.includes('alpha')
+    )
+  )
+})
+
 test('a control covered by another element is not offered', async t => {
   const page = await open(
     t,
