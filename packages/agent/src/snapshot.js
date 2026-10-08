@@ -48,6 +48,19 @@ module.exports = function snapshot () {
       }
       return hit
     }
+    // A wrapping inline link's box center can fall in the gap between line fragments.
+    cache.hitPoint = element => {
+      const boxes = [...element.getClientRects(), element.getBoundingClientRect()]
+      for (const rect of boxes) {
+        if (rect.width <= 0 || rect.height <= 0) continue
+        const x = rect.x + rect.width / 2
+        const y = rect.y + rect.height / 2
+        if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue
+        const hit = cache.elementFromPoint(x, y)
+        if (!hit || cache.contains(element, hit)) return { x, y }
+      }
+      return null
+    }
     cache.activeElement = () => {
       let active = document.activeElement
       while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement
@@ -219,23 +232,9 @@ module.exports = function snapshot () {
         continue
       }
       const r = e.getBoundingClientRect()
-      const x = r.x + r.width / 2
-      const y = r.y + r.height / 2
       const rname = role(e)
-      if (
-        !rname ||
-        r.width <= 0 ||
-        r.height <= 0 ||
-        x < 0 ||
-        y < 0 ||
-        x >= innerWidth ||
-        y >= innerHeight
-      ) {
-        continue
-      }
-      if (rname === 'gridcell' && e.querySelector('button,[role="button"]')) continue
-      const hit = cache.elementFromPoint(x, y)
-      if (hit && !cache.contains(e, hit)) continue
+      if (!rname || (rname === 'gridcell' && e.querySelector('button,[role="button"]'))) continue
+      if (!cache.hitPoint(e)) continue
       const base = {
         node: identity(e),
         role: rname,
