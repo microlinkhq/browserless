@@ -2,6 +2,7 @@
 
 const {
   experimental_decide: decideWithModel,
+  gateway,
   generateText,
   Output,
   jsonSchema,
@@ -206,6 +207,26 @@ const callMetrics = (kind, result, ms) => {
   }
 }
 
+// ai 7.0.133 wraps a plain state as [{ type: 'json', value }] before doDecide.
+// Hand the model the object this package built.
+const plainDecisionState = state => {
+  const part = Array.isArray(state) && state.length === 1 ? state[0] : undefined
+  return part?.type === 'json' ? part.value : state
+}
+
+const withPlainDecisionState = model => {
+  const provider = globalThis.AI_SDK_DEFAULT_PROVIDER ?? gateway
+  const resolved =
+    typeof model === 'string'
+      ? (provider.decisionModel ?? provider.evaluationModel).call(provider, model)
+      : model
+  return Object.create(resolved, {
+    doDecide: {
+      value: options => resolved.doDecide({ ...options, state: plainDecisionState(options.state) })
+    }
+  })
+}
+
 const metered = async (options, kind, call) => {
   const started = performance.now()
   const result = await call()
@@ -217,7 +238,12 @@ const decide = async (state, goal, history, model, options) => {
   const { space, operations, request } = buildRequest(state, goal, history)
   const { answers, rounding } = await withinTimeout(options, abortSignal =>
     metered(options, 'decision', () =>
-      decideWithModel({ model, ...request, maxRetries: MAX_RETRIES, abortSignal })
+      decideWithModel({
+        model: withPlainDecisionState(model),
+        ...request,
+        maxRetries: MAX_RETRIES,
+        abortSignal
+      })
     )
   )
   const answer = validateChoice(answers?.operation, Object.keys(operations), rounding)
@@ -393,7 +419,12 @@ const evaluationRequest = (state, goal, history) =>
 const evaluateGoal = async (request, model, options) => {
   const { answers, rounding } = await withinTimeout(options, abortSignal =>
     metered(options, 'evaluation', () =>
-      decideWithModel({ model, ...request, maxRetries: MAX_RETRIES, abortSignal })
+      decideWithModel({
+        model: withPlainDecisionState(model),
+        ...request,
+        maxRetries: MAX_RETRIES,
+        abortSignal
+      })
     )
   )
   const { choice, probabilities } = validateChoice(
@@ -407,6 +438,7 @@ const evaluateGoal = async (request, model, options) => {
 
 module.exports = {
   REASONING_LEVELS,
+  withPlainDecisionState,
   evaluateGoal,
   evaluationRequest,
   writeRules,

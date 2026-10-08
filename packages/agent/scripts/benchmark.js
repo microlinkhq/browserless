@@ -3,7 +3,7 @@
 const { experimental_decide: decide } = require('ai')
 const { createTypeSafeAi } = require('@ai-sdk/typesafe-ai')
 
-const { askLanguageModel } = require('../src/model')
+const { askLanguageModel, withPlainDecisionState } = require('../src/model')
 const agent = require('..')
 
 const DEFAULT_URL = 'https://wallapop.com'
@@ -55,7 +55,11 @@ const recordingDecisionModel = (model, recorded) => {
 const targetQuestion = operation => `${operation.toLowerCase()}_target`
 
 const jevChoice = async (model, request) => {
-  const { answers } = await decide({ model, ...request, maxRetries: 0 })
+  const { answers } = await decide({
+    model: withPlainDecisionState(model),
+    ...request,
+    maxRetries: 0
+  })
   const operation = answers.operation.choice
   return { operation, target: answers[targetQuestion(operation)]?.choice ?? null }
 }
