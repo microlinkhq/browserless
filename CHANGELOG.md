@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.10](https://github.com/microlinkhq/browserless/compare/v14.0.9...v14.0.10) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** hit-test each line of a wrapping link ([#974](https://github.com/microlinkhq/browserless/issues/974)) ([196566f](https://github.com/microlinkhq/browserless/commit/196566f3e3f2dc8a22947cb0d552bc7a1620904c))
+* **agent:** offer a transparent checkbox through its visible label ([#975](https://github.com/microlinkhq/browserless/issues/975)) ([1637c72](https://github.com/microlinkhq/browserless/commit/1637c72f723aac9f2486340b79c11823288d594a))
+
 ## [14.0.9](https://github.com/microlinkhq/browserless/compare/v14.0.8...v14.0.9) (2026-10-08)
 
 ### Bug Fixes
