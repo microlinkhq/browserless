@@ -179,13 +179,17 @@ const waitForNavigation = (action, limitMs, pollMs) =>
     } catch {
       return resolve()
     }
-    if ((next.protocol !== 'http:' && next.protocol !== 'https:') || next.href === location.href) {
+    const documentKey = value => `${value.origin}${value.pathname}${value.search}`
+    if (
+      (next.protocol !== 'http:' && next.protocol !== 'https:') ||
+      documentKey(next) === documentKey(location)
+    ) {
       return resolve()
     }
-    const origin = location.href
+    const origin = documentKey(location)
     const started = Date.now()
     const poll = () => {
-      if (location.href !== origin || Date.now() - started >= limitMs) resolve()
+      if (documentKey(location) !== origin || Date.now() - started >= limitMs) resolve()
       else setTimeout(poll, pollMs)
     }
     poll()
