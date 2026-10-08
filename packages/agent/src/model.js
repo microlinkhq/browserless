@@ -18,6 +18,7 @@ const {
   RULES_WRITER,
   GOAL_EVALUATION
 } = require('./questions')
+const { BlockedError } = require('./errors')
 
 const PROBABILITY_SUM_TOLERANCE = 0.02
 const WINNER_TOLERANCE = 1e-6
@@ -33,7 +34,7 @@ const TEXT_HISTORY_LENGTH = 6
 
 const FIELD_VALUE_SCHEMA = jsonSchema({
   type: 'object',
-  properties: { text: { type: 'string' } },
+  properties: { text: { type: ['string', 'null'] } },
   required: ['text'],
   additionalProperties: false
 })
@@ -359,6 +360,9 @@ const fieldText = async (goal, action, state, history, model, options) => {
       'text'
     )
   )
+  if (output?.text === null) {
+    throw new BlockedError('model_blocked', 'The goal does not say what to type in this field.')
+  }
   if (!isFieldValue(output)) throw invalidFieldValue()
   return output.text
 }

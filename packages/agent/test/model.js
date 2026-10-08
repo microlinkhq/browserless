@@ -9,6 +9,7 @@ const {
   decideWithLanguageModel,
   fieldText
 } = require('../src/model')
+const { BlockedError } = require('../src/errors')
 const { APICallError } = require('ai')
 const { state, answer, decisionModel, textModel, mockModels } = require('./fixtures/page')
 
@@ -184,9 +185,16 @@ test('a decision request that outlives the timeout is aborted', async t => {
   })
 })
 
+test('a missing field value stops as model_blocked', async t => {
+  const error = await t.throwsAsync(
+    fieldText('cars', state().actions[0], state(), [], textModel('{"text":null}'), REQUEST),
+    { instanceOf: BlockedError }
+  )
+  t.is(error.reason, 'model_blocked')
+})
+
 for (const content of [
   '{}',
-  '{"text":null}',
   '{"text":""}',
   '{"text":"x","code":"click()"}',
   '["x"]',

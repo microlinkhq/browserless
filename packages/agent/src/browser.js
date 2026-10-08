@@ -21,11 +21,20 @@ const TARGET_GONE = new RegExp(
   `${NAVIGATING.source}|Node is detached from document|not clickable or not an Element`
 )
 
+// Puppeteer's isolated world shares the DOM and hides its window from page scripts.
+const agentWorld = page => {
+  const frame = typeof page.mainFrame === 'function' ? page.mainFrame() : undefined
+  const isolated = typeof frame?.isolatedRealm === 'function' ? frame.isolatedRealm() : undefined
+  return typeof isolated?.evaluate === 'function' ? isolated : page
+}
+
 const snapshotUnlessNavigating = page =>
-  page.evaluate(snapshot).catch(error => {
-    if (NAVIGATING.test(error.message)) return null
-    throw error
-  })
+  agentWorld(page)
+    .evaluate(snapshot)
+    .catch(error => {
+      if (NAVIGATING.test(error.message)) return null
+      throw error
+    })
 
 const observe = async page => {
   const deadline = Date.now() + DOCUMENT_READY_LIMIT_MS
@@ -111,7 +120,7 @@ const settled = (action, limits) =>
   new Promise(resolve => {
     const field = window.__browserlessAgent?.nodes.get(action.node)
     const autocomplete = action.kind === 'fill' && field?.getAttribute('role') === 'combobox'
-    const suggestionVisible = () => {
+    const visibleOptions = () => {
       const ids = (field.getAttribute('aria-controls') || field.getAttribute('aria-owns') || '')
         .split(/\s+/)
         .filter(Boolean)
@@ -120,7 +129,7 @@ const settled = (action, limits) =>
         : [document]
       return roots
         .flatMap(root => [...root.querySelectorAll('[role="option"]')])
-        .some(option => {
+        .filter(option => {
           const r = option.getBoundingClientRect()
           return (
             r.width > 0 &&
@@ -131,6 +140,9 @@ const settled = (action, limits) =>
           )
         })
     }
+    // Options already on screen are not this field's new suggestions.
+    const alreadyVisible = new Set(autocomplete ? visibleOptions() : [])
+    const suggestionVisible = () => visibleOptions().some(option => !alreadyVisible.has(option))
     let frames = 0
     let finished = false
     const finish = () => {
@@ -147,7 +159,10 @@ const settled = (action, limits) =>
   })
 
 // Navigation can destroy the page context mid-wait; the next observation handles that.
-const settle = (page, action) => page.evaluate(settled, action, SETTLE_LIMITS).catch(() => {})
+const settle = (page, action) =>
+  agentWorld(page)
+    .evaluate(settled, action, SETTLE_LIMITS)
+    .catch(() => {})
 
 const execute = async (page, state, action, text, waitMs) => {
   if (action.kind === 'wait') {
@@ -162,7 +177,7 @@ const execute = async (page, state, action, text, waitMs) => {
   }
   let handle
   try {
-    handle = await page.evaluateHandle(
+    handle = await agentWorld(page).evaluateHandle(
       node => window.__browserlessAgent?.nodes.get(node) || null,
       action.node
     )
@@ -200,6 +215,7 @@ const execute = async (page, state, action, text, waitMs) => {
 }
 
 module.exports = {
+  agentWorld,
   readStableOutline,
   pageOutline,
   observe,
