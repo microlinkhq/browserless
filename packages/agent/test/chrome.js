@@ -238,10 +238,15 @@ const SEARCH_FORM = `<form><input aria-label="Search" value="bmw x3"></form><inp
   })
 </script>`
 
-test('an svg link still observes when its scope is not an html element', async t => {
-  const page = await open(t, '<svg role="row"><a href="/x"><text>Go</text></a></svg>')
+test('an svg scope still observes an html control inside it', async t => {
+  const page = await open(
+    t,
+    '<svg role="row" width="80" height="40"><foreignObject width="80" height="40"><button>Go</button></foreignObject></svg>'
+  )
   const state = await observe(page)
-  t.true(Array.isArray(state.actions))
+  const action = state.actions.find(item => item.label === 'Go')
+  t.truthy(action)
+  t.true(Array.isArray(state.guards[action.node]))
 })
 
 test('a form field named innerText still observes, and a visible text change is stale', async t => {
