@@ -1,4 +1,4 @@
-/* global location, innerWidth, innerHeight, getSelection, requestAnimationFrame */
+/* global location, innerHeight, getSelection, requestAnimationFrame */
 'use strict'
 
 const snapshot = require('./snapshot')
@@ -65,18 +65,7 @@ const targetFresh = (element, state, action, requirements = {}) => {
     return false
   }
   if (requirements.focused && cache.activeElement() !== element) return false
-  const rect = element.getBoundingClientRect()
-  const x = rect.x + rect.width / 2
-  const y = rect.y + rect.height / 2
-  const ownHit =
-    rect.width &&
-    rect.height &&
-    x >= 0 &&
-    y >= 0 &&
-    x < innerWidth &&
-    y < innerHeight &&
-    cache.contains(element, cache.elementFromPoint(x, y))
-  if (!ownHit && !cache.toggleLabel(element)) return false
+  if (!cache.hitPoint(element) && !cache.toggleLabel(element)) return false
   if (
     action.kind === 'fill' &&
     (element.readOnly || element.getAttribute('aria-readonly') === 'true')
@@ -203,7 +192,8 @@ const execute = async (page, state, action, text, waitMs) => {
       await focusForKeyboard()
       await element.evaluate(selectContents)
       await assertFresh(KEYBOARD_TARGET)
-      await page.keyboard.sendCharacter(text)
+      if (text) await page.keyboard.sendCharacter(text)
+      else await page.keyboard.press('Backspace')
     } else if (action.kind === 'submit') {
       await focusForKeyboard()
       await page.keyboard.press('Enter')

@@ -1,4 +1,4 @@
-/* global location, scrollX, scrollY, innerWidth, innerHeight */
+/* global HTMLElement, getComputedStyle, location, scrollX, scrollY, innerWidth, innerHeight */
 // Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See README.md.
 module.exports = function snapshot () {
   return (() => {
@@ -58,6 +58,19 @@ module.exports = function snapshot () {
       const hit = cache.elementFromPoint(x, y)
       return !!hit && (cache.contains(element, hit) || (!!extra && cache.contains(extra, hit)))
     }
+    // A wrapping inline link's box center can fall in the gap between line fragments.
+    cache.hitPoint = element => {
+      const boxes = [...element.getClientRects(), element.getBoundingClientRect()]
+      for (const rect of boxes) {
+        if (rect.width <= 0 || rect.height <= 0) continue
+        const x = rect.x + rect.width / 2
+        const y = rect.y + rect.height / 2
+        if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue
+        const hit = cache.elementFromPoint(x, y)
+        if (!hit || cache.contains(element, hit)) return { x, y }
+      }
+      return null
+    }
     cache.activeElement = () => {
       let active = document.activeElement
       while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement
@@ -111,11 +124,19 @@ module.exports = function snapshot () {
     const name = (e, seen = new Set()) => {
       if (!e || seen.has(e)) return ''
       seen.add(e)
-      const referenced = (e.getAttribute('aria-labelledby') || '')
-        .split(/\s+/)
-        .map(id => name(e.getRootNode().getElementById(id), seen))
-        .filter(Boolean)
-        .join(' ')
+      return named(e, seen, false)
+    }
+    const named = (e, seen, skipLabelledBy) => {
+      const referenced = skipLabelledBy
+        ? ''
+        : (e.getAttribute('aria-labelledby') || '')
+            .split(/\s+/)
+            .map(id => {
+              const target = e.getRootNode().getElementById(id)
+              return target === e ? named(e, seen, true) : name(target, seen)
+            })
+            .filter(Boolean)
+            .join(' ')
       return (
         referenced ||
         e.getAttribute('aria-label') ||
@@ -123,9 +144,9 @@ module.exports = function snapshot () {
           .map(l => name(l, seen))
           .filter(Boolean)
           .join(' ') ||
-        (['button', 'submit', 'reset'].includes(e.type) ? e.value : '') ||
+        (e.tagName === 'INPUT' && ['button', 'submit', 'reset'].includes(e.type) ? e.value : '') ||
         e.getAttribute('alt') ||
-        (e.tagName === 'INPUT'
+        (e.tagName === 'INPUT' || e.tagName === 'SELECT'
           ? ''
           : flatChildren(e)
             .map(n =>
@@ -190,6 +211,8 @@ module.exports = function snapshot () {
         .filter(safe)
         .map(e => [identity(e), e.value, e.checked, e.selectedIndex, e.disabled, e.readOnly])
     ]
+    // A named form control shadows the form's own innerText property.
+    const readInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText').get
     cache.guard = e => {
       if (!e?.isConnected || (!visibleNow(e) && !cache.toggleLabel(e))) return null
       const scope =
@@ -200,6 +223,7 @@ module.exports = function snapshot () {
         name(e),
         e.value ?? null,
         e.checked ?? null,
+        e.indeterminate === true,
         e.selectedIndex ?? null,
         e.readOnly ?? null,
         e.matches(':disabled'),
@@ -207,6 +231,7 @@ module.exports = function snapshot () {
         e.getAttribute('aria-expanded'),
         e.getAttribute('aria-checked'),
         e.getAttribute('aria-selected'),
+        e.getAttribute('aria-pressed'),
         e.tagName === 'SELECT'
           ? [...e.options].map(o => [
               o.value,
@@ -216,7 +241,9 @@ module.exports = function snapshot () {
             ])
           : null,
         e.getAttribute('href'),
-        scope?.innerText?.slice(0, 6000) || '',
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 6000)
+          : scope?.textContent?.slice(0, 6000)) || '',
         [...(cache.closest(e, 'form')?.querySelectorAll('input,textarea,select') || [])]
           .filter(safe)
           .map(field => [
@@ -240,34 +267,22 @@ module.exports = function snapshot () {
         continue
       }
       const r = e.getBoundingClientRect()
-      const x = r.x + r.width / 2
-      const y = r.y + r.height / 2
       const rname = role(e)
-      if (
-        !rname ||
-        r.width <= 0 ||
-        r.height <= 0 ||
-        x < 0 ||
-        y < 0 ||
-        x >= innerWidth ||
-        y >= innerHeight
-      ) {
-        continue
-      }
-      if (rname === 'gridcell' && e.querySelector('button,[role="button"]')) continue
-      const hit = cache.elementFromPoint(x, y)
-      if (hit && !cache.contains(e, hit)) continue
+      if (!rname || (rname === 'gridcell' && e.querySelector('button,[role="button"]'))) continue
+      if (!cache.hitPoint(e)) continue
       const base = {
         node: identity(e),
         role: rname,
         label: name(e) || rname,
         rect: { x: r.x, y: r.y, w: r.width, h: r.height }
       }
-      for (const key of ['checked', 'selected', 'expanded']) {
+      for (const key of ['checked', 'selected', 'expanded', 'pressed']) {
         const value = e.getAttribute('aria-' + key)
         if (value !== null) base[key] = value
       }
-      if (['checkbox', 'radio'].includes(e.type)) base.checked = String(e.checked)
+      if (['checkbox', 'radio'].includes(e.type)) {
+        base.checked = e.type === 'checkbox' && e.indeterminate ? 'mixed' : String(e.checked)
+      }
       if (e.tagName === 'SELECT') {
         for (const o of e.options) {
           if (!o.selected && !o.disabled && !o.closest('optgroup[disabled]')) {
@@ -315,6 +330,73 @@ module.exports = function snapshot () {
         kind: 'click',
         checked: String(input.checked),
         value: String(input.value)
+      })
+    }
+    const listSelector = 'ul,ol,[role="list"],[role="listbox"],[role="menu"],[role="tablist"]'
+    const pointer = element => {
+      if (getComputedStyle(element).cursor !== 'pointer') return false
+      const parent = flatParent(element)
+      if (!parent || getComputedStyle(parent).cursor !== 'pointer') return true
+      return parent.matches(listSelector)
+    }
+    const inLayer = element => {
+      for (let current = element; current; current = flatParent(current)) {
+        if (current === document.body || current === document.documentElement) return false
+        const position = getComputedStyle(current).position
+        if (position === 'absolute' || position === 'fixed' || position === 'sticky') return true
+      }
+      return false
+    }
+    const pointerLists = new WeakMap()
+    const inPointerList = element => {
+      const parent = flatParent(element)
+      if (!parent?.matches(listSelector)) return false
+      let eligible = pointerLists.get(parent)
+      if (eligible == null) {
+        eligible = [...parent.children].filter(pointer).length >= 2
+        pointerLists.set(parent, eligible)
+      }
+      return eligible
+    }
+    const candidates = []
+    for (const element of queryAll('li,div,span,td,dd,p')) {
+      if (collected.has(element) || !visible(element) || !pointer(element)) continue
+      if (element.matches(':disabled') || cache.closest(element, '[aria-disabled="true"]')) continue
+      if (element.querySelector(selector)) continue
+      const rect = element.getBoundingClientRect()
+      const x = rect.x + rect.width / 2
+      const y = rect.y + rect.height / 2
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        x < 0 ||
+        y < 0 ||
+        x >= innerWidth ||
+        y >= innerHeight
+      ) {
+        continue
+      }
+      const hit = cache.elementFromPoint(x, y)
+      if (hit && !cache.contains(element, hit)) continue
+      if (!inLayer(element) && !inPointerList(element)) continue
+      const label = (name(element) || '').replace(/\s+/g, ' ').trim().slice(0, 120)
+      if (!label) continue
+      candidates.push({ element, rect, label })
+    }
+    const rows = candidates.filter(
+      ({ element }) =>
+        !candidates.some(
+          other => other.element !== element && cache.contains(element, other.element)
+        )
+    )
+    for (const { element, rect, label } of rows.slice(0, 40)) {
+      actions.push({
+        node: identity(element),
+        role: 'button',
+        label,
+        rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
+        kind: 'click',
+        value: ''
       })
     }
     const words = []
@@ -388,8 +470,18 @@ module.exports = function snapshot () {
     const height = document.documentElement.scrollHeight
     const pageKey = cache.pageKey()
     const guards = {}
+    const scopes = {}
     for (const a of actions) {
-      if (!(a.node in guards)) guards[a.node] = cache.guard(cache.nodes.get(a.node))
+      if (a.node in guards) continue
+      const element = cache.nodes.get(a.node)
+      guards[a.node] = cache.guard(element)
+      const scope =
+        cache.closest(element, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') ||
+        flatParent(element)
+      scopes[a.node] =
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 1000)
+          : scope?.textContent?.slice(0, 1000)) || ''
     }
     // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
     const semantics = actions.map(({ rect, ...action }) => action)
@@ -429,6 +521,7 @@ module.exports = function snapshot () {
       marker,
       pageKey,
       guards,
+      scopes,
       omittedActions
     }
   })()
