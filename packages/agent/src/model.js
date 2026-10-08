@@ -100,6 +100,7 @@ const actionSpace = actions => {
         checked: action.checked,
         selected: action.selected,
         expanded: action.expanded,
+        pressed: action.pressed,
         operations: [],
         options: []
       })
@@ -157,7 +158,8 @@ const buildRequest = (state, goal, history) => {
             role: a.role,
             checked: a.checked,
             selected: a.selected,
-            expanded: a.expanded
+            expanded: a.expanded,
+            pressed: a.pressed
           }
         ])
       ),

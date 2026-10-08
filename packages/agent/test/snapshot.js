@@ -191,6 +191,22 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('aria-pressed is reported, and changing it fails freshness', t => {
+  const { window, observe, fresh } = dom(
+    '<button id="nonstop" aria-pressed="false">Nonstop only</button>'
+  )
+  const current = observe()
+  const action = current.actions.find(item => item.label === 'Nonstop only')
+  const button = window.document.getElementById('nonstop')
+  t.is(action.pressed, 'false')
+  t.true(fresh(button, current, action))
+  button.setAttribute('aria-pressed', 'true')
+  t.false(fresh(button, current, action))
+  const next = observe()
+  t.is(next.actions.find(item => item.label === 'Nonstop only').pressed, 'true')
+  t.not(JSON.stringify(current.marker), JSON.stringify(next.marker))
+})
+
 test('a self reference in aria-labelledby keeps the element text', t => {
   const { observe } = dom(
     `<body>

@@ -196,6 +196,7 @@ module.exports = function snapshot () {
         e.getAttribute('aria-expanded'),
         e.getAttribute('aria-checked'),
         e.getAttribute('aria-selected'),
+        e.getAttribute('aria-pressed'),
         e.tagName === 'SELECT'
           ? [...e.options].map(o => [
               o.value,
@@ -254,7 +255,7 @@ module.exports = function snapshot () {
         label: name(e) || rname,
         rect: { x: r.x, y: r.y, w: r.width, h: r.height }
       }
-      for (const key of ['checked', 'selected', 'expanded']) {
+      for (const key of ['checked', 'selected', 'expanded', 'pressed']) {
         const value = e.getAttribute('aria-' + key)
         if (value !== null) base[key] = value
       }
