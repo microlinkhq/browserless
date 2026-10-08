@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.11](https://github.com/microlinkhq/browserless/compare/v14.0.10...v14.0.11) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** index in-flow icon controls that have no accessible name ([#976](https://github.com/microlinkhq/browserless/issues/976)) ([dcf45ee](https://github.com/microlinkhq/browserless/commit/dcf45ee319c4dc8c0831a214c03043cc41351a47))
+
 ## [14.0.10](https://github.com/microlinkhq/browserless/compare/v14.0.9...v14.0.10) (2026-10-08)
 
 ### Bug Fixes
