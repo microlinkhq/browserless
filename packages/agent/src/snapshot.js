@@ -197,7 +197,9 @@ module.exports = function snapshot () {
             ])
           : null,
         e.getAttribute('href'),
-        (scope && readInnerText.call(scope).slice(0, 6000)) || '',
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 6000)
+          : scope?.textContent?.slice(0, 6000)) || '',
         [...(cache.closest(e, 'form')?.querySelectorAll('input,textarea,select') || [])]
           .filter(safe)
           .map(field => [
