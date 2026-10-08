@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.9](https://github.com/microlinkhq/browserless/compare/v14.0.8...v14.0.9) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** let the text helper clear a field with an empty string ([#973](https://github.com/microlinkhq/browserless/issues/973)) ([1c6dcfe](https://github.com/microlinkhq/browserless/commit/1c6dcfec443b908440070af82d6fa07901ab2aee))
+* **agent:** report an indeterminate checkbox as mixed ([#972](https://github.com/microlinkhq/browserless/issues/972)) ([0765c3d](https://github.com/microlinkhq/browserless/commit/0765c3d4a79152e859d8c86bdffaf80da205b1e8))
+
 ## [14.0.8](https://github.com/microlinkhq/browserless/compare/v14.0.7...v14.0.8) (2026-10-08)
 
 ### Bug Fixes
