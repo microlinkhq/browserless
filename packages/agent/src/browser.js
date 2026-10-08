@@ -1,4 +1,4 @@
-/* global location, innerWidth, innerHeight, getSelection, requestAnimationFrame */
+/* global location, innerHeight, getSelection, requestAnimationFrame */
 'use strict'
 
 const snapshot = require('./snapshot')
@@ -9,6 +9,8 @@ const KEYBOARD_TARGET = { focused: true }
 const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
 const NAVIGATION_LIMIT_MS = 1500
 const NAVIGATION_POLL_MS = 50
+const BUSY_LIMIT_MS = 3000
+const BUSY_POLL_MS = 50
 const DOCUMENT_READY_LIMIT_MS = 3000
 const DOCUMENT_READY_POLL_MS = 50
 const OUTLINE_LIMITS = { characters: 60000, text: 80, attribute: 80, siblings: 3 }
@@ -67,20 +69,7 @@ const targetFresh = (element, state, action, requirements = {}) => {
     return false
   }
   if (requirements.focused && cache.activeElement() !== element) return false
-  const r = element.getBoundingClientRect()
-  const x = r.x + r.width / 2
-  const y = r.y + r.height / 2
-  if (
-    !r.width ||
-    !r.height ||
-    x < 0 ||
-    y < 0 ||
-    x >= innerWidth ||
-    y >= innerHeight ||
-    !cache.contains(element, cache.elementFromPoint(x, y))
-  ) {
-    return false
-  }
+  if (!cache.hitPoint(element) && !cache.toggleLabel(element)) return false
   if (
     action.kind === 'fill' &&
     (element.readOnly || element.getAttribute('aria-readonly') === 'true')
@@ -129,9 +118,8 @@ const settled = (action, limits) =>
       const roots = ids.length
         ? ids.map(id => field.getRootNode().getElementById(id)).filter(Boolean)
         : [document]
-      return roots
-        .flatMap(root => [...root.querySelectorAll('[role="option"]')])
-        .filter(option => {
+      const listed = root =>
+        [...root.querySelectorAll('[role="option"]')].filter(option => {
           const r = option.getBoundingClientRect()
           return (
             r.width > 0 &&
@@ -141,6 +129,9 @@ const settled = (action, limits) =>
             option.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
           )
         })
+      const owned = roots.flatMap(listed)
+      // Options can render outside an aria-controls root, including after that root already has an option.
+      return ids.length ? [...owned, ...listed(document)] : owned
     }
     // Options already on screen are not this field's new suggestions.
     const alreadyVisible = new Set(autocomplete ? visibleOptions() : [])
@@ -195,13 +186,52 @@ const waitForNavigation = (action, limitMs, pollMs) =>
     poll()
   })
 
+const untilIdle = (action, limitMs, pollMs) =>
+  new Promise(resolve => {
+    const started = Date.now()
+    const field = window.__browserlessAgent?.nodes.get(action.node)
+    const roots = [document]
+    for (const root of roots) {
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot) roots.push(element.shadowRoot)
+      }
+    }
+    const all = selector => roots.flatMap(root => [...root.querySelectorAll(selector)])
+    const shown = element =>
+      element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    const busy = () => {
+      if (field?.isConnected && field.matches(':disabled')) return true
+      if (all('[aria-busy="true"]').some(shown)) return true
+      return all('progress,[role="progressbar"]').some(element => {
+        if (!shown(element)) return false
+        if (element.tagName === 'PROGRESS') return element.position < 0
+        return element.getAttribute('aria-valuenow') == null
+      })
+    }
+    const poll = () => {
+      if (!busy() || Date.now() - started >= limitMs) resolve()
+      else setTimeout(poll, pollMs)
+    }
+    poll()
+  })
+
 const settle = async (page, action) => {
   await agentWorld(page)
     .evaluate(settled, action, SETTLE_LIMITS)
     .catch(() => {})
   await agentWorld(page)
+    .evaluate(untilIdle, action, BUSY_LIMIT_MS, BUSY_POLL_MS)
+    .catch(() => {})
+  await agentWorld(page)
     .evaluate(waitForNavigation, action, NAVIGATION_LIMIT_MS, NAVIGATION_POLL_MS)
     .catch(() => {})
+}
+
+const clickLabelIfCovered = input => {
+  const cache = window.__browserlessAgent
+  const label = cache?.toggleLabel?.(input)
+  if (!label || cache.centerHits(input)) return null
+  return cache.centerHits(label, input)
 }
 
 const execute = async (page, state, action, text, waitMs) => {
@@ -237,14 +267,17 @@ const execute = async (page, state, action, text, waitMs) => {
       await focusForKeyboard()
       await element.evaluate(selectContents)
       await assertFresh(KEYBOARD_TARGET)
-      await page.keyboard.sendCharacter(text)
+      if (text) await page.keyboard.sendCharacter(text)
+      else await page.keyboard.press('Backspace')
     } else if (action.kind === 'submit') {
       await focusForKeyboard()
       await page.keyboard.press('Enter')
     } else if (action.kind === 'select') {
       await element.select(action.value)
     } else if (action.kind === 'click') {
-      await element.click()
+      const point = await element.evaluate(clickLabelIfCovered)
+      if (point) await page.mouse.click(point.x, point.y)
+      else await element.click()
     } else throw new TypeError('Unknown observed action.')
   } catch (error) {
     if (TARGET_GONE.test(error.message)) throw new StaleDecisionError()
@@ -263,7 +296,9 @@ module.exports = {
   settle,
   settled,
   waitForNavigation,
+  untilIdle,
   pageChanged,
   targetFresh,
-  selectContents
+  selectContents,
+  clickLabelIfCovered
 }

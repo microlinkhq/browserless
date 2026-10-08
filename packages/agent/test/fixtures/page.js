@@ -2,7 +2,14 @@
 
 const { EventEmitter } = require('node:events')
 const { StaleDecisionError } = require('../../src/errors')
-const { selectContents, settled, waitForNavigation, pageOutline } = require('../../src/browser')
+const {
+  selectContents,
+  settled,
+  untilIdle,
+  waitForNavigation,
+  pageOutline,
+  clickLabelIfCovered
+} = require('../../src/browser')
 const { evaluateRules } = require('../../src/rules')
 const { MockLanguageModelV4 } = require('ai/test')
 
@@ -58,7 +65,7 @@ class Page extends EventEmitter {
   }
 
   async evaluate (fn, ...args) {
-    if (fn === settled || fn === waitForNavigation) {
+    if (fn === settled || fn === untilIdle || fn === waitForNavigation) {
       if (fn === settled) this.settles++
       return
     }
@@ -79,6 +86,7 @@ class Page extends EventEmitter {
     const element = {
       evaluate: async fn => {
         if (fn === selectContents) return page.inputs.push({ selectContents: true })
+        if (fn === clickLabelIfCovered) return false
         return page.guards.length ? page.guards.shift() : true
       },
       focus: async () => {
