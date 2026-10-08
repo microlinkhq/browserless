@@ -90,11 +90,19 @@ module.exports = function snapshot () {
     const name = (e, seen = new Set()) => {
       if (!e || seen.has(e)) return ''
       seen.add(e)
-      const referenced = (e.getAttribute('aria-labelledby') || '')
-        .split(/\s+/)
-        .map(id => name(e.getRootNode().getElementById(id), seen))
-        .filter(Boolean)
-        .join(' ')
+      return named(e, seen, false)
+    }
+    const named = (e, seen, skipLabelledBy) => {
+      const referenced = skipLabelledBy
+        ? ''
+        : (e.getAttribute('aria-labelledby') || '')
+            .split(/\s+/)
+            .map(id => {
+              const target = e.getRootNode().getElementById(id)
+              return target === e ? named(e, seen, true) : name(target, seen)
+            })
+            .filter(Boolean)
+            .join(' ')
       return (
         referenced ||
         e.getAttribute('aria-label') ||

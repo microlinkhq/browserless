@@ -191,6 +191,22 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('a self reference in aria-labelledby keeps the element text', t => {
+  const { observe } = dom(
+    `<body>
+      <span id="f1">report.pdf</span>
+      <button id="e1" aria-labelledby="e1 f1">Edit</button>
+      <button id="d1" aria-labelledby="d1 f1">Delete</button>
+    </body>`
+  )
+  t.deepEqual(
+    observe()
+      .actions.filter(action => action.kind === 'click')
+      .map(action => action.label),
+    ['Edit report.pdf', 'Delete report.pdf']
+  )
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
