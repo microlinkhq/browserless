@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.7](https://github.com/microlinkhq/browserless/compare/v14.0.6...v14.0.7) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** keep an element's own text when aria-labelledby lists itself ([#970](https://github.com/microlinkhq/browserless/issues/970)) ([adbfd4a](https://github.com/microlinkhq/browserless/commit/adbfd4a07a9c859345a594c4cd35e9fb54171c06))
+
 ## [14.0.6](https://github.com/microlinkhq/browserless/compare/v14.0.5...v14.0.6) (2026-10-08)
 
 ### Bug Fixes
