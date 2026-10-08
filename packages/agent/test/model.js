@@ -195,7 +195,7 @@ test('a missing field value stops as model_blocked', async t => {
 
 for (const content of [
   '{}',
-  '{"text":""}',
+  '{"text":" "}',
   '{"text":"x","code":"click()"}',
   '["x"]',
   'not json',
@@ -208,6 +208,13 @@ for (const content of [
     )
   })
 }
+
+test('an empty text value clears the field', async t => {
+  t.is(
+    await fieldText('cars', state().actions[0], state(), [], textModel('{"text":""}'), REQUEST),
+    ''
+  )
+})
 
 test('text model returns only a validated field value', async t => {
   t.is(
