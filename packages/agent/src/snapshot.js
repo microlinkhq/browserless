@@ -1,4 +1,4 @@
-/* global getComputedStyle, location, scrollX, scrollY, innerWidth, innerHeight */
+/* global HTMLElement, getComputedStyle, location, scrollX, scrollY, innerWidth, innerHeight */
 // Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See README.md.
 module.exports = function snapshot () {
   return (() => {
@@ -169,6 +169,8 @@ module.exports = function snapshot () {
         .filter(safe)
         .map(e => [identity(e), e.value, e.checked, e.selectedIndex, e.disabled, e.readOnly])
     ]
+    // A named form control shadows the form's own innerText property.
+    const readInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText').get
     cache.guard = e => {
       if (!e?.isConnected || !visibleNow(e)) return null
       const scope =
@@ -195,7 +197,9 @@ module.exports = function snapshot () {
             ])
           : null,
         e.getAttribute('href'),
-        scope?.innerText?.slice(0, 6000) || '',
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 6000)
+          : scope?.textContent?.slice(0, 6000)) || '',
         [...(cache.closest(e, 'form')?.querySelectorAll('input,textarea,select') || [])]
           .filter(safe)
           .map(field => [
@@ -412,8 +416,18 @@ module.exports = function snapshot () {
     const height = document.documentElement.scrollHeight
     const pageKey = cache.pageKey()
     const guards = {}
+    const scopes = {}
     for (const a of actions) {
-      if (!(a.node in guards)) guards[a.node] = cache.guard(cache.nodes.get(a.node))
+      if (a.node in guards) continue
+      const element = cache.nodes.get(a.node)
+      guards[a.node] = cache.guard(element)
+      const scope =
+        cache.closest(element, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') ||
+        flatParent(element)
+      scopes[a.node] =
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 1000)
+          : scope?.textContent?.slice(0, 1000)) || ''
     }
     // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
     const semantics = actions.map(({ rect, ...action }) => action)
@@ -453,6 +467,7 @@ module.exports = function snapshot () {
       marker,
       pageKey,
       guards,
+      scopes,
       omittedActions
     }
   })()
