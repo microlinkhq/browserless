@@ -205,7 +205,9 @@ const execute = async (page, state, action, text, waitMs) => {
           window.__browserlessAgent.toggleLabel(input)
         )
         try {
-          await labelHandle.asElement().click()
+          const labelElement = labelHandle.asElement()
+          if (!labelElement) throw new StaleDecisionError()
+          await labelElement.click()
         } finally {
           await labelHandle.dispose()
         }
