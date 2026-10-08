@@ -58,6 +58,14 @@ test('input types that cannot take inserted text are never fill targets', async 
   )
 })
 
+test('an empty fill clears the selected field', async t => {
+  const page = await open(t, '<input aria-label="Search" value="old">')
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'fill' && item.label === 'Search')
+  await execute(page, state, action, '', 0)
+  t.is(await page.$eval('input', element => element.value), '')
+})
+
 test('typing replaces the existing value of an input', async t => {
   const page = await open(t, '<input aria-label="Search" value="old">')
   await fill(page, 'Search')
