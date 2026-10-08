@@ -104,7 +104,7 @@ module.exports = function snapshot () {
           .join(' ') ||
         (e.tagName === 'INPUT' && ['button', 'submit', 'reset'].includes(e.type) ? e.value : '') ||
         e.getAttribute('alt') ||
-        (e.tagName === 'INPUT'
+        (e.tagName === 'INPUT' || e.tagName === 'SELECT'
           ? ''
           : flatChildren(e)
             .map(n =>
