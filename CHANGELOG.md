@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.3](https://github.com/microlinkhq/browserless/compare/v14.0.2...v14.0.3) (2026-10-08)
+
+### Bug Fixes
+
+* **agent:** read form text through the native innerText getter ([#964](https://github.com/microlinkhq/browserless/issues/964)) ([bb5f1fc](https://github.com/microlinkhq/browserless/commit/bb5f1fc698edf27c8c82489ca27ec53f8bf9aa42))
+
 ## [14.0.2](https://github.com/microlinkhq/browserless/compare/v14.0.1...v14.0.2) (2026-10-08)
 
 ### Performance Improvements
