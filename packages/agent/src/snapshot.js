@@ -1,4 +1,4 @@
-/* global location, scrollX, scrollY, innerWidth, innerHeight */
+/* global HTMLElement, location, scrollX, scrollY, innerWidth, innerHeight */
 // Adapted from browser-use/jev-ultrafast snapshot.js (MIT). See README.md.
 module.exports = function snapshot () {
   return (() => {
@@ -169,6 +169,8 @@ module.exports = function snapshot () {
         .filter(safe)
         .map(e => [identity(e), e.value, e.checked, e.selectedIndex, e.disabled, e.readOnly])
     ]
+    // A named form control shadows the form's own innerText property.
+    const readInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText').get
     cache.guard = e => {
       if (!e?.isConnected || !visibleNow(e)) return null
       const scope =
@@ -195,7 +197,9 @@ module.exports = function snapshot () {
             ])
           : null,
         e.getAttribute('href'),
-        scope?.innerText?.slice(0, 6000) || '',
+        (scope instanceof HTMLElement
+          ? readInnerText.call(scope).slice(0, 6000)
+          : scope?.textContent?.slice(0, 6000)) || '',
         [...(cache.closest(e, 'form')?.querySelectorAll('input,textarea,select') || [])]
           .filter(safe)
           .map(field => [
