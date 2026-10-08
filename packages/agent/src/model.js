@@ -336,7 +336,7 @@ const isFieldValue = output =>
   typeof output === 'object' &&
   Object.keys(output).length === 1 &&
   typeof output.text === 'string' &&
-  output.text.trim() !== '' &&
+  (output.text === '' || output.text.trim() !== '') &&
   output.text.length <= TEXT_MAX_LENGTH
 
 const fieldText = async (goal, action, state, history, model, options) => {
