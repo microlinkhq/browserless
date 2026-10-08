@@ -58,6 +58,14 @@ test('input types that cannot take inserted text are never fill targets', async 
   )
 })
 
+test('an empty fill clears the selected field', async t => {
+  const page = await open(t, '<input aria-label="Search" value="old">')
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'fill' && item.label === 'Search')
+  await execute(page, state, action, '', 0)
+  t.is(await page.$eval('input', element => element.value), '')
+})
+
 test('typing replaces the existing value of an input', async t => {
   const page = await open(t, '<input aria-label="Search" value="old">')
   await fill(page, 'Search')
@@ -237,6 +245,44 @@ const SEARCH_FORM = `<form><input aria-label="Search" value="bmw x3"></form><inp
     window.submissions++
   })
 </script>`
+
+test('an svg scope still observes an html control inside it', async t => {
+  const page = await open(
+    t,
+    '<svg role="row" width="80" height="40"><foreignObject width="80" height="40"><button>Go</button></foreignObject></svg>'
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Go')
+  t.truthy(action)
+  t.true(Array.isArray(state.guards[action.node]))
+})
+
+test('a form field named innerText still observes, and a visible text change is stale', async t => {
+  const page = await open(
+    t,
+    `<form>
+      <p id="note">Visible note</p>
+      <p hidden id="secret">Hidden</p>
+      <input name="innerText" aria-label="Shadow">
+      <input name="innerText" aria-label="Again">
+      <button id="save" type="button">Save</button>
+    </form>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(a => a.kind === 'click' && a.label === 'Save')
+  t.truthy(action)
+  await page.$eval('#secret', element => {
+    element.textContent = 'Still hidden'
+  })
+  await execute(page, state, action, undefined, 0)
+  t.is(await page.$eval('#save', element => element.textContent), 'Save')
+  await page.$eval('#note', element => {
+    element.textContent = 'Changed note'
+  })
+  await t.throwsAsync(execute(page, state, action, undefined, 0), {
+    instanceOf: StaleDecisionError
+  })
+})
 
 test('submitting a populated field sends Enter to its form', async t => {
   const page = await open(t, SEARCH_FORM)

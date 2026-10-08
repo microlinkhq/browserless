@@ -184,7 +184,8 @@ const execute = async (page, state, action, text, waitMs) => {
       await focusForKeyboard()
       await element.evaluate(selectContents)
       await assertFresh(KEYBOARD_TARGET)
-      await page.keyboard.sendCharacter(text)
+      if (text) await page.keyboard.sendCharacter(text)
+      else await page.keyboard.press('Backspace')
     } else if (action.kind === 'submit') {
       await focusForKeyboard()
       await page.keyboard.press('Enter')
