@@ -94,7 +94,7 @@ const actionSpace = actions => {
       indices.set(action.node, index)
       elements.push({
         index,
-        label: action.label.split(' → ')[0],
+        label: action.kind === 'select' ? action.label.split(' → ')[0] : action.label,
         role: action.role,
         value: action.current_value ?? action.value,
         checked: action.checked,

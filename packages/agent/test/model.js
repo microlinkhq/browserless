@@ -94,6 +94,18 @@ test('select options have distinct indices for the same retained node', t => {
   )
   t.deepEqual(Object.keys(space.targets.SELECT), ['1:1', '1:2'])
   t.is(space.targets.SELECT['1:2'].value, 'recent')
+  t.is(space.elements[0].label, 'Sort')
+})
+
+test('a literal arrow in a control label is kept', t => {
+  const space = actionSpace([
+    { id: 'e1', node: 1, kind: 'click', role: 'button', label: 'Move → Inbox', value: '' },
+    { id: 'e2', node: 2, kind: 'click', role: 'button', label: 'Move → Archive', value: '' }
+  ])
+  t.deepEqual(
+    space.elements.map(element => element.label),
+    ['Move → Inbox', 'Move → Archive']
+  )
 })
 
 test('one speculative request consumes only the operation-selected head', async t => {
