@@ -7,6 +7,8 @@ const { BlockedError, StaleDecisionError } = require('./errors')
 
 const KEYBOARD_TARGET = { focused: true }
 const SETTLE_LIMITS = { autocompleteMs: 200, defaultMs: 50, minFrames: 2 }
+const NAVIGATION_LIMIT_MS = 1500
+const NAVIGATION_POLL_MS = 50
 const BUSY_LIMIT_MS = 3000
 const BUSY_POLL_MS = 50
 const DOCUMENT_READY_LIMIT_MS = 3000
@@ -150,6 +152,44 @@ const settled = (action, limits) =>
   })
 
 // Navigation can destroy the page context mid-wait; the next observation handles that.
+const waitForNavigation = (action, limitMs, pollMs) =>
+  new Promise(resolve => {
+    const element = window.__browserlessAgent?.nodes.get(action.node)
+    if (element?.tagName !== 'A' || element.hasAttribute('download')) return resolve()
+    const raw =
+      element.getAttribute('target') ||
+      document.querySelector('base[target]')?.getAttribute('target') ||
+      ''
+    const keyword = raw.toLowerCase()
+    const sameTab =
+      !raw ||
+      keyword === '_self' ||
+      keyword === '_parent' ||
+      keyword === '_top' ||
+      raw === window.name
+    if (!sameTab) return resolve()
+    let next
+    try {
+      next = new URL(element.href, location.href)
+    } catch {
+      return resolve()
+    }
+    const documentKey = value => `${value.origin}${value.pathname}${value.search}`
+    if (
+      (next.protocol !== 'http:' && next.protocol !== 'https:') ||
+      documentKey(next) === documentKey(location)
+    ) {
+      return resolve()
+    }
+    const origin = documentKey(location)
+    const started = Date.now()
+    const poll = () => {
+      if (documentKey(location) !== origin || Date.now() - started >= limitMs) resolve()
+      else setTimeout(poll, pollMs)
+    }
+    poll()
+  })
+
 const untilIdle = (action, limitMs, pollMs) =>
   new Promise(resolve => {
     const started = Date.now()
@@ -185,6 +225,9 @@ const settle = async (page, action) => {
     .catch(() => {})
   await agentWorld(page)
     .evaluate(untilIdle, action, BUSY_LIMIT_MS, BUSY_POLL_MS)
+    .catch(() => {})
+  await agentWorld(page)
+    .evaluate(waitForNavigation, action, NAVIGATION_LIMIT_MS, NAVIGATION_POLL_MS)
     .catch(() => {})
 }
 
@@ -256,6 +299,7 @@ module.exports = {
   execute,
   settle,
   settled,
+  waitForNavigation,
   untilIdle,
   pageChanged,
   targetFresh,

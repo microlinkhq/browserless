@@ -633,6 +633,75 @@ test('observing a document that has no body yet waits for the body', async t => 
   )
 })
 
+test('a delayed same-tab navigation is not observed on the old document', async t => {
+  const destination = await pageWithLateBody(t, '<button>Arrived</button>')
+  const page = await open(
+    t,
+    `<a id="leave" href="${destination}">Leave</a>
+     <script>
+       document.getElementById('leave').addEventListener('click', event => {
+         event.preventDefault()
+         const href = event.currentTarget.href
+         setTimeout(() => { location.href = href }, 400)
+       })
+     </script>`
+  )
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Leave')
+  await execute(page, state, action, undefined, 0)
+  await settle(page, action)
+  const next = await observe(page)
+  t.true(next.actions.some(item => item.label === 'Arrived'))
+  t.false(next.actions.some(item => item.label === 'Leave'))
+})
+
+test('a same-document fragment link does not wait for navigation', async t => {
+  const server = createServer((request, response) => {
+    response.setHeader('content-type', 'text/html')
+    response.end('<a href="#section">Jump</a>')
+  })
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+  t.teardown(() => server.close())
+  const page = await browser.newPage()
+  t.teardown(() => page.close())
+  await page.emulateFocusedPage(true)
+  await page.goto(`http://127.0.0.1:${server.address().port}/`)
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Jump')
+  await execute(page, state, action, undefined, 0)
+  const started = Date.now()
+  await settle(page, action)
+  t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
+})
+
+test('a base target of _blank does not wait for navigation', async t => {
+  const server = createServer((request, response) => {
+    response.setHeader('content-type', 'text/html')
+    response.end('<base target="_blank"><a href="https://example.com/next">Leave</a>')
+  })
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+  t.teardown(() => server.close())
+  const page = await browser.newPage()
+  t.teardown(() => page.close())
+  await page.emulateFocusedPage(true)
+  await page.goto(`http://127.0.0.1:${server.address().port}/`)
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Leave')
+  await execute(page, state, action, undefined, 0)
+  const started = Date.now()
+  await settle(page, action)
+  t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
+})
+
+test('settling a button does not wait for navigation', async t => {
+  const page = await open(t, '<button type="button">Stay</button>')
+  const state = await observe(page)
+  const action = state.actions.find(item => item.label === 'Stay')
+  const started = Date.now()
+  await settle(page, action)
+  t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
+})
+
 test('observing a document that never gets a body is blocked', async t => {
   const page = await open(t, '<button>Gone</button>')
   await page.evaluate(() => document.body.remove())

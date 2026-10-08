@@ -6,6 +6,7 @@ const {
   selectContents,
   settled,
   untilIdle,
+  waitForNavigation,
   pageOutline,
   clickLabelIfCovered
 } = require('../../src/browser')
@@ -64,7 +65,7 @@ class Page extends EventEmitter {
   }
 
   async evaluate (fn, ...args) {
-    if (fn === settled || fn === untilIdle) {
+    if (fn === settled || fn === untilIdle || fn === waitForNavigation) {
       if (fn === settled) this.settles++
       return
     }
