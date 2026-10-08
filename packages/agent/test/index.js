@@ -79,12 +79,13 @@ test('a failing decision model is called once and no input is sent', async t => 
   t.deepEqual(page.inputs, [])
 })
 
-test('invalid generated text does not focus or type', async t => {
+test('a missing field value does not focus or type', async t => {
   const page = new Page()
-  await t.throwsAsync(
+  const error = await t.throwsAsync(
     run(page, [], { models: mockModels(['TYPE_TEXT'], { text: '{"text":null}' }) }),
-    { instanceOf: TypeError }
+    { instanceOf: agent.BlockedError }
   )
+  t.is(error.reason, 'model_blocked')
   t.deepEqual(page.inputs, [])
 })
 

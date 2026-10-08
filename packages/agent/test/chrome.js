@@ -3,7 +3,7 @@
 const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
-const { observe, execute, settled, pageOutline } = require('../src/browser')
+const { observe, execute, settled, pageOutline, agentWorld } = require('../src/browser')
 const { applyRules } = require('../src/rules')
 const { StaleDecisionError } = require('../src/errors')
 
@@ -134,6 +134,31 @@ test('controls inside open shadow roots are observed with their slotted label', 
   t.true(state.text.includes('Shadow paragraph'))
 })
 
+test('a page script cannot swap the node the agent clicks', async t => {
+  const page = await open(t, '<button id="ok">Ok</button><button id="bad">Bad</button>')
+  await page.evaluate(() => {
+    for (const id of ['ok', 'bad']) {
+      document.getElementById(id).addEventListener('click', () => {
+        window.clicked = id
+      })
+    }
+  })
+  const state = await observe(page)
+  const action = state.actions.find(item => item.kind === 'click' && item.label === 'Ok')
+  await page.evaluate(() => {
+    window.__browserlessAgent = {
+      nodes: { get: () => document.getElementById('bad') },
+      guard: () => null,
+      contains: () => true,
+      elementFromPoint: () => document.getElementById('bad'),
+      closest: () => null,
+      activeElement: () => document.getElementById('bad')
+    }
+  })
+  await execute(page, state, action, undefined, 0)
+  t.is(await page.evaluate(() => window.clicked), 'ok')
+})
+
 test('clicking a control inside a shadow root reaches that control', async t => {
   const page = await open(t, `${SHADOW_COMPONENTS}<x-button>Sign in</x-button>`)
   await countClicks(page)
@@ -237,28 +262,52 @@ test('styles inside a shadow root never leak into a control label', async t => {
 
 const SETTLE_LIMITS = { autocompleteMs: 1500, defaultMs: 50, minFrames: 2 }
 const CLEARLY_BEFORE_AUTOCOMPLETE_LIMIT_MS = 1000
-const SUGGESTION_DELAY_MS = 120
+const SUGGESTION_DELAY_MS = 200
 
 const COMBOBOX =
   '<input role="combobox" aria-label="City" aria-controls="suggestions"><ul id="suggestions"></ul>'
 
-const settleMs = async (page, kind, label) => {
+const settleMs = async (page, kind, label, before) => {
   const { actions } = await observe(page)
   const action = actions.find(a => a.kind === kind && a.label === label)
+  if (before) await before()
   const started = Date.now()
-  await page.evaluate(settled, action, SETTLE_LIMITS)
+  await agentWorld(page).evaluate(settled, action, SETTLE_LIMITS)
   return Date.now() - started
 }
 
+// Arm the insert from the world that settles, on the first read of the field,
+// so the option cannot exist before that read no matter how slow the runner is.
+const revealSuggestionWhenRead = page =>
+  agentWorld(page).evaluate(delay => {
+    const field = document.querySelector('[role="combobox"]')
+    const original = field.getAttribute.bind(field)
+    field.getAttribute = name => {
+      if (!field.dataset.revealArmed) {
+        field.dataset.revealArmed = '1'
+        setTimeout(() => {
+          document.getElementById('suggestions').innerHTML = '<li role="option">Zurich</li>'
+        }, delay)
+      }
+      return original(name)
+    }
+  }, SUGGESTION_DELAY_MS)
+
 test('settling after typing in a combobox waits for its suggestions to appear', async t => {
   const page = await open(t, COMBOBOX)
-  await page.evaluate(delay => {
-    setTimeout(() => {
-      document.getElementById('suggestions').innerHTML = '<li role="option">Zurich</li>'
-    }, delay)
-  }, SUGGESTION_DELAY_MS)
-  const elapsed = await settleMs(page, 'fill', 'City')
+  const elapsed = await settleMs(page, 'fill', 'City', () => revealSuggestionWhenRead(page))
   t.is(await page.$eval('#suggestions', list => list.textContent), 'Zurich')
+  t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
+})
+
+test('settling after typing in a combobox ignores options already on screen', async t => {
+  const page = await open(
+    t,
+    '<div role="option">Leftover</div><input role="combobox" aria-label="City"><ul id="suggestions"></ul>'
+  )
+  const elapsed = await settleMs(page, 'fill', 'City', () => revealSuggestionWhenRead(page))
+  t.is(await page.$eval('#suggestions', list => list.textContent), 'Zurich')
+  t.true(elapsed >= SUGGESTION_DELAY_MS - 40, `settled after ${elapsed} ms`)
   t.true(elapsed < SETTLE_LIMITS.autocompleteMs, `settled after ${elapsed} ms`)
 })
 

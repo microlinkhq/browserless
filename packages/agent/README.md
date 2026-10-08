@@ -219,7 +219,7 @@ provider that did not answer, is in `error` as it was thrown. The reasons:
 | `step_budget` | Action or decision-request budget exhausted |
 | `no_change` | Three consecutive successful actions left the same observation. An action that changed nothing is not offered again until the page changes |
 | `stale_target` | Three consecutive decisions chose the same target and it failed its freshness check each time |
-| `model_blocked` | The provider selected BLOCKED |
+| `model_blocked` | The provider selected BLOCKED, or the text model had no value to type |
 
 Malformed responses, network/provider failures and aborts resolve with
 `status: 'error'` and the original error in `error`; they never become invented
@@ -525,8 +525,9 @@ path and final page it has answered both yes and no.
 
 The text model is called with `generateText` and a JSON object output only for
 TYPE_TEXT. It must return exactly `{ "text": "..." }` with a nonempty string of
-at most 2000 characters. Null, extra keys, arrays, invalid JSON and a reply
-with no output fail closed.
+at most 2000 characters. `{"text": null}` means the goal never gave a value, and the
+run stops with `model_blocked` before anything is typed. Extra keys, arrays,
+invalid JSON and a reply with no output fail closed.
 Reasoning models can spend the whole 1024-token reply budget thinking and
 return no usable value, so reasoning is off unless `reasoning` says otherwise.
 No personal information or missing value is guessed by the executor. Page text,
@@ -535,8 +536,9 @@ only pages you may disclose to them.
 
 ## How it works
 
-1. `page.evaluate` collects visible controls, viewport text, form state and live
-   DOM refs. Persistent DOM node IDs, snapshot action IDs (`e1`, `e2`) and model
+1. Puppeteer's isolated world collects visible controls, viewport text, form
+   state and live DOM refs, so page scripts cannot rewrite the node map.
+   Persistent DOM node IDs, snapshot action IDs (`e1`, `e2`) and model
    indices are separate. At most 250 element actions and 6000 text characters
    are offered per snapshot.
 2. One request proposes an operation plus speculative CLICK, TYPE_TEXT, SUBMIT and
