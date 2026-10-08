@@ -233,6 +233,23 @@ test('inherited pointer and a relative body do not split or invent rows', t => {
   t.true(clicks.some(label => label.includes('Beijingbei') && label.includes('beijingbei')))
 })
 
+test('rows stay when the list and its text share a pointer cursor', t => {
+  // jsdom does not inherit cursor, so the rule sets the value a browser inherits from the list.
+  const { observe } = dom(
+    `<body>
+      <style>ul, ul li, ul li span { cursor: pointer }</style>
+      <ul><li><span>One</span><span>uno</span></li><li>Two</li></ul>
+    </body>`
+  )
+  const clicks = observe()
+    .actions.filter(action => action.kind === 'click')
+    .map(action => action.label)
+  t.true(clicks.some(label => label.includes('One') && label.includes('uno')))
+  t.true(clicks.includes('Two'))
+  t.false(clicks.includes('One'))
+  t.false(clicks.includes('uno'))
+})
+
 test('custom pointer rows are capped at 40', t => {
   const items = Array.from(
     { length: 41 },

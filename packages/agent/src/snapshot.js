@@ -284,10 +284,12 @@ module.exports = function snapshot () {
       }
     }
     const collected = new Set(actions.map(action => cache.nodes.get(action.node)))
+    const listSelector = 'ul,ol,[role="list"],[role="listbox"],[role="menu"],[role="tablist"]'
     const pointer = element => {
       if (getComputedStyle(element).cursor !== 'pointer') return false
       const parent = flatParent(element)
-      return !parent || getComputedStyle(parent).cursor !== 'pointer'
+      if (!parent || getComputedStyle(parent).cursor !== 'pointer') return true
+      return parent.matches(listSelector)
     }
     const inLayer = element => {
       for (let current = element; current; current = flatParent(current)) {
@@ -297,12 +299,16 @@ module.exports = function snapshot () {
       }
       return false
     }
+    const pointerLists = new WeakMap()
     const inPointerList = element => {
       const parent = flatParent(element)
-      if (!parent?.matches('ul,ol,[role="list"],[role="listbox"],[role="menu"],[role="tablist"]')) {
-        return false
+      if (!parent?.matches(listSelector)) return false
+      let eligible = pointerLists.get(parent)
+      if (eligible == null) {
+        eligible = [...parent.children].filter(pointer).length >= 2
+        pointerLists.set(parent, eligible)
       }
-      return [...parent.children].filter(pointer).length >= 2
+      return eligible
     }
     const candidates = []
     for (const element of queryAll('li,div,span,td,dd,p')) {
