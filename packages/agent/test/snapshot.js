@@ -191,6 +191,21 @@ test('only typeable editing hosts are indexed as fill targets', t => {
   )
 })
 
+test('an unlabeled select is not named by its options', t => {
+  const { observe } = dom(
+    `<body>
+      <select><option>North</option><option>South</option></select>
+      <select aria-label="Region"><option>North</option><option>South</option></select>
+    </body>`
+  )
+  t.deepEqual(
+    observe()
+      .actions.filter(action => action.kind === 'select')
+      .map(action => action.label),
+    ['combobox → South', 'Region → South']
+  )
+})
+
 test('submit is offered only for inputs that already hold a value', t => {
   const { observe } = dom(
     '<body><input aria-label="Filled" value="bmw x3"><input aria-label="Empty"><textarea aria-label="Notes">text</textarea></body>'
