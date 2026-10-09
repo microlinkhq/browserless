@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.15](https://github.com/microlinkhq/browserless/compare/v14.0.14...v14.0.15) (2026-10-09)
+
+### Performance Improvements
+
+* **agent:** read a shared scope's text once per snapshot ([#984](https://github.com/microlinkhq/browserless/issues/984)) ([23987d6](https://github.com/microlinkhq/browserless/commit/23987d65ce4bae87430ba5e25dcfbf29e08ef1b0))
+
 ## [14.0.14](https://github.com/microlinkhq/browserless/compare/v14.0.13...v14.0.14) (2026-10-08)
 
 ### Bug Fixes
