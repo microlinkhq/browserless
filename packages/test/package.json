@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.js",
     "./create": "./src/create.js",
-    "./suite": "./src/suite.js"
+    "./suite": "./src/suite.js",
+    "./perf": "./src/perf.js"
   },
   "author": {
     "email": "hello@microlink.io",
