@@ -1,5 +1,6 @@
 'use strict'
 
+const { execFileSync } = require('node:child_process')
 const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
@@ -1050,51 +1051,95 @@ test('page outline shows the value and placeholder of inputs', async t => {
   t.true(outline.includes('placeholder="Search"'))
 })
 
-// Milliseconds move with the runner. A rect walk on this same page moves with them.
-// Scope text once per action was about 5x that walk; once per scope is about 1.3x.
-test.serial('grid snapshot stays within a layout-relative budget', async t => {
-  const cells = Array.from(
+const snapshotFunction = source => source.slice(source.indexOf('function snapshot')).trim()
+
+const baseSnapshot = () => {
+  const rev = process.env.PERF_BASE || 'origin/master'
+  try {
+    return execFileSync('git', ['show', `${rev}:packages/agent/src/snapshot.js`], {
+      encoding: 'utf8'
+    })
+  } catch (error) {
+    if (process.env.PERF_BASE) throw error
+    return null
+  }
+}
+
+// Same Chrome page, interleaved, so a slow runner slows the base and the pull request together.
+// The 10% band is timer noise. Identical snapshot source skips the timing.
+const slowerThanBase = (head, base) => head > base * 1.1 && head > base + 1
+
+test.serial('snapshot p50 stays at or under the pull request base', async t => {
+  const base = baseSnapshot()
+  if (!base) return t.pass()
+  const headSource = snapshotFunction(snapshot.toString())
+  const baseSource = snapshotFunction(base)
+  if (headSource === baseSource) return t.pass()
+  const listings = `<main>${Array.from(
+    { length: 80 },
+    (_, index) =>
+      `<article><a href="/item/${index}"><h2>Item ${index}</h2></a><p>${'Notes. '.repeat(
+        12
+      )}</p><button type="button">Save ${index}</button></article>`
+  ).join('')}</main>`
+  const grid = `<style>body{margin:0;font:11px/1.1 sans-serif}#grid{display:flex;flex-wrap:wrap}a,button{width:90px;height:18px}</style><div id="grid">${Array.from(
     { length: 400 },
     (_, index) =>
       `<a href="/i/${index}"><span>Item ${index}</span></a><button type="button">Item ${index}</button>`
+  ).join('')}</div>`
+  const long = Array.from(
+    { length: 2000 },
+    (_, index) =>
+      `<p>Paragraph ${index}. ${'Sentence. '.repeat(8)} <a href="/p/${index}">link</a></p>`
   ).join('')
   const page = await browser.newPage()
   t.teardown(() => page.close())
   await page.setViewport({ width: 1280, height: 800 })
-  await page.setContent(
-    `<!doctype html><style>body{margin:0;font:11px/1.1 sans-serif}#grid{display:flex;flex-wrap:wrap}a,button{width:90px;height:18px}</style><div id="grid">${cells}</div>`
-  )
-  await page.evaluate(source => {
-    const script = document.createElement('script')
-    script.textContent = `globalThis.__snap = (${source})`
-    document.documentElement.append(script)
-    script.remove()
-  }, snapshot.toString())
-  const { snapshotMs, walkMs } = await page.evaluate(() => {
-    const p50 = fn => {
-      const samples = []
-      for (let i = 0; i < 14; i++) {
-        const started = performance.now()
-        fn()
-        if (i >= 3) samples.push(performance.now() - started)
-      }
-      return samples.sort((a, b) => a - b)[Math.ceil(samples.length * 0.5) - 1]
-    }
-    const controls = document.querySelectorAll('a,button')
-    const walkMs = p50(() => {
-      let width = 0
-      for (let pass = 0; pass < 40; pass++) {
-        for (const element of controls) width += element.getBoundingClientRect().width
-      }
-      return width
-    })
-    return { snapshotMs: p50(() => globalThis.__snap()), walkMs }
-  })
-  const ratio = snapshotMs / walkMs
+  const rows = []
+  for (const [name, html] of [
+    ['listings', listings],
+    ['grid', grid],
+    ['long', long]
+  ]) {
+    await page.setContent(`<!doctype html><body>${html}</body>`)
+    await page.evaluate(
+      (head, previous) => {
+        const install = (key, source) => {
+          const script = document.createElement('script')
+          script.textContent = `globalThis.${key} = (${source})`
+          document.documentElement.append(script)
+          script.remove()
+        }
+        install('__snapHead', head)
+        install('__snapBase', previous)
+      },
+      headSource,
+      baseSource
+    )
+    rows.push(
+      await page.evaluate(label => {
+        const samples = { head: [], base: [] }
+        for (let i = 0; i < 18; i++) {
+          const order = i % 2 ? ['head', 'base'] : ['base', 'head']
+          for (const which of order) {
+            const started = performance.now()
+            ;(which === 'head' ? globalThis.__snapHead : globalThis.__snapBase)()
+            if (i >= 3) samples[which].push(performance.now() - started)
+          }
+        }
+        const p50 = values => values.sort((a, b) => a - b)[Math.ceil(values.length * 0.5) - 1]
+        return { name: label, head: p50(samples.head), base: p50(samples.base) }
+      }, name)
+    )
+  }
   t.log(
-    `grid snapshot p50 ${snapshotMs.toFixed(1)} ms, rect walk ${walkMs.toFixed(
-      1
-    )} ms, ratio ${ratio.toFixed(2)}`
+    rows
+      .map(row => `${row.name} ${row.head.toFixed(1)} ms vs base ${row.base.toFixed(1)} ms`)
+      .join(', ')
   )
-  t.true(ratio < 3, `grid snapshot p50 is ${ratio.toFixed(2)}x the rect walk`)
+  const slower = rows.filter(row => slowerThanBase(row.head, row.base))
+  t.deepEqual(
+    slower.map(row => `${row.name} ${row.head.toFixed(1)} > ${row.base.toFixed(1)}`),
+    []
+  )
 })

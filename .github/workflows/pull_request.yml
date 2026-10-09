@@ -60,9 +60,13 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: pnpm --filter @browserless/ai install-model
+      - name: Fetch snapshot perf base
+        if: matrix.package.name == '@browserless/agent' && github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
       - name: Test
         env:
           DEBUG: browserless:ai
+          PERF_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
         run: xvfb-run -a pnpm --filter "${{ matrix.package.filter }}" exec c8 pnpm test
       - name: Coverage
         run: pnpm --filter "${{ matrix.package.filter }}" exec c8 report --reporter=lcov --report-dir=coverage
