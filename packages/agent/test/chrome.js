@@ -4,6 +4,7 @@ const { createServer } = require('node:http')
 const test = require('ava')
 const puppeteer = require('puppeteer')
 const { observe, execute, settle, settled, pageOutline, agentWorld } = require('../src/browser')
+const snapshot = require('../src/snapshot')
 const { applyRules } = require('../src/rules')
 const { StaleDecisionError } = require('../src/errors')
 
@@ -1047,4 +1048,53 @@ test('page outline shows the value and placeholder of inputs', async t => {
   t.true(outline.includes('name="q"'))
   t.true(outline.includes('value="bmw x3"'))
   t.true(outline.includes('placeholder="Search"'))
+})
+
+// Milliseconds move with the runner. A rect walk on this same page moves with them.
+// Scope text once per action was about 5x that walk; once per scope is about 1.3x.
+test.serial('grid snapshot stays within a layout-relative budget', async t => {
+  const cells = Array.from(
+    { length: 400 },
+    (_, index) =>
+      `<a href="/i/${index}"><span>Item ${index}</span></a><button type="button">Item ${index}</button>`
+  ).join('')
+  const page = await browser.newPage()
+  t.teardown(() => page.close())
+  await page.setViewport({ width: 1280, height: 800 })
+  await page.setContent(
+    `<!doctype html><style>body{margin:0;font:11px/1.1 sans-serif}#grid{display:flex;flex-wrap:wrap}a,button{width:90px;height:18px}</style><div id="grid">${cells}</div>`
+  )
+  await page.evaluate(source => {
+    const script = document.createElement('script')
+    script.textContent = `globalThis.__snap = (${source})`
+    document.documentElement.append(script)
+    script.remove()
+  }, snapshot.toString())
+  const { snapshotMs, walkMs } = await page.evaluate(() => {
+    const p50 = fn => {
+      const samples = []
+      for (let i = 0; i < 14; i++) {
+        const started = performance.now()
+        fn()
+        if (i >= 3) samples.push(performance.now() - started)
+      }
+      return samples.sort((a, b) => a - b)[Math.ceil(samples.length * 0.5) - 1]
+    }
+    const controls = document.querySelectorAll('a,button')
+    const walkMs = p50(() => {
+      let width = 0
+      for (let pass = 0; pass < 40; pass++) {
+        for (const element of controls) width += element.getBoundingClientRect().width
+      }
+      return width
+    })
+    return { snapshotMs: p50(() => globalThis.__snap()), walkMs }
+  })
+  const ratio = snapshotMs / walkMs
+  t.log(
+    `grid snapshot p50 ${snapshotMs.toFixed(1)} ms, rect walk ${walkMs.toFixed(
+      1
+    )} ms, ratio ${ratio.toFixed(2)}`
+  )
+  t.true(ratio < 3, `grid snapshot p50 is ${ratio.toFixed(2)}x the rect walk`)
 })
