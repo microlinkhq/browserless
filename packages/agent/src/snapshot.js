@@ -217,7 +217,16 @@ module.exports = function snapshot () {
     ]
     // A named form control shadows the form's own innerText property.
     const readInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText').get
-    cache.guard = e => {
+    // This map dies with the snapshot call. cache.guard() with no reader stays live.
+    const scopeText = new WeakMap()
+    const readScope = scope => {
+      if (!(scope instanceof HTMLElement)) return scope?.textContent || ''
+      if (scopeText.has(scope)) return scopeText.get(scope)
+      const text = readInnerText.call(scope) || ''
+      scopeText.set(scope, text)
+      return text
+    }
+    cache.guard = (e, read) => {
       if (!e?.isConnected || (!visibleNow(e) && !cache.toggleLabel(e))) return null
       const scope =
         cache.closest(e, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') || flatParent(e)
@@ -245,9 +254,12 @@ module.exports = function snapshot () {
             ])
           : null,
         e.getAttribute('href'),
-        (scope instanceof HTMLElement
-          ? readInnerText.call(scope).slice(0, 6000)
-          : scope?.textContent?.slice(0, 6000)) || '',
+        (read
+          ? read(scope)
+          : scope instanceof HTMLElement
+            ? readInnerText.call(scope)
+            : scope?.textContent || ''
+        ).slice(0, 6000),
         [...(cache.closest(e, 'form')?.querySelectorAll('input,textarea,select') || [])]
           .filter(safe)
           .map(field => [
@@ -540,14 +552,11 @@ module.exports = function snapshot () {
     for (const a of actions) {
       if (a.node in guards) continue
       const element = cache.nodes.get(a.node)
-      guards[a.node] = cache.guard(element)
+      guards[a.node] = cache.guard(element, readScope)
       const scope =
         cache.closest(element, 'form,dialog,[role="dialog"],article,li,tr,[role="row"]') ||
         flatParent(element)
-      scopes[a.node] =
-        (scope instanceof HTMLElement
-          ? readInnerText.call(scope).slice(0, 1000)
-          : scope?.textContent?.slice(0, 1000)) || ''
+      scopes[a.node] = readScope(scope).slice(0, 1000)
     }
     // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
     const semantics = actions.map(({ rect, ...action }) => action)

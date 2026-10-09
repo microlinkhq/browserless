@@ -8,6 +8,7 @@ const { targetFresh } = require('../src/browser')
 const dom = html => {
   const { window } = new JSDOM(html, { url: 'https://fixture.invalid', runScripts: 'outside-only' })
   Object.defineProperty(window.HTMLElement.prototype, 'innerText', {
+    configurable: true,
     get () {
       return this.textContent
     }
@@ -422,6 +423,34 @@ test('same-labeled fields keep distinct scope text off the action list', t => {
   t.true(scopes[fields[0].node].includes('Passenger 1'))
   t.true(scopes[fields[1].node].includes('Passenger 2'))
   t.not(scopes[fields[0].node], scopes[fields[1].node])
+})
+
+test('shared scope text is read once per snapshot', t => {
+  const cells = Array.from(
+    { length: 40 },
+    (_, index) =>
+      `<a href="/i/${index}">Item ${index}</a><button type="button">Save ${index}</button>`
+  ).join('')
+  const { window, observe, fresh } = dom(`<body><div id="grid">${cells}</div></body>`)
+  const grid = window.document.getElementById('grid')
+  let reads = 0
+  const inner = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'innerText')
+  Object.defineProperty(window.HTMLElement.prototype, 'innerText', {
+    configurable: true,
+    get () {
+      if (this === grid) reads++
+      return inner.get.call(this)
+    }
+  })
+  const state = observe()
+  const clicks = state.actions.filter(action => action.kind === 'click')
+  t.true(clicks.length > 10)
+  t.is(reads, 1)
+  t.true(state.scopes[clicks[0].node].includes('Item 0'))
+  const element = window.__browserlessAgent.nodes.get(clicks[0].node)
+  t.true(fresh(element, state, clicks[0]))
+  grid.append(window.document.createTextNode(' changed'))
+  t.false(fresh(element, state, clicks[0]))
 })
 
 test('submit is offered only for inputs that already hold a value', t => {
