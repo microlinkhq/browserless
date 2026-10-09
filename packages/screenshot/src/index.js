@@ -239,7 +239,7 @@ const fullPageScreenshotOpts = async (page, screenshotOpts) => {
       height: document.documentElement.scrollHeight
     }))
   )
-  if (size.isRejected) return screenshotOpts
+  if (size.isRejected || size.value == null) return screenshotOpts
   const { width, height } = size.value
   if (!(width > 0) || !(height > 0)) return screenshotOpts
   const dpr = page.viewport()?.deviceScaleFactor || 1
