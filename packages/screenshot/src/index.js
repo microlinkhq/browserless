@@ -225,6 +225,41 @@ const isLossy = ({ type, path }) =>
     ? LOSSY_TYPES.has(type)
     : LOSSY_EXTENSIONS.has(extname(path ?? '').toLowerCase())
 
+// PNG of a ~150 megapixel full page encodes past the free-plan browser budget
+// (wuling.com/carDetail, 30k CSS px at 2x: ~9s locally, still open at 28s in
+// production). JPEG of that surface comes back empty from Chrome. Scale the
+// clip so the PNG stays within this many device pixels.
+const FULL_PAGE_PNG_PIXELS = 40000000
+
+const fullPageScreenshotOpts = async (page, screenshotOpts) => {
+  if (!screenshotOpts.fullPage || screenshotOpts.clip) return screenshotOpts
+  const size = await pReflect(
+    evaluateIsolated(page, () => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight
+    }))
+  )
+  if (size.isRejected) return screenshotOpts
+  const { width, height } = size.value
+  if (!(width > 0) || !(height > 0)) return screenshotOpts
+  const dpr = page.viewport()?.deviceScaleFactor || 1
+  const pixels = Math.ceil(width * dpr) * Math.ceil(height * dpr)
+  if (pixels <= FULL_PAGE_PNG_PIXELS) return screenshotOpts
+  const fitted = {
+    ...screenshotOpts,
+    captureBeyondViewport: true,
+    clip: {
+      height,
+      scale: Math.sqrt(FULL_PAGE_PNG_PIXELS / pixels),
+      width,
+      x: 0,
+      y: 0
+    }
+  }
+  delete fitted.fullPage
+  return fitted
+}
+
 // Captures stay binary until returned: the blank-page check and the overlay
 // decode them with sharp, which reads a base64 string as raw bytes.
 const encodeScreenshot = (image, encoding) =>
@@ -256,7 +291,7 @@ module.exports = ({ goto, ...gotoOpts }) => {
         captureWithNavigationRetry(
           async () => {
             if (expand) await pReflect(expandOverflow(page))
-            return page.screenshot(screenshotOpts)
+            return page.screenshot(await fullPageScreenshotOpts(page, screenshotOpts))
           },
           { page, goto, timeout }
         )
