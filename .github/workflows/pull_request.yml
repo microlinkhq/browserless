@@ -61,7 +61,7 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: pnpm --filter @browserless/ai install-model
       - name: Fetch snapshot perf base
-        if: matrix.package.name == '@browserless/agent' && github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && (matrix.package.name == '@browserless/agent' || matrix.package.name == '@browserless/screenshot' || matrix.package.name == '@browserless/goto' || matrix.package.name == 'browserless')
         run: git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
       - name: Test
         env:
