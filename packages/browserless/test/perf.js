@@ -11,6 +11,7 @@ const {
   expression,
   gate,
   loadModule,
+  namedConst,
   timeInPage,
   timePair
 } = require('@browserless/test/perf')
@@ -55,7 +56,11 @@ test.serial('core capture paths stay at or under the pull request base', async t
       ...(await timeInPage(
         page,
         pageFn(headFile, 'function findTallestOverflowScroller', '\nconst evaluateInPage'),
-        pageFn(overflowBase, 'function findTallestOverflowScroller', '\nconst evaluateInPage')
+        pageFn(overflowBase, 'function findTallestOverflowScroller', '\nconst evaluateInPage'),
+        {
+          headArgs: [namedConst(headFile, 'OVERFLOW_MIN_PX')],
+          baseArgs: [namedConst(overflowBase, 'OVERFLOW_MIN_PX')]
+        }
       ))
     })
   }
@@ -66,7 +71,7 @@ test.serial('core capture paths stay at or under the pull request base', async t
       expression(between(source, 'const dismissOverlays = ', '\nconst WORLD_NAME'))
     rows.push({
       name: 'dismiss',
-      ...(await timeInPage(page, slice(headFile), slice(dismissBase)))
+      ...(await timeInPage(page, slice(headFile), slice(dismissBase), { isolate: true }))
     })
   }
   gate(t, rows)

@@ -27,7 +27,7 @@ test.serial('dismiss scan stays at or under the pull request base', async t => {
   gate(t, [
     {
       name: 'dismiss',
-      ...(await timeInPage(page, slice(head), slice(base)))
+      ...(await timeInPage(page, slice(head), slice(base), { isolate: true }))
     }
   ])
 })

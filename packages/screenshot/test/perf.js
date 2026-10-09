@@ -11,6 +11,7 @@ const {
   expression,
   gate,
   loadModule,
+  namedConst,
   timeInPage,
   timePair
 } = require('@browserless/test/perf')
@@ -48,7 +49,11 @@ test.serial('screenshot hot paths stay at or under the pull request base', async
       ...(await timeInPage(
         page,
         pageFn(headFile, 'function findTallestOverflowScroller', '\nconst evaluateInPage'),
-        pageFn(overflowBase, 'function findTallestOverflowScroller', '\nconst evaluateInPage')
+        pageFn(overflowBase, 'function findTallestOverflowScroller', '\nconst evaluateInPage'),
+        {
+          headArgs: [namedConst(headFile, 'OVERFLOW_MIN_PX')],
+          baseArgs: [namedConst(overflowBase, 'OVERFLOW_MIN_PX')]
+        }
       ))
     })
   }

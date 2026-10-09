@@ -48,14 +48,38 @@ const timePair = (head, base) => {
   return { head: p50(samples.head), base: p50(samples.base) }
 }
 
-const timeInPage = (page, headSource, baseSource) =>
+const namedConst = (source, name) => {
+  const match = source.match(new RegExp(`const ${name} = (\\d+)`))
+  if (!match) throw new Error(`missing ${name}`)
+  return Number(match[1])
+}
+
+const timeInPage = (page, headSource, baseSource, options = {}) =>
   page.evaluate(
-    (head, base) => {
+    (head, base, options) => {
+      const { isolate = false, headArgs = [], baseArgs = [] } = options
+      const html = document.documentElement.outerHTML
+      const worlds = {}
       const install = (key, source) => {
-        const script = document.createElement('script')
-        script.textContent = `globalThis.${key} = ${source}`
-        document.documentElement.append(script)
+        if (!isolate) {
+          const script = document.createElement('script')
+          script.textContent = `globalThis.${key} = ${source}`
+          document.documentElement.append(script)
+          script.remove()
+          worlds[key] = window
+          return
+        }
+        const iframe = document.createElement('iframe')
+        document.body.append(iframe)
+        const doc = iframe.contentDocument
+        doc.open()
+        doc.write(`<!doctype html>${html}`)
+        doc.close()
+        const script = doc.createElement('script')
+        script.textContent = `globalThis.__perf = ${source}`
+        doc.documentElement.append(script)
         script.remove()
+        worlds[key] = iframe.contentWindow
       }
       install('__perfHead', head)
       install('__perfBase', base)
@@ -63,9 +87,11 @@ const timeInPage = (page, headSource, baseSource) =>
       for (let i = 0; i < 18; i++) {
         const order = i % 2 ? ['head', 'base'] : ['base', 'head']
         for (const which of order) {
+          const key = which === 'head' ? '__perfHead' : '__perfBase'
+          const win = worlds[key]
+          const fn = isolate ? win.__perf : win[key]
           const started = performance.now()
-          const fn = which === 'head' ? globalThis.__perfHead : globalThis.__perfBase
-          fn()
+          fn(...(which === 'head' ? headArgs : baseArgs))
           if (i >= 3) samples[which].push(performance.now() - started)
         }
       }
@@ -73,7 +99,8 @@ const timeInPage = (page, headSource, baseSource) =>
       return { head: mid(samples.head), base: mid(samples.base) }
     },
     headSource,
-    baseSource
+    baseSource,
+    options
   )
 
 const loadModule = (source, resolve = require) => {
@@ -120,6 +147,7 @@ module.exports = {
   between,
   expression,
   timePair,
+  namedConst,
   timeInPage,
   loadModule,
   denseHtml,
