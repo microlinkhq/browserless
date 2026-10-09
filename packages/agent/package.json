@@ -32,7 +32,7 @@
     "@ai-sdk/typesafe-ai": "~3.0.13",
     "@browserless/cli": "workspace:*",
     "ava": "5",
-    "jsdom": "26",
+    "jsdom": "30",
     "puppeteer": "25"
   },
   "engines": {
