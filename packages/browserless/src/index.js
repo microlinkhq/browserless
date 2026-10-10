@@ -37,10 +37,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     return browserProcessPromise.then(browserProcess => driver.close(browserProcess, opts))
   }
 
-  const respawn = () =>
+  const respawn = ({ force = false } = {}) =>
     !isClosed &&
     Promise.all([
-      browserProcessPromise.then(driver.close),
+      browserProcessPromise.then(browser => driver.close(browser, { force })),
       (browserProcessPromise = spawn({ respawn: true }))
     ])
 
@@ -87,7 +87,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       debug('respawn', { reason: 'createBrowserContext', message: error.message })
       await lock(async () => {
         const current = await browserProcessPromise.catch(() => {})
-        if (current === browser) await respawn()
+        if (current === browser) await respawn({ force: true })
       })
       return createBrowserContext(contextOpts, false)
     }

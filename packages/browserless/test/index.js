@@ -273,7 +273,11 @@ test('respawn when createBrowserContext does not answer', async t => {
     })
   }
 
-  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+  const closeCalls = []
+  driver.close = (subprocess, opts) => {
+    closeCalls.push(opts)
+    return Promise.resolve(subprocess.close && subprocess.close())
+  }
 
   t.teardown(() => {
     driver.spawn = originalSpawn
@@ -288,6 +292,7 @@ test('respawn when createBrowserContext does not answer', async t => {
 
   t.is(await evaluate(), 'ok')
   t.is(spawned, 2)
+  t.true(closeCalls.some(opts => opts && opts.force === true))
 })
 
 test('respawn when createBrowserContext hits the protocol timeout', async t => {
