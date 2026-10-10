@@ -240,6 +240,93 @@ test('respawn under `Protocol error (Target.createBrowserContext): Target closed
   }
 })
 
+const mockContext = () => ({
+  id: 'ctx',
+  close: () => Promise.resolve(),
+  newPage: () =>
+    Promise.resolve({
+      _client: () => ({ id: () => 'page-id' }),
+      close: () => Promise.resolve(),
+      isClosed: () => false
+    })
+})
+
+const mockBrowser = (t, createBrowserContext) => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  const state = { spawned: 0, closeCalls: [] }
+
+  driver.spawn = () => {
+    state.spawned += 1
+    const attempt = state.spawned
+    return Promise.resolve({
+      process: () => ({ pid: attempt }),
+      connected: true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => createBrowserContext(attempt),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = (subprocess, opts) => {
+    state.closeCalls.push(opts)
+    return Promise.resolve(subprocess.close && subprocess.close())
+  }
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 200 })
+  t.teardown(browser.close)
+  return { browser, state }
+}
+
+const evaluateOk = async browser => {
+  const browserless = await browser.createContext({ retry: 0, timeout: 2000 })
+  const evaluate = browserless.withPage(() => async () => 'ok', { timeout: 2000 })
+  return evaluate()
+}
+
+test('respawn when createBrowserContext does not answer', async t => {
+  const context = mockContext()
+  const { browser, state } = mockBrowser(t, attempt =>
+    attempt === 1 ? new Promise(() => {}) : Promise.resolve(context)
+  )
+
+  t.is(await evaluateOk(browser), 'ok')
+  t.is(state.spawned, 2)
+  t.true(state.closeCalls.some(opts => opts && opts.force === true))
+})
+
+test('respawn when createBrowserContext hits the protocol timeout', async t => {
+  const context = mockContext()
+  const protocolTimeout = new Error(
+    "Protocol error (Target.createBrowserContext): Target.createBrowserContext timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed."
+  )
+  protocolTimeout.name = 'ProtocolError'
+
+  const { browser, state } = mockBrowser(t, attempt =>
+    attempt === 1 ? Promise.reject(protocolTimeout) : Promise.resolve(context)
+  )
+
+  t.is(await evaluateOk(browser), 'ok')
+  t.is(state.spawned, 2)
+})
+
+test('a failed createBrowserContext does not respawn', async t => {
+  const { browser, state } = mockBrowser(t, () => Promise.reject(new Error('proxy rejected')))
+  const error = await evaluateOk(browser).catch(err => err)
+
+  t.is(error.message, 'proxy rejected')
+  t.is(state.spawned, 1)
+})
+
 test('respawn under `Protocol error (Target.createTarget): Target closed`', async t => {
   /**
    * It simulates te context is created but the URL is not set yet

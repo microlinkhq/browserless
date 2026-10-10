@@ -55,6 +55,28 @@ test('spawn keeps user ignoreDefaultArgs as is', async t => {
   t.deepEqual(launchOptions.ignoreDefaultArgs, ['--foo'])
 })
 
+test('force close kills the process instead of calling browser.close', async t => {
+  let closed = false
+  let killed
+  const child = {
+    pid: 2147483646,
+    kill: signal => {
+      killed = signal
+    }
+  }
+  const browser = {
+    process: () => child,
+    close: async () => {
+      closed = true
+    }
+  }
+
+  await driver.close(browser, { force: true })
+
+  t.false(closed)
+  t.is(killed, 'SIGKILL')
+})
+
 test('spawn preserves ignoreDefaultArgs=true', async t => {
   let launchOptions
   const puppeteer = createFakePuppeteer(options => {

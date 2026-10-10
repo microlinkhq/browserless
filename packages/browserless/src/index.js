@@ -14,6 +14,17 @@ const { AbortError } = pRetry
 
 const driver = require('./driver')
 
+// Chrome can stop answering CDP while `connected` stays true, so the
+// disconnect respawn never runs. Puppeteer then waits out its 180s protocol
+// timeout on every context, and each wait holds a pool slot.
+const CREATE_CONTEXT_TIMEOUT = 10_000
+
+const isUnresponsiveBrowser = error =>
+  error?.name === 'TimeoutError' ||
+  (typeof error?.message === 'string' &&
+    error.message.includes('timed out') &&
+    error.message.includes('protocolTimeout'))
+
 module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const lock = withLock()
   const goto = createGoto({ timeout: globalTimeout, ...launchOpts })
@@ -26,10 +37,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     return browserProcessPromise.then(browserProcess => driver.close(browserProcess, opts))
   }
 
-  const respawn = () =>
+  const respawn = ({ force = false } = {}) =>
     !isClosed &&
     Promise.all([
-      browserProcessPromise.then(driver.close),
+      browserProcessPromise.then(browser => driver.close(browser, { force })),
       (browserProcessPromise = spawn({ respawn: true }))
     ])
 
@@ -64,8 +75,24 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
   let browserProcessPromise = spawn()
 
-  const createBrowserContext = contextOpts =>
-    getBrowser().then(browser => browser.createBrowserContext(contextOpts))
+  const createBrowserContext = async contextOpts => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const browser = await getBrowser()
+      const pending = browser.createBrowserContext(contextOpts)
+      pending.catch(() => {})
+
+      try {
+        return await pTimeout(pending, Math.min(globalTimeout, CREATE_CONTEXT_TIMEOUT))
+      } catch (error) {
+        if (attempt > 0 || !isUnresponsiveBrowser(error)) throw error
+        debug('respawn', { reason: 'createBrowserContext', message: error.message })
+        await lock(async () => {
+          const current = await browserProcessPromise.catch(() => {})
+          if (current === browser) await respawn({ force: true })
+        })
+      }
+    }
+  }
 
   const getBrowser = async () => {
     if (isClosed) return browserProcessPromise
