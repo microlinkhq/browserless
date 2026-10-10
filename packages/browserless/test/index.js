@@ -240,6 +240,151 @@ test('respawn under `Protocol error (Target.createBrowserContext): Target closed
   }
 })
 
+test('respawn when createBrowserContext does not answer', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let spawned = 0
+
+  const browserContext = {
+    id: 'ctx-hung',
+    close: () => Promise.resolve(),
+    newPage: () =>
+      Promise.resolve({
+        _client: () => ({ id: () => 'page-id' }),
+        close: () => Promise.resolve(),
+        isClosed: () => false
+      })
+  }
+
+  driver.spawn = () => {
+    spawned += 1
+    const hung = spawned === 1
+    return Promise.resolve({
+      process: () => ({ pid: spawned }),
+      connected: true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => (hung ? new Promise(() => {}) : Promise.resolve(browserContext)),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 200 })
+  t.teardown(browser.close)
+
+  const browserless = await browser.createContext({ retry: 0, timeout: 2000 })
+  const evaluate = browserless.withPage(() => async () => 'ok', { timeout: 2000 })
+
+  t.is(await evaluate(), 'ok')
+  t.is(spawned, 2)
+})
+
+test('respawn when createBrowserContext hits the protocol timeout', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let spawned = 0
+
+  const browserContext = {
+    id: 'ctx-protocol',
+    close: () => Promise.resolve(),
+    newPage: () =>
+      Promise.resolve({
+        _client: () => ({ id: () => 'page-id' }),
+        close: () => Promise.resolve(),
+        isClosed: () => false
+      })
+  }
+
+  const protocolTimeout = new Error(
+    "Protocol error (Target.createBrowserContext): Target.createBrowserContext timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed."
+  )
+  protocolTimeout.name = 'ProtocolError'
+
+  driver.spawn = () => {
+    spawned += 1
+    const dead = spawned === 1
+    return Promise.resolve({
+      process: () => ({ pid: spawned }),
+      connected: true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () =>
+        dead ? Promise.reject(protocolTimeout) : Promise.resolve(browserContext),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 200 })
+  t.teardown(browser.close)
+
+  const browserless = await browser.createContext({ retry: 0, timeout: 2000 })
+  const evaluate = browserless.withPage(() => async () => 'ok', { timeout: 2000 })
+
+  t.is(await evaluate(), 'ok')
+  t.is(spawned, 2)
+})
+
+test('a failed createBrowserContext does not respawn', async t => {
+  const browserlessFactory = require('..')
+  const { driver } = browserlessFactory
+
+  const originalSpawn = driver.spawn
+  const originalClose = driver.close
+  let spawned = 0
+
+  driver.spawn = () => {
+    spawned += 1
+    return Promise.resolve({
+      process: () => ({ pid: spawned }),
+      connected: true,
+      once: () => {},
+      version: () => Promise.resolve('mock'),
+      createBrowserContext: () => Promise.reject(new Error('proxy rejected')),
+      close: () => Promise.resolve(),
+      disconnect: () => Promise.resolve()
+    })
+  }
+
+  driver.close = subprocess => Promise.resolve(subprocess.close && subprocess.close())
+
+  t.teardown(() => {
+    driver.spawn = originalSpawn
+    driver.close = originalClose
+  })
+
+  const browser = browserlessFactory({ timeout: 200 })
+  t.teardown(browser.close)
+
+  const browserless = await browser.createContext({ retry: 0, timeout: 2000 })
+  const evaluate = browserless.withPage(() => async () => 'ok', { timeout: 2000 })
+  const error = await evaluate().catch(err => err)
+
+  t.is(error.message, 'proxy rejected')
+  t.is(spawned, 1)
+})
+
 test('respawn under `Protocol error (Target.createTarget): Target closed`', async t => {
   /**
    * It simulates te context is created but the URL is not set yet
