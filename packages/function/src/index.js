@@ -93,6 +93,7 @@ module.exports = ({ tmpdir } = {}) => {
       needsBrowser: needsBrowserOverride,
       getPage,
       onDenied,
+      allowFileAccess,
       ...opts
     } = {}
   ) => {
@@ -268,7 +269,7 @@ module.exports = ({ tmpdir } = {}) => {
 
     return async (url, fnOpts = {}) => {
       if (!needsNetwork) return runWithoutBrowser(url, fnOpts)
-      const sandbox = createSandbox({ onDenied })
+      const sandbox = createSandbox({ onDenied, allowFileAccess })
       try {
         return await (getPage
           ? runWithGivenPage(url, fnOpts, sandbox)

@@ -37,7 +37,7 @@ const parseCommand = raw => {
   return { id, method, params, sessionId }
 }
 
-module.exports = async ({ root, browserContextId, send, close, onDenied }) => {
+module.exports = async ({ root, browserContextId, allowFileAccess, send, close, onDenied }) => {
   const connection = root.connection()
   const sessions = new Map()
   const discoveredTargets = new Map()
@@ -50,6 +50,7 @@ module.exports = async ({ root, browserContextId, send, close, onDenied }) => {
 
   const scope = {
     browserContextId,
+    allowFileAccess,
     ownsTarget: targetId => ownedTargetIds.has(targetId),
     ownsSession: sessionId => sessions.has(sessionId)
   }

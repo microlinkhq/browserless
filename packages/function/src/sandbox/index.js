@@ -4,7 +4,7 @@ const gateway = require('./gateway')
 
 const SANDBOX_ERROR = 'SandboxError'
 
-module.exports = ({ onDenied = () => {} } = {}) => {
+module.exports = ({ onDenied = () => {}, allowFileAccess = false } = {}) => {
   const grants = []
   const reasons = new Set()
 
@@ -14,7 +14,7 @@ module.exports = ({ onDenied = () => {} } = {}) => {
   }
 
   const grant = async page => {
-    const granted = await gateway.grant(page, { onDenied: recordDenial })
+    const granted = await gateway.grant(page, { onDenied: recordDenial, allowFileAccess })
     grants.push(granted)
     return granted.endpoint
   }

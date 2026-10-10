@@ -1,6 +1,6 @@
 'use strict'
 
-const NAVIGABLE_PROTOCOLS = new Set(['http:', 'https:', 'about:', 'data:', 'blob:'])
+const NAVIGABLE_PROTOCOLS = new Set(['http:', 'https:', 'data:', 'blob:'])
 
 const DEFAULT_TARGET_FILTER = [
   { type: 'browser', exclude: true },
@@ -115,14 +115,24 @@ const URL_PARAM_METHODS = new Set([
   'Target.createTarget'
 ])
 
-const isNavigable = url =>
-  typeof url === 'string' && NAVIGABLE_PROTOCOLS.has(URL.parse(url)?.protocol)
+const isNavigable = (url, allowFileAccess) => {
+  let parsed
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+  if (NAVIGABLE_PROTOCOLS.has(parsed.protocol)) return true
+  if (parsed.protocol === 'about:') return parsed.pathname === 'blank'
+  return allowFileAccess === true && parsed.protocol === 'file:'
+}
 
 const domainOf = method => method.slice(0, method.indexOf('.'))
 
-const isAllowedMethod = (method, isRoot) => {
+const isAllowedMethod = (method, isRoot, allowFileAccess) => {
   if (isRoot) return ROOT_METHODS.has(method)
-  if (LOCAL_FILE_METHODS.has(method) || SHARED_SCREEN_METHODS.has(method)) return false
+  if (SHARED_SCREEN_METHODS.has(method)) return false
+  if (allowFileAccess !== true && LOCAL_FILE_METHODS.has(method)) return false
   return SESSION_METHODS.has(method) || SESSION_DOMAINS.has(domainOf(method))
 }
 
@@ -130,10 +140,19 @@ const dragsLocalFiles = (method, params) =>
   method === 'Input.dispatchDragEvent' && params.data?.files?.length > 0
 
 const denial = ({ method, params, isRoot }, scope) => {
-  if (!isAllowedMethod(method, isRoot)) return `'${method}' is not available to functions`
-  if (dragsLocalFiles(method, params)) return `'${method}' cannot carry local files`
-  if (URL_PARAM_METHODS.has(method) && params.url !== undefined && !isNavigable(params.url)) {
-    return `'${method}' only accepts http, https, about, data and blob URLs`
+  const { allowFileAccess } = scope
+  if (!isAllowedMethod(method, isRoot, allowFileAccess)) {
+    return `'${method}' is not available to functions`
+  }
+  if (allowFileAccess !== true && dragsLocalFiles(method, params)) {
+    return `'${method}' cannot carry local files`
+  }
+  if (
+    URL_PARAM_METHODS.has(method) &&
+    params.url !== undefined &&
+    !isNavigable(params.url, allowFileAccess)
+  ) {
+    return `'${method}' only accepts http, https, data, blob and about:blank URLs`
   }
   if (params.browserContextId !== undefined && params.browserContextId !== scope.browserContextId) {
     return `Failed to find browser context with id ${params.browserContextId}`

@@ -26,6 +26,11 @@ const scope = {
 const onSession = (method, params = {}) => denial({ method, params, isRoot: false }, scope)
 const onRoot = (method, params = {}) => denial({ method, params, isRoot: true }, scope)
 
+const withFiles = { ...scope, allowFileAccess: true }
+const onSessionWithFiles = (method, params = {}) =>
+  denial({ method, params, isRoot: false }, withFiles)
+const onRootWithFiles = (method, params = {}) => denial({ method, params, isRoot: true }, withFiles)
+
 const METHODS_THE_ISOLATE_CLIENT_SENDS_AND_FUNCTIONS_LOSE = [
   'DOM.setFileInputFiles',
   'Target.createBrowserContext',
@@ -155,6 +160,12 @@ for (const url of [
   'devtools://devtools/bundled/inspector.html',
   'filesystem:file:///temporary/a',
   'javascript:alert(1)',
+  'about:crash',
+  'about:gpucrash',
+  'about:hang',
+  'about:kill',
+  'ABOUT:CRASH',
+  'about://blank',
   '/etc/passwd',
   '',
   42
@@ -168,12 +179,12 @@ for (const url of [
     ]) {
       t.is(
         onSession(method, { url }),
-        `'${method}' only accepts http, https, about, data and blob URLs`
+        `'${method}' only accepts http, https, data, blob and about:blank URLs`
       )
     }
     t.is(
       onRoot('Target.createTarget', { url }),
-      "'Target.createTarget' only accepts http, https, about, data and blob URLs"
+      "'Target.createTarget' only accepts http, https, data, blob and about:blank URLs"
     )
   })
 }
@@ -182,6 +193,8 @@ for (const url of [
   'https://example.com/',
   'http://example.com/',
   'about:blank',
+  'about:blank#top',
+  'about:blank?a=1',
   'data:text/html,hi',
   'blob:https://example.com/0f1e'
 ]) {
@@ -318,4 +331,54 @@ test('frames and workers are attached by their page, not by the browser', t => {
   t.true(isTopLevelTarget('tab'))
   t.true(isTopLevelTarget('page'))
   t.true(isTopLevelTarget('service_worker'))
+})
+
+test('with file access a page session may touch the local filesystem', t => {
+  for (const method of [
+    'DOM.setFileInputFiles',
+    'DOM.getFileInfo',
+    'Network.loadNetworkResource',
+    'Page.handleFileChooser',
+    'Page.setDownloadBehavior'
+  ]) {
+    t.is(onSessionWithFiles(method), undefined, method)
+  }
+  t.is(
+    onSessionWithFiles('Input.dispatchDragEvent', {
+      type: 'drop',
+      x: 0,
+      y: 0,
+      data: { items: [], files: ['/etc/passwd'], dragOperationsMask: 1 }
+    }),
+    undefined
+  )
+})
+
+test('with file access a function may navigate to a local file', t => {
+  t.true(isNavigable('file:///etc/passwd', true))
+  t.is(onSessionWithFiles('Page.navigate', { url: 'file:///etc/passwd' }), undefined)
+  t.is(onRootWithFiles('Target.createTarget', { url: 'file:///etc/passwd' }), undefined)
+})
+
+test('file access still refuses what reaches every function on the browser', t => {
+  for (const url of ['about:crash', 'about:gpucrash', 'chrome://version']) {
+    t.false(isNavigable(url, true), url)
+    t.is(
+      onSessionWithFiles('Page.navigate', { url }),
+      "'Page.navigate' only accepts http, https, data, blob and about:blank URLs"
+    )
+  }
+  t.is(
+    onSessionWithFiles('Emulation.updateScreen', { screenId: '1' }),
+    "'Emulation.updateScreen' is not available to functions"
+  )
+  t.is(onSessionWithFiles('Tracing.start'), "'Tracing.start' is not available to functions")
+  t.is(
+    onSessionWithFiles('Storage.getCookies', { browserContextId: 'other-context' }),
+    'Failed to find browser context with id other-context'
+  )
+  t.is(
+    onRootWithFiles('Target.attachToTarget', { targetId: 'other-target' }),
+    'No target with given id found'
+  )
 })

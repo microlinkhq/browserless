@@ -24,6 +24,17 @@ const SET_LOCAL_FILE = `async ({ page }) => {
   await client.send('DOM.setFileInputFiles', { nodeId, files: ['/etc/hosts'] })
 }`
 
+const READ_LOCAL_FILE = `async ({ page }) => {
+  const client = await page.createCDPSession()
+  const { root } = await client.send('DOM.getDocument')
+  const { nodeId } = await client.send('DOM.querySelector', {
+    nodeId: root.nodeId,
+    selector: '#upload'
+  })
+  await client.send('DOM.setFileInputFiles', { nodeId, files: ['/etc/hosts'] })
+  return page.$eval('#upload', input => input.files[0].text().then(text => text.length))
+}`
+
 const openPage = async (t, url) => {
   const context = await getBrowser().createContext()
   t.teardown(() => context.destroyContext())
@@ -48,6 +59,31 @@ test('a denied command fails the function as a SandboxError', async t => {
   t.truthy(profiling)
 })
 
+test('with file access a function can read a local file', async t => {
+  const { isFulfilled, value } = await browserlessFunction(READ_LOCAL_FILE, {
+    ...opts,
+    allowFileAccess: true
+  })(OWN_PAGE_URL)
+
+  t.true(isFulfilled)
+  t.true(value > 0)
+})
+
+test('file access does not let a function reach another call', async t => {
+  await openPage(t, 'data:text/html,<title>another-call</title>')
+
+  const result = await browserlessFunction(
+    async ({ page }) => {
+      const pages = await page.browser().pages()
+      return Promise.all(pages.map(open => open.title()))
+    },
+    { ...opts, allowFileAccess: true }
+  )(OWN_PAGE_URL)
+
+  t.true(result.isFulfilled)
+  t.deepEqual(result.value, ['own'])
+})
+
 test('a navigation to a local file is refused', async t => {
   const { isFulfilled, value } = await browserlessFunction(
     ({ page }) => page.goto('file:///etc/hosts'),
@@ -57,7 +93,7 @@ test('a navigation to a local file is refused', async t => {
   t.false(isFulfilled)
   t.deepEqual(value, {
     name: 'SandboxError',
-    message: "'Page.navigate' only accepts http, https, about, data and blob URLs"
+    message: "'Page.navigate' only accepts http, https, data, blob and about:blank URLs"
   })
 })
 

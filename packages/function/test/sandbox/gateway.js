@@ -367,7 +367,7 @@ test('local files are out of reach of a puppeteer client', async t => {
   )
   t.is(await page.$eval('#upload', input => input.files.length), 0)
 
-  const refusedNavigation = 'only accepts http, https, about, data and blob URLs'
+  const refusedNavigation = 'only accepts http, https, data, blob and about:blank URLs'
   t.true((await messageOf(page.goto(`file://${LOCAL_FILE}`))).includes(refusedNavigation))
   t.true((await messageOf(page.goto('chrome://version'))).includes(refusedNavigation))
   const browserLevelSession = browser.target().createCDPSession()
@@ -581,7 +581,7 @@ test('a revoked client that was intercepting requests no longer holds the page',
   t.is(await ownPage.title(), 'Example Domain')
 })
 
-test('a revoked grant leaves no session behind on the host connection', async t => {
+test('a grant is released only once its sessions are gone from the host connection', async t => {
   const page = await openPage(
     t,
     'data:text/html,<iframe src="https://example.com/"></iframe>' +
@@ -596,7 +596,6 @@ test('a revoked grant leaves no session behind on the host connection', async t 
   t.true(hostSessions.size > sessionsBeforeTheGrant)
 
   await grant.revoke()
-  await pWaitFor(() => hostSessions.size === sessionsBeforeTheGrant, { timeout: 5000 })
 
   t.is(hostSessions.size, sessionsBeforeTheGrant)
 })

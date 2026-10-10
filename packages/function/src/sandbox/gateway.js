@@ -27,6 +27,7 @@ const openScope = async (grant, socket) =>
   createScope({
     root: await grant.browser.target().createCDPSession(),
     browserContextId: grant.browserContextId,
+    allowFileAccess: grant.allowFileAccess,
     onDenied: grant.onDenied,
     send: message => {
       if (socket.readyState !== WebSocket.OPEN) return
@@ -47,7 +48,8 @@ const onConnection = (socket, req) => {
   socket.on('message', data => opening.then(scope => scope.handle(data.toString())).catch(() => {}))
   socket.on('close', () => {
     grant.socket = undefined
-    opening.then(scope => scope.dispose()).catch(() => {})
+    const previous = grant.disposed ?? Promise.resolve()
+    grant.disposed = previous.then(() => opening.then(scope => scope.dispose())).catch(() => {})
   })
 }
 
@@ -76,12 +78,18 @@ const terminate = socket =>
     socket.terminate()
   })
 
-const grant = async (page, { onDenied = () => {} } = {}) => {
+const grant = async (page, { onDenied = () => {}, allowFileAccess = false } = {}) => {
   const browserContextId = page.browserContext().id
   if (!browserContextId) throw new Error('A function page needs its own browser context')
   const server = await listen()
   const token = randomBytes(TOKEN_BYTES).toString('hex')
-  const entry = { browser: page.browser(), browserContextId, onDenied, socket: undefined }
+  const entry = {
+    browser: page.browser(),
+    browserContextId,
+    allowFileAccess,
+    onDenied,
+    socket: undefined
+  }
   grants.set(token, entry)
 
   return {
@@ -89,6 +97,7 @@ const grant = async (page, { onDenied = () => {} } = {}) => {
     revoke: async () => {
       grants.delete(token)
       if (entry.socket) await terminate(entry.socket)
+      await entry.disposed
     }
   }
 }

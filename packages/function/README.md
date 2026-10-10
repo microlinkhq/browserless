@@ -178,8 +178,8 @@ The same method and arguments resolve once per run. 32 distinct calls are allowe
 The isolate never gets Chromium's DevTools endpoint. It connects to a loopback endpoint granted for each attempt and revoked when the call settles, which relays only what a page needs:
 
 - The function sees and drives only the pages of its own browser context. `browser.newPage()` lands there, and `browser.close()` ends only its own connection.
-- Commands that reach local files are refused: `elementHandle.uploadFile()`, dropped files, custom download paths, and navigation to anything but `http`, `https`, `about`, `data` and `blob` URLs.
-- Browser-wide commands are refused: tracing, creating browser contexts, and the window and screen every page shares.
+- Commands that reach local files are refused by default: `elementHandle.uploadFile()`, dropped files, custom download paths, and navigation to anything but `http`, `https`, `data`, `blob` and `about:blank` URLs.
+- Browser-wide commands are refused: tracing, creating browser contexts, the window and screen every page shares, and `about:` and `chrome:` targets that crash or hang the browser.
 
 A refused command settles the function as failed, keeping its profiling and logs:
 
@@ -193,6 +193,12 @@ Two things are up to the caller:
 
 - Launch Chromium with `pipe: true`. A function can open network connections, so a DevTools port anywhere it can reach is a way around the sandbox.
 - Give every page its own browser context. A page in the default context is refused.
+
+#### Local file access
+
+`allowFileAccess: true` lets a function read the local filesystem: file inputs, dropped files, download paths and `file:` navigation. Everything else stays: a function still reaches only its own browser context, and the commands that touch what every function on the browser shares are still refused.
+
+Turn it on only where the filesystem holds nothing a function should read. A function reads with the browser's own permissions, so anything that user can read is reachable: run it on a disposable host, keep application code and secrets out of its reach (for example by running Chromium as a separate user that cannot read them), and block network access to anything a file could point at, such as a cloud metadata endpoint.
 
 ### Options
 
@@ -237,6 +243,10 @@ const myFn = createFunction(code, {
   // Called with `{ method, reason }` for every DevTools command the sandbox
   // refuses, including one the function catches and recovers from.
   onDenied: ({ method, reason }) => console.warn(method, reason),
+
+  // Let the function read the local filesystem. Off by default; see
+  // "Local file access" before turning it on.
+  allowFileAccess: false,
 
 
   // Run against a page that is already navigated, instead of creating a
