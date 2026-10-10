@@ -11,6 +11,7 @@ const { AbortError } = pRetry
 
 const { SLOT } = createIsolatedFunction
 const createRunFunction = require('./function')
+const createSandbox = require('./sandbox')
 const path = require('path')
 
 // `isolated-function` reads these to know which dependencies a snippet requires
@@ -56,13 +57,6 @@ const isHttpResponse = response => response != null && typeof response.status ==
 
 const isPageNotFound = error => error?.message === createRunFunction.PAGE_NOT_FOUND
 
-// A supplied page need not be a full Puppeteer page, so neither accessor is
-// assumed: the isolate connects over this endpoint and cannot run without it.
-const wsEndpointOf = page => {
-  const browser = typeof page.browser === 'function' ? page.browser() : undefined
-  return typeof browser?.wsEndpoint === 'function' ? browser.wsEndpoint() : undefined
-}
-
 const serializeResponse = response => ({
   status: response.status(),
   statusText: response.statusText(),
@@ -98,6 +92,7 @@ module.exports = ({ tmpdir } = {}) => {
       hostPage,
       needsBrowser: needsBrowserOverride,
       getPage,
+      onDenied,
       ...opts
     } = {}
   ) => {
@@ -133,15 +128,22 @@ module.exports = ({ tmpdir } = {}) => {
         ? { ...runFunctionOpts, needsNetwork: network, source }
         : runFunctionOpts
 
-    const buildRunOpts = async ({ page, device, response, url, fnOpts, strictTarget = false }) => {
+    const buildRunOpts = async ({
+      page,
+      device,
+      response,
+      url,
+      fnOpts,
+      sandbox,
+      strictTarget = false
+    }) => {
       if (!page) throw new Error(createRunFunction.PAGE_NOT_FOUND)
       const targetId = await getTargetId(page)
       if (strictTarget && !targetId) throw new Error(createRunFunction.PAGE_NOT_FOUND)
 
       const resolvedDevice = device ?? (await readDevice(page))
 
-      const browserWSEndpoint = wsEndpointOf(page)
-      if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
+      const browserWSEndpoint = await sandbox.grant(page)
 
       return withPrebuiltSource(
         {
@@ -162,8 +164,10 @@ module.exports = ({ tmpdir } = {}) => {
       )
     }
 
-    const settle = result => {
+    const settle = (result, sandbox) => {
       if (result.isFulfilled) return result
+      const denial = sandbox?.denialOf(result.value)
+      if (denial) return { ...result, value: denial }
       const error = ensureError(result.value)
       if (isBrowserlessError(error)) throw error
       return result
@@ -172,10 +176,10 @@ module.exports = ({ tmpdir } = {}) => {
     // The page was navigated by whoever handed it over, so there is no `goto`
     // and no page to close: its owner decides when it dies. `timeout` is not
     // forwarded to `runFunction`, so this path has to apply it itself. A
-    // timeout rejects the call and leaves the page open. The snippet and its
-    // isolate subprocess keep running until the snippet returns or the page
-    // is closed. The retry loop stops, so no later attempt starts.
-    const runWithGivenPage = async (url, fnOpts) => {
+    // timeout rejects the call and leaves the page open. The snippet keeps
+    // running in its isolate until it returns, but it loses the browser once
+    // the call settles. The retry loop stops, so no later attempt starts.
+    const runWithGivenPage = async (url, fnOpts, sandbox) => {
       let isRejected = false
 
       // The caller holds its rejection, so nothing further should start. Called
@@ -194,14 +198,14 @@ module.exports = ({ tmpdir } = {}) => {
         // fault being retried, so the caller gets to hand over a live one.
         const { page, device, response } = await getPage()
         const result = await runFunction(
-          await buildRunOpts({ page, device, response, url, fnOpts, strictTarget: true })
+          await buildRunOpts({ page, device, response, url, fnOpts, sandbox, strictTarget: true })
         )
         // A miss inside the isolate comes back as a rejected result. It is not
         // a user-code failure: the supplied page was never found.
         if (!result.isFulfilled && isPageNotFound(ensureError(result.value))) {
           throw new Error(createRunFunction.PAGE_NOT_FOUND)
         }
-        return settle(result)
+        return settle(result, sandbox)
       }
 
       // There is no context to replace here, so this is the only retry the
@@ -229,7 +233,7 @@ module.exports = ({ tmpdir } = {}) => {
       })
     }
 
-    const runWithBrowser = async (url, fnOpts) => {
+    const runWithBrowser = async (url, fnOpts, sandbox) => {
       const browser = await getBrowser()
       const browserless = await browser.createContext()
 
@@ -237,7 +241,8 @@ module.exports = ({ tmpdir } = {}) => {
         .withPage((page, goto) => async () => {
           const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
           return settle(
-            await runFunction(await buildRunOpts({ page, device, response, url, fnOpts }))
+            await runFunction(await buildRunOpts({ page, device, response, url, fnOpts, sandbox })),
+            sandbox
           )
         })()
         .finally(() => browserless.destroyContext())
@@ -263,7 +268,14 @@ module.exports = ({ tmpdir } = {}) => {
 
     return async (url, fnOpts = {}) => {
       if (!needsNetwork) return runWithoutBrowser(url, fnOpts)
-      return getPage ? runWithGivenPage(url, fnOpts) : runWithBrowser(url, fnOpts)
+      const sandbox = createSandbox({ onDenied })
+      try {
+        return await (getPage
+          ? runWithGivenPage(url, fnOpts, sandbox)
+          : runWithBrowser(url, fnOpts, sandbox))
+      } finally {
+        await sandbox.release()
+      }
     }
   }
 

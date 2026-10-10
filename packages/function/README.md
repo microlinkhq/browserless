@@ -173,6 +173,27 @@ Both kinds can sit on the same page, and either counts as satisfying that method
 
 The same method and arguments resolve once per run. 32 distinct calls are allowed per run; `vmOpts.maxHostCalls` changes the cap. The isolate runs untrusted code and can reach the channel directly, so treat every argument as untrusted input. Every `hostPage` value has to be a function.
 
+### Sandbox
+
+The isolate never gets Chromium's DevTools endpoint. It connects to a loopback endpoint granted for each attempt and revoked when the call settles, which relays only what a page needs:
+
+- The function sees and drives only the pages of its own browser context. `browser.newPage()` lands there, and `browser.close()` ends only its own connection.
+- Commands that reach local files are refused: `elementHandle.uploadFile()`, dropped files, custom download paths, and navigation to anything but `http`, `https`, `about`, `data` and `blob` URLs.
+- Browser-wide commands are refused: tracing, creating browser contexts, and the window and screen every page shares.
+
+A refused command settles the function as failed, keeping its profiling and logs:
+
+```js
+// => { isFulfilled: false, value: { name: 'SandboxError', message: "'DOM.setFileInputFiles' is not available to functions" }, ... }
+```
+
+A function that catches the refusal carries on. `onDenied` hears about every refused command either way.
+
+Two things are up to the caller:
+
+- Launch Chromium with `pipe: true`. A function can open network connections, so a DevTools port anywhere it can reach is a way around the sandbox.
+- Give every page its own browser context. A page in the default context is refused.
+
 ### Options
 
 ```js
@@ -213,14 +234,19 @@ const myFn = createFunction(code, {
   // VM sandbox options (passed to isolated-function)
   vmOpts: { /* ... */ },
 
+  // Called with `{ method, reason }` for every DevTools command the sandbox
+  // refuses, including one the function catches and recovers from.
+  onDenied: ({ method, reason }) => console.warn(method, reason),
+
 
   // Run against a page that is already navigated, instead of creating a
   // context and navigating. It replaces that path, so `getBrowserless` is not
   // consulted when it is set. No `goto` happens and the page is never closed:
   // whoever supplied it owns its lifetime. Pass `response` when you have it,
   // so the function still sees `_response`. `timeout` bounds how long the
-  // caller waits. It leaves the page open, and the snippet plus its isolate
-  // subprocess keep running until the snippet returns or the page is closed.
+  // caller waits. It leaves the page open, and the snippet keeps running in
+  // its isolate until it returns, but loses the browser once the call settles.
+  // The page must live in its own browser context.
   // `device` and `response` are optional. Without a device, the `{ userAgent,
   // viewport }` a snippet sees is read off the page, so it matches what the
   // default path reports; pass your own to override it.
@@ -242,16 +268,12 @@ const result = await createFunction(code, {
 await page.close()
 ```
 
-The snippet runs in an isolate connected over `browserWSEndpoint`, so
-`page.browser()` reaches every page on that browser, not only the one it was
-handed. `strictTarget` decides which page that is, not what it can reach. This
-was already true of the navigating path, and it matters more once one context is
-shared across tasks: treat sharing as a trust boundary this package cannot
-enforce for you.
+The snippet reaches only the browser context the page lives in, so pages that
+share a context also share what a snippet can see; see [Sandbox](#sandbox).
 
-`timeout` rejects the call and leaves the page open. The snippet and its
-isolate subprocess keep running, so treat the page as busy: leave it alone
-until that work finishes, or close it. Closing the page ends the snippet.
+`timeout` rejects the call and leaves the page open. The snippet loses the
+browser as the call settles, but its isolate keeps running until it returns,
+so a snippet that never touches the browser again is not stopped by it.
 
 Retaining a page from `browserless` requires `keepPage`, since `evaluate`
 closes its page as soon as it resolves:

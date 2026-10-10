@@ -137,6 +137,7 @@ test('getPage throws when the isolate cannot find the supplied target', async t 
   // its title.
   const ghost = {
     browser: () => marked.browser(),
+    browserContext: () => marked.browserContext(),
     createCDPSession: async () => ({
       send: async () => ({ targetInfo: { targetId: 'missing-target' } }),
       detach: async () => {}
@@ -168,8 +169,8 @@ test('getPage rejects on timeout and leaves the page open', async t => {
     })(fileUrl)
   )
 
-  // The timeout ends the wait. The snippet is still blocked on the selector,
-  // and the isolate subprocess stays up until the page is closed.
+  // The timeout ends the wait. The snippet loses the browser as the call
+  // settles, and the page stays open for its owner.
   t.is(error.code, 'EBRWSRTIMEOUT')
   t.false(page.isClosed())
 })

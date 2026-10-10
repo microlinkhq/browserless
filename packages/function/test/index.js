@@ -59,6 +59,15 @@ const isolatedFunctionMock = `
         create.SLOT = SLOT
         return create`
 
+// A fake page has no browser context to grant, so the isolate gets the
+// endpoint the page names.
+const sandboxMock = `
+        return () => ({
+          grant: async page => page.browser().wsEndpoint(),
+          denialOf: () => undefined,
+          release: async () => {}
+        })`
+
 const runPageFnSubprocess = body => {
   const browserlessFunctionPath = require.resolve('..')
   const script = `
@@ -72,6 +81,9 @@ const runPageFnSubprocess = body => {
           instance.teardown = async () => {}
           return instance
         }
+      }
+      if (request === './sandbox') {
+        ${sandboxMock}
       }
       return originalLoad(request, parent, isMain)
     }
@@ -393,6 +405,9 @@ test('response is serialized and reconstructed with callable methods (page funct
       if (request === 'isolated-function') {
         ${isolatedFunctionMock}
       }
+      if (request === './sandbox') {
+        ${sandboxMock}
+      }
       if (request === '@cloudflare/puppeteer') {
         return { connect: async () => ({
           pages: async () => [],
@@ -505,7 +520,7 @@ test('response is undefined for non-page functions (subprocess)', t => {
   t.is(result.value, true)
 })
 
-test('throws error when browser is launched with pipe mode', async t => {
+test('runs when the browser is launched with pipe mode', async t => {
   const createTestUtil = require('@browserless/test/create')
   const { getBrowser } = createTestUtil({ pipe: true })
 
@@ -515,8 +530,9 @@ test('throws error when browser is launched with pipe mode', async t => {
     getBrowserless: () => getBrowser()
   })
 
-  const error = await t.throwsAsync(myFn(fileUrl))
-  t.is(error.message, 'Browser WebSocket endpoint not found')
+  const result = await myFn(fileUrl)
+  t.true(result.isFulfilled)
+  t.is(result.value, 'Example Domain')
 })
 
 test('non-page functions skip browser entirely', async t => {
@@ -553,44 +569,14 @@ test('access to url without spinning a browser', async t => {
   t.is(getBrowserlessCalls, 0)
 })
 
-test('prefer page browser websocket endpoint when available', t => {
-  const { status, stdout, stderr } = runPageFnSubprocess(`
-    let browserCalls = 0
-    const fakeBrowserless = {
-      withPage: fn => async () =>
-        fn(
-          { browser: () => ({ wsEndpoint: () => 'ws://from-page' }) },
-          async () => ({ device: { viewport: {}, userAgent: 'ua' } })
-        )(),
-      browser: async () => {
-        browserCalls += 1
-        return { wsEndpoint: () => 'ws://from-browserless' }
-      },
-      destroyContext: async () => {}
-    }
+test('the isolate connects through the sandbox, not the browser', async t => {
+  const myFn = browserlessFunction(({ page }) => page.browser().wsEndpoint(), opts)
 
-    const fn = browserlessFunction(({ page }) => page.title(), {
-      getBrowserless: async () => ({
-        createContext: async () => fakeBrowserless
-      })
-    })
+  const result = await myFn(fileUrl)
 
-    Promise.resolve()
-      .then(() => fn('https://example.com'))
-      .then(result => {
-        process.stdout.write(JSON.stringify({ browserCalls, result }))
-      })
-      .catch(error => {
-        process.stderr.write(String(error && error.stack ? error.stack : error))
-        process.exit(1)
-      })
-  `)
-
-  t.is(status, 0, stderr)
-  const { browserCalls, result } = JSON.parse(stdout.trim())
-  t.is(browserCalls, 0)
   t.true(result.isFulfilled)
-  t.is(result.value, 'ok')
+  t.regex(result.value, /^ws:\/\/127\.0\.0\.1:\d+\/[0-9a-f]{64}$/)
+  t.not(result.value, (await browserless.browser()).wsEndpoint())
 })
 
 test('reuse function code analysis across invocations', t => {
