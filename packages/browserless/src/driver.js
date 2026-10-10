@@ -76,29 +76,25 @@ const close = async (subprocess, { signal = 'SIGKILL', force = false, ...debugOp
 
   if (pid === undefined && !hasDisconnect && !hasClose) return
 
-  // A browser that has stopped answering CDP will not finish `browser.close()`.
-  // Kill the process instead; graceful close stays the path for a live browser.
   const child = typeof subprocess.process === 'function' ? subprocess.process() : undefined
   const kill = () => {
     const proc = child && child.pid ? child : subprocess
     return proc && proc.pid ? killProcessGroup(proc, { signal }) : undefined
   }
 
-  // It's necessary to call `browser.close` for removing temporal files associated
-  // and remove listeners attached to the main process; check
-  // - https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
-  // - https://github.com/puppeteer/puppeteer/blob/69d85e874416d62de6e821bef30e5cebcfd42f15/src/node/BrowserRunner.ts#L189
-  await pReflect(
-    force
-      ? kill()
-      : pid === undefined
-        ? hasDisconnect
-          ? subprocess.disconnect()
-          : subprocess.close()
-        : hasClose
-          ? subprocess.close()
-          : kill()
-  )
+  // `browser.close` removes temp files and listeners on the main process:
+  // https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
+  // https://github.com/puppeteer/puppeteer/blob/69d85e874416d62de6e821bef30e5cebcfd42f15/src/node/BrowserRunner.ts#L189
+  const graceful = () => {
+    if (pid === undefined) {
+      return hasDisconnect ? subprocess.disconnect() : subprocess.close()
+    }
+    if (hasClose) return subprocess.close()
+    return kill()
+  }
+
+  // A browser that has stopped answering CDP will not finish `browser.close()`.
+  await pReflect(force ? kill() : graceful())
 
   debug('close', { pid, signal, ...debugOpts })
   return pid === undefined ? {} : { pid }
