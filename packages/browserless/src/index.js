@@ -75,21 +75,22 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
   let browserProcessPromise = spawn()
 
-  const createBrowserContext = async (contextOpts, respawnOnTimeout = true) => {
-    const browser = await getBrowser()
-    const attempt = browser.createBrowserContext(contextOpts)
-    attempt.catch(() => {})
+  const createBrowserContext = async contextOpts => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const browser = await getBrowser()
+      const pending = browser.createBrowserContext(contextOpts)
+      pending.catch(() => {})
 
-    try {
-      return await pTimeout(attempt, Math.min(globalTimeout, CREATE_CONTEXT_TIMEOUT))
-    } catch (error) {
-      if (!respawnOnTimeout || !isUnresponsiveBrowser(error)) throw error
-      debug('respawn', { reason: 'createBrowserContext', message: error.message })
-      await lock(async () => {
-        const current = await browserProcessPromise.catch(() => {})
-        if (current === browser) await respawn({ force: true })
-      })
-      return createBrowserContext(contextOpts, false)
+      try {
+        return await pTimeout(pending, Math.min(globalTimeout, CREATE_CONTEXT_TIMEOUT))
+      } catch (error) {
+        if (attempt > 0 || !isUnresponsiveBrowser(error)) throw error
+        debug('respawn', { reason: 'createBrowserContext', message: error.message })
+        await lock(async () => {
+          const current = await browserProcessPromise.catch(() => {})
+          if (current === browser) await respawn({ force: true })
+        })
+      }
     }
   }
 
