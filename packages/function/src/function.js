@@ -14,9 +14,10 @@ const portOf = (endpoint, url) => {
   if (scheme === -1) return ''
   const authority = endpoint.slice(scheme + 3).split(/[/?#]/, 1)[0]
   const colon = authority.lastIndexOf(':')
-  if (colon === -1 || authority.lastIndexOf(']') > colon) return ''
+  if (colon === -1) return ''
   const port = authority.slice(colon + 1)
-  return /^\d+$/.test(port) ? port : ''
+  // `080` is port 80. The dial uses the number, so the grant has to as well.
+  return /^\d+$/.test(port) ? String(Number(port)) : ''
 }
 
 const pair = (address, port) => {

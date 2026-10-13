@@ -38,6 +38,12 @@ test('an explicit default websocket port is still allowed', async t => {
   t.false(ssrf('127.0.0.1', 1))
 })
 
+test('a leading-zero default port is the port that is dialed', async t => {
+  const { ssrf } = await run({ browserWSEndpoint: 'ws://127.0.0.1:080/token' })
+  t.true(ssrf('127.0.0.1', 80))
+  t.false(ssrf('127.0.0.1', 8))
+})
+
 test('an explicit default secure websocket port is still allowed', async t => {
   const { ssrf } = await run({ browserWSEndpoint: 'wss://127.0.0.1:443/token' })
   t.true(ssrf('127.0.0.1', 443))
@@ -52,6 +58,11 @@ test('an explicit default IPv6 port is still allowed', async t => {
 test('an address with no port is not allowed', async t => {
   const { ssrf } = await run({ browserWSEndpoint: 'ws://127.0.0.1/token' })
   t.false(ssrf('127.0.0.1', 80))
+})
+
+test('an IPv6 address with no port is not allowed', async t => {
+  const { ssrf } = await run({ browserWSEndpoint: 'ws://[::1]/token' })
+  t.false(ssrf('::1', 80))
 })
 
 test('a run with no browser socket grants nothing on its own', async t => {
