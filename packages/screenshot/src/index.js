@@ -245,9 +245,10 @@ const fullPageScreenshotOpts = async (page, screenshotOpts) => {
   const dpr = page.viewport()?.deviceScaleFactor || 1
   const pixels = Math.ceil(width * dpr) * Math.ceil(height * dpr)
   if (pixels <= FULL_PAGE_PNG_PIXELS) return screenshotOpts
-  const fitted = {
+  return {
     ...screenshotOpts,
     captureBeyondViewport: true,
+    fullPage: false,
     clip: {
       height,
       scale: Math.sqrt(FULL_PAGE_PNG_PIXELS / pixels),
@@ -256,8 +257,6 @@ const fullPageScreenshotOpts = async (page, screenshotOpts) => {
       y: 0
     }
   }
-  delete fitted.fullPage
-  return fitted
 }
 
 // Captures stay binary until returned: the blank-page check and the overlay
