@@ -29,7 +29,7 @@
     "debug-logfmt": "~1.4.15"
   },
   "devDependencies": {
-    "@ai-sdk/typesafe-ai": "~3.0.13",
+    "@ai-sdk/typesafe-ai": "~3.0.18",
     "@browserless/cli": "workspace:*",
     "ava": "8",
     "jsdom": "30",
