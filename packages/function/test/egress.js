@@ -28,6 +28,26 @@ test('an IPv6 browser socket keeps its brackets', async t => {
   t.deepEqual(allow.egress, ['[::1]:9'])
 })
 
+test('an explicit default websocket port is still granted', async t => {
+  const allow = await run({ browserWSEndpoint: 'ws://127.0.0.1:80/token' })
+  t.deepEqual(allow.egress, ['127.0.0.1:80'])
+})
+
+test('an explicit default secure websocket port is still granted', async t => {
+  const allow = await run({ browserWSEndpoint: 'wss://127.0.0.1:443/token' })
+  t.deepEqual(allow.egress, ['127.0.0.1:443'])
+})
+
+test('an explicit default IPv6 port keeps its brackets', async t => {
+  const allow = await run({ browserWSEndpoint: 'wss://[::1]:443/token' })
+  t.deepEqual(allow.egress, ['[::1]:443'])
+})
+
+test('an address with no port is not granted', async t => {
+  const allow = await run({ browserWSEndpoint: 'ws://127.0.0.1/token' })
+  t.deepEqual(allow.egress, [])
+})
+
 test('a run with no browser socket grants no reserved dial', async t => {
   const allow = await run({})
   t.deepEqual(allow.egress, [])
