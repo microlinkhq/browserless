@@ -36,7 +36,7 @@
     "lighthouse": "~13.5.0"
   },
   "devDependencies": {
-    "ava": "5"
+    "ava": "8"
   },
   "engines": {
     "node": ">= 24"

@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 const errors = require('..')
 
 test('avoid parse ensureError twice', t => {

@@ -2,7 +2,7 @@
 
 const { runServer, getBrowserContext, getBrowserWSEndpoint } = require('@browserless/test')
 const puppeteer = require('puppeteer')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { getClientHints } = require('../src/client-hints')
 

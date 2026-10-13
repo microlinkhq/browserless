@@ -2,7 +2,7 @@
 
 const { runServer, getBrowserContext } = require('@browserless/test')
 const createGetDevice = require('@browserless/devices')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { getClientHints } = require('../../src/client-hints')
 

@@ -1,7 +1,7 @@
 'use strict'
 
 const { getBrowserContext, runServer } = require('@browserless/test')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const createScreenshot = require('..')
 const { waitForReady } = require('..')

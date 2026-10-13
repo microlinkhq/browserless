@@ -4,7 +4,7 @@ const { waitForDomStability } = require('@browserless/screenshot')
 const createPdf = require('@browserless/pdf')
 const path = require('path')
 const fs = require('fs')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const whiteScreenshot = fs.readFileSync(
   path.resolve(__dirname, '../../screenshot/test/fixtures/white-5k.png')

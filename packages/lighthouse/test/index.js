@@ -1,7 +1,7 @@
 'use strict'
 
 const { getBrowserContext } = require('@browserless/test')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const createLighthouse = require('..')
 

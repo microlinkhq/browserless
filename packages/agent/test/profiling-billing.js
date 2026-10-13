@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 const model = require('../src/model')
 
 const EVALUATION_CALL = {

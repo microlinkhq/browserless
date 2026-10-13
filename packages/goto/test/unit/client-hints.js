@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { getClientHints } = require('../../src/client-hints')
 const createGoto = require('../../src')

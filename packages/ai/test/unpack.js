@@ -3,7 +3,7 @@
 const { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, existsSync } = require('node:fs')
 const { tmpdir } = require('node:os')
 const path = require('node:path')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const createAi = require('..')
 

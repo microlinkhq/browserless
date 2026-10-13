@@ -50,7 +50,7 @@
     "unique-random-array": "~3.0.0"
   },
   "devDependencies": {
-    "ava": "5"
+    "ava": "8"
   },
   "engines": {
     "node": ">= 24"

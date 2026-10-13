@@ -1,5 +1,6 @@
 'use strict'
 
+const { registerCompletionHandler } = require('ava')
 const { default: listen } = require('async-listen')
 const { onExit } = require('signal-exit')
 const { createServer } = require('http')
@@ -26,10 +27,19 @@ const runServer = async (t, handler) => {
 
 module.exports = opts => {
   let _browser
+  let exitRegistered = false
 
   const createBrowser = () => {
     const browser = require('browserless')(opts)
     onExit(browser.close)
+    // The shared browser stays open until the process exits. AVA 6+ no longer
+    // exits the worker for us, so close it from a completion handler.
+    if (!exitRegistered) {
+      exitRegistered = true
+      registerCompletionHandler(() => {
+        process.exit()
+      })
+    }
     return browser
   }
 

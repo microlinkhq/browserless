@@ -1,11 +1,8 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 
-const {
-  prepareFullDocument,
-  isCompleteScroll
-} = require('../src/prepare-full-document')
+const { prepareFullDocument, isCompleteScroll } = require('../src/prepare-full-document')
 
 test('prepareFullDocument tolerates navigation during the scroll', async t => {
   const goto = {

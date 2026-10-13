@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 const createGoto = require('../../src')
 const networkIdle = require('../../src/network-idle')
 

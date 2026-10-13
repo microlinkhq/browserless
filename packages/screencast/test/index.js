@@ -2,7 +2,7 @@
 
 const { getBrowserContext } = require('@browserless/test')
 const { EventEmitter } = require('events')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const createScreencast = require('..')
 

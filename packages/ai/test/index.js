@@ -1,7 +1,7 @@
 'use strict'
 
 const createHelpers = require('@browserless/test/create')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { cacheRoot, hasFile } = require('../src/find-dir')
 const createAi = require('..')

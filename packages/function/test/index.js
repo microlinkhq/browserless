@@ -3,7 +3,7 @@
 const { getBrowser } = require('@browserless/test')
 const { spawnSync } = require('child_process')
 const path = require('path')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const browserlessFunction = require('..')()
 

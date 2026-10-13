@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { writeHeader, writeClusterHeader } = require('../src/recorder/ebml')
 

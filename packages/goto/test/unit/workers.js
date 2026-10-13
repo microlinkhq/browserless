@@ -1,7 +1,7 @@
 'use strict'
 
 const { runServer, getBrowserContext } = require('@browserless/test')
-const test = require('ava')
+const { default: test } = require('ava')
 
 /**
  * Every scope must keep its high entropy user agent client hints. A browser

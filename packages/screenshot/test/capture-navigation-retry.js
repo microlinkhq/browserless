@@ -1,7 +1,7 @@
 'use strict'
 
 const { setTimeout: sleep } = require('node:timers/promises')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { captureWithNavigationRetry } = require('../src/index.js')
 

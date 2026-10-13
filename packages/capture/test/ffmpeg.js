@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { getOutputArgs, spawnFfmpeg, ENCODERS } = require('../src/recorder/ffmpeg')
 

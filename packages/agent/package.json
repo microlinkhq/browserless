@@ -31,7 +31,7 @@
   "devDependencies": {
     "@ai-sdk/typesafe-ai": "~3.0.13",
     "@browserless/cli": "workspace:*",
-    "ava": "5",
+    "ava": "8",
     "jsdom": "30",
     "puppeteer": "25"
   },
