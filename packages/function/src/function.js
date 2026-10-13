@@ -5,6 +5,25 @@ const net = require('node:net')
 
 const template = require('./template')
 
+// `new URL()` drops a scheme's default port, so `ws://127.0.0.1:80` has an
+// empty `url.port`. The port is still in the raw authority. An endpoint that
+// names no port stays ungranted.
+const portOf = (endpoint, url) => {
+  if (url.port !== '') return url.port
+  const scheme = endpoint.indexOf('://')
+  if (scheme === -1) return ''
+  const authority = endpoint.slice(scheme + 3).split(/[/?#]/, 1)[0]
+  const colon = authority.lastIndexOf(':')
+  if (colon === -1 || authority.lastIndexOf(']') > colon) return ''
+  const port = authority.slice(colon + 1)
+  return /^\d+$/.test(port) ? port : ''
+}
+
+const pair = (address, port) => {
+  const value = String(port)
+  return net.isIP(address) === 6 ? `[${address}]:${value}` : `${address}:${value}`
+}
+
 const egressOf = endpoint => {
   if (typeof endpoint !== 'string') return []
   let url
@@ -13,13 +32,14 @@ const egressOf = endpoint => {
   } catch {
     return []
   }
-  if (url.port === '') return []
+  const port = portOf(endpoint, url)
+  if (port === '') return []
   const host =
     url.hostname.startsWith('[') && url.hostname.endsWith(']')
       ? url.hostname.slice(1, -1)
       : url.hostname
   if (net.isIP(host) === 0) return []
-  return [net.isIP(host) === 6 ? `[${host}]:${url.port}` : `${host}:${url.port}`]
+  return [net.isIP(host) === 6 ? `[${host}]:${port}` : `${host}:${port}`]
 }
 
 const [nodeMajor] = process.version.slice(1).split('.').map(Number)
@@ -48,7 +68,12 @@ module.exports =
       ...opts
     }) => {
       const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
-      const vmOptsAllow = vmOpts?.allow || {}
+      const { ssrf: policy, allow: vmOptsAllow = {}, ...vmOptsRest } = vmOpts ?? {}
+      const granted = new Set(egressOf(browserWSEndpoint))
+      const ssrf =
+      typeof policy === 'function'
+        ? (address, port) => granted.has(pair(address, port)) || policy(address, port) === true
+        : undefined
       // `isolated-function` rejects `slot` unless the sentinel appears once.
       // A second copy means an extendPage method mentioned it; inline the user
       // code and take a full build so that call still runs.
@@ -64,16 +89,13 @@ module.exports =
         : source
       const host = template.exposedHost(hostPage, extendPage)
       const fn = isolatedFunction(program, {
-        ...vmOpts,
+        ...vmOptsRest,
+        ...(ssrf && { ssrf }),
         ...(copies === 1 && { slot: code }),
         ...(host && { host }),
         allow: {
           ...vmOptsAllow,
-          permissions: [...(vmOptsAllow.permissions || []), ...permissions],
-          egress: [
-            ...(Array.isArray(vmOptsAllow.egress) ? vmOptsAllow.egress : []),
-            ...egressOf(browserWSEndpoint)
-          ]
+          permissions: [...(vmOptsAllow.permissions || []), ...permissions]
         },
         throwError: false
       })
