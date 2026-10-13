@@ -69,26 +69,32 @@ const getPid = subprocess => {
   return 'pid' in browserProcess ? browserProcess.pid : undefined
 }
 
-const close = async (subprocess, { signal = 'SIGKILL', ...debugOpts } = {}) => {
+const close = async (subprocess, { signal = 'SIGKILL', force = false, ...debugOpts } = {}) => {
   const pid = getPid(subprocess)
   const hasDisconnect = subprocess && typeof subprocess.disconnect === 'function'
   const hasClose = subprocess && typeof subprocess.close === 'function'
 
   if (pid === undefined && !hasDisconnect && !hasClose) return
 
-  // It's necessary to call `browser.close` for removing temporal files associated
-  // and remove listeners attached to the main process; check
-  // - https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
-  // - https://github.com/puppeteer/puppeteer/blob/69d85e874416d62de6e821bef30e5cebcfd42f15/src/node/BrowserRunner.ts#L189
-  await pReflect(
-    pid === undefined
-      ? hasDisconnect
-        ? subprocess.disconnect()
-        : subprocess.close()
-      : hasClose
-        ? subprocess.close()
-        : killProcessGroup(subprocess, signal)
-  )
+  const child = typeof subprocess.process === 'function' ? subprocess.process() : undefined
+  const kill = () => {
+    const proc = child && child.pid ? child : subprocess
+    return proc && proc.pid ? killProcessGroup(proc, { signal }) : undefined
+  }
+
+  // `browser.close` removes temp files and listeners on the main process:
+  // https://github.com/puppeteer/puppeteer/blob/778ac92469d66c542c3c12fe0aa23703dd6315c2/src/node/BrowserRunner.ts#L146
+  // https://github.com/puppeteer/puppeteer/blob/69d85e874416d62de6e821bef30e5cebcfd42f15/src/node/BrowserRunner.ts#L189
+  const graceful = () => {
+    if (pid === undefined) {
+      return hasDisconnect ? subprocess.disconnect() : subprocess.close()
+    }
+    if (hasClose) return subprocess.close()
+    return kill()
+  }
+
+  // A browser that has stopped answering CDP will not finish `browser.close()`.
+  await pReflect(force ? kill() : graceful())
 
   debug('close', { pid, signal, ...debugOpts })
   return pid === undefined ? {} : { pid }
