@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.21](https://github.com/microlinkhq/browserless/compare/v14.0.20...v14.0.21) (2026-10-13)
+
+### Bug Fixes
+
+* respawn Chrome when it stops answering CDP ([#988](https://github.com/microlinkhq/browserless/issues/988)) ([17ee2f4](https://github.com/microlinkhq/browserless/commit/17ee2f471e38382eabd970abeb427c88ca100c65))
+
 ## [14.0.20](https://github.com/microlinkhq/browserless/compare/v14.0.19...v14.0.20) (2026-10-13)
 
 **Note:** Version bump only for package browserless

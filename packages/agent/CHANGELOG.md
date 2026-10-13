@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.21](https://github.com/microlinkhq/browserless/compare/v14.0.20...v14.0.21) (2026-10-13)
+
+**Note:** Version bump only for package @browserless/agent
+
 ## [14.0.20](https://github.com/microlinkhq/browserless/compare/v14.0.19...v14.0.20) (2026-10-13)
 
 **Note:** Version bump only for package @browserless/agent
