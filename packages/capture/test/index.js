@@ -3,7 +3,7 @@
 const { EventEmitter } = require('events')
 const fs = require('fs/promises')
 const path = require('path')
-const test = require('ava')
+const { default: test } = require('ava')
 const os = require('os')
 
 const { EXTENSION_ID } = require('../src/constants')

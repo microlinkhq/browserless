@@ -1,7 +1,7 @@
 'use strict'
 
 const pReflect = require('p-reflect')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const createScreenshot = require('..')
 

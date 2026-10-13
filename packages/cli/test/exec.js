@@ -3,7 +3,7 @@
 const { execFile } = require('child_process')
 const { promisify } = require('util')
 const path = require('path')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const exec = require('../src/commands/exec')
 

@@ -52,7 +52,7 @@
     "svg-gradient": "~1.0.5"
   },
   "devDependencies": {
-    "ava": "5"
+    "ava": "8"
   },
   "engines": {
     "node": ">= 24"

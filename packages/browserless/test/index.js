@@ -4,7 +4,7 @@ const { setTimeout } = require('timers/promises')
 const { request } = require('http')
 const $ = require('tinyspawn')
 const path = require('path')
-const ava = require('ava')
+const { default: ava } = require('ava')
 
 const { runServer, createBrowser, getBrowserContext, getBrowser } = require('@browserless/test')
 const { detectBuild, parseGalliumVersion } = require('../src/report')

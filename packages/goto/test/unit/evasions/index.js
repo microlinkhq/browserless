@@ -2,7 +2,7 @@
 
 const { getPage } = require('@browserless/test')
 const path = require('path')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const isCI = !!process.env.CI
 

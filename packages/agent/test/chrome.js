@@ -2,7 +2,7 @@
 
 const { execFileSync } = require('node:child_process')
 const { createServer } = require('node:http')
-const test = require('ava')
+const { default: test } = require('ava')
 const puppeteer = require('puppeteer')
 const { observe, execute, settle, settled, pageOutline, agentWorld } = require('../src/browser')
 const snapshot = require('../src/snapshot')

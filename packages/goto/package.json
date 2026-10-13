@@ -42,7 +42,7 @@
     "tough-cookie": "~6.0.2"
   },
   "devDependencies": {
-    "ava": "5"
+    "ava": "8"
   },
   "engines": {
     "node": ">= 24"

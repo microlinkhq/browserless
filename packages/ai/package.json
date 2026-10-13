@@ -33,7 +33,7 @@
     "debug-logfmt": "~1.4.15"
   },
   "devDependencies": {
-    "ava": "5",
+    "ava": "8",
     "browserless": "^14.0.21",
     "puppeteer": "25"
   },

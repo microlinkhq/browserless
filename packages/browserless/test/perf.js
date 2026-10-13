@@ -3,7 +3,7 @@
 const { readFileSync } = require('node:fs')
 const { createRequire } = require('node:module')
 const { getPage } = require('@browserless/test')
-const test = require('ava')
+const { default: test } = require('ava')
 const {
   baseSource,
   between,

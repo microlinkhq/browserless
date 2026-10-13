@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 const { JSDOM } = require('jsdom')
 const snapshot = require('../src/snapshot')
 const { targetFresh } = require('../src/browser')

@@ -6,7 +6,7 @@ const { onExit } = require('signal-exit')
 const { copy } = require('fs-extra')
 const temp = require('temperment')
 const path = require('path')
-const test = require('ava')
+const { default: test } = require('ava')
 const fs = require('fs')
 
 const { runServer } = require('.')

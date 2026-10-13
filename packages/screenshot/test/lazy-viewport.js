@@ -2,7 +2,7 @@
 
 const { getBrowserContext, runServer } = require('@browserless/test')
 const sharp = require('sharp')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const createScreenshot = require('..')
 

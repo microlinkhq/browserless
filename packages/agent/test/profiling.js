@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 const { MockLanguageModelV4 } = require('ai/test')
 const agent = require('..')
 const { costOf, createProfiling } = require('../src/profiling')

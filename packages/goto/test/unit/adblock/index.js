@@ -2,7 +2,7 @@
 
 const { spawnSync } = require('child_process')
 const path = require('path')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { runServer, getBrowserContext } = require('@browserless/test')

@@ -1,7 +1,7 @@
 'use strict'
 
 const { setTimeout: delay } = require('node:timers/promises')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const screenshotModulePath = require.resolve('../src/index.js')
 const isWhiteModulePath = require.resolve('../src/is-white-screenshot.js')

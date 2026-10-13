@@ -43,7 +43,7 @@
     "ws": "~8.22.0"
   },
   "devDependencies": {
-    "ava": "5"
+    "ava": "8"
   },
   "engines": {
     "node": ">= 24"

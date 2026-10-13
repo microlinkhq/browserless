@@ -2,7 +2,7 @@
 
 const { readdirSync } = require('fs')
 const path = require('path')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const getConfig = require('../src/get-config')
 

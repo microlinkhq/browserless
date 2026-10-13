@@ -6,7 +6,7 @@ const { randomUUID } = require('node:crypto')
 const createScreenshot = require('..')
 const path = require('node:path')
 const os = require('node:os')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const isCI = !!process.env.CI
 

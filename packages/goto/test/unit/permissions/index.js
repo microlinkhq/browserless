@@ -2,7 +2,7 @@
 
 const { runServer, getBrowserContext } = require('@browserless/test')
 const { driver } = require('browserless')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const FIXTURE = `<!doctype html>
 <title>notifications</title>

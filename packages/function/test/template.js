@@ -3,7 +3,7 @@
 'use strict'
 
 const { spawnSync } = require('child_process')
-const test = require('ava')
+const { default: test } = require('ava')
 
 const template = require('../src/template')
 

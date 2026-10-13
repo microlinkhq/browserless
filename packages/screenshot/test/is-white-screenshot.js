@@ -1,6 +1,6 @@
 'use strict'
 
-const test = require('ava')
+const { default: test } = require('ava')
 const { readFile } = require('fs/promises')
 
 const isWhite = require('../src/is-white-screenshot')

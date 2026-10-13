@@ -2,7 +2,7 @@
 
 const { createBrowser, getBrowserContext, runServer } = require('@browserless/test')
 const psList = require('ps-list')
-const test = require('ava')
+const { default: test } = require('ava')
 const browserless = require('..')
 
 const isCI = !!process.env.CI

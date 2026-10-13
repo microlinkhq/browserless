@@ -2,7 +2,7 @@
 
 const { getPage } = require('@browserless/test')
 
-const test = require('ava')
+const { default: test } = require('ava')
 
 const pretty = require('../src/pretty')
 
