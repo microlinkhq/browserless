@@ -1,8 +1,26 @@
 'use strict'
 
 const { SLOT } = require('isolated-function')
+const net = require('node:net')
 
 const template = require('./template')
+
+const egressOf = endpoint => {
+  if (typeof endpoint !== 'string') return []
+  let url
+  try {
+    url = new URL(endpoint)
+  } catch {
+    return []
+  }
+  if (url.port === '') return []
+  const host =
+    url.hostname.startsWith('[') && url.hostname.endsWith(']')
+      ? url.hostname.slice(1, -1)
+      : url.hostname
+  if (net.isIP(host) === 0) return []
+  return [net.isIP(host) === 6 ? `[${host}]:${url.port}` : `${host}:${url.port}`]
+}
 
 const [nodeMajor] = process.version.slice(1).split('.').map(Number)
 
@@ -51,7 +69,11 @@ module.exports =
         ...(host && { host }),
         allow: {
           ...vmOptsAllow,
-          permissions: [...(vmOptsAllow.permissions || []), ...permissions]
+          permissions: [...(vmOptsAllow.permissions || []), ...permissions],
+          egress: [
+            ...(Array.isArray(vmOptsAllow.egress) ? vmOptsAllow.egress : []),
+            ...egressOf(browserWSEndpoint)
+          ]
         },
         throwError: false
       })
