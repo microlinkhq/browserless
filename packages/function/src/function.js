@@ -19,6 +19,11 @@ const portOf = (endpoint, url) => {
   return /^\d+$/.test(port) ? port : ''
 }
 
+const pair = (address, port) => {
+  const value = String(port)
+  return net.isIP(address) === 6 ? `[${address}]:${value}` : `${address}:${value}`
+}
+
 const egressOf = endpoint => {
   if (typeof endpoint !== 'string') return []
   let url
@@ -63,7 +68,12 @@ module.exports =
       ...opts
     }) => {
       const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
-      const vmOptsAllow = vmOpts?.allow || {}
+      const { ssrf: policy, allow: vmOptsAllow = {}, ...vmOptsRest } = vmOpts ?? {}
+      const granted = new Set(egressOf(browserWSEndpoint))
+      const ssrf =
+      typeof policy === 'function'
+        ? (address, port) => granted.has(pair(address, port)) || policy(address, port) === true
+        : undefined
       // `isolated-function` rejects `slot` unless the sentinel appears once.
       // A second copy means an extendPage method mentioned it; inline the user
       // code and take a full build so that call still runs.
@@ -79,16 +89,13 @@ module.exports =
         : source
       const host = template.exposedHost(hostPage, extendPage)
       const fn = isolatedFunction(program, {
-        ...vmOpts,
+        ...vmOptsRest,
+        ...(ssrf && { ssrf }),
         ...(copies === 1 && { slot: code }),
         ...(host && { host }),
         allow: {
           ...vmOptsAllow,
-          permissions: [...(vmOptsAllow.permissions || []), ...permissions],
-          egress: [
-            ...(Array.isArray(vmOptsAllow.egress) ? vmOptsAllow.egress : []),
-            ...egressOf(browserWSEndpoint)
-          ]
+          permissions: [...(vmOptsAllow.permissions || []), ...permissions]
         },
         throwError: false
       })
