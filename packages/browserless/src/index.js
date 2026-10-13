@@ -19,6 +19,8 @@ const driver = require('./driver')
 // timeout on every context, and each wait holds a pool slot.
 const CREATE_CONTEXT_TIMEOUT = 10_000
 
+const closeLateContext = pending => pending.then(context => context.close()).catch(() => {})
+
 const isUnresponsiveBrowser = error =>
   error?.name === 'TimeoutError' ||
   (typeof error?.message === 'string' &&
@@ -79,11 +81,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     for (let attempt = 0; attempt < 2; attempt++) {
       const browser = await getBrowser()
       const pending = browser.createBrowserContext(contextOpts)
-      pending.catch(() => {})
 
       try {
         return await pTimeout(pending, Math.min(globalTimeout, CREATE_CONTEXT_TIMEOUT))
       } catch (error) {
+        closeLateContext(pending)
         if (attempt > 0 || !isUnresponsiveBrowser(error)) throw error
         debug('respawn', { reason: 'createBrowserContext', message: error.message })
         await lock(async () => {

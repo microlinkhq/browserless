@@ -327,6 +327,20 @@ test('a failed createBrowserContext does not respawn', async t => {
   t.is(state.spawned, 1)
 })
 
+test('a context created after the timeout is closed', async t => {
+  const LATE_MS = 400
+  let closed = 0
+  const lateContext = () => setTimeout(LATE_MS, { ...mockContext(), close: async () => closed++ })
+
+  const { browser, state } = mockBrowser(t, lateContext)
+  const error = await evaluateOk(browser).catch(err => err)
+  await setTimeout(LATE_MS)
+
+  t.is(error.name, 'TimeoutError')
+  t.is(state.spawned, 2)
+  t.is(closed, 2)
+})
+
 test('respawn under `Protocol error (Target.createTarget): Target closed`', async t => {
   /**
    * It simulates te context is created but the URL is not set yet
