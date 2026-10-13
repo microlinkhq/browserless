@@ -17,6 +17,8 @@ test.before(async () => {
 })
 test.after.always(() => browser?.close())
 
+const testOnIdleBrowser = test.serial
+
 const open = async (t, html) => {
   const page = await browser.newPage()
   t.teardown(() => page.close())
@@ -301,7 +303,7 @@ test('submitting is discarded when the page moves focus to another control', asy
   t.is(await page.evaluate(() => window.submissions), 0)
 })
 
-test('a static meter does not hold the next observation', async t => {
+testOnIdleBrowser('a static meter does not hold the next observation', async t => {
   const page = await open(
     t,
     `<progress value="70" max="100"></progress>
@@ -613,7 +615,7 @@ test('settling after typing in a combobox gives up at the autocomplete limit', a
   t.true(elapsed >= SETTLE_LIMITS.autocompleteMs - 20, `settled after ${elapsed} ms`)
 })
 
-test('settling after a click does not wait for suggestions', async t => {
+testOnIdleBrowser('settling after a click does not wait for suggestions', async t => {
   const page = await open(t, `${COMBOBOX}<button>Go</button>`)
   const elapsed = await settleMs(page, 'click', 'Go')
   t.true(elapsed < CLEARLY_BEFORE_AUTOCOMPLETE_LIMIT_MS, `settled after ${elapsed} ms`)
@@ -657,7 +659,7 @@ test('a delayed same-tab navigation is not observed on the old document', async 
   t.false(next.actions.some(item => item.label === 'Leave'))
 })
 
-test('a same-document fragment link does not wait for navigation', async t => {
+testOnIdleBrowser('a same-document fragment link does not wait for navigation', async t => {
   const server = createServer((request, response) => {
     response.setHeader('content-type', 'text/html')
     response.end('<a href="#section">Jump</a>')
@@ -676,7 +678,7 @@ test('a same-document fragment link does not wait for navigation', async t => {
   t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
 })
 
-test('a base target of _blank does not wait for navigation', async t => {
+testOnIdleBrowser('a base target of _blank does not wait for navigation', async t => {
   const server = createServer((request, response) => {
     response.setHeader('content-type', 'text/html')
     response.end('<base target="_blank"><a href="https://example.com/next">Leave</a>')
@@ -695,7 +697,7 @@ test('a base target of _blank does not wait for navigation', async t => {
   t.true(Date.now() - started < 500, `settled after ${Date.now() - started} ms`)
 })
 
-test('settling a button does not wait for navigation', async t => {
+testOnIdleBrowser('settling a button does not wait for navigation', async t => {
   const page = await open(t, '<button type="button">Stay</button>')
   const state = await observe(page)
   const action = state.actions.find(item => item.label === 'Stay')
