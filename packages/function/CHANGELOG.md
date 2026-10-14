@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.24](https://github.com/microlinkhq/browserless/compare/v14.0.23...v14.0.24) (2026-10-14)
+
+### Bug Fixes
+
+* **function:** pass the browser socket as an isolate egress exception ([#994](https://github.com/microlinkhq/browserless/issues/994)) ([c1ce767](https://github.com/microlinkhq/browserless/commit/c1ce7677ae68e56fc32e1edce061c45985e56c0b))
+
 ## [14.0.22](https://github.com/microlinkhq/browserless/compare/v14.0.21...v14.0.22) (2026-10-13)
 
 **Note:** Version bump only for package @browserless/function
