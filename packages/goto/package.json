@@ -31,7 +31,7 @@
   ],
   "dependencies": {
     "@browserless/devices": "workspace:*",
-    "@duckduckgo/autoconsent": "~16.51.0",
+    "@duckduckgo/autoconsent": "~16.54.0",
     "@ghostery/adblocker-puppeteer": "~2.20.1",
     "@kikobeats/got": "~11.8.9",
     "debug-logfmt": "~1.4.15",
