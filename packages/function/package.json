@@ -38,7 +38,7 @@
     "isolated-function": "~0.2.18",
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.2",
-    "p-timeout": "~4.1.0",
+    "p-timeout": "~8.0.0",
     "require-one-of": "~1.0.25"
   },
   "devDependencies": {
