@@ -46,7 +46,7 @@
     "mime": "~3.0.0",
     "null-prototype-object": "~1.2.7",
     "p-reflect": "~2.1.0",
-    "pretty-ms": "~7.0.1",
+    "pretty-ms": "~10.0.0",
     "prism-themes": "~1.9.0",
     "sharp": "~0.35.5",
     "svg-gradient": "~1.0.5"
