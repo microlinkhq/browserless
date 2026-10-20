@@ -1,8 +1,10 @@
 'use strict'
 
 const fs = require('node:fs')
+const path = require('node:path')
 
-const botdSource = fs.readFileSync(require.resolve('@fingerprintjs/botd'), 'utf8')
+const botdPackage = path.dirname(require.resolve('@fingerprintjs/botd/package.json'))
+const botdSource = fs.readFileSync(path.join(botdPackage, 'dist/botd.esm.js'), 'utf8')
 
 /**
  * @typedef {Object} BotdDetector
@@ -70,34 +72,32 @@ const parseReport = payload => {
 }
 
 const collect = async source => {
-  const module = { exports: {} }
-  // The BotD build is CommonJS. This runs it in the page without adding a script tag.
-  // eslint-disable-next-line no-new-func
-  new Function('exports', 'module', source)(module.exports, module)
-  const agent = await module.exports.load({ monitoring: false })
-  const verdict = agent.detect()
-  const detections = agent.getDetections()
-  const components = agent.getComponents()
-  const trapped = []
-  for (const name of Object.keys(components)) {
-    const state = components[name].state
-    // Success is 0. Undefined (-1) is an absent value, which is what a browser
-    // reports for window.process. detectProcess already returns false for that.
-    // Any other state is a collect that did not finish.
-    if (state !== 0 && state !== -1) trapped.push(name)
-  }
-  return {
-    bot: verdict.bot,
-    kind: verdict.bot ? verdict.botKind : null,
-    detections,
-    trapped
+  const STATE_SUCCESS = 0
+  const STATE_UNDEFINED = -1
+  const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }))
+  try {
+    const botd = await import(url)
+    const agent = await botd.load({ monitoring: false })
+    const verdict = agent.detect()
+    const detections = agent.getDetections()
+    const components = agent.getComponents()
+    const trapped = []
+    for (const name of Object.keys(components)) {
+      const state = components[name].state
+      if (state !== STATE_SUCCESS && state !== STATE_UNDEFINED) trapped.push(name)
+    }
+    return {
+      bot: verdict.bot,
+      kind: verdict.bot ? verdict.botKind : null,
+      detections,
+      trapped
+    }
+  } finally {
+    URL.revokeObjectURL(url)
   }
 }
 
 /**
- * Run the installed BotD build in the page main world.
- * A collection failure stays in trapped and does not flip bot.
- *
  * @param {import('puppeteer').Page} page
  * @returns {Promise<BotdReport>}
  */
