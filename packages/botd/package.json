@@ -1,0 +1,41 @@
+{
+  "name": "@browserless/botd",
+  "private": true,
+  "main": "src/index.js",
+  "author": {
+    "email": "hello@microlink.io",
+    "name": "microlink.io",
+    "url": "https://microlink.io"
+  },
+  "repository": {
+    "directory": "packages/botd",
+    "type": "git",
+    "url": "git+https://github.com/microlinkhq/browserless.git#master"
+  },
+  "bugs": {
+    "url": "https://github.com/microlinkhq/browserless/issues"
+  },
+  "engines": {
+    "node": ">= 24"
+  },
+  "license": "MIT",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "ava"
+  },
+  "ava": {
+    "serial": true,
+    "timeout": "2m",
+    "workerThreads": false
+  },
+  "dependencies": {
+    "@fingerprintjs/botd": "2.0.0"
+  },
+  "devDependencies": {
+    "@browserless/test": "workspace:*",
+    "ava": "8",
+    "browserless": "workspace:*"
+  }
+}
