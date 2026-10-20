@@ -133,6 +133,19 @@ test('handle errors', async t => {
   t.true(!!result.logging)
 })
 
+test('a non-string code option is the function argument', async t => {
+  const code = '({ code }) => code'
+  const myFn = browserlessFunction(code, { ...opts, code: 7 })
+  const { logging, profiling, ...result } = await myFn(fileUrl)
+
+  t.deepEqual(result, {
+    isFulfilled: true,
+    value: 7
+  })
+  t.true(!!profiling)
+  t.true(!!logging)
+})
+
 test('provide a mechanism to pass things to the function ', async t => {
   const code = ({ query }) => query.foo
   const myFn = browserlessFunction(code, opts)

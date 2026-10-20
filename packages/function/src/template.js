@@ -263,7 +263,8 @@ const applyHostPage = (hostPage, extendPage) =>
 // _response is a plain JSON object serialized via isolated-function;
 // wrap each value as a method to match Puppeteer's HTTPResponse API
 const withResponse = `
-  const { _response: _r, pageValues, targetId: _t, strictTarget: _s, ...rest } = opts
+  const { _response: _r, pageValues, targetId: _t, strictTarget: _s, codeArg, ...rest } = opts
+  if (codeArg !== undefined) rest.code = codeArg
   const response = _r
     ? Object.fromEntries(Object.entries(_r).map(([k, v]) => [k, () => v]))
     : undefined`

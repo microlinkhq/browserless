@@ -125,6 +125,21 @@ module.exports = ({ tmpdir } = {}) => {
       return browserPromise
     }
 
+    // A per-call string `code` replaces the snippet and is bundled on its own.
+    // Any other `code` is the caller's argument (a query value such as `7`):
+    // it must not become the slot, which isolated-function only accepts as a string.
+    const withSnippet = extra => {
+      if (extra != null && typeof extra.code === 'string') return {}
+      const userCode =
+        extra != null && Object.prototype.hasOwnProperty.call(extra, 'code')
+          ? extra.code
+          : opts.code
+      return {
+        code,
+        ...(userCode !== undefined && { codeArg: userCode })
+      }
+    }
+
     // A per-call `code` override is bundled on its own, so this reads the merged
     // options rather than `code`: the template built above only matches the
     // snippet this function was created with.
@@ -156,7 +171,8 @@ module.exports = ({ tmpdir } = {}) => {
           ...(isHttpResponse(response) && { _response: serializeResponse(response) }),
           browserWSEndpoint,
           targetId,
-          ...(strictTarget && { strictTarget: true })
+          ...(strictTarget && { strictTarget: true }),
+          ...withSnippet(fnOpts)
         },
         needsNetwork
       )
@@ -253,7 +269,8 @@ module.exports = ({ tmpdir } = {}) => {
             hostPage,
             ...opts,
             ...fnOpts,
-            ...(pageValues && { pageValues })
+            ...(pageValues && { pageValues }),
+            ...withSnippet(fnOpts)
           },
           false
         )

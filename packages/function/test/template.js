@@ -85,6 +85,16 @@ test('response is undefined when _response is absent', async t => {
   t.is(result, undefined)
 })
 
+test('codeArg reaches the function as code', async t => {
+  const code = '(opts) => opts'
+  const source = template(code)
+  const fn = new Function(`return (${source})`)()
+  const result = await fn('https://example.com', undefined, { codeArg: 7, foo: 1 })
+  t.is(result.code, 7)
+  t.is(result.foo, 1)
+  t.false(Object.prototype.hasOwnProperty.call(result, 'codeArg'))
+})
+
 test('_response is not leaked to user function opts', async t => {
   const code = '(opts) => Object.keys(opts).sort()'
   const source = template(code)
