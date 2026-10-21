@@ -14,11 +14,20 @@ const HOST_DESKTOP_PLATFORMS = {
 const hostDesktopPlatform = (platform = process.platform) =>
   HOST_DESKTOP_PLATFORMS[platform] ?? 'X11; Linux x86_64'
 
+const reducedChromeVersion = chromeVersion => {
+  const major = String(chromeVersion).match(/^(\d+)/)
+  return major ? `${major[1]}.0.0.0` : chromeVersion
+}
+
 const desktopUserAgent = (chromeVersion, platform = hostDesktopPlatform()) =>
-  `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
+  `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${reducedChromeVersion(
+    chromeVersion
+  )} Safari/537.36`
 
 const syncChromeVersion = (userAgent, chromeVersion) =>
-  chromeVersion ? userAgent.replace(/Chrome\/[\d.]+/g, `Chrome/${chromeVersion}`) : userAgent
+  chromeVersion
+    ? userAgent.replace(/Chrome\/[\d.]+/g, `Chrome/${reducedChromeVersion(chromeVersion)}`)
+    : userAgent
 
 const withChromeVersion = (source, chromeVersion) => {
   const devices = {}

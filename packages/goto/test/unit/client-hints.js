@@ -53,12 +53,26 @@ test('macOS user agent reports macOS hints', t => {
   t.is(platform, 'MacIntel')
   t.like(userAgentMetadata, {
     platform: 'macOS',
-    architecture: 'arm',
+    platformVersion: '10.15.7',
+    architecture: 'x86',
     bitness: '64',
     model: '',
     mobile: false,
     wow64: false,
     formFactors: ['Desktop']
+  })
+})
+
+test('an ARM macOS user agent reports arm hints and its OS version', t => {
+  const { userAgentMetadata } = getClientHints(
+    'Mozilla/5.0 (Macintosh; ARM Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
+  )
+
+  t.like(userAgentMetadata, {
+    platform: 'macOS',
+    platformVersion: '14.5.0',
+    architecture: 'arm',
+    bitness: '64'
   })
 })
 

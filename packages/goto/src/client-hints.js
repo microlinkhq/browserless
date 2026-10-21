@@ -11,8 +11,6 @@ const BRAND_ORDERS = [
   [2, 1, 0]
 ]
 
-const MAC_PLATFORM_VERSION = '26.6.2'
-const MAC_ARCHITECTURE = { architecture: 'arm', bitness: '64' }
 const LINUX_PLATFORM_VERSION = ''
 const WINDOWS_PLATFORM_VERSIONS = { '10.0': '19.0.0', 6.3: '0.3.0', 6.2: '0.2.0', 6.1: '0.1.0' }
 
@@ -86,7 +84,12 @@ const detectPlatform = userAgent => {
   }
 
   if (/Macintosh/.test(userAgent)) {
-    return desktop('macOS', 'MacIntel', MAC_PLATFORM_VERSION, MAC_ARCHITECTURE)
+    const mac = userAgent.match(/Mac OS X (\d+(?:[._]\d+){1,2})/)
+    const platformVersion = mac ? toPlatformVersion(mac[1]) : '10.15.7'
+    const architecture = /\bARM\b|Apple Silicon|aarch64|arm64/i.test(userAgent)
+      ? { architecture: 'arm', bitness: '64' }
+      : { architecture: 'x86', bitness: '64' }
+    return desktop('macOS', 'MacIntel', platformVersion, architecture)
   }
 
   const linux = userAgent.match(/Linux (\w+)/)
