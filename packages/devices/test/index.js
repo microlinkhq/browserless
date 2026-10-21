@@ -70,21 +70,15 @@ test('aligns Chrome user agents with the installed Puppeteer', t => {
     getDevice({ device: 'Macbook Pro 13' }).userAgent,
     createGetDevice.desktopUserAgent(chromeVersion)
   )
-  t.true(
-    getDevice({ device: 'Galaxy S8' }).userAgent.includes(
-      `Chrome/${chromeVersion.split('.')[0]}.0.0.0`
-    )
-  )
-  t.false(getDevice({ device: 'Galaxy S8' }).userAgent.includes('Chrome/62.0.3202.84'))
+  t.true(getDevice({ device: 'Galaxy S8' }).userAgent.includes(`Chrome/${chromeVersion}`))
   t.false(getDevice({ device: 'iPhone 13' }).userAgent.includes('Chrome/'))
 })
 
 test('the desktop user agent follows the host operating system', t => {
   const chromeVersion = '152.0.7977.83'
   const { desktopUserAgent, hostDesktopPlatform } = createGetDevice
-  const reduced = `${chromeVersion.split('.')[0]}.0.0.0`
   const asUserAgent = platform =>
-    `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${reduced} Safari/537.36`
+    `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
 
   t.is(
     desktopUserAgent(chromeVersion, hostDesktopPlatform('darwin')),
@@ -124,9 +118,7 @@ test('does not ship a frozen Chrome 62 user agent', t => {
   const getDevice = createGetDevice()
   const { userAgent } = getDevice({ device: 'Macbook Pro 13' })
 
-  const reduced = `${getDevice.chromeVersion.split('.')[0]}.0.0.0`
-  t.true(userAgent.includes(`Chrome/${reduced}`))
-  if (getDevice.chromeVersion !== reduced) t.false(userAgent.includes(getDevice.chromeVersion))
+  t.true(userAgent.includes(`Chrome/${getDevice.chromeVersion}`))
   t.false(userAgent.includes('Chrome/62'))
   t.false(userAgent.includes('10_12_6'))
 })
