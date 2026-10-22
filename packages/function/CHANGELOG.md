@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.0.30](https://github.com/microlinkhq/browserless/compare/v14.0.29...v14.0.30) (2026-10-22)
+
+### Bug Fixes
+
+* add the browser socket to a hosts list ([#1003](https://github.com/microlinkhq/browserless/issues/1003)) ([8d85005](https://github.com/microlinkhq/browserless/commit/8d8500587446b20e35a511362b3bb51494665407))
+
 ## [14.0.29](https://github.com/microlinkhq/browserless/compare/v14.0.28...v14.0.29) (2026-10-22)
 
 **Note:** Version bump only for package @browserless/function
