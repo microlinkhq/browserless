@@ -69,8 +69,14 @@ module.exports =
       ...opts
     }) => {
       const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
-      const { ssrf: policy, allow: vmOptsAllow = {}, ...vmOptsRest } = vmOpts ?? {}
+      const { ssrf: policy, allow: vmOptsAllow = {}, hosts: listed, ...vmOptsRest } = vmOpts ?? {}
       const granted = new Set(egressOf(browserWSEndpoint))
+      const socketHosts = [...granted].map(value => {
+        const colon = value.lastIndexOf(':')
+        const raw = value.slice(0, colon)
+        const host = raw.startsWith('[') && raw.endsWith(']') ? raw.slice(1, -1) : raw
+        return { host, port: value.slice(colon + 1) }
+      })
       const ssrf =
       typeof policy === 'function'
         ? (address, port) => granted.has(pair(address, port)) || policy(address, port) === true
@@ -91,6 +97,7 @@ module.exports =
       const host = template.exposedHost(hostPage, extendPage)
       const fn = isolatedFunction(program, {
         ...vmOptsRest,
+        ...(Array.isArray(listed) && { hosts: [...listed, ...socketHosts] }),
         ...(ssrf && { ssrf }),
         ...(copies === 1 && { slot: code }),
         ...(host && { host }),

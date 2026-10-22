@@ -86,6 +86,25 @@ test('the caller policy is kept and the browser socket is added', async t => {
   t.false(ssrf('10.0.0.1', 80))
 })
 
+test('a hosts list gains the browser socket', async t => {
+  const { hosts } = await run({
+    browserWSEndpoint: 'ws://127.0.0.1:43123/token',
+    vmOpts: { ssrf: () => false, hosts: [{ host: 'example.com', port: '443' }] }
+  })
+  t.deepEqual(hosts, [
+    { host: 'example.com', port: '443' },
+    { host: '127.0.0.1', port: '43123' }
+  ])
+})
+
+test('without a hosts list the browser socket is not added', async t => {
+  const options = await run({
+    browserWSEndpoint: 'ws://127.0.0.1:43123/token',
+    vmOpts: { ssrf: () => false }
+  })
+  t.is(options.hosts, undefined)
+})
+
 test('without a policy the isolate dials stay unrestricted', async t => {
   const options = await run({
     browserWSEndpoint: 'ws://127.0.0.1:43123/token',
