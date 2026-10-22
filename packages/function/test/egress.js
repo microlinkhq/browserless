@@ -97,6 +97,25 @@ test('a hosts list gains the browser socket', async t => {
   ])
 })
 
+test('an IPv6 browser socket is added to a hosts list', async t => {
+  const { hosts } = await run({
+    browserWSEndpoint: 'ws://[::1]:9/token',
+    vmOpts: { ssrf: () => false, hosts: [{ host: 'example.com', port: '443' }] }
+  })
+  t.deepEqual(hosts, [
+    { host: 'example.com', port: '443' },
+    { host: '::1', port: '9' }
+  ])
+})
+
+test('a hosts value that is not a list is forwarded', async t => {
+  const { hosts } = await run({
+    browserWSEndpoint: 'ws://127.0.0.1:43123/token',
+    vmOpts: { ssrf: () => false, hosts: '127.0.0.1' }
+  })
+  t.is(hosts, '127.0.0.1')
+})
+
 test('without a hosts list the browser socket is not added', async t => {
   const options = await run({
     browserWSEndpoint: 'ws://127.0.0.1:43123/token',
