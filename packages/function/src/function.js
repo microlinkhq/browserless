@@ -40,7 +40,7 @@ const egressOf = endpoint => {
       ? url.hostname.slice(1, -1)
       : url.hostname
   if (net.isIP(host) === 0) return []
-  return [net.isIP(host) === 6 ? `[${host}]:${port}` : `${host}:${port}`]
+  return [{ host, port }]
 }
 
 const [nodeMajor] = process.version.slice(1).split('.').map(Number)
@@ -70,7 +70,8 @@ module.exports =
     }) => {
       const permissions = needsNetwork && nodeMajor >= 25 ? ['net'] : []
       const { ssrf: policy, allow: vmOptsAllow = {}, ...vmOptsRest } = vmOpts ?? {}
-      const granted = new Set(egressOf(browserWSEndpoint))
+      const socketHosts = egressOf(browserWSEndpoint)
+      const granted = new Set(socketHosts.map(({ host, port }) => pair(host, port)))
       const ssrf =
       typeof policy === 'function'
         ? (address, port) => granted.has(pair(address, port)) || policy(address, port) === true
@@ -91,6 +92,9 @@ module.exports =
       const host = template.exposedHost(hostPage, extendPage)
       const fn = isolatedFunction(program, {
         ...vmOptsRest,
+        ...(Array.isArray(vmOptsRest.hosts) && {
+          hosts: [...vmOptsRest.hosts, ...socketHosts]
+        }),
         ...(ssrf && { ssrf }),
         ...(copies === 1 && { slot: code }),
         ...(host && { host }),
