@@ -16,12 +16,13 @@ const { ENCODERS } = require('./recorder/ffmpeg')
 //   require('@browserless/capture')             // extension (default)
 //   require('@browserless/capture/screencast')  // CDP screencast + ffmpeg
 //   require('@browserless/capture/screenshot')  // polled screenshot + ffmpeg
+//   require('@browserless/capture/record')      // page.record() (Chrome M153+)
 module.exports = require('./extension')
 
 module.exports.extensionPath = EXTENSION_PATH
 module.exports.extensionId = EXTENSION_ID
 module.exports.TYPES = TYPES
-module.exports.MODES = ['extension', 'screencast', 'screenshot']
+module.exports.MODES = ['extension', 'screencast', 'screenshot', 'record']
 module.exports.ENCODERS = ENCODERS
 module.exports.DEFAULT = DEFAULT
 module.exports.DEFAULT_CODEC_BY_TYPE = DEFAULT_CODEC_BY_TYPE
