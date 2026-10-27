@@ -179,6 +179,25 @@ test('`args` reach a function that uses the page', async t => {
   t.is(typeof result.value.title, 'string')
 })
 
+test('`args` cannot replace the page or move the function to another target', async t => {
+  const code = async ({ page }) => page.title()
+  const myFn = browserlessFunction(code, {
+    ...opts,
+    args: { page: 2, targetId: 'bogus', strictTarget: true, browserWSEndpoint: 'ws://127.0.0.1:1' }
+  })
+  const { logging, profiling, ...result } = await myFn(fileUrl)
+  t.true(result.isFulfilled)
+  t.is(typeof result.value, 'string')
+})
+
+test('a `null` per-call `args` rejects', async t => {
+  const myFn = browserlessFunction(() => 1, opts)
+  await t.throwsAsync(() => myFn(fileUrl, { args: null }), {
+    instanceOf: TypeError,
+    message: 'Expected `args` to be a plain object'
+  })
+})
+
 test('`args` must be a plain object', t => {
   t.throws(() => browserlessFunction(() => 1, { ...opts, args: 'abc' }), {
     instanceOf: TypeError,

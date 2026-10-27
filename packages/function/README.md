@@ -104,7 +104,7 @@ await myFn('https://example.com') // => { isFulfilled: true, value: 'abc', ... }
 await myFn('https://example.com', { args: { code: 'xyz' } }) // value: 'xyz'
 ```
 
-`url` always wins over `args`. An `args.page` or `args.response` replaces the page or response your function receives, the same as any other custom option.
+`page`, `response`, `url` and `device` come from the runtime and always win over `args`.
 
 ### Result object
 

@@ -361,7 +361,7 @@ const template = (code, usesPageOrOpts) => {
   if (!usesPage) {
     return `async (url, _, opts) => {
     ${withResponse}
-    return (${code})({ response, ...rest, ...args, url })
+    return (${code})({ ...args, response, ...rest, url })
   }`
   }
 
@@ -370,7 +370,7 @@ const template = (code, usesPageOrOpts) => {
     ${withResponse}
     const page = {}
     ${extensions}
-    return (${code})({ page, response, ...rest, ...args, url })
+    return (${code})({ ...args, page, response, ...rest, url })
   }`
   }
 
@@ -398,7 +398,7 @@ const template = (code, usesPageOrOpts) => {
           }
         }
         ${extensions}
-        return await (${code})({ page, response, ...rest, ...args, url })
+        return await (${code})({ ...args, page, response, ...rest, url })
       } finally {
         await timed('disconnect', () => browser.disconnect())
       }
