@@ -147,6 +147,53 @@ test('provide a mechanism to pass things to the function ', async t => {
   t.true(!!logging)
 })
 
+test('`args` reach the function without touching runtime options', async t => {
+  const code = ({ code, source, needsNetwork, vmOpts }) => ({ code, source, needsNetwork, vmOpts })
+  const args = { code: 'abc', source: 'not a program', needsNetwork: true, vmOpts: 1 }
+  const myFn = browserlessFunction(code, { ...opts, args })
+
+  const { logging, profiling, ...result } = await myFn(fileUrl)
+
+  t.deepEqual(result, { isFulfilled: true, value: args })
+})
+
+test('a numeric `code` in `args` is an argument, not the snippet', async t => {
+  const myFn = browserlessFunction(({ code }) => code, opts)
+  const { logging, profiling, ...result } = await myFn(fileUrl, { args: { code: 7 } })
+  t.deepEqual(result, { isFulfilled: true, value: 7 })
+})
+
+test('per-call `args` merge over the ones the function was created with', async t => {
+  const code = ({ a, b }) => ({ a, b })
+  const myFn = browserlessFunction(code, { ...opts, args: { a: 1, b: 1 } })
+  const { logging, profiling, ...result } = await myFn(fileUrl, { args: { b: 2 } })
+  t.deepEqual(result, { isFulfilled: true, value: { a: 1, b: 2 } })
+})
+
+test('`args` reach a function that uses the page', async t => {
+  const code = async ({ page, code }) => ({ title: await page.title(), code })
+  const myFn = browserlessFunction(code, { ...opts, args: { code: 'abc' } })
+  const { logging, profiling, ...result } = await myFn(fileUrl)
+  t.true(result.isFulfilled)
+  t.is(result.value.code, 'abc')
+  t.is(typeof result.value.title, 'string')
+})
+
+test('`args` must be a plain object', t => {
+  t.throws(() => browserlessFunction(() => 1, { ...opts, args: 'abc' }), {
+    instanceOf: TypeError,
+    message: 'Expected `args` to be a plain object'
+  })
+})
+
+test('a per-call `args` that is not a plain object rejects', async t => {
+  const myFn = browserlessFunction(() => 1, opts)
+  await t.throwsAsync(() => myFn(fileUrl, { args: [1] }), {
+    instanceOf: TypeError,
+    message: 'Expected `args` to be a plain object'
+  })
+})
+
 test('collect logs ', async t => {
   const code = ({ query }) => {
     console.log(query)

@@ -96,6 +96,21 @@ test('_response is not leaked to user function opts', async t => {
   t.deepEqual(result, ['query', 'response', 'url'])
 })
 
+test('`args` is spread into the user function opts, not passed as a key', async t => {
+  const code = '(opts) => opts'
+  const fn = new Function(`return (${template(code)})`)()
+  const result = await fn('https://example.com', undefined, {
+    args: { code: 'abc', foo: 1 },
+    device: 'iPhone'
+  })
+  t.deepEqual(result, { response: undefined, device: 'iPhone', code: 'abc', foo: 1, url: 'https://example.com' })
+})
+
+test('`args` cannot replace `url`', async t => {
+  const fn = new Function(`return (${template('({ url }) => url')})`)()
+  t.is(await fn('https://example.com', undefined, { args: { url: 'https://evil.test' } }), 'https://example.com')
+})
+
 test('non-page template passes url to the user function', async t => {
   const code = '({ url }) => url'
   const source = template(code)
@@ -107,7 +122,7 @@ test('non-page template passes url to the user function', async t => {
 test('page template includes url in function call', t => {
   const code = '({ page, url }) => url'
   const source = template(code)
-  t.true(source.includes('{ page, response, ...rest, url }'))
+  t.true(source.includes('{ page, response, ...rest, ...args, url }'))
 })
 
 test('stub-page template passes url to the user function', async t => {
@@ -117,7 +132,7 @@ test('stub-page template passes url to the user function', async t => {
     needsBrowser: false,
     extendPage: { html: '<p>hi</p>' }
   })
-  t.true(source.includes('{ page, response, ...rest, url }'))
+  t.true(source.includes('{ page, response, ...rest, ...args, url }'))
   t.false(source.includes('puppeteer'))
   const fn = new Function(`return (${source})`)()
   t.deepEqual(
