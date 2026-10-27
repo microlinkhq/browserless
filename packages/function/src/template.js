@@ -270,7 +270,14 @@ const withResponse = `
   const toInput = runtime =>
     args === undefined
       ? { ...runtime, ...rest, url }
-      : { ...rest, ...args, ...runtime, ...('device' in rest && { device: rest.device }), url }`
+      : {
+          ...runtime,
+          ...rest,
+          ...args,
+          ...runtime,
+          ...('device' in rest && { device: rest.device }),
+          url
+        }`
 
 const normalizeOpts = (code, usesPageOrOpts) => {
   if (usesPageOrOpts && typeof usesPageOrOpts === 'object') {

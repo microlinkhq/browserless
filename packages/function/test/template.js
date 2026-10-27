@@ -142,6 +142,13 @@ test('`args` win over flat options, the runtime wins over `args`', async t => {
   })
 })
 
+test('`args` keep the key order of flat options', async t => {
+  const fn = new Function(`return (${template('(opts) => Object.keys(opts)')})`)()
+  const flat = await fn('https://example.com', undefined, { name: 1, headers: 1 })
+  const withArgs = await fn('https://example.com', undefined, { args: { name: 1, headers: 1 } })
+  t.deepEqual(withArgs, flat)
+})
+
 test('without `args` the function input is unchanged', async t => {
   const fn = new Function(`return (${template('(opts) => Object.keys(opts)')})`)()
   const result = await fn('https://example.com', undefined, { device: 'iPhone', foo: 1 })
