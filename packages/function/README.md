@@ -104,7 +104,7 @@ await myFn('https://example.com') // => { isFulfilled: true, value: 'abc', ... }
 await myFn('https://example.com', { args: { code: 'xyz' } }) // value: 'xyz'
 ```
 
-`page`, `response`, `url` and `device` come from the runtime and always win over `args`.
+`args` win over other custom options with the same name. `page`, `response`, `url` and `device` come from the runtime and always win over `args`.
 
 ### Result object
 

@@ -127,6 +127,27 @@ test('`args` cannot replace the stub `page`', async t => {
   t.is(await fn('https://example.com', undefined, { pageValues: { html: '<p>hi</p>' }, args: { page: 2 } }), '<p>hi</p>')
 })
 
+test('`args` win over flat options, the runtime wins over `args`', async t => {
+  const fn = new Function(`return (${template('(opts) => opts')})`)()
+  const result = await fn('https://example.com', undefined, {
+    foo: 1,
+    device: 'iPhone',
+    args: { foo: 2, device: 'evil', url: 'https://evil.test' }
+  })
+  t.deepEqual(result, {
+    foo: 2,
+    device: 'iPhone',
+    response: undefined,
+    url: 'https://example.com'
+  })
+})
+
+test('without `args` the function input is unchanged', async t => {
+  const fn = new Function(`return (${template('(opts) => Object.keys(opts)')})`)()
+  const result = await fn('https://example.com', undefined, { device: 'iPhone', foo: 1 })
+  t.deepEqual(result, ['response', 'device', 'foo', 'url'])
+})
+
 test('`args` cannot replace `url`', async t => {
   const fn = new Function(`return (${template('({ url }) => url')})`)()
   t.is(await fn('https://example.com', undefined, { args: { url: 'https://evil.test' } }), 'https://example.com')
@@ -143,7 +164,7 @@ test('non-page template passes url to the user function', async t => {
 test('page template includes url in function call', t => {
   const code = '({ page, url }) => url'
   const source = template(code)
-  t.true(source.includes('{ ...args, page, response, ...rest, url }'))
+  t.true(source.includes('toInput({ page, response })'))
 })
 
 test('stub-page template passes url to the user function', async t => {
@@ -153,7 +174,7 @@ test('stub-page template passes url to the user function', async t => {
     needsBrowser: false,
     extendPage: { html: '<p>hi</p>' }
   })
-  t.true(source.includes('{ ...args, page, response, ...rest, url }'))
+  t.true(source.includes('toInput({ page, response })'))
   t.false(source.includes('puppeteer'))
   const fn = new Function(`return (${source})`)()
   t.deepEqual(

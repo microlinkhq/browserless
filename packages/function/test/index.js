@@ -190,6 +190,19 @@ test('`args` cannot replace the page or move the function to another target', as
   t.is(typeof result.value, 'string')
 })
 
+test('a bad per-call `args` rejects before the browser is asked for', async t => {
+  let asked = 0
+  const myFn = browserlessFunction(({ page }) => page.title(), {
+    ...opts,
+    getBrowserless: () => {
+      asked++
+      return browserless
+    }
+  })
+  await t.throwsAsync(() => myFn(fileUrl, { args: 'abc' }), { instanceOf: TypeError })
+  t.is(asked, 0)
+})
+
 test('a `null` per-call `args` rejects', async t => {
   const myFn = browserlessFunction(() => 1, opts)
   await t.throwsAsync(() => myFn(fileUrl, { args: null }), {

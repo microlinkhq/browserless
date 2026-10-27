@@ -266,7 +266,11 @@ const withResponse = `
   const { _response: _r, pageValues, targetId: _t, strictTarget: _s, args, ...rest } = opts
   const response = _r
     ? Object.fromEntries(Object.entries(_r).map(([k, v]) => [k, () => v]))
-    : undefined`
+    : undefined
+  const toInput = runtime =>
+    args === undefined
+      ? { ...runtime, ...rest, url }
+      : { ...rest, ...args, ...runtime, ...('device' in rest && { device: rest.device }), url }`
 
 const normalizeOpts = (code, usesPageOrOpts) => {
   if (usesPageOrOpts && typeof usesPageOrOpts === 'object') {
@@ -361,7 +365,7 @@ const template = (code, usesPageOrOpts) => {
   if (!usesPage) {
     return `async (url, _, opts) => {
     ${withResponse}
-    return (${code})({ ...args, response, ...rest, url })
+    return (${code})(toInput({ response }))
   }`
   }
 
@@ -370,7 +374,7 @@ const template = (code, usesPageOrOpts) => {
     ${withResponse}
     const page = {}
     ${extensions}
-    return (${code})({ ...args, page, response, ...rest, url })
+    return (${code})(toInput({ page, response }))
   }`
   }
 
@@ -398,7 +402,7 @@ const template = (code, usesPageOrOpts) => {
           }
         }
         ${extensions}
-        return await (${code})({ ...args, page, response, ...rest, url })
+        return await (${code})(toInput({ page, response }))
       } finally {
         await timed('disconnect', () => browser.disconnect())
       }
