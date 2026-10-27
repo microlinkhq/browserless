@@ -2,7 +2,7 @@
   "name": "@browserless/ai",
   "description": "Run Chrome Built-in AI APIs (Prompt, Summarizer, Translator, Language Detector) from Node.js using browserless.",
   "homepage": "https://browserless.js.org",
-  "version": "14.0.32",
+  "version": "14.0.33",
   "main": "src",
   "author": {
     "email": "hello@microlink.io",
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "ava": "8",
-    "browserless": "^14.0.32",
+    "browserless": "^14.0.33",
     "puppeteer": "25"
   },
   "engines": {
