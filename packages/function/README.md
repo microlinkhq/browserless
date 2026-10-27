@@ -104,7 +104,7 @@ await myFn('https://example.com') // => { isFulfilled: true, value: 'abc', ... }
 await myFn('https://example.com', { args: { code: 'xyz' } }) // value: 'xyz'
 ```
 
-`args` win over other custom options with the same name. `page`, `response`, `url` and `device` come from the runtime and always win over `args`.
+`args` win over other custom options with the same name. `response` and `url` come from the runtime and win over `args`. So does `page`, when the function runs with one; a function that does not use `page` still receives `args.page`. `device` comes from the runtime, and `args` cannot set it.
 
 ### Result object
 
@@ -228,7 +228,6 @@ const myFn = createFunction(code, {
   // Values for your function, spread into its argument. Never read as a
   // runtime option. Must be a plain object.
   args: { code: 'abc' },
-
 
   // Run against a page that is already navigated, instead of creating a
   // context and navigating. It replaces that path, so `getBrowserless` is not

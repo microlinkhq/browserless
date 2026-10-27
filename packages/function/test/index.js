@@ -218,6 +218,111 @@ test('`args` must be a plain object', t => {
   })
 })
 
+test('`args` stay nested on every path, and null options keep creation `args`', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+    const seen = []
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return () => {
+          const instance = () => async (url, endpoint, opts) => {
+            const record = {
+              endpoint: endpoint ?? null,
+              args: Object.hasOwn(opts, 'args') ? opts.args : null,
+              targetId: opts.targetId ?? null,
+              strictTarget: opts.strictTarget === true
+            }
+            seen.push(record)
+            return { isFulfilled: true, value: 'ok' }
+          }
+          instance.teardown = async () => {}
+          return instance
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+    const ask = () => {
+      throw new Error('browser')
+    }
+    const myFn = browserlessFunction(({ code }) => code, {
+      getBrowserless: ask,
+      args: { code: 1 }
+    })
+    const bare = browserlessFunction(({ code }) => code, { getBrowserless: ask })
+    const nullProto = Object.create(null)
+    nullProto.code = 7
+    const page = {
+      browser: () => ({ wsEndpoint: () => 'ws://example' }),
+      createCDPSession: async () => ({
+        send: async () => ({ targetInfo: { targetId: 'real' } }),
+        detach: async () => {}
+      })
+    }
+    const pageFn = browserlessFunction(async ({ page: current }) => current, {
+      getBrowserless: async () => ({
+        createContext: async () => ({
+          withPage: handler => async () =>
+            handler(page, async () => ({ device: { userAgent: 'ua', viewport: { width: 1 } } }))(),
+          destroyContext: async () => {}
+        })
+      })
+    })
+    const handed = browserlessFunction(async ({ page: current }) => current, {
+      getBrowserless: ask,
+      getPage: async () => ({ page })
+    })
+    const nested = { code: 3, targetId: 'bogus', browserWSEndpoint: 'ws://evil' }
+
+    Promise.resolve()
+      .then(() => myFn('https://example.com'))
+      .then(() => myFn('https://example.com', null))
+      .then(() => myFn('https://example.com', { args: { code: 2 } }))
+      .then(() => bare('https://example.com'))
+      .then(() => bare('https://example.com', null))
+      .then(() => bare('https://example.com', { args: nullProto }))
+      .then(() => bare('https://example.com', { args: {} }))
+      .then(() => pageFn('https://example.com', { args: nested }))
+      .then(() => handed('https://example.com', { args: nested }))
+      .then(() => process.stdout.write(JSON.stringify(seen)))
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  t.deepEqual(JSON.parse(stdout), [
+    { endpoint: null, args: { code: 1 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: { code: 1 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: { code: 2 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: null, targetId: null, strictTarget: false },
+    { endpoint: null, args: null, targetId: null, strictTarget: false },
+    { endpoint: null, args: { code: 7 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: {}, targetId: null, strictTarget: false },
+    {
+      endpoint: 'ws://example',
+      args: { code: 3, targetId: 'bogus', browserWSEndpoint: 'ws://evil' },
+      targetId: 'real',
+      strictTarget: false
+    },
+    {
+      endpoint: 'ws://example',
+      args: { code: 3, targetId: 'bogus', browserWSEndpoint: 'ws://evil' },
+      targetId: 'real',
+      strictTarget: true
+    }
+  ])
+})
+
 test('a per-call `args` that is not a plain object rejects', async t => {
   const myFn = browserlessFunction(() => 1, opts)
   await t.throwsAsync(() => myFn(fileUrl, { args: [1] }), {

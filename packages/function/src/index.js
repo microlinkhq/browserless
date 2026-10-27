@@ -286,7 +286,9 @@ module.exports = ({ tmpdir } = {}) => {
     }
 
     return async (url, fnOpts = {}) => {
-      const call = splitArgs(fnOpts)
+      // The default only replaces `undefined`. A `null` options object used to
+      // be spread into the run options, which ignores it, so it stays empty.
+      const call = splitArgs(fnOpts ?? {})
       if (!needsNetwork) return runWithoutBrowser(url, call)
       return getPage ? runWithGivenPage(url, call) : runWithBrowser(url, call)
     }
