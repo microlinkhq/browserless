@@ -63,6 +63,18 @@ const wsEndpointOf = page => {
   return typeof browser?.wsEndpoint === 'function' ? browser.wsEndpoint() : undefined
 }
 
+const isPlainObject = value => {
+  if (value === null || typeof value !== 'object') return false
+  const prototype = Object.getPrototypeOf(value)
+  return prototype === null || prototype === Object.prototype
+}
+
+const assertArgs = args => {
+  if (args !== undefined && !isPlainObject(args)) {
+    throw new TypeError('Expected `args` to be a plain object')
+  }
+}
+
 const serializeResponse = response => ({
   status: response.status(),
   statusText: response.statusText(),
@@ -98,9 +110,11 @@ module.exports = ({ tmpdir } = {}) => {
       hostPage,
       needsBrowser: needsBrowserOverride,
       getPage,
+      args: baseArgs,
       ...opts
     } = {}
   ) => {
+    assertArgs(baseArgs)
     const code = stringify(fn)
     const usesPage = createRunFunction.isUsingPage(code)
     const needsNetwork =
@@ -133,7 +147,13 @@ module.exports = ({ tmpdir } = {}) => {
         ? { ...runFunctionOpts, needsNetwork: network, source }
         : runFunctionOpts
 
-    const buildRunOpts = async ({ page, device, response, url, fnOpts, strictTarget = false }) => {
+    const splitArgs = ({ args: callArgs, ...callOpts }) => {
+      assertArgs(callArgs)
+      if (baseArgs === undefined && callArgs === undefined) return { callOpts }
+      return { callOpts, args: { ...baseArgs, ...callArgs } }
+    }
+
+    const buildRunOpts = async ({ page, device, response, url, call, strictTarget = false }) => {
       if (!page) throw new Error(createRunFunction.PAGE_NOT_FOUND)
       const targetId = await getTargetId(page)
       if (strictTarget && !targetId) throw new Error(createRunFunction.PAGE_NOT_FOUND)
@@ -143,6 +163,8 @@ module.exports = ({ tmpdir } = {}) => {
       const browserWSEndpoint = wsEndpointOf(page)
       if (!browserWSEndpoint) throw new Error('Browser WebSocket endpoint not found')
 
+      const { callOpts, args } = call
+
       return withPrebuiltSource(
         {
           url,
@@ -151,12 +173,13 @@ module.exports = ({ tmpdir } = {}) => {
           extendPage,
           hostPage,
           ...opts,
-          ...fnOpts,
+          ...callOpts,
           ...(pageValues && { pageValues }),
           ...(isHttpResponse(response) && { _response: serializeResponse(response) }),
           browserWSEndpoint,
           targetId,
-          ...(strictTarget && { strictTarget: true })
+          ...(strictTarget && { strictTarget: true }),
+          ...(args && { args })
         },
         needsNetwork
       )
@@ -175,7 +198,7 @@ module.exports = ({ tmpdir } = {}) => {
     // timeout rejects the call and leaves the page open. The snippet and its
     // isolate subprocess keep running until the snippet returns or the page
     // is closed. The retry loop stops, so no later attempt starts.
-    const runWithGivenPage = async (url, fnOpts) => {
+    const runWithGivenPage = async (url, call) => {
       let isRejected = false
 
       // The caller holds its rejection, so nothing further should start. Called
@@ -194,7 +217,7 @@ module.exports = ({ tmpdir } = {}) => {
         // fault being retried, so the caller gets to hand over a live one.
         const { page, device, response } = await getPage()
         const result = await runFunction(
-          await buildRunOpts({ page, device, response, url, fnOpts, strictTarget: true })
+          await buildRunOpts({ page, device, response, url, call, strictTarget: true })
         )
         // A miss inside the isolate comes back as a rejected result. It is not
         // a user-code failure: the supplied page was never found.
@@ -229,7 +252,7 @@ module.exports = ({ tmpdir } = {}) => {
       })
     }
 
-    const runWithBrowser = async (url, fnOpts) => {
+    const runWithBrowser = async (url, call) => {
       const browser = await getBrowser()
       const browserless = await browser.createContext()
 
@@ -237,13 +260,13 @@ module.exports = ({ tmpdir } = {}) => {
         .withPage((page, goto) => async () => {
           const { device, response } = await goto(page, { url, timeout, ...gotoOpts })
           return settle(
-            await runFunction(await buildRunOpts({ page, device, response, url, fnOpts }))
+            await runFunction(await buildRunOpts({ page, device, response, url, call }))
           )
         })()
         .finally(() => browserless.destroyContext())
     }
 
-    const runWithoutBrowser = async (url, fnOpts) => {
+    const runWithoutBrowser = async (url, { callOpts, args }) => {
       const result = await runFunction(
         withPrebuiltSource(
           {
@@ -252,8 +275,9 @@ module.exports = ({ tmpdir } = {}) => {
             extendPage,
             hostPage,
             ...opts,
-            ...fnOpts,
-            ...(pageValues && { pageValues })
+            ...callOpts,
+            ...(pageValues && { pageValues }),
+            ...(args && { args })
           },
           false
         )
@@ -262,8 +286,11 @@ module.exports = ({ tmpdir } = {}) => {
     }
 
     return async (url, fnOpts = {}) => {
-      if (!needsNetwork) return runWithoutBrowser(url, fnOpts)
-      return getPage ? runWithGivenPage(url, fnOpts) : runWithBrowser(url, fnOpts)
+      // The default only replaces `undefined`. A `null` options object used to
+      // be spread into the run options, which ignores it, so it stays empty.
+      const call = splitArgs(fnOpts ?? {})
+      if (!needsNetwork) return runWithoutBrowser(url, call)
+      return getPage ? runWithGivenPage(url, call) : runWithBrowser(url, call)
     }
   }
 

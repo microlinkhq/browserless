@@ -384,3 +384,26 @@ test('a timeout during the retry backoff does not start another attempt', async 
   await new Promise(resolve => setTimeout(resolve, 1500))
   t.is(calls, 1)
 })
+
+test('getPage keeps `args` apart from the page it runs on', async t => {
+  const context = await browserless.createContext()
+  t.teardown(() => context.destroyContext())
+
+  const page = await context.page('handover-args')
+  await page.goto(fileUrl)
+  await page.evaluate(() => {
+    document.title = 'HANDOVER-ARGS'
+  })
+
+  const result = await browserlessFunction(
+    async ({ page, code, targetId }) => ({ title: await page.title(), code, targetId }),
+    {
+      getPage: async () => ({ page }),
+      args: { code: 7, targetId: 'bogus', page: 2 },
+      timeout: 120000
+    }
+  )(fileUrl)
+
+  t.true(result.isFulfilled)
+  t.deepEqual(result.value, { title: 'HANDOVER-ARGS', code: 7, targetId: 'bogus' })
+})

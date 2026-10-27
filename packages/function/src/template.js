@@ -261,12 +261,18 @@ const applyHostPage = (hostPage, extendPage) =>
     .join('\n      ')
 
 // _response is a plain JSON object serialized via isolated-function;
-// wrap each value as a method to match Puppeteer's HTTPResponse API
+// wrap each value as a method to match Puppeteer's HTTPResponse API.
+//
+// Runtime wins over args; args win over flat options. Spreading the runtime
+// twice keeps that precedence without moving keys that were already present.
+// With no args, userArgs is empty and this is the old input.
 const withResponse = `
-  const { _response: _r, pageValues, targetId: _t, strictTarget: _s, ...rest } = opts
+  const { _response: _r, pageValues, targetId: _t, strictTarget: _s, args, ...rest } = opts
   const response = _r
     ? Object.fromEntries(Object.entries(_r).map(([k, v]) => [k, () => v]))
-    : undefined`
+    : undefined
+  const { device: _d, ...userArgs } = args || {}
+  const toInput = runtime => ({ ...runtime, ...rest, ...userArgs, ...runtime, url })`
 
 const normalizeOpts = (code, usesPageOrOpts) => {
   if (usesPageOrOpts && typeof usesPageOrOpts === 'object') {
@@ -361,7 +367,7 @@ const template = (code, usesPageOrOpts) => {
   if (!usesPage) {
     return `async (url, _, opts) => {
     ${withResponse}
-    return (${code})({ response, ...rest, url })
+    return (${code})(toInput({ response }))
   }`
   }
 
@@ -370,7 +376,7 @@ const template = (code, usesPageOrOpts) => {
     ${withResponse}
     const page = {}
     ${extensions}
-    return (${code})({ page, response, ...rest, url })
+    return (${code})(toInput({ page, response }))
   }`
   }
 
@@ -398,7 +404,7 @@ const template = (code, usesPageOrOpts) => {
           }
         }
         ${extensions}
-        return await (${code})({ page, response, ...rest, url })
+        return await (${code})(toInput({ page, response }))
       } finally {
         await timed('disconnect', () => browser.disconnect())
       }

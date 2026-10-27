@@ -96,6 +96,96 @@ test('_response is not leaked to user function opts', async t => {
   t.deepEqual(result, ['query', 'response', 'url'])
 })
 
+test('`args` is spread into the user function opts, not passed as a key', async t => {
+  const code = '(opts) => opts'
+  const fn = new Function(`return (${template(code)})`)()
+  const result = await fn('https://example.com', undefined, {
+    args: { code: 'abc', foo: 1 },
+    device: 'iPhone'
+  })
+  t.deepEqual(result, {
+    code: 'abc',
+    foo: 1,
+    response: undefined,
+    device: 'iPhone',
+    url: 'https://example.com'
+  })
+})
+
+test('`args` cannot replace `response`', async t => {
+  const fn = new Function(`return (${template('({ response }) => response.status()')})`)()
+  t.is(
+    await fn('https://example.com', undefined, {
+      _response: { status: 200 },
+      args: { response: 1 }
+    }),
+    200
+  )
+})
+
+test('`args` cannot replace the stub `page`', async t => {
+  const source = template('async ({ page }) => page.html()', {
+    usesPage: true,
+    needsBrowser: false,
+    extendPage: { html: '<p>hi</p>' }
+  })
+  const fn = new Function(`return (${source})`)()
+  t.is(
+    await fn('https://example.com', undefined, {
+      pageValues: { html: '<p>hi</p>' },
+      args: { page: 2 }
+    }),
+    '<p>hi</p>'
+  )
+})
+
+test('`args` win over flat options, the runtime wins over `args`', async t => {
+  const fn = new Function(`return (${template('(opts) => opts')})`)()
+  const result = await fn('https://example.com', undefined, {
+    foo: 1,
+    device: 'iPhone',
+    args: { foo: 2, device: 'evil', url: 'https://evil.test' }
+  })
+  t.deepEqual(result, {
+    foo: 2,
+    device: 'iPhone',
+    response: undefined,
+    url: 'https://example.com'
+  })
+})
+
+test('`args` cannot supply a `device` the runtime did not set', async t => {
+  const fn = new Function(`return (${template('({ device }) => device')})`)()
+  t.is(await fn('https://example.com', undefined, { args: { device: 'fake' } }), undefined)
+})
+
+test('`args.page` reaches a function that does not use a page', async t => {
+  const fn = new Function(`return (${template('(opts) => opts')})`)()
+  const result = await fn('https://example.com', undefined, { args: { page: 'fake' } })
+  t.is(result.page, 'fake')
+})
+
+test('`args` keep the key order of flat options', async t => {
+  const fn = new Function(`return (${template('(opts) => Object.keys(opts)')})`)()
+  const flat = await fn('https://example.com', undefined, { name: 1, headers: 1 })
+  const withArgs = await fn('https://example.com', undefined, { args: { name: 1, headers: 1 } })
+  t.deepEqual(withArgs, flat)
+})
+
+test('without `args` the function input is unchanged', async t => {
+  const fn = new Function(`return (${template('(opts) => Object.keys(opts)')})`)()
+  const result = await fn('https://example.com', undefined, { device: 'iPhone', foo: 1 })
+  t.deepEqual(result, ['response', 'device', 'foo', 'url'])
+})
+
+test('`args` cannot replace `url`', async t => {
+  const fn = new Function(`return (${template('({ url }) => url')})`)()
+  t.is(
+    await fn('https://example.com', undefined, { args: { url: 'https://evil.test' } }),
+    'https://example.com'
+  )
+})
+
 test('non-page template passes url to the user function', async t => {
   const code = '({ url }) => url'
   const source = template(code)
@@ -107,7 +197,7 @@ test('non-page template passes url to the user function', async t => {
 test('page template includes url in function call', t => {
   const code = '({ page, url }) => url'
   const source = template(code)
-  t.true(source.includes('{ page, response, ...rest, url }'))
+  t.true(source.includes('toInput({ page, response })'))
 })
 
 test('stub-page template passes url to the user function', async t => {
@@ -117,7 +207,7 @@ test('stub-page template passes url to the user function', async t => {
     needsBrowser: false,
     extendPage: { html: '<p>hi</p>' }
   })
-  t.true(source.includes('{ page, response, ...rest, url }'))
+  t.true(source.includes('toInput({ page, response })'))
   t.false(source.includes('puppeteer'))
   const fn = new Function(`return (${source})`)()
   t.deepEqual(

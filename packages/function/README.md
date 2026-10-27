@@ -94,6 +94,18 @@ The sandboxed function receives these properties:
 | `device` | Device descriptor with `userAgent` and `viewport` |
 | `...opts` | Any custom options passed at runtime |
 
+Pass values meant for your function under `args`. They are kept apart from the runtime options, so a value named `code`, `source` or `vmOpts` reaches your function instead of changing how it runs:
+
+```js
+const myFn = createFunction(({ code }) => code, { args: { code: 'abc' } })
+await myFn('https://example.com') // => { isFulfilled: true, value: 'abc', ... }
+
+// per-call args merge over the ones given at creation
+await myFn('https://example.com', { args: { code: 'xyz' } }) // value: 'xyz'
+```
+
+`args` win over other custom options with the same name. `response` and `url` come from the runtime and win over `args`. So does `page`, when the function runs with one; a function that does not use `page` still receives `args.page`. `device` comes from the runtime, and `args` cannot set it.
+
 ### Result object
 
 The function returns a structured result:
@@ -213,6 +225,9 @@ const myFn = createFunction(code, {
   // VM sandbox options (passed to isolated-function)
   vmOpts: { /* ... */ },
 
+  // Values for your function, spread into its argument. Never read as a
+  // runtime option. Must be a plain object.
+  args: { code: 'abc' },
 
   // Run against a page that is already navigated, instead of creating a
   // context and navigating. It replaces that path, so `getBrowserless` is not

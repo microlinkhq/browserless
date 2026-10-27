@@ -147,6 +147,190 @@ test('provide a mechanism to pass things to the function ', async t => {
   t.true(!!logging)
 })
 
+test('`args` reach the function without touching runtime options', async t => {
+  const code = ({ code, source, needsNetwork, vmOpts }) => ({ code, source, needsNetwork, vmOpts })
+  const args = { code: 'abc', source: 'not a program', needsNetwork: true, vmOpts: 1 }
+  const myFn = browserlessFunction(code, { ...opts, args })
+
+  const { logging, profiling, ...result } = await myFn(fileUrl)
+
+  t.deepEqual(result, { isFulfilled: true, value: args })
+})
+
+test('a numeric `code` in `args` is an argument, not the snippet', async t => {
+  const myFn = browserlessFunction(({ code }) => code, opts)
+  const { logging, profiling, ...result } = await myFn(fileUrl, { args: { code: 7 } })
+  t.deepEqual(result, { isFulfilled: true, value: 7 })
+})
+
+test('per-call `args` merge over the ones the function was created with', async t => {
+  const code = ({ a, b }) => ({ a, b })
+  const myFn = browserlessFunction(code, { ...opts, args: { a: 1, b: 1 } })
+  const { logging, profiling, ...result } = await myFn(fileUrl, { args: { b: 2 } })
+  t.deepEqual(result, { isFulfilled: true, value: { a: 1, b: 2 } })
+})
+
+test('`args` reach a function that uses the page', async t => {
+  const code = async ({ page, code }) => ({ title: await page.title(), code })
+  const myFn = browserlessFunction(code, { ...opts, args: { code: 'abc' } })
+  const { logging, profiling, ...result } = await myFn(fileUrl)
+  t.true(result.isFulfilled)
+  t.is(result.value.code, 'abc')
+  t.is(typeof result.value.title, 'string')
+})
+
+test('`args` cannot replace the page or move the function to another target', async t => {
+  const code = async ({ page }) => page.title()
+  const myFn = browserlessFunction(code, {
+    ...opts,
+    args: { page: 2, targetId: 'bogus', strictTarget: true, browserWSEndpoint: 'ws://127.0.0.1:1' }
+  })
+  const { logging, profiling, ...result } = await myFn(fileUrl)
+  t.true(result.isFulfilled)
+  t.is(typeof result.value, 'string')
+})
+
+test('a bad per-call `args` rejects before the browser is asked for', async t => {
+  let asked = 0
+  const myFn = browserlessFunction(({ page }) => page.title(), {
+    ...opts,
+    getBrowserless: () => {
+      asked++
+      return browserless
+    }
+  })
+  await t.throwsAsync(() => myFn(fileUrl, { args: 'abc' }), { instanceOf: TypeError })
+  t.is(asked, 0)
+})
+
+test('a `null` per-call `args` rejects', async t => {
+  const myFn = browserlessFunction(() => 1, opts)
+  await t.throwsAsync(() => myFn(fileUrl, { args: null }), {
+    instanceOf: TypeError,
+    message: 'Expected `args` to be a plain object'
+  })
+})
+
+test('`args` must be a plain object', t => {
+  t.throws(() => browserlessFunction(() => 1, { ...opts, args: 'abc' }), {
+    instanceOf: TypeError,
+    message: 'Expected `args` to be a plain object'
+  })
+})
+
+test('`args` stay nested on every path, and null options keep creation `args`', t => {
+  const browserlessFunctionPath = require.resolve('..')
+  const script = `
+    const Module = require('module')
+    const originalLoad = Module._load
+    const seen = []
+
+    Module._load = function (request, parent, isMain) {
+      if (request === 'isolated-function') {
+        return () => {
+          const instance = () => async (url, endpoint, opts) => {
+            const record = {
+              endpoint: endpoint ?? null,
+              args: Object.hasOwn(opts, 'args') ? opts.args : null,
+              targetId: opts.targetId ?? null,
+              strictTarget: opts.strictTarget === true
+            }
+            seen.push(record)
+            return { isFulfilled: true, value: 'ok' }
+          }
+          instance.teardown = async () => {}
+          return instance
+        }
+      }
+      return originalLoad(request, parent, isMain)
+    }
+
+    const browserlessFunction = require(${JSON.stringify(browserlessFunctionPath)})()
+    const ask = () => {
+      throw new Error('browser')
+    }
+    const myFn = browserlessFunction(({ code }) => code, {
+      getBrowserless: ask,
+      args: { code: 1 }
+    })
+    const bare = browserlessFunction(({ code }) => code, { getBrowserless: ask })
+    const nullProto = Object.create(null)
+    nullProto.code = 7
+    const page = {
+      browser: () => ({ wsEndpoint: () => 'ws://example' }),
+      createCDPSession: async () => ({
+        send: async () => ({ targetInfo: { targetId: 'real' } }),
+        detach: async () => {}
+      })
+    }
+    const pageFn = browserlessFunction(async ({ page: current }) => current, {
+      getBrowserless: async () => ({
+        createContext: async () => ({
+          withPage: handler => async () =>
+            handler(page, async () => ({ device: { userAgent: 'ua', viewport: { width: 1 } } }))(),
+          destroyContext: async () => {}
+        })
+      })
+    })
+    const handed = browserlessFunction(async ({ page: current }) => current, {
+      getBrowserless: ask,
+      getPage: async () => ({ page })
+    })
+    const nested = { code: 3, targetId: 'bogus', browserWSEndpoint: 'ws://evil' }
+
+    Promise.resolve()
+      .then(() => myFn('https://example.com'))
+      .then(() => myFn('https://example.com', null))
+      .then(() => myFn('https://example.com', { args: { code: 2 } }))
+      .then(() => bare('https://example.com'))
+      .then(() => bare('https://example.com', null))
+      .then(() => bare('https://example.com', { args: nullProto }))
+      .then(() => bare('https://example.com', { args: {} }))
+      .then(() => pageFn('https://example.com', { args: nested }))
+      .then(() => handed('https://example.com', { args: nested }))
+      .then(() => process.stdout.write(JSON.stringify(seen)))
+      .catch(error => {
+        process.stderr.write(String(error && error.stack ? error.stack : error))
+        process.exit(1)
+      })
+  `
+
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['-e', script], {
+    encoding: 'utf8'
+  })
+
+  t.is(status, 0, stderr)
+  t.deepEqual(JSON.parse(stdout), [
+    { endpoint: null, args: { code: 1 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: { code: 1 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: { code: 2 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: null, targetId: null, strictTarget: false },
+    { endpoint: null, args: null, targetId: null, strictTarget: false },
+    { endpoint: null, args: { code: 7 }, targetId: null, strictTarget: false },
+    { endpoint: null, args: {}, targetId: null, strictTarget: false },
+    {
+      endpoint: 'ws://example',
+      args: { code: 3, targetId: 'bogus', browserWSEndpoint: 'ws://evil' },
+      targetId: 'real',
+      strictTarget: false
+    },
+    {
+      endpoint: 'ws://example',
+      args: { code: 3, targetId: 'bogus', browserWSEndpoint: 'ws://evil' },
+      targetId: 'real',
+      strictTarget: true
+    }
+  ])
+})
+
+test('a per-call `args` that is not a plain object rejects', async t => {
+  const myFn = browserlessFunction(() => 1, opts)
+  await t.throwsAsync(() => myFn(fileUrl, { args: [1] }), {
+    instanceOf: TypeError,
+    message: 'Expected `args` to be a plain object'
+  })
+})
+
 test('collect logs ', async t => {
   const code = ({ query }) => {
     console.log(query)
