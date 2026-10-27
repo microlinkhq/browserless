@@ -142,6 +142,11 @@ test('`args` win over flat options, the runtime wins over `args`', async t => {
   })
 })
 
+test('`args` cannot supply a `device` the runtime did not set', async t => {
+  const fn = new Function(`return (${template('({ device }) => device')})`)()
+  t.is(await fn('https://example.com', undefined, { args: { device: 'fake' } }), undefined)
+})
+
 test('`args` keep the key order of flat options', async t => {
   const fn = new Function(`return (${template('(opts) => Object.keys(opts)')})`)()
   const flat = await fn('https://example.com', undefined, { name: 1, headers: 1 })

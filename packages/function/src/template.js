@@ -267,17 +267,11 @@ const withResponse = `
   const response = _r
     ? Object.fromEntries(Object.entries(_r).map(([k, v]) => [k, () => v]))
     : undefined
+  const { device: _d, ...userArgs } = args || {}
   const toInput = runtime =>
     args === undefined
       ? { ...runtime, ...rest, url }
-      : {
-          ...runtime,
-          ...rest,
-          ...args,
-          ...runtime,
-          ...('device' in rest && { device: rest.device }),
-          url
-        }`
+      : { ...runtime, ...rest, ...userArgs, ...runtime, url }`
 
 const normalizeOpts = (code, usesPageOrOpts) => {
   if (usesPageOrOpts && typeof usesPageOrOpts === 'object') {
