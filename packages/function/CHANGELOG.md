@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.1.0](https://github.com/microlinkhq/browserless/compare/v14.0.33...v14.1.0) (2026-10-27)
+
+### Features
+
+* **function:** pass function values under `args` ([#1009](https://github.com/microlinkhq/browserless/issues/1009)) ([c9801c6](https://github.com/microlinkhq/browserless/commit/c9801c6920c6728f84e3b0f1899da6ea26203f9e))
+
 ## [14.0.30](https://github.com/microlinkhq/browserless/compare/v14.0.29...v14.0.30) (2026-10-22)
 
 ### Bug Fixes
