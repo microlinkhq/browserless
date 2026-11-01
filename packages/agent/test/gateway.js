@@ -13,7 +13,6 @@ const LIVE_TIMEOUT_MS = 120000
 const answerFor = (id, { criteria }, operations) => {
   const ids = Object.keys(criteria)
   if (id === 'operation') return answer(operations.shift(), ids)
-  if (id === 'passed') return answer('yes', ids)
   return answer(ids[0], ids)
 }
 
