@@ -12,8 +12,7 @@ const LIVE_TIMEOUT_MS = 120000
 
 const answerFor = (id, { criteria }, operations) => {
   const ids = Object.keys(criteria)
-  if (id === 'operation') return answer(operations.shift(), ids)
-  return answer(ids[0], ids)
+  return answer(id === 'operation' ? operations.shift() : ids[0], ids)
 }
 
 const gatewayOver = operations => {
