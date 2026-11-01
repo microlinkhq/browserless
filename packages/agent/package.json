@@ -25,7 +25,7 @@
     "puppeteer"
   ],
   "dependencies": {
-    "ai": "^7.0.136",
+    "ai": "~7.0.156",
     "debug-logfmt": "~1.4.15"
   },
   "devDependencies": {
