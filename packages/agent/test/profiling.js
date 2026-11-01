@@ -140,7 +140,12 @@ test('the evaluator sees the final page, its fields, and the actions taken witho
   const page = new Page([state(), state('Results')])
   const info = await run(page, ['CLICK', 'DONE'], { evaluator: judge.model })
   await info.profiling()
-  const [{ state: evaluated, questions }] = judge.calls
+  const [
+    {
+      state: [{ value: evaluated }],
+      questions
+    }
+  ] = judge.calls
   t.is(evaluated.page.text, 'Results')
   t.true(evaluated.elements.length > 0)
   t.deepEqual(

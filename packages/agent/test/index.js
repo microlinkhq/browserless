@@ -298,7 +298,7 @@ test('a discarded stale decision is reported to the next decision request', asyn
   page.guards = [false]
   const models = mockModels(['CLICK', 'DONE'])
   await run(page, [], { models })
-  t.deepEqual(models.calls[1].state.recent_actions, [
+  t.deepEqual(models.calls[1].state[0].value.recent_actions, [
     { operation: 'CLICK', action: 'e2', stale: true }
   ])
 })
