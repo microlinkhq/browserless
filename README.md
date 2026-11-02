@@ -251,6 +251,22 @@ default: `2`
 
 The number of retries that can be performed before considering a navigation as failed.
 
+##### proxyServer
+
+type: `string`<br/>
+
+The proxy the context sends its traffic through. When it carries credentials, browserless keeps them out of the browser:
+
+```js
+const browserless = await browser.createContext({
+  proxyServer: 'http://username:password@proxy.example.com:8080'
+})
+```
+
+A local forwarder on loopback adds the credentials on the way to the proxy and closes with [.destroyContext()](#destroycontextoptions). Chromium only sees the forwarder, so a site that asks for a login never receives the proxy's username and password. Encode reserved characters in them (`@`, `:`, `/`) with `encodeURIComponent`.
+
+A `proxyServer` without credentials is passed to Chromium as it is.
+
 ### .browser()
 
 Returns the internal [Browser](https://github.com/puppeteer/puppeteer/blob/v10.0.0/docs/api.md#class-browser) instance.
@@ -613,7 +629,7 @@ Disables CSS [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/anima
 
 type: `object`<br/>
 
-It will be passed down to [page.authenticate](https://pptr.dev/api/puppeteer.page.authenticate).
+It will be passed down to [page.authenticate](https://pptr.dev/api/puppeteer.page.authenticate), which answers every login a request asks for, from a site or from a proxy, with these credentials. For proxy credentials use [proxyServer](#proxyserver) instead, so a site never receives them.
 
 ##### click
 
