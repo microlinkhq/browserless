@@ -12,6 +12,7 @@ const pRetry = require('p-retry')
 
 const { AbortError } = pRetry
 
+const { forwardProxy, closeForwarder } = require('./proxy-forwarder')
 const driver = require('./driver')
 
 // Chrome can stop answering CDP while `connected` stays true, so the
@@ -108,7 +109,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
-    let _contextPromise = createBrowserContext(contextOpts)
+    const forwardedContextOpts = forwardProxy(contextOpts)
+    const newBrowserContext = () => forwardedContextOpts.then(createBrowserContext)
+    let _contextPromise = newBrowserContext()
     let isDestroyedForced = false
     const pageMetadata = new WeakMap()
 
@@ -200,7 +203,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               // closed page, a detached frame and a destroyed execution context,
               // which a fresh page recovers from.
               const previousContextPromise = _contextPromise
-              _contextPromise = createBrowserContext(contextOpts)
+              _contextPromise = newBrowserContext()
               await pReflect(previousContextPromise.then(ctx => ctx.close()))
               debug('retry', { attemptNumber, retriesLeft, message })
             }
@@ -239,12 +242,16 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const destroyContext = async ({ force = false } = {}) => {
       if (force) isDestroyedForced = true
 
-      const [browserProcess, browserContext] = await Promise.all([
-        getBrowser(),
-        getBrowserContext()
-      ])
-      await pReflect(browserContext.close())
-      debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
+      try {
+        const [browserProcess, browserContext] = await Promise.all([
+          getBrowser(),
+          getBrowserContext()
+        ])
+        await pReflect(browserContext.close())
+        debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
+      } finally {
+        await closeForwarder(forwardedContextOpts)
+      }
     }
 
     return {

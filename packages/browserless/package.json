@@ -44,6 +44,7 @@
     "p-reflect": "~2.1.0",
     "p-retry": "~4.6.1",
     "p-timeout": "~4.1.0",
+    "proxy-chain": "~3.0.1",
     "require-one-of": "~1.0.25",
     "superlock": "~1.4.2"
   },
