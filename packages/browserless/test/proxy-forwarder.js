@@ -1,5 +1,6 @@
 'use strict'
 
+const { setTimeout } = require('timers/promises')
 const { default: test } = require('ava')
 const http = require('http')
 const net = require('net')
@@ -18,6 +19,7 @@ forwarder.forwardProxy = async contextOpts => {
 const { getBrowser } = require('@browserless/test')
 
 const LOOPBACK_FORWARDER = /^http:\/\/127\.0\.0\.1:\d+$/
+const CLOSE_BUDGET_MS = 1000
 
 const isListening = url =>
   new Promise(resolve => {
@@ -65,6 +67,46 @@ for (const credentials of ['user:secret', 'user', ':secret', 'us%40er:p%40ss%3Aw
     t.false(await isListening(forwarded.proxyServer))
   })
 }
+
+const runTunnelingProxy = async t => {
+  const tunnels = new Set()
+  const server = http.createServer()
+  server.on('connect', (req, socket) => {
+    tunnels.add(socket)
+    socket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
+  })
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+  t.teardown(() => {
+    for (const socket of tunnels) socket.destroy()
+    return new Promise(resolve => server.close(resolve))
+  })
+  return server.address().port
+}
+
+const openTunnel = proxyServer =>
+  new Promise((resolve, reject) => {
+    const socket = net.connect(Number(new URL(proxyServer).port), '127.0.0.1', () =>
+      socket.write('CONNECT target.test:443 HTTP/1.1\r\nHost: target.test:443\r\n\r\n')
+    )
+    socket.once('data', chunk =>
+      chunk.toString().startsWith('HTTP/1.1 200') ? resolve(socket) : reject(new Error(chunk))
+    )
+    socket.once('error', reject)
+  })
+
+test('closing a forwarder does not wait for an open tunnel', async t => {
+  const port = await runTunnelingProxy(t)
+  const forwardedPromise = forwardProxy({ proxyServer: `http://user:secret@127.0.0.1:${port}` })
+  const tunnel = await openTunnel((await forwardedPromise).proxyServer)
+  t.teardown(() => tunnel.destroy())
+
+  const outcome = await Promise.race([
+    closeForwarder(forwardedPromise).then(() => 'closed'),
+    setTimeout(CLOSE_BUDGET_MS, 'waiting')
+  ])
+
+  t.is(outcome, 'closed')
+})
 
 test('closing a forwarder that never started does nothing', async t => {
   await t.notThrowsAsync(closeForwarder(Promise.reject(new Error('never started'))))
