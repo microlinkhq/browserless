@@ -312,3 +312,21 @@ test.serial('a context reused after destroyContext starts a new forwarder', asyn
   t.deepEqual(listening, [false, true])
   t.deepEqual(await Promise.all(opened.map(isListening)), [false, false])
 })
+
+test.serial('a call retried in a new context keeps its forwarder', async t => {
+  const port = await runProxy(t)
+  opened.length = 0
+  const browser = require('../src')({ timeout: 30000 })
+  t.teardown(() => browser.close())
+  const browserless = await browser.createContext({
+    proxyServer: `http://user:secret@127.0.0.1:${port}`
+  })
+  let attempts = 0
+
+  await browserless.withPage(() => async () => {
+    if (attempts++ === 0) throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+  })()
+
+  t.is(attempts, 2)
+  t.is(opened.length, 1)
+})

@@ -226,6 +226,35 @@ test('a context destroyed mid-call keeps a non-retryable error', async t => {
   })
 })
 
+const failFirstAttempt = (beforeFailing = async () => {}) => {
+  let attempts = 0
+  return () => async () => {
+    if (attempts++ > 0) return attempts
+    await beforeFailing()
+    throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+  }
+}
+
+test('a call started after destroyContext still retries', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const browserless = await browserlessFactory.createContext()
+  await browserless.context()
+  await browserless.destroyContext()
+
+  t.is(await browserless.withPage(failFirstAttempt())(), 2)
+})
+
+test('destroying another context does not stop a call from retrying', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const destroyed = await browserlessFactory.createContext()
+  const browserless = await browserlessFactory.createContext()
+  await Promise.all([destroyed.context(), browserless.context()])
+
+  t.is(await browserless.withPage(failFirstAttempt(destroyed.destroyContext))(), 2)
+})
+
 test('a destroyed context leaves no browser context behind', async t => {
   const browserlessFactory = createBrowser()
   t.teardown(browserlessFactory.close)
