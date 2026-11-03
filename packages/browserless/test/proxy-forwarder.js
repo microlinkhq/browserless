@@ -47,6 +47,7 @@ const runProxy = async t => {
 
 for (const proxyServer of [
   undefined,
+  '',
   '127.0.0.1:8080',
   'proxy.example:8080',
   'http://proxy.example:8080',
@@ -64,7 +65,9 @@ for (const proxyServer of [
   'http://user@proxy.example:8080',
   'http://:secret@proxy.example:8080',
   'http://us%40er:p%40ss%3Aw%2Frd@proxy.example:8080',
-  'user:secret@proxy.example:8080'
+  'user:secret@proxy.example:8080',
+  'https://user:secret@proxy.example:8443',
+  'socks5://user:secret@proxy.example:1080'
 ]) {
   test(`${proxyServer} is forwarded from loopback`, async t => {
     const forwardedPromise = forwardProxy({
@@ -216,13 +219,17 @@ test.serial('closing the browser does not close a destroyed context again', asyn
   t.deepEqual(closed, opened)
 })
 
-for (const username of ['proxy-key', '127']) {
-  test(`a forwarder error keeps the proxy host readable for a ${username} username`, async t => {
+for (const [credentials, redacted] of [
+  ['proxy-key', '***'],
+  ['127', '***'],
+  [':127', ':***']
+]) {
+  test(`a forwarder error keeps the proxy host readable for ${credentials} credentials`, async t => {
     const error = await t.throwsAsync(
-      forwardProxy({ proxyServer: `ftp://${username}@127.0.0.1:8080` })
+      forwardProxy({ proxyServer: `ftp://${credentials}@127.0.0.1:8080` })
     )
 
-    t.true(error.message.includes('ftp://***@127.0.0.1:8080'), error.message)
+    t.true(error.message.includes(`ftp://${redacted}@127.0.0.1:8080`), error.message)
   })
 }
 
