@@ -181,6 +181,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             page = await createPage(name)
             closePageTimeout = startCloseTimeout()
             const value = await fn(page, goto)(...args)
+            if (isAbandoned()) throw contextDisconnected()
             // A timeout already rejected the caller, who never received this
             // page. Retaining it would clear the in-call watchdog and arm a
             // new one with nobody holding the page.
