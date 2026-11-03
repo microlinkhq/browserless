@@ -265,7 +265,7 @@ const browserless = await browser.createContext({
 
 A local forwarder on loopback adds the credentials on the way to the proxy and closes with [.destroyContext()](#destroycontextoptions) or [.close()](#close). Chromium only sees the forwarder, so a site that asks for a login never receives the proxy's username and password. Encode reserved characters in them (`@`, `:`, `/`) with `encodeURIComponent`.
 
-A `proxyServer` without credentials is passed to Chromium as it is.
+A `proxyServer` without credentials is passed to Chromium as it is. A `proxyServer` with credentials needs [mode](#mode) `'launch'`: a connected browser runs on another host and cannot reach the forwarder, so the context fails with a `TypeError`.
 
 ### .browser()
 

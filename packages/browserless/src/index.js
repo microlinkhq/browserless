@@ -111,7 +111,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
-    const forwardedContextOpts = isClosed ? Promise.resolve(contextOpts) : forwardProxy(contextOpts)
+    const forwardedContextOpts = isClosed
+      ? Promise.resolve(contextOpts)
+      : forwardProxy(contextOpts, { mode: launchOpts.mode })
     forwarders.add(forwardedContextOpts)
     const newBrowserContext = () => forwardedContextOpts.then(createBrowserContext)
     const usesForwarder = () => forwardedContextOpts.then(opts => opts !== contextOpts)
@@ -199,10 +201,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
               if (isRejected || isDestroyedForced) throw new AbortError()
-              if (isDestroyed && (await usesForwarder())) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
+              if (isDestroyed && (await usesForwarder())) throw new AbortError()
               const { message, attemptNumber, retriesLeft } = error
               // Every attempt builds its own page, so both codes are retryable
               // inside the existing context: `EBRWSRCONTEXTCONNRESET` covers a

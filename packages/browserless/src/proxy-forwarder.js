@@ -4,6 +4,8 @@ const { anonymizeProxy, closeAnonymizedProxy } = require('proxy-chain')
 
 const REDACTED = '***'
 const DEFAULT_SCHEME = 'http://'
+const CONNECT_MODE_ERROR =
+  "A proxyServer with credentials needs `mode: 'launch'`: a connected browser cannot reach the local forwarder"
 
 const forwardedProxyServers = new Set()
 
@@ -27,9 +29,10 @@ const withoutCredentials = (error, proxyUrl) => {
   return error
 }
 
-const forwardProxy = async contextOpts => {
+const forwardProxy = async (contextOpts, { mode } = {}) => {
   const proxyUrl = contextOpts.proxyServer && parseProxyServer(contextOpts.proxyServer)
   if (!hasCredentials(proxyUrl)) return contextOpts
+  if (mode === 'connect') throw new TypeError(CONNECT_MODE_ERROR)
   try {
     const proxyServer = await anonymizeProxy(proxyUrl.href)
     forwardedProxyServers.add(proxyServer)

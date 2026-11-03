@@ -11,8 +11,8 @@ const forwarder = require('../src/proxy-forwarder')
 const { forwardProxy, closeForwarder } = forwarder
 
 const opened = []
-forwarder.forwardProxy = async contextOpts => {
-  const forwarded = await forwardProxy(contextOpts)
+forwarder.forwardProxy = async (...args) => {
+  const forwarded = await forwardProxy(...args)
   opened.push(forwarded.proxyServer)
   return forwarded
 }
@@ -243,7 +243,7 @@ test('closing a context does not close a forwarder it did not start', async t =>
   t.true(await isListening(proxyServer))
 })
 
-const destroyThenRetry = async (t, contextOpts) => {
+const destroyThenRetry = async (t, contextOpts, { code = 'EPROTOCOL' } = {}) => {
   const browser = require('../src')({ timeout: 30000 })
   t.teardown(() => browser.close())
   const browserless = await browser.createContext(contextOpts)
@@ -254,9 +254,9 @@ const destroyThenRetry = async (t, contextOpts) => {
     .withPage(() => async () => {
       if (attempts++ > 0) return 'retried'
       await browserless.destroyContext()
-      throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+      throw Object.assign(new Error('context reset'), { code })
     })()
-    .catch(error => error.name)
+    .catch(error => [error.name, error.message])
 
   return { attempts, outcome }
 }
@@ -266,7 +266,17 @@ test.serial('a context destroyed mid-call does not retry through its closed forw
 
   t.deepEqual(await destroyThenRetry(t, { proxyServer: `http://user:secret@127.0.0.1:${port}` }), {
     attempts: 1,
-    outcome: 'AbortError'
+    outcome: ['AbortError', undefined]
+  })
+})
+
+test.serial('a context destroyed mid-call keeps a non-retryable error', async t => {
+  const port = await runProxy(t)
+  const contextOpts = { proxyServer: `http://user:secret@127.0.0.1:${port}` }
+
+  t.deepEqual(await destroyThenRetry(t, contextOpts, { code: 'EFATAL' }), {
+    attempts: 1,
+    outcome: ['Error', 'context reset']
   })
 })
 
@@ -275,3 +285,39 @@ for (const proxyServer of [undefined, 'http://proxy.example:8080']) {
     t.deepEqual(await destroyThenRetry(t, { proxyServer }), { attempts: 2, outcome: 'retried' })
   })
 }
+
+test('a connected browser refuses a proxy with credentials', async t => {
+  const error = await t.throwsAsync(
+    forwardProxy(
+      { proxyServer: 'http://proxy-key:secret@proxy.example:8080' },
+      { mode: 'connect' }
+    ),
+    { instanceOf: TypeError }
+  )
+
+  t.regex(error.message, /mode: 'launch'/)
+  t.false(error.message.includes('proxy-key'))
+})
+
+for (const proxyServer of [undefined, 'http://proxy.example:8080']) {
+  test(`a connected browser uses ${proxyServer} proxy as it is`, async t => {
+    const contextOpts = { proxyServer }
+    t.is(await forwardProxy(contextOpts, { mode: 'connect' }), contextOpts)
+  })
+}
+
+test.serial('a context on a connected browser fails before starting a forwarder', async t => {
+  const launched = require('../src')({ timeout: 30000 })
+  t.teardown(() => launched.close())
+  const browserWSEndpoint = (await launched.browser()).wsEndpoint()
+  const connected = require('../src')({ mode: 'connect', browserWSEndpoint, timeout: 30000 })
+  t.teardown(() => connected.close())
+  opened.length = 0
+
+  const browserless = await connected.createContext({
+    proxyServer: 'http://user:secret@proxy.example:8080'
+  })
+
+  await t.throwsAsync(browserless.context(), { instanceOf: TypeError })
+  t.deepEqual(opened, [])
+})
