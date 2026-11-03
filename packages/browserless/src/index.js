@@ -260,9 +260,9 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       const closingContextOpts = forwardedContextOpts
       _contextPromise = undefined
       forwardedContextOpts = undefined
+      if (!closingContextPromise) return
 
       try {
-        if (!closingContextPromise) return
         const [browserProcess, browserContext] = await Promise.all([
           getBrowser(),
           closingContextPromise
@@ -270,10 +270,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         await pReflect(browserContext.close())
         debug('destroyContext', { pid: driver.pid(browserProcess), id: browserContext.id })
       } finally {
-        if (closingContextOpts) {
-          forwarders.delete(closingContextOpts)
-          await closeForwarder(closingContextOpts)
-        }
+        forwarders.delete(closingContextOpts)
+        await closeForwarder(closingContextOpts)
       }
     }
 
