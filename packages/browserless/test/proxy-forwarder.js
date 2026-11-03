@@ -16,6 +16,12 @@ forwarder.forwardProxy = async contextOpts => {
   return forwarded
 }
 
+const closed = []
+forwarder.closeForwarder = async contextOptsPromise => {
+  closed.push((await contextOptsPromise.catch(() => ({}))).proxyServer)
+  return closeForwarder(contextOptsPromise)
+}
+
 const { getBrowser } = require('@browserless/test')
 
 const LOOPBACK_FORWARDER = /^http:\/\/127\.0\.0\.1:\d+$/
@@ -184,4 +190,20 @@ test.serial('a context created after the browser closed starts no forwarder', as
   await t.throwsAsync(browserless.context())
 
   t.deepEqual(opened, [])
+})
+
+test.serial('closing the browser does not close a destroyed context again', async t => {
+  const port = await runProxy(t)
+  const browser = require('../src')({ timeout: 30000 })
+  opened.length = 0
+  closed.length = 0
+
+  const browserless = await browser.createContext({
+    proxyServer: `http://user:secret@127.0.0.1:${port}`
+  })
+  await browserless.context()
+  await browserless.destroyContext()
+  await browser.close()
+
+  t.deepEqual(closed, opened)
 })

@@ -9,17 +9,10 @@ const hasCredentials = proxyServer => {
   return Boolean(url?.username || url?.password)
 }
 
-const credentialsOf = proxyServer => {
-  const { username, password } = URL.parse(proxyServer)
-  return [username, password, decodeURIComponent(username), decodeURIComponent(password)].filter(
-    Boolean
-  )
-}
-
 const withoutCredentials = (error, proxyServer) => {
-  for (const secret of credentialsOf(proxyServer)) {
+  const { username, password } = URL.parse(proxyServer)
+  for (const secret of [username, password].filter(Boolean)) {
     error.message = error.message.replaceAll(secret, REDACTED)
-    error.stack = error.stack?.replaceAll(secret, REDACTED)
   }
   return error
 }
