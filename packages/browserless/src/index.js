@@ -125,7 +125,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     let destroyCount = 0
     const pageMetadata = new WeakMap()
 
-    const getBrowserContext = () => _contextPromise
+    const getBrowserContext = () => (_contextPromise ??= newBrowserContext())
 
     const createPage = async name => {
       const duration = debug.duration('createPage')
@@ -204,7 +204,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             onFailedAttempt: async error => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
-              if (isRejected) throw new AbortError()
+              if (isRejected || isClosed) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
@@ -253,13 +253,16 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
     const destroyContext = async () => {
       destroyCount++
+      const closingContextPromise = _contextPromise
       const closingContextOpts = forwardedContextOpts
+      _contextPromise = undefined
       forwardedContextOpts = undefined
 
       try {
+        if (!closingContextPromise) return
         const [browserProcess, browserContext] = await Promise.all([
           getBrowser(),
-          getBrowserContext()
+          closingContextPromise
         ])
         await pReflect(browserContext.close())
         debug('destroyContext', { pid: driver.pid(browserProcess), id: browserContext.id })
