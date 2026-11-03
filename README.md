@@ -26,7 +26,7 @@
   - [.text(url, options)](#texturl-options)
   - [.pdf(url, options)](#pdfurl-options)
   - [.screenshot(url, options)](#screenshoturl-options)
-  - [.destroyContext(options)](#destroycontextoptions)
+  - [.destroyContext()](#destroycontext)
   - [.getDevice(options)](#getdeviceoptions)
   - [.evaluate(fn, gotoOpts)](#evaluatefn-gotoopts)
   - [.goto(page, options)](#gotopage-options)
@@ -263,7 +263,7 @@ const browserless = await browser.createContext({
 })
 ```
 
-A local forwarder on loopback adds the credentials on the way to the proxy and closes with [.destroyContext()](#destroycontextoptions) or [.close()](#close). Chromium only sees the forwarder, so a site that asks for a login never receives the proxy's username and password. Encode reserved characters in them (`@`, `:`, `/`) with `encodeURIComponent`.
+A local forwarder on loopback adds the credentials on the way to the proxy and closes with [.destroyContext()](#destroycontext) or [.close()](#close). A call made after `.destroyContext()` starts a new one. Chromium only sees the forwarder, so a site that asks for a login never receives the proxy's username and password. Encode reserved characters in them (`@`, `:`, `/`) with `encodeURIComponent`.
 
 A `proxyServer` without credentials is passed to Chromium as it is. A `proxyServer` with credentials needs [mode](#mode) `'launch'`: a connected browser runs on another host and cannot reach the forwarder, so the context fails with a `TypeError`.
 
@@ -297,6 +297,8 @@ This method is an implementation detail, normally you don't need to call it.
 ### .close()
 
 Closes the internal browser.
+
+A call whose function has not returned yet rejects with an `AbortError` instead of retrying. An error that would not have been retried reaches the caller unchanged.
 
 ```js
 const { onExit } = require('signal-exit')
@@ -470,7 +472,7 @@ const buffer = await browserless.screenshot(url.toString(), {
 })
 ```
 
-### .destroyContext(options)
+### .destroyContext()
 
 Destroys the current browser context.
 
@@ -482,14 +484,9 @@ const content = await browserless.html('https://example.com')
 await browserless.destroyContext()
 ```
 
-#### options
+A call whose function has not returned yet rejects with an `AbortError` instead of retrying in a new context. An error that would not have been retried reaches the caller unchanged. A call made after `.destroyContext()` opens a new context.
 
-##### force
-
-type: `string` <br/>
-default: `'force'`
-
-When `force` is set, it prevents the recreation of the context in case a browser action is being executed.
+The `force` option is deprecated and has no effect: every destroyed context behaves as `force` did.
 
 ### .getDevice(options)
 

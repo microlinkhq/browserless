@@ -11,6 +11,8 @@ const { detectBuild, parseGalliumVersion } = require('../src/report')
 
 const test = process.env.CI ? ava.serial : ava
 
+const BACKOFF_GAP_MS = 200
+
 test('detectBuild distinguishes testing builds from branded Chrome', t => {
   // Chrome for Testing (puppeteer cache) -> 'chrome-for-testing'
   t.is(
@@ -186,6 +188,210 @@ test('force to destroy a browser context', async t => {
   t.is(error.name, 'AbortError')
 })
 
+const abandonMidCall = async (t, abandon, { contextOpts, code = 'EPROTOCOL' } = {}) => {
+  const browserlessFactory = require('..')({ timeout: 30000 })
+  t.teardown(() => browserlessFactory.close())
+  const browserless = await browserlessFactory.createContext(contextOpts)
+  await browserless.context()
+  let attempts = 0
+
+  const outcome = await browserless
+    .withPage(() => async () => {
+      if (attempts++ > 0) return 'retried'
+      await abandon({ browserless, browserlessFactory })
+      throw Object.assign(new Error('context reset'), { code })
+    })()
+    .catch(error => [error.name, error.message])
+
+  return { attempts, outcome }
+}
+
+const destroy = ({ browserless }) => browserless.destroyContext()
+const close = ({ browserlessFactory }) => browserlessFactory.close()
+
+for (const proxyServer of [
+  undefined,
+  'http://proxy.example:8080',
+  'http://user:secret@127.0.0.1:9'
+]) {
+  test(`a context destroyed mid-call with ${proxyServer} proxy does not retry`, async t => {
+    t.deepEqual(await abandonMidCall(t, destroy, { contextOpts: { proxyServer } }), {
+      attempts: 1,
+      outcome: ['AbortError', undefined]
+    })
+  })
+}
+
+test('a context destroyed mid-call keeps a non-retryable error', async t => {
+  t.deepEqual(await abandonMidCall(t, destroy, { code: 'EFATAL' }), {
+    attempts: 1,
+    outcome: ['Error', 'context reset']
+  })
+})
+
+const failFirstAttempt = (beforeFailing = async () => {}) => {
+  let attempts = 0
+  return () => async () => {
+    if (attempts++ > 0) return attempts
+    await beforeFailing()
+    throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+  }
+}
+
+test('a call started after destroyContext still retries', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const browserless = await browserlessFactory.createContext()
+  await browserless.context()
+  await browserless.destroyContext()
+
+  t.is(await browserless.withPage(failFirstAttempt())(), 2)
+})
+
+test('destroying another context does not stop a call from retrying', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const destroyed = await browserlessFactory.createContext()
+  const browserless = await browserlessFactory.createContext()
+  await Promise.all([destroyed.context(), browserless.context()])
+
+  t.is(await browserless.withPage(failFirstAttempt(destroyed.destroyContext))(), 2)
+})
+
+test('a destroyed context leaves no browser context behind', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const browserless = await browserlessFactory.createContext()
+  const browser = await browserless.browser()
+  let onRequest
+  const requested = new Promise(resolve => {
+    onRequest = resolve
+  })
+  const url = await runServer(t, () => onRequest())
+
+  const promise = browserless.html(url)
+  await requested
+  await browserless.destroyContext()
+  const error = await Promise.resolve(promise).catch(error => error)
+
+  t.is(error.name, 'AbortError')
+  t.is(browser.browserContexts().length, 1)
+})
+
+test('a call started while destroyContext runs opens a new context', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const browserless = await browserlessFactory.createContext({ retry: 0 })
+  await browserless.context()
+
+  const destroying = browserless.destroyContext()
+  const value = await browserless.withPage(() => async () => 'ok', { timeout: 5000 })()
+  await destroying
+
+  t.is(value, 'ok')
+})
+
+test('the first call after destroyContext works without retries', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const browserless = await browserlessFactory.createContext({ retry: 0 })
+  await browserless.context()
+  await browserless.destroyContext()
+
+  t.is(await browserless.withPage(() => async () => 'ok', { timeout: 5000 })(), 'ok')
+})
+
+test('a call retrying while the browser closes does not retry', async t => {
+  t.deepEqual(await abandonMidCall(t, close), {
+    attempts: 1,
+    outcome: ['AbortError', undefined]
+  })
+})
+
+const abandonBetweenAttempts = async (t, abandon) => {
+  const browserlessFactory = require('..')({ timeout: 30000 })
+  t.teardown(() => browserlessFactory.close())
+  const browserless = await browserlessFactory.createContext()
+  const browser = await browserless.browser()
+  let attempts = 0
+  let abandoned
+
+  const outcome = await browserless
+    .withPage(() => async () => {
+      if (attempts++ > 0) return 'retried'
+      abandoned = setTimeout(BACKOFF_GAP_MS).then(() =>
+        abandon({ browserless, browserlessFactory })
+      )
+      throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+    })()
+    .catch(error => [error.name, error.message])
+  await abandoned
+
+  return { attempts, outcome, contexts: browser.browserContexts().length }
+}
+
+test('a context destroyed while a retry waits does not retry', async t => {
+  t.deepEqual(await abandonBetweenAttempts(t, destroy), {
+    attempts: 1,
+    outcome: ['AbortError', undefined],
+    contexts: 1
+  })
+})
+
+test('a browser closed while a retry waits does not retry', async t => {
+  const { attempts, outcome } = await abandonBetweenAttempts(t, close)
+  t.deepEqual({ attempts, outcome }, { attempts: 1, outcome: ['AbortError', undefined] })
+})
+
+for (const keepPage of [false, true]) {
+  test(`a call that finishes after destroyContext rejects with keepPage ${keepPage}`, async t => {
+    const browserlessFactory = createBrowser()
+    t.teardown(browserlessFactory.close)
+    const browserless = await browserlessFactory.createContext()
+    let attempts = 0
+
+    const outcome = await browserless
+      .withPage(
+        page => async () => {
+          attempts++
+          await browserless.destroyContext()
+          return page
+        },
+        { keepPage }
+      )()
+      .then(
+        () => 'resolved',
+        error => error.name
+      )
+
+    t.deepEqual({ attempts, outcome }, { attempts: 1, outcome: 'AbortError' })
+  })
+}
+
+test('a call destroyed while its page closes keeps its value', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const browserless = await browserlessFactory.createContext()
+
+  const value = await browserless.withPage(page => async () => {
+    const closePage = page.close.bind(page)
+    page.close = async () => {
+      await browserless.destroyContext()
+      return closePage()
+    }
+    return 'value'
+  })()
+
+  t.is(value, 'value')
+})
+
+test('a call retrying while the browser closes keeps a non-retryable error', async t => {
+  t.deepEqual(await abandonMidCall(t, close, { code: 'EFATAL' }), {
+    attempts: 1,
+    outcome: ['Error', 'context reset']
+  })
+})
+
 test('ensure to close browser', async t => {
   const browser = require('..')()
   await browser.close()
@@ -286,6 +492,38 @@ const mockBrowser = (t, createBrowserContext) => {
   t.teardown(browser.close)
   return { browser, state }
 }
+
+test('a call that finishes after the browser closes rejects', async t => {
+  const { browser } = mockBrowser(t, () => Promise.resolve(mockContext()))
+  const browserless = await browser.createContext({ timeout: 5000 })
+
+  const outcome = await browserless
+    .withPage(() => async () => {
+      await browser.close()
+      return 'value'
+    })()
+    .catch(error => error.name)
+
+  t.is(outcome, 'AbortError')
+})
+
+test('a browser closed while a retry waits does not start another attempt', async t => {
+  const { browser } = mockBrowser(t, () => Promise.resolve(mockContext()))
+  const browserless = await browser.createContext({ timeout: 5000 })
+  let attempts = 0
+  let closing
+
+  const outcome = await browserless
+    .withPage(() => async () => {
+      if (attempts++ > 0) return 'retried'
+      closing = setTimeout(BACKOFF_GAP_MS).then(browser.close)
+      throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+    })()
+    .catch(error => error.name)
+  await closing
+
+  t.deepEqual({ attempts, outcome }, { attempts: 1, outcome: 'AbortError' })
+})
 
 const evaluateOk = async browser => {
   const browserless = await browser.createContext({ retry: 0, timeout: 2000 })

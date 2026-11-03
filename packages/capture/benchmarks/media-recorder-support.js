@@ -73,7 +73,7 @@ const main = async () => {
       if (!page.isClosed()) await page.close().catch(() => {})
     }
   } finally {
-    await browserless.destroyContext({ force: true }).catch(() => {})
+    await browserless.destroyContext().catch(() => {})
     await browser.close()
   }
 }

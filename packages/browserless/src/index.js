@@ -1,6 +1,6 @@
 'use strict'
 
-const { ensureError, browserTimeout } = require('@browserless/errors')
+const { ensureError, browserTimeout, contextDisconnected } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -111,18 +111,21 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
-    const forwardedContextOpts = isClosed
-      ? Promise.resolve(contextOpts)
-      : forwardProxy(contextOpts, { mode: launchOpts.mode })
-    forwarders.add(forwardedContextOpts)
-    const newBrowserContext = () => forwardedContextOpts.then(createBrowserContext)
-    const usesForwarder = () => forwardedContextOpts.then(opts => opts !== contextOpts)
+    let forwardedContextOpts
+    const forwardContextOpts = () => {
+      forwardedContextOpts = isClosed
+        ? Promise.resolve(contextOpts)
+        : forwardProxy(contextOpts, { mode: launchOpts.mode })
+      forwarders.add(forwardedContextOpts)
+      return forwardedContextOpts
+    }
+    const newBrowserContext = () =>
+      (forwardedContextOpts ?? forwardContextOpts()).then(createBrowserContext)
     let _contextPromise = newBrowserContext()
-    let isDestroyedForced = false
-    let isDestroyed = false
+    let destroyCount = 0
     const pageMetadata = new WeakMap()
 
-    const getBrowserContext = () => _contextPromise
+    const getBrowserContext = () => (_contextPromise ??= newBrowserContext())
 
     const createPage = async name => {
       const duration = debug.duration('createPage')
@@ -154,6 +157,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
       return async (...args) => {
         let isRejected = false
+        const destroysAtStart = destroyCount
+        const isAbandoned = () => isClosed || destroyCount !== destroysAtStart
 
         async function run () {
           let page
@@ -172,9 +177,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           }
 
           try {
+            if (isAbandoned()) throw contextDisconnected()
             page = await createPage(name)
             closePageTimeout = startCloseTimeout()
             const value = await fn(page, goto)(...args)
+            if (isAbandoned()) throw contextDisconnected()
             // A timeout already rejected the caller, who never received this
             // page. Retaining it would clear the in-call watchdog and arm a
             // new one with nobody holding the page.
@@ -200,11 +207,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             onFailedAttempt: async error => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
-              if (isRejected || isDestroyedForced) throw new AbortError()
+              if (isRejected) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
-              if (isDestroyed && (await usesForwarder())) throw new AbortError()
+              if (isAbandoned()) throw new AbortError()
               const { message, attemptNumber, retriesLeft } = error
               // Every attempt builds its own page, so both codes are retryable
               // inside the existing context: `EBRWSRCONTEXTCONNRESET` covers a
@@ -247,20 +254,24 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       )
     }
 
-    const destroyContext = async ({ force = false } = {}) => {
-      isDestroyed = true
-      if (force) isDestroyedForced = true
+    const destroyContext = async () => {
+      destroyCount++
+      const closingContextPromise = _contextPromise
+      const closingContextOpts = forwardedContextOpts
+      _contextPromise = undefined
+      forwardedContextOpts = undefined
+      if (!closingContextPromise) return
 
       try {
         const [browserProcess, browserContext] = await Promise.all([
           getBrowser(),
-          getBrowserContext()
+          closingContextPromise
         ])
         await pReflect(browserContext.close())
-        debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
+        debug('destroyContext', { pid: driver.pid(browserProcess), id: browserContext.id })
       } finally {
-        forwarders.delete(forwardedContextOpts)
-        await closeForwarder(forwardedContextOpts)
+        forwarders.delete(closingContextOpts)
+        await closeForwarder(closingContextOpts)
       }
     }
 
