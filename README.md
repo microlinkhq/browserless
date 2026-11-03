@@ -298,6 +298,8 @@ This method is an implementation detail, normally you don't need to call it.
 
 Closes the internal browser.
 
+A call whose function has not returned yet rejects with an `AbortError` instead of retrying. An error that would not have been retried reaches the caller unchanged.
+
 ```js
 const { onExit } = require('signal-exit')
 // automatically teardown resources after
