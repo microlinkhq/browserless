@@ -482,7 +482,7 @@ const content = await browserless.html('https://example.com')
 await browserless.destroyContext()
 ```
 
-A call still running in the context rejects with an `AbortError` instead of retrying in a new context. An error that would not have been retried reaches the caller unchanged. A call made after `.destroyContext()` opens a new context.
+A call whose function has not returned yet rejects with an `AbortError` instead of retrying in a new context. An error that would not have been retried reaches the caller unchanged. A call made after `.destroyContext()` opens a new context.
 
 The `force` option is deprecated and has no effect: every destroyed context behaves as `force` did.
 
