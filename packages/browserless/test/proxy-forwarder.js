@@ -144,3 +144,44 @@ test.serial('a context that fails to open still closes its forwarder', async t =
 
   t.false(await isListening(opened[0]))
 })
+
+test('a forwarder error does not carry the credentials', async t => {
+  const error = await t.throwsAsync(
+    forwardProxy({ proxyServer: 'ftp://proxy-key:p%40ss%3Aw%2Frd@127.0.0.1:8080' })
+  )
+
+  for (const secret of ['proxy-key', 'p%40ss%3Aw%2Frd', 'p@ss:w/rd']) {
+    t.false(error.message.includes(secret), secret)
+    t.false(error.stack.includes(secret), secret)
+  }
+})
+
+test.serial('closing the browser closes the forwarders of contexts never destroyed', async t => {
+  const port = await runProxy(t)
+  opened.length = 0
+  const browser = require('../src')({ timeout: 30000 })
+
+  const contexts = await Promise.all(
+    [1, 2].map(() => browser.createContext({ proxyServer: `http://user:secret@127.0.0.1:${port}` }))
+  )
+  await Promise.all(contexts.map(context => context.context()))
+  const listeningWhileOpen = await Promise.all(opened.map(isListening))
+  await browser.close()
+
+  t.deepEqual(listeningWhileOpen, [true, true])
+  t.deepEqual(await Promise.all(opened.map(isListening)), [false, false])
+})
+
+test.serial('a context created after the browser closed starts no forwarder', async t => {
+  const port = await runProxy(t)
+  const browser = require('../src')({ timeout: 30000 })
+  await browser.close()
+  opened.length = 0
+
+  const browserless = await browser.createContext({
+    proxyServer: `http://user:secret@127.0.0.1:${port}`
+  })
+  await t.throwsAsync(browserless.context())
+
+  t.deepEqual(opened, [])
+})

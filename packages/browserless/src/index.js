@@ -34,9 +34,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const { defaultViewport } = goto
 
   let isClosed = false
+  const forwarders = new Set()
 
-  const close = opts => {
+  const close = async opts => {
     isClosed = true
+    await Promise.all([...forwarders].map(closeForwarder))
     return browserProcessPromise.then(browserProcess => driver.close(browserProcess, opts))
   }
 
@@ -109,7 +111,8 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
-    const forwardedContextOpts = forwardProxy(contextOpts)
+    const forwardedContextOpts = isClosed ? Promise.resolve(contextOpts) : forwardProxy(contextOpts)
+    forwarders.add(forwardedContextOpts)
     const newBrowserContext = () => forwardedContextOpts.then(createBrowserContext)
     let _contextPromise = newBrowserContext()
     let isDestroyedForced = false
@@ -250,6 +253,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
         await pReflect(browserContext.close())
         debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
       } finally {
+        forwarders.delete(forwardedContextOpts)
         await closeForwarder(forwardedContextOpts)
       }
     }
