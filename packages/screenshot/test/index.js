@@ -99,6 +99,31 @@ for (const waitUntil of ['load', 'auto']) {
   })
 }
 
+test('an overlay written to a path returns what sharp reports and writes the file', async t => {
+  const browserless = await getBrowserContext(t)
+  const filepath = path.join(os.tmpdir(), `overlay-${randomUUID()}.png`)
+  t.teardown(() => rm(filepath, { force: true }))
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<html><body style="background:#c84"><h1>ok</h1></body></html>')
+  })
+
+  const info = await browserless.withPage(
+    (page, goto) => async () =>
+      createScreenshot({ goto })(page)(url, {
+        waitUntil: 'load',
+        adblock: false,
+        timeout: 10000,
+        path: filepath,
+        overlay: { background: '#fff' }
+      })
+  )()
+
+  t.is(info.format, 'png')
+  t.deepEqual((await readFile(filepath)).subarray(0, 4), PNG_MAGIC)
+})
+
 test('a quality asked for without a lossy type still captures', async t => {
   const browserless = await getBrowserContext(t)
 
