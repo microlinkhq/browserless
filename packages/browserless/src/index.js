@@ -1,6 +1,6 @@
 'use strict'
 
-const { ensureError, browserTimeout } = require('@browserless/errors')
+const { ensureError, browserTimeout, contextDisconnected } = require('@browserless/errors')
 const createScreenshot = require('@browserless/screenshot')
 const debug = require('debug-logfmt')('browserless')
 const createGoto = require('@browserless/goto')
@@ -158,6 +158,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       return async (...args) => {
         let isRejected = false
         const destroysAtStart = destroyCount
+        const isAbandoned = () => isClosed || destroyCount !== destroysAtStart
 
         async function run () {
           let page
@@ -176,6 +177,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           }
 
           try {
+            if (isAbandoned()) throw contextDisconnected()
             page = await createPage(name)
             closePageTimeout = startCloseTimeout()
             const value = await fn(page, goto)(...args)
@@ -204,11 +206,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             onFailedAttempt: async error => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
-              if (isRejected || isClosed) throw new AbortError()
+              if (isRejected) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
-              if (destroyCount !== destroysAtStart) throw new AbortError()
+              if (isAbandoned()) throw new AbortError()
               const { message, attemptNumber, retriesLeft } = error
               // Every attempt builds its own page, so both codes are retryable
               // inside the existing context: `EBRWSRCONTEXTCONNRESET` covers a
