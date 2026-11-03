@@ -229,6 +229,7 @@ for (const [credentials, redacted] of [
       forwardProxy({ proxyServer: `ftp://${credentials}@127.0.0.1:8080` })
     )
 
+    t.true(error.message.startsWith('Invalid "proxyUrl" provided'), error.message)
     t.true(error.message.includes(`ftp://${redacted}@127.0.0.1:8080`), error.message)
   })
 }
