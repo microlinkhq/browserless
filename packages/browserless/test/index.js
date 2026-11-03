@@ -377,6 +377,23 @@ for (const keepPage of [false, true]) {
   })
 }
 
+test('a call destroyed while its page closes keeps its value', async t => {
+  const browserlessFactory = createBrowser()
+  t.teardown(browserlessFactory.close)
+  const browserless = await browserlessFactory.createContext()
+
+  const value = await browserless.withPage(page => async () => {
+    const closePage = page.close.bind(page)
+    page.close = async () => {
+      await browserless.destroyContext()
+      return closePage()
+    }
+    return 'value'
+  })()
+
+  t.is(value, 'value')
+})
+
 test('a call retrying while the browser closes keeps a non-retryable error', async t => {
   const browserlessFactory = require('..')({ timeout: 30000 })
   const browserless = await browserlessFactory.createContext()
