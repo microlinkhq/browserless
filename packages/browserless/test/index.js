@@ -308,7 +308,7 @@ test('a call retrying while the browser closes does not retry', async t => {
   })
 })
 
-const abandonBetweenAttempts = async (t, abandon, { code = 'EPROTOCOL' } = {}) => {
+const abandonBetweenAttempts = async (t, abandon) => {
   const browserlessFactory = require('..')({ timeout: 30000 })
   t.teardown(() => browserlessFactory.close())
   const browserless = await browserlessFactory.createContext()
@@ -322,7 +322,7 @@ const abandonBetweenAttempts = async (t, abandon, { code = 'EPROTOCOL' } = {}) =
       abandoned = setTimeout(BACKOFF_GAP_MS).then(() =>
         abandon({ browserless, browserlessFactory })
       )
-      throw Object.assign(new Error('context reset'), { code })
+      throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
     })()
     .catch(error => [error.name, error.message])
   await abandoned
