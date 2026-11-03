@@ -111,15 +111,18 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
-    const forwardedContextOpts = isClosed
-      ? Promise.resolve(contextOpts)
-      : forwardProxy(contextOpts, { mode: launchOpts.mode })
-    forwarders.add(forwardedContextOpts)
-    const newBrowserContext = () => forwardedContextOpts.then(createBrowserContext)
-    const usesForwarder = () => forwardedContextOpts.then(opts => opts !== contextOpts)
+    let forwardedContextOpts
+    const forwardContextOpts = () => {
+      forwardedContextOpts = isClosed
+        ? Promise.resolve(contextOpts)
+        : forwardProxy(contextOpts, { mode: launchOpts.mode })
+      forwarders.add(forwardedContextOpts)
+      return forwardedContextOpts
+    }
+    const newBrowserContext = () =>
+      (forwardedContextOpts ?? forwardContextOpts()).then(createBrowserContext)
     let _contextPromise = newBrowserContext()
-    let isDestroyedForced = false
-    let isDestroyed = false
+    let destroyCount = 0
     const pageMetadata = new WeakMap()
 
     const getBrowserContext = () => _contextPromise
@@ -154,6 +157,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
       return async (...args) => {
         let isRejected = false
+        const destroysAtStart = destroyCount
 
         async function run () {
           let page
@@ -200,11 +204,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
             onFailedAttempt: async error => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
-              if (isRejected || isDestroyedForced) throw new AbortError()
+              if (isRejected) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
-              if (isDestroyed && (await usesForwarder())) throw new AbortError()
+              if (destroyCount !== destroysAtStart) throw new AbortError()
               const { message, attemptNumber, retriesLeft } = error
               // Every attempt builds its own page, so both codes are retryable
               // inside the existing context: `EBRWSRCONTEXTCONNRESET` covers a
@@ -247,9 +251,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       )
     }
 
-    const destroyContext = async ({ force = false } = {}) => {
-      isDestroyed = true
-      if (force) isDestroyedForced = true
+    const destroyContext = async () => {
+      destroyCount++
+      const closingContextOpts = forwardedContextOpts
+      forwardedContextOpts = undefined
 
       try {
         const [browserProcess, browserContext] = await Promise.all([
@@ -257,10 +262,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
           getBrowserContext()
         ])
         await pReflect(browserContext.close())
-        debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
+        debug('destroyContext', { pid: driver.pid(browserProcess), id: browserContext.id })
       } finally {
-        forwarders.delete(forwardedContextOpts)
-        await closeForwarder(forwardedContextOpts)
+        if (closingContextOpts) {
+          forwarders.delete(closingContextOpts)
+          await closeForwarder(closingContextOpts)
+        }
       }
     }
 

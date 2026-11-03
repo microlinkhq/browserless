@@ -162,7 +162,7 @@ const main = async () => {
       printSummary(`mv3-service-worker-concurrent-${CONCURRENCY}x`, mv3Concurrent)
     }
   } finally {
-    await browserless.destroyContext({ force: true }).catch(() => {})
+    await browserless.destroyContext().catch(() => {})
     await browser.close()
   }
 }
