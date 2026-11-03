@@ -114,8 +114,10 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const forwardedContextOpts = isClosed ? Promise.resolve(contextOpts) : forwardProxy(contextOpts)
     forwarders.add(forwardedContextOpts)
     const newBrowserContext = () => forwardedContextOpts.then(createBrowserContext)
+    const usesForwarder = () => forwardedContextOpts.then(opts => opts !== contextOpts)
     let _contextPromise = newBrowserContext()
     let isDestroyedForced = false
+    let isDestroyed = false
     const pageMetadata = new WeakMap()
 
     const getBrowserContext = () => _contextPromise
@@ -197,6 +199,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               debug('onFailedAttempt', { name: error.name, code: error.code, isRejected })
               if (error.name === 'AbortError') throw error
               if (isRejected || isDestroyedForced) throw new AbortError()
+              if (isDestroyed && (await usesForwarder())) throw new AbortError()
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
@@ -243,6 +246,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const destroyContext = async ({ force = false } = {}) => {
+      isDestroyed = true
       if (force) isDestroyedForced = true
 
       try {

@@ -242,3 +242,36 @@ test('closing a context does not close a forwarder it did not start', async t =>
 
   t.true(await isListening(proxyServer))
 })
+
+const destroyThenRetry = async (t, contextOpts) => {
+  const browser = require('../src')({ timeout: 30000 })
+  t.teardown(() => browser.close())
+  const browserless = await browser.createContext(contextOpts)
+  await browserless.context()
+  let attempts = 0
+
+  const outcome = await browserless
+    .withPage(() => async () => {
+      if (attempts++ > 0) return 'retried'
+      await browserless.destroyContext()
+      throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+    })()
+    .catch(error => error.name)
+
+  return { attempts, outcome }
+}
+
+test.serial('a context destroyed mid-call does not retry through its closed forwarder', async t => {
+  const port = await runProxy(t)
+
+  t.deepEqual(await destroyThenRetry(t, { proxyServer: `http://user:secret@127.0.0.1:${port}` }), {
+    attempts: 1,
+    outcome: 'AbortError'
+  })
+})
+
+for (const proxyServer of [undefined, 'http://proxy.example:8080']) {
+  test.serial(`a context destroyed mid-call with ${proxyServer} proxy still retries`, async t => {
+    t.deepEqual(await destroyThenRetry(t, { proxyServer }), { attempts: 2, outcome: 'retried' })
+  })
+}
