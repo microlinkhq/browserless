@@ -79,6 +79,51 @@ test('dialog listener is cleaned up between screenshot calls on same page', asyn
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47])
 const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff])
 
+for (const waitUntil of ['load', 'auto']) {
+  test(`a capture puppeteer returns as a Uint8Array comes back as a Buffer with ${waitUntil}`, async t => {
+    const browserless = await getBrowserContext(t)
+
+    const url = await runServer(t, ({ res }) => {
+      res.setHeader('content-type', 'text/html')
+      res.end('<html><body style="background:#c84"><h1>ok</h1></body></html>')
+    })
+
+    const capture = await browserless.withPage((page, goto) => async () => {
+      const takeScreenshot = page.screenshot.bind(page)
+      page.screenshot = async opts => new Uint8Array(await takeScreenshot(opts))
+      return createScreenshot({ goto })(page)(url, { waitUntil, adblock: false, timeout: 10000 })
+    })()
+
+    t.true(Buffer.isBuffer(capture))
+    t.deepEqual(capture.subarray(0, 4), PNG_MAGIC)
+  })
+}
+
+test('an overlay written to a path returns what sharp reports and writes the file', async t => {
+  const browserless = await getBrowserContext(t)
+  const filepath = path.join(os.tmpdir(), `overlay-${randomUUID()}.png`)
+  t.teardown(() => rm(filepath, { force: true }))
+
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<html><body style="background:#c84"><h1>ok</h1></body></html>')
+  })
+
+  const info = await browserless.withPage(
+    (page, goto) => async () =>
+      createScreenshot({ goto })(page)(url, {
+        waitUntil: 'load',
+        adblock: false,
+        timeout: 10000,
+        path: filepath,
+        overlay: { background: '#fff' }
+      })
+  )()
+
+  t.is(info.format, 'png')
+  t.deepEqual((await readFile(filepath)).subarray(0, 4), PNG_MAGIC)
+})
+
 test('a quality asked for without a lossy type still captures', async t => {
   const browserless = await getBrowserContext(t)
 

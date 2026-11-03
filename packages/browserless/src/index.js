@@ -12,6 +12,7 @@ const pRetry = require('p-retry')
 
 const { AbortError } = pRetry
 
+const { forwardProxy, closeForwarder } = require('./proxy-forwarder')
 const driver = require('./driver')
 
 // Chrome can stop answering CDP while `connected` stays true, so the
@@ -33,9 +34,11 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   const { defaultViewport } = goto
 
   let isClosed = false
+  const forwarders = new Set()
 
-  const close = opts => {
+  const close = async opts => {
     isClosed = true
+    await Promise.all([...forwarders].map(closeForwarder))
     return browserProcessPromise.then(browserProcess => driver.close(browserProcess, opts))
   }
 
@@ -108,8 +111,15 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
   }
 
   const createContext = async ({ retry = 2, timeout: contextTimeout, ...contextOpts } = {}) => {
-    let _contextPromise = createBrowserContext(contextOpts)
+    const forwardedContextOpts = isClosed
+      ? Promise.resolve(contextOpts)
+      : forwardProxy(contextOpts, { mode: launchOpts.mode })
+    forwarders.add(forwardedContextOpts)
+    const newBrowserContext = () => forwardedContextOpts.then(createBrowserContext)
+    const usesForwarder = () => forwardedContextOpts.then(opts => opts !== contextOpts)
+    let _contextPromise = newBrowserContext()
     let isDestroyedForced = false
+    let isDestroyed = false
     const pageMetadata = new WeakMap()
 
     const getBrowserContext = () => _contextPromise
@@ -194,13 +204,14 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
               const isRetryable =
                 error.code === 'EBRWSRCONTEXTCONNRESET' || error.code === 'EPROTOCOL'
               if (!isRetryable) throw error
+              if (isDestroyed && (await usesForwarder())) throw new AbortError()
               const { message, attemptNumber, retriesLeft } = error
               // Every attempt builds its own page, so both codes are retryable
               // inside the existing context: `EBRWSRCONTEXTCONNRESET` covers a
               // closed page, a detached frame and a destroyed execution context,
               // which a fresh page recovers from.
               const previousContextPromise = _contextPromise
-              _contextPromise = createBrowserContext(contextOpts)
+              _contextPromise = newBrowserContext()
               await pReflect(previousContextPromise.then(ctx => ctx.close()))
               debug('retry', { attemptNumber, retriesLeft, message })
             }
@@ -237,14 +248,20 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const destroyContext = async ({ force = false } = {}) => {
+      isDestroyed = true
       if (force) isDestroyedForced = true
 
-      const [browserProcess, browserContext] = await Promise.all([
-        getBrowser(),
-        getBrowserContext()
-      ])
-      await pReflect(browserContext.close())
-      debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
+      try {
+        const [browserProcess, browserContext] = await Promise.all([
+          getBrowser(),
+          getBrowserContext()
+        ])
+        await pReflect(browserContext.close())
+        debug('destroyContext', { pid: driver.pid(browserProcess), force, id: browserContext.id })
+      } finally {
+        forwarders.delete(forwardedContextOpts)
+        await closeForwarder(forwardedContextOpts)
+      }
     }
 
     return {
