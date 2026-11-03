@@ -493,6 +493,38 @@ const mockBrowser = (t, createBrowserContext) => {
   return { browser, state }
 }
 
+test('a call that finishes after the browser closes rejects', async t => {
+  const { browser } = mockBrowser(t, () => Promise.resolve(mockContext()))
+  const browserless = await browser.createContext({ timeout: 5000 })
+
+  const outcome = await browserless
+    .withPage(() => async () => {
+      await browser.close()
+      return 'value'
+    })()
+    .catch(error => error.name)
+
+  t.is(outcome, 'AbortError')
+})
+
+test('a browser closed while a retry waits does not start another attempt', async t => {
+  const { browser } = mockBrowser(t, () => Promise.resolve(mockContext()))
+  const browserless = await browser.createContext({ timeout: 5000 })
+  let attempts = 0
+  let closing
+
+  const outcome = await browserless
+    .withPage(() => async () => {
+      if (attempts++ > 0) return 'retried'
+      closing = setTimeout(BACKOFF_GAP_MS).then(browser.close)
+      throw Object.assign(new Error('context reset'), { code: 'EPROTOCOL' })
+    })()
+    .catch(error => error.name)
+  await closing
+
+  t.deepEqual({ attempts, outcome }, { attempts: 1, outcome: 'AbortError' })
+})
+
 const evaluateOk = async browser => {
   const browserless = await browser.createContext({ retry: 0, timeout: 2000 })
   const evaluate = browserless.withPage(() => async () => 'ok', { timeout: 2000 })
