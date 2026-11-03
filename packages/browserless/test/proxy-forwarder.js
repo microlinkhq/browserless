@@ -207,3 +207,9 @@ test.serial('closing the browser does not close a destroyed context again', asyn
 
   t.deepEqual(closed, opened)
 })
+
+test('a forwarder error keeps the proxy host readable when only a username is set', async t => {
+  const error = await t.throwsAsync(forwardProxy({ proxyServer: 'ftp://proxy-key@127.0.0.1:8080' }))
+
+  t.true(error.message.includes('ftp://***@127.0.0.1:8080'), error.message)
+})
