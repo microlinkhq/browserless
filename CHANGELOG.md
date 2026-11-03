@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.1.3](https://github.com/microlinkhq/browserless/compare/v14.1.2...v14.1.3) (2026-11-03)
+
+### Bug Fixes
+
+* **browserless:** a call running when its context is destroyed does not retry ([#1017](https://github.com/microlinkhq/browserless/issues/1017)) ([0efe6b8](https://github.com/microlinkhq/browserless/commit/0efe6b8fb3f289d0d402afdf0933387057162bfe))
+
 ## [14.1.2](https://github.com/microlinkhq/browserless/compare/v14.1.1...v14.1.2) (2026-11-03)
 
 ### Bug Fixes
