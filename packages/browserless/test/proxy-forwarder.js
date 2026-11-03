@@ -2,6 +2,7 @@
 
 const { setTimeout } = require('timers/promises')
 const { default: test } = require('ava')
+const { anonymizeProxy, closeAnonymizedProxy } = require('proxy-chain')
 const http = require('http')
 const net = require('net')
 
@@ -49,7 +50,8 @@ for (const proxyServer of [
   '127.0.0.1:8080',
   'proxy.example:8080',
   'http://proxy.example:8080',
-  'socks5://proxy.example:1080'
+  'socks5://proxy.example:1080',
+  'http=proxy.example:8080;https=proxy.example:8443'
 ]) {
   test(`${proxyServer} is used as it is`, async t => {
     const contextOpts = { proxyServer, proxyBypassList: ['<-loopback>'] }
@@ -57,10 +59,16 @@ for (const proxyServer of [
   })
 }
 
-for (const credentials of ['user:secret', 'user', ':secret', 'us%40er:p%40ss%3Aw%2Frd']) {
-  test(`a proxy with ${credentials} credentials is forwarded from loopback`, async t => {
+for (const proxyServer of [
+  'http://user:secret@proxy.example:8080',
+  'http://user@proxy.example:8080',
+  'http://:secret@proxy.example:8080',
+  'http://us%40er:p%40ss%3Aw%2Frd@proxy.example:8080',
+  'user:secret@proxy.example:8080'
+]) {
+  test(`${proxyServer} is forwarded from loopback`, async t => {
     const forwardedPromise = forwardProxy({
-      proxyServer: `http://${credentials}@proxy.example:8080`,
+      proxyServer,
       proxyBypassList: ['<-loopback>']
     })
     const forwarded = await forwardedPromise
@@ -208,8 +216,21 @@ test.serial('closing the browser does not close a destroyed context again', asyn
   t.deepEqual(closed, opened)
 })
 
-test('a forwarder error keeps the proxy host readable when only a username is set', async t => {
-  const error = await t.throwsAsync(forwardProxy({ proxyServer: 'ftp://proxy-key@127.0.0.1:8080' }))
+for (const username of ['proxy-key', '127']) {
+  test(`a forwarder error keeps the proxy host readable for a ${username} username`, async t => {
+    const error = await t.throwsAsync(
+      forwardProxy({ proxyServer: `ftp://${username}@127.0.0.1:8080` })
+    )
 
-  t.true(error.message.includes('ftp://***@127.0.0.1:8080'), error.message)
+    t.true(error.message.includes('ftp://***@127.0.0.1:8080'), error.message)
+  })
+}
+
+test('closing a context does not close a forwarder it did not start', async t => {
+  const proxyServer = await anonymizeProxy('http://user:secret@proxy.example:8080')
+  t.teardown(() => closeAnonymizedProxy(proxyServer, true))
+
+  await closeForwarder(Promise.resolve({ proxyServer }))
+
+  t.true(await isListening(proxyServer))
 })

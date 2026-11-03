@@ -3,33 +3,45 @@
 const { anonymizeProxy, closeAnonymizedProxy } = require('proxy-chain')
 
 const REDACTED = '***'
+const DEFAULT_SCHEME = 'http://'
 
-const hasCredentials = proxyServer => {
-  const url = URL.parse(proxyServer ?? '')
-  return Boolean(url?.username || url?.password)
-}
+const forwardedProxyServers = new Set()
 
-const withoutCredentials = (error, proxyServer) => {
-  const { username, password } = URL.parse(proxyServer)
-  for (const secret of [username, password].filter(Boolean)) {
-    error.message = error.message.replaceAll(secret, REDACTED)
-  }
+const parseProxyServer = proxyServer =>
+  URL.parse(proxyServer.includes('://') ? proxyServer : `${DEFAULT_SCHEME}${proxyServer}`)
+
+const hasCredentials = proxyUrl => Boolean(proxyUrl?.username || proxyUrl?.password)
+
+const redactSecrets = (text, secrets) =>
+  secrets.reduce((redacted, secret) => redacted.replaceAll(secret, REDACTED), text)
+
+const withoutCredentials = (error, proxyUrl) => {
+  const redactedUrl = new URL(proxyUrl)
+  if (proxyUrl.username) redactedUrl.username = REDACTED
+  if (proxyUrl.password) redactedUrl.password = REDACTED
+  const secrets = [proxyUrl.username, proxyUrl.password].filter(Boolean)
+  error.message = error.message
+    .split(proxyUrl.href)
+    .map(part => redactSecrets(part, secrets))
+    .join(redactedUrl.href)
   return error
 }
 
 const forwardProxy = async contextOpts => {
-  const { proxyServer } = contextOpts
-  if (!hasCredentials(proxyServer)) return contextOpts
+  const proxyUrl = contextOpts.proxyServer && parseProxyServer(contextOpts.proxyServer)
+  if (!hasCredentials(proxyUrl)) return contextOpts
   try {
-    return { ...contextOpts, proxyServer: await anonymizeProxy(proxyServer) }
+    const proxyServer = await anonymizeProxy(proxyUrl.href)
+    forwardedProxyServers.add(proxyServer)
+    return { ...contextOpts, proxyServer }
   } catch (error) {
-    throw withoutCredentials(error, proxyServer)
+    throw withoutCredentials(error, proxyUrl)
   }
 }
 
 const closeForwarder = async contextOptsPromise => {
   const { proxyServer } = await contextOptsPromise.catch(() => ({}))
-  if (proxyServer) await closeAnonymizedProxy(proxyServer, true)
+  if (forwardedProxyServers.delete(proxyServer)) await closeAnonymizedProxy(proxyServer, true)
 }
 
 module.exports = { forwardProxy, closeForwarder }
