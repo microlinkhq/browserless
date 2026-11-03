@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.1.2](https://github.com/microlinkhq/browserless/compare/v14.1.1...v14.1.2) (2026-11-03)
+
+### Bug Fixes
+
+* **browserless:** keep proxy credentials out of Chromium ([#1016](https://github.com/microlinkhq/browserless/issues/1016)) ([54e15bf](https://github.com/microlinkhq/browserless/commit/54e15bf60127dded24a72abb79b1d2dd1c639e3c))
+
 ## [14.1.1](https://github.com/microlinkhq/browserless/compare/v14.1.0...v14.1.1) (2026-11-01)
 
 ### Bug Fixes
