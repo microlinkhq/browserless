@@ -261,10 +261,11 @@ const fullPageScreenshotOpts = async (page, screenshotOpts) => {
 
 // Captures stay binary until returned: the blank-page check and the overlay
 // decode them with sharp, which reads a base64 string as raw bytes.
-const encodeScreenshot = (image, encoding) =>
-  encoding === 'base64' && ArrayBuffer.isView(image)
-    ? Buffer.from(image.buffer, image.byteOffset, image.byteLength).toString('base64')
-    : image
+const encodeScreenshot = (image, encoding) => {
+  if (!ArrayBuffer.isView(image)) return image
+  const buffer = Buffer.from(image.buffer, image.byteOffset, image.byteLength)
+  return encoding === 'base64' ? buffer.toString('base64') : buffer
+}
 
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
