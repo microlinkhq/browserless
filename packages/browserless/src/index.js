@@ -127,9 +127,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const isAbandoned = () => isClosed || isDestroyed
 
     const getBrowserContext = () =>
-      isDestroyed
-        ? Promise.reject(contextDisconnected())
-        : (_contextPromise ??= newBrowserContext())
+      isDestroyed ? Promise.reject(contextDisconnected()) : _contextPromise
 
     const createPage = async name => {
       const duration = debug.duration('createPage')

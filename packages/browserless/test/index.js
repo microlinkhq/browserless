@@ -239,18 +239,27 @@ const failFirstAttempt = (beforeFailing = async () => {}) => {
 }
 
 const callsAfterDestroy = {
-  html: browserless => browserless.html('about:blank'),
-  text: browserless => browserless.text('about:blank'),
-  screenshot: browserless => browserless.screenshot('about:blank'),
-  pdf: browserless => browserless.pdf('about:blank'),
-  evaluate: browserless => browserless.evaluate(page => page.title())('about:blank'),
-  withPage: browserless => browserless.withPage(() => async () => 'ok')(),
-  report: browserless => browserless.report(),
-  page: browserless => browserless.page(),
-  context: browserless => browserless.context()
+  html: [browserless => browserless.html('about:blank'), { name: 'AbortError' }],
+  text: [browserless => browserless.text('about:blank'), { name: 'AbortError' }],
+  screenshot: [browserless => browserless.screenshot('about:blank'), { name: 'AbortError' }],
+  pdf: [browserless => browserless.pdf('about:blank'), { name: 'AbortError' }],
+  evaluate: [
+    browserless => browserless.evaluate(page => page.title())('about:blank'),
+    { name: 'AbortError' }
+  ],
+  withPage: [browserless => browserless.withPage(() => async () => 'ok')(), { name: 'AbortError' }],
+  report: [browserless => browserless.report(), { name: 'AbortError' }],
+  page: [
+    browserless => browserless.page(),
+    { name: 'BrowserlessError', code: 'EBRWSRCONTEXTCONNRESET' }
+  ],
+  context: [
+    browserless => browserless.context(),
+    { name: 'BrowserlessError', code: 'EBRWSRCONTEXTCONNRESET' }
+  ]
 }
 
-for (const [name, call] of Object.entries(callsAfterDestroy)) {
+for (const [name, [call, expected]] of Object.entries(callsAfterDestroy)) {
   test(`.${name}() after destroyContext rejects without opening a context`, async t => {
     const browserlessFactory = createBrowser()
     t.teardown(browserlessFactory.close)
@@ -259,9 +268,7 @@ for (const [name, call] of Object.entries(callsAfterDestroy)) {
     await browserless.context()
     await browserless.destroyContext()
 
-    const error = await t.throwsAsync(call(browserless))
-
-    t.true(error.name === 'AbortError' || error.code === 'EBRWSRCONTEXTCONNRESET')
+    await t.throwsAsync(call(browserless), expected)
     t.is(browser.browserContexts().length, 1)
   })
 }
