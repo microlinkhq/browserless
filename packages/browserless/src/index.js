@@ -122,10 +122,12 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     const newBrowserContext = () =>
       (forwardedContextOpts ?? forwardContextOpts()).then(createBrowserContext)
     let _contextPromise = newBrowserContext()
-    let destroyCount = 0
+    let isDestroyed = false
     const pageMetadata = new WeakMap()
+    const isAbandoned = () => isClosed || isDestroyed
 
-    const getBrowserContext = () => (_contextPromise ??= newBrowserContext())
+    const getBrowserContext = () =>
+      isDestroyed ? Promise.reject(contextDisconnected()) : _contextPromise
 
     const createPage = async name => {
       const duration = debug.duration('createPage')
@@ -157,8 +159,6 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
 
       return async (...args) => {
         let isRejected = false
-        const destroysAtStart = destroyCount
-        const isAbandoned = () => isClosed || destroyCount !== destroysAtStart
 
         async function run () {
           let page
@@ -255,7 +255,7 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
     }
 
     const destroyContext = async () => {
-      destroyCount++
+      isDestroyed = true
       const closingContextPromise = _contextPromise
       const closingContextOpts = forwardedContextOpts
       _contextPromise = undefined
