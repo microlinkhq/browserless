@@ -30,7 +30,16 @@ test('fingerprintjs', async t => {
   const browserless = await getBrowserContext(t, { retry: 0, timeout: 20000 })
 
   const fingerprint = await browserless.evaluate(page =>
-    page.evaluate("document.querySelector('.giant').innerText")
+    page.evaluate(async () => {
+      const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+      let result = ''
+      // The demo paints `.giant` only after the visitor identifier is ready.
+      do {
+        await delay(100)
+        result = document.querySelector('.giant')?.innerText ?? ''
+      } while (!result)
+      return result
+    })
   )
 
   const fingerprintOne = await fingerprint('https://fingerprintjs.github.io/fingerprintjs/', {
