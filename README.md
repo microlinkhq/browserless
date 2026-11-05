@@ -263,7 +263,7 @@ const browserless = await browser.createContext({
 })
 ```
 
-A local forwarder on loopback adds the credentials on the way to the proxy and closes with [.destroyContext()](#destroycontext) or [.close()](#close). A call made after `.destroyContext()` starts a new one. Chromium only sees the forwarder, so a site that asks for a login never receives the proxy's username and password. Encode reserved characters in them (`@`, `:`, `/`) with `encodeURIComponent`.
+A local forwarder on loopback adds the credentials on the way to the proxy and closes with [.destroyContext()](#destroycontext) or [.close()](#close). Chromium only sees the forwarder, so a site that asks for a login never receives the proxy's username and password. Encode reserved characters in them (`@`, `:`, `/`) with `encodeURIComponent`.
 
 A `proxyServer` without credentials is passed to Chromium as it is. A `proxyServer` with credentials needs [mode](#mode) `'launch'`: a connected browser runs on another host and cannot reach the forwarder, so the context fails with a `TypeError`.
 
@@ -484,7 +484,7 @@ const content = await browserless.html('https://example.com')
 await browserless.destroyContext()
 ```
 
-A call whose function has not returned yet rejects with an `AbortError` instead of retrying in a new context. An error that would not have been retried reaches the caller unchanged. A call made after `.destroyContext()` opens a new context.
+A call whose function has not returned yet rejects with an `AbortError` instead of retrying in a new context. An error that would not have been retried reaches the caller unchanged. `.destroyContext()` is final: every later call that needs the browser context rejects without opening a new one or a new proxy forwarder. Methods that load a page (`.html()`, `.screenshot()`, `.withPage()`, …) reject with an `AbortError`; `.page()` and `.context()` reject with `EBRWSRCONTEXTCONNRESET`. Call `browser.createContext()` for a new one.
 
 The `force` option is deprecated and has no effect: every destroyed context behaves as `force` did.
 

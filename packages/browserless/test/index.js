@@ -238,15 +238,33 @@ const failFirstAttempt = (beforeFailing = async () => {}) => {
   }
 }
 
-test('a call started after destroyContext still retries', async t => {
-  const browserlessFactory = createBrowser()
-  t.teardown(browserlessFactory.close)
-  const browserless = await browserlessFactory.createContext()
-  await browserless.context()
-  await browserless.destroyContext()
+const callsAfterDestroy = {
+  html: browserless => browserless.html('about:blank'),
+  text: browserless => browserless.text('about:blank'),
+  screenshot: browserless => browserless.screenshot('about:blank'),
+  pdf: browserless => browserless.pdf('about:blank'),
+  evaluate: browserless => browserless.evaluate(page => page.title())('about:blank'),
+  withPage: browserless => browserless.withPage(() => async () => 'ok')(),
+  report: browserless => browserless.report(),
+  page: browserless => browserless.page(),
+  context: browserless => browserless.context()
+}
 
-  t.is(await browserless.withPage(failFirstAttempt())(), 2)
-})
+for (const [name, call] of Object.entries(callsAfterDestroy)) {
+  test(`.${name}() after destroyContext rejects without opening a context`, async t => {
+    const browserlessFactory = createBrowser()
+    t.teardown(browserlessFactory.close)
+    const browser = await browserlessFactory.browser()
+    const browserless = await browserlessFactory.createContext()
+    await browserless.context()
+    await browserless.destroyContext()
+
+    const error = await t.throwsAsync(call(browserless))
+
+    t.true(error.name === 'AbortError' || error.code === 'EBRWSRCONTEXTCONNRESET')
+    t.is(browser.browserContexts().length, 1)
+  })
+}
 
 test('destroying another context does not stop a call from retrying', async t => {
   const browserlessFactory = createBrowser()
@@ -278,27 +296,19 @@ test('a destroyed context leaves no browser context behind', async t => {
   t.is(browser.browserContexts().length, 1)
 })
 
-test('a call started while destroyContext runs opens a new context', async t => {
+test('a call started while destroyContext runs rejects without opening a context', async t => {
   const browserlessFactory = createBrowser()
   t.teardown(browserlessFactory.close)
-  const browserless = await browserlessFactory.createContext({ retry: 0 })
+  const browser = await browserlessFactory.browser()
+  const browserless = await browserlessFactory.createContext()
   await browserless.context()
 
   const destroying = browserless.destroyContext()
-  const value = await browserless.withPage(() => async () => 'ok', { timeout: 5000 })()
+  const error = await t.throwsAsync(browserless.withPage(() => async () => 'ok')())
   await destroying
 
-  t.is(value, 'ok')
-})
-
-test('the first call after destroyContext works without retries', async t => {
-  const browserlessFactory = createBrowser()
-  t.teardown(browserlessFactory.close)
-  const browserless = await browserlessFactory.createContext({ retry: 0 })
-  await browserless.context()
-  await browserless.destroyContext()
-
-  t.is(await browserless.withPage(() => async () => 'ok', { timeout: 5000 })(), 'ok')
+  t.is(error.name, 'AbortError')
+  t.is(browser.browserContexts().length, 1)
 })
 
 test('a call retrying while the browser closes does not retry', async t => {
@@ -612,8 +622,10 @@ test('respawn under `Protocol error (Target.createTarget): Failed to find browse
   await browserless.text('https://example.com')
   await browserless.destroyContext()
 
-  await browserless.text('https://example.com')
-  const anotherContextId = await browserless.context().then(({ id }) => id)
+  const another = await browserlessFactory.createContext()
+  t.teardown(another.destroyContext)
+  await another.text('https://example.com')
+  const anotherContextId = await another.context().then(({ id }) => id)
 
   const anotherPid = (await browserlessFactory.browser()).process().pid
 

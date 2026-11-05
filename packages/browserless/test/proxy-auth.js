@@ -189,7 +189,7 @@ test('a context recreated by a retry still goes through the proxy', async t => {
   t.is(status, 200)
 })
 
-test('a context reused after destroyContext still goes through the proxy', async t => {
+test('a call after destroyContext never reaches the proxy', async t => {
   const target = await runTarget(t, { secure: false })
   const proxy = await runAuthenticatedProxy(t, target)
   const browserless = await getBrowserContext(t, { proxyServer: proxy.proxyServer })
@@ -206,7 +206,7 @@ test('a context reused after destroyContext still goes through the proxy', async
   await browserless.destroyContext()
   const authorizedBefore = proxy.seen.authorized
 
-  t.is(await status(), 200)
-  t.true(proxy.seen.authorized > authorizedBefore)
+  await t.throwsAsync(status(), { name: 'AbortError' })
+  t.is(proxy.seen.authorized, authorizedBefore)
   t.is(proxy.seen.rejected, 0)
 })

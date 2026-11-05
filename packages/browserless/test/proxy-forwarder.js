@@ -294,7 +294,7 @@ test.serial('a context destroyed twice closes its forwarder once', async t => {
   t.deepEqual(closed, opened)
 })
 
-test.serial('a context reused after destroyContext starts a new forwarder', async t => {
+test.serial('a call after destroyContext starts no forwarder', async t => {
   const port = await runProxy(t)
   opened.length = 0
   const browser = require('../src')({ timeout: 30000 })
@@ -305,12 +305,11 @@ test.serial('a context reused after destroyContext starts a new forwarder', asyn
   })
   await browserless.context()
   await browserless.destroyContext()
-  await browserless.withPage(() => async () => {})()
-  const listening = await Promise.all(opened.map(isListening))
-  await browser.close()
+  await t.throwsAsync(browserless.html('about:blank'))
+  await t.throwsAsync(browserless.page())
 
-  t.deepEqual(listening, [false, true])
-  t.deepEqual(await Promise.all(opened.map(isListening)), [false, false])
+  t.is(opened.length, 1)
+  t.deepEqual(await Promise.all(opened.map(isListening)), [false])
 })
 
 test.serial('a call retried in a new context keeps its forwarder', async t => {
