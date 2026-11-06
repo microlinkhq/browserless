@@ -3,18 +3,20 @@
 const { getBrowserContext } = require('@browserless/test')
 const { default: test } = require('ava')
 
+const POLLING_INTERVAL_MS = 100
+
+const waitForText = async (page, readText) => {
+  const handle = await page.waitForFunction(readText, { polling: POLLING_INTERVAL_MS })
+  return handle.jsonValue()
+}
+
 test('creepjs', async t => {
   const browserless = await getBrowserContext(t)
 
   const fingerprint = await browserless.evaluate(page =>
-    page.evaluate(async () => {
-      const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-      let result = 'Computing...'
-      do {
-        await delay(100)
-        result = document.querySelector('.fingerprint-header div').innerText.split(': ')[1]
-      } while (result === 'Computing...')
-      return result
+    waitForText(page, () => {
+      const hash = document.querySelector('.fingerprint-header div')?.innerText.split(': ')[1]
+      return hash !== 'Computing...' && hash
     })
   )
 
@@ -30,16 +32,7 @@ test('fingerprintjs', async t => {
   const browserless = await getBrowserContext(t, { retry: 0, timeout: 20000 })
 
   const fingerprint = await browserless.evaluate(page =>
-    page.evaluate(async () => {
-      const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-      let result = ''
-      // The demo paints `.giant` only after the visitor identifier is ready.
-      do {
-        await delay(100)
-        result = document.querySelector('.giant')?.innerText ?? ''
-      } while (!result)
-      return result
-    })
+    waitForText(page, () => document.querySelector('.giant')?.innerText)
   )
 
   const fingerprintOne = await fingerprint('https://fingerprintjs.github.io/fingerprintjs/', {
