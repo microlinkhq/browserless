@@ -4,6 +4,10 @@ updates:
     directory: '/'
     schedule:
       interval: daily
+    ignore:
+      - dependency-name: "p-retry"
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
