@@ -3,34 +3,24 @@
 const { imgDiff } = require('img-diff-js')
 const { PDFParse } = require('pdf-parse')
 const { onExit } = require('signal-exit')
-const { copy } = require('fs-extra')
 const temp = require('temperment')
-const path = require('path')
 const { default: test } = require('ava')
 const fs = require('fs')
 
 const { runServer } = require('.')
 
-const isCI = !!process.env.CI
+const MIN_PAINTED_PIXELS = 100
 
-const PIXELS_DIFFERENCE = isCI ? 50000 : 0
+const BODY = '<p>hello world</p>'
 
-const looksSame = async (actualFilename, expectedFilename) =>
-  imgDiff({
-    actualFilename,
-    expectedFilename
-  })
+const BLANK_BODY = '<p style="color: white">hello world</p>'
 
-const imageComparison = async (t, expectedFilename, filename) => {
-  const actualFilename = path.resolve(process.cwd(), `test/snapshots/${filename}`)
-  if (!fs.existsSync(actualFilename)) {
-    await copy(expectedFilename, actualFilename)
-    return true
-  }
-  return looksSame(expectedFilename, actualFilename)
+const FILE_SIGNATURES = {
+  png: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+  jpeg: Buffer.from([0xff, 0xd8, 0xff])
 }
 
-const getUrl = t =>
+const getUrl = (t, body = BODY) =>
   runServer(t, ({ res }) => {
     res.setHeader('Content-Type', 'text/html')
     return res.end(`<!DOCTYPE html>
@@ -41,10 +31,45 @@ const getUrl = t =>
       <title>Document</title>
     </head>
     <body>
-      <p>hello world</p>
+      ${body}
     </body>
     </html>`)
   })
+
+const takeScreenshot = async (t, browserless, { body, type, ...opts }) => {
+  const filepath = temp.file({ extension: type })
+  const url = await getUrl(t, body)
+  await browserless.screenshot(url, { type, path: filepath, ...opts })
+  return filepath
+}
+
+const assertScreenshot = async (t, browser, { type, width, height, ...opts }) => {
+  const browserless = await browser.createContext()
+  t.teardown(browserless.destroyContext)
+
+  const filepath = await takeScreenshot(t, browserless, { type, ...opts })
+  const blankFilepath = await takeScreenshot(t, browserless, {
+    type,
+    ...opts,
+    body: BLANK_BODY,
+    waitUntil: 'load'
+  })
+
+  const signature = FILE_SIGNATURES[type]
+  t.true(
+    fs.readFileSync(filepath).subarray(0, signature.length).equals(signature),
+    `screenshot is not a ${type} file`
+  )
+
+  const diff = await imgDiff({ actualFilename: filepath, expectedFilename: blankFilepath })
+  t.is(diff.width, width)
+  t.is(diff.height, height)
+  t.log(`${diff.diffCount} pixels painted over a blank page`)
+  t.true(
+    diff.diffCount >= MIN_PAINTED_PIXELS,
+    `only ${diff.diffCount} pixels differ from a blank page, the content was not painted`
+  )
+}
 
 module.exports = (browser, teardown = browser.close) => {
   onExit(teardown)
@@ -68,67 +93,19 @@ module.exports = (browser, teardown = browser.close) => {
     t.snapshot(text)
   })
 
-  test('.screenshot (png)', async t => {
-    const filepath = temp.file({
-      extension: 'png'
-    })
+  test('.screenshot (png)', t =>
+    assertScreenshot(t, browser, { type: 'png', width: 2560, height: 1600 }))
 
-    const browserless = await browser.createContext()
-    t.teardown(browserless.destroyContext)
-    const url = await getUrl(t)
-    await browserless.screenshot(url, {
-      path: filepath
-    })
+  test('.screenshot (jpeg)', t =>
+    assertScreenshot(t, browser, { type: 'jpeg', width: 2560, height: 1600 }))
 
-    const { diffCount } = await imageComparison(t, filepath, 'example.png')
-
-    t.true(
-      diffCount <= PIXELS_DIFFERENCE,
-      `images are different by ${diffCount} differential pixels`
-    )
-  })
-
-  test('.screenshot (jpeg)', async t => {
-    const filepath = temp.file({
-      extension: 'jpeg'
-    })
-
-    const browserless = await browser.createContext()
-    t.teardown(browserless.destroyContext)
-    const url = await getUrl(t)
-    await browserless.screenshot(url, {
-      type: 'jpeg',
-      path: filepath
-    })
-
-    const { diffCount } = await imageComparison(t, filepath, 'example.jpeg')
-
-    t.true(
-      diffCount <= PIXELS_DIFFERENCE,
-      `images are different by ${diffCount} differential pixels`
-    )
-  })
-
-  test('.screenshot with device emulation', async t => {
-    const filepath = temp.file({
-      extension: 'png'
-    })
-
-    const browserless = await browser.createContext()
-    t.teardown(browserless.destroyContext)
-    const url = await getUrl(t)
-    await browserless.screenshot(url, {
+  test('.screenshot with device emulation', t =>
+    assertScreenshot(t, browser, {
+      type: 'png',
       device: 'iPhone 6',
-      path: filepath
-    })
-
-    const { diffCount } = await imageComparison(t, filepath, 'iphone.png')
-
-    t.true(
-      diffCount <= PIXELS_DIFFERENCE,
-      `images are different by ${diffCount} differential pixels`
-    )
-  })
+      width: 750,
+      height: 1334
+    }))
 
   test('.pdf', async t => {
     const browserless = await browser.createContext()

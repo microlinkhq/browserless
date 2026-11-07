@@ -38,7 +38,6 @@
     "async-listen": "latest",
     "ava": "8",
     "browserless": "workspace:*",
-    "fs-extra": "latest",
     "img-diff-js": "latest",
     "pdf-parse": "latest",
     "puppeteer": "25",
