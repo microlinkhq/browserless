@@ -279,6 +279,28 @@ test.serial('a context on a connected browser fails before starting a forwarder'
   t.deepEqual(opened, [])
 })
 
+test.serial('an unused context on a connected browser raises no unhandled rejection', async t => {
+  const unhandled = []
+  const onUnhandledRejection = reason => unhandled.push(reason)
+  process.on('unhandledRejection', onUnhandledRejection)
+  t.teardown(() => process.off('unhandledRejection', onUnhandledRejection))
+
+  const launched = require('../src')({ timeout: 30000 })
+  t.teardown(() => launched.close())
+  const browserWSEndpoint = (await launched.browser()).wsEndpoint()
+  const connected = require('../src')({ mode: 'connect', browserWSEndpoint, timeout: 30000 })
+  t.teardown(() => connected.close())
+
+  const browserless = await connected.createContext({
+    proxyServer: 'http://user:secret@proxy.example:8080'
+  })
+  await setTimeout(100)
+
+  t.deepEqual(unhandled, [])
+  await t.throwsAsync(browserless.context(), { instanceOf: TypeError })
+  await t.throwsAsync(browserless.page(), { instanceOf: TypeError })
+})
+
 test.serial('a context destroyed twice closes its forwarder once', async t => {
   const port = await runProxy(t)
   opened.length = 0
