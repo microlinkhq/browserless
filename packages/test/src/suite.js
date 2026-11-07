@@ -43,7 +43,7 @@ const takeScreenshot = async (t, browserless, { body, type, ...opts }) => {
   return filepath
 }
 
-const assertScreenshot = async (t, browser, { type = 'png', width, height, ...opts }) => {
+const assertScreenshot = async (t, browser, { type, width, height, ...opts }) => {
   const browserless = await browser.createContext()
   t.teardown(browserless.destroyContext)
 
@@ -93,13 +93,19 @@ module.exports = (browser, teardown = browser.close) => {
     t.snapshot(text)
   })
 
-  test('.screenshot (png)', t => assertScreenshot(t, browser, { width: 2560, height: 1600 }))
+  test('.screenshot (png)', t =>
+    assertScreenshot(t, browser, { type: 'png', width: 2560, height: 1600 }))
 
   test('.screenshot (jpeg)', t =>
     assertScreenshot(t, browser, { type: 'jpeg', width: 2560, height: 1600 }))
 
   test('.screenshot with device emulation', t =>
-    assertScreenshot(t, browser, { device: 'iPhone 6', width: 750, height: 1334 }))
+    assertScreenshot(t, browser, {
+      type: 'png',
+      device: 'iPhone 6',
+      width: 750,
+      height: 1334
+    }))
 
   test('.pdf', async t => {
     const browserless = await browser.createContext()
