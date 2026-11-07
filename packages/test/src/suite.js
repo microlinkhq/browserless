@@ -11,9 +11,13 @@ const fs = require('fs')
 
 const { runServer } = require('.')
 
-const isCI = !!process.env.CI
+const PIXELS_DIFFERENCE = 100
 
-const PIXELS_DIFFERENCE = isCI ? 50000 : 0
+const SNAPSHOTS_PLATFORM = 'linux'
+
+const snapshotTest = process.platform === SNAPSHOTS_PLATFORM ? test : test.skip
+
+const snapshotTitle = title => `${title} (${SNAPSHOTS_PLATFORM} only, snapshots are rendered there)`
 
 const looksSame = async (actualFilename, expectedFilename) =>
   imgDiff({
@@ -25,12 +29,18 @@ const imageComparison = async (t, expectedFilename, filename) => {
   const actualFilename = path.resolve(process.cwd(), `test/snapshots/${filename}`)
   if (!fs.existsSync(actualFilename)) {
     await copy(expectedFilename, actualFilename)
-    return true
+    return { diffCount: 0 }
   }
   return looksSame(expectedFilename, actualFilename)
 }
 
-const getUrl = t =>
+const assertImagesMatch = async (t, filepath, filename) => {
+  const { diffCount } = await imageComparison(t, filepath, filename)
+  t.log(`${filename}: ${diffCount} differential pixels`)
+  t.true(diffCount <= PIXELS_DIFFERENCE, `images are different by ${diffCount} differential pixels`)
+}
+
+const getUrl = (t, body = '<p>hello world</p>') =>
   runServer(t, ({ res }) => {
     res.setHeader('Content-Type', 'text/html')
     return res.end(`<!DOCTYPE html>
@@ -41,7 +51,7 @@ const getUrl = t =>
       <title>Document</title>
     </head>
     <body>
-      <p>hello world</p>
+      ${body}
     </body>
     </html>`)
   })
@@ -68,7 +78,7 @@ module.exports = (browser, teardown = browser.close) => {
     t.snapshot(text)
   })
 
-  test('.screenshot (png)', async t => {
+  snapshotTest(snapshotTitle('.screenshot (png)'), async t => {
     const filepath = temp.file({
       extension: 'png'
     })
@@ -80,15 +90,10 @@ module.exports = (browser, teardown = browser.close) => {
       path: filepath
     })
 
-    const { diffCount } = await imageComparison(t, filepath, 'example.png')
-
-    t.true(
-      diffCount <= PIXELS_DIFFERENCE,
-      `images are different by ${diffCount} differential pixels`
-    )
+    await assertImagesMatch(t, filepath, 'example.png')
   })
 
-  test('.screenshot (jpeg)', async t => {
+  snapshotTest(snapshotTitle('.screenshot (jpeg)'), async t => {
     const filepath = temp.file({
       extension: 'jpeg'
     })
@@ -101,15 +106,10 @@ module.exports = (browser, teardown = browser.close) => {
       path: filepath
     })
 
-    const { diffCount } = await imageComparison(t, filepath, 'example.jpeg')
-
-    t.true(
-      diffCount <= PIXELS_DIFFERENCE,
-      `images are different by ${diffCount} differential pixels`
-    )
+    await assertImagesMatch(t, filepath, 'example.jpeg')
   })
 
-  test('.screenshot with device emulation', async t => {
+  snapshotTest(snapshotTitle('.screenshot with device emulation'), async t => {
     const filepath = temp.file({
       extension: 'png'
     })
@@ -122,11 +122,29 @@ module.exports = (browser, teardown = browser.close) => {
       path: filepath
     })
 
-    const { diffCount } = await imageComparison(t, filepath, 'iphone.png')
+    await assertImagesMatch(t, filepath, 'iphone.png')
+  })
 
+  snapshotTest(snapshotTitle('.screenshot of a blank page differs from the snapshot'), async t => {
+    const filepath = temp.file({
+      extension: 'png'
+    })
+
+    const browserless = await browser.createContext()
+    t.teardown(browserless.destroyContext)
+    const url = await getUrl(t, '')
+    await browserless.screenshot(url, {
+      path: filepath
+    })
+
+    const { diffCount } = await looksSame(
+      filepath,
+      path.resolve(process.cwd(), 'test/snapshots/example.png')
+    )
+    t.log(`blank page: ${diffCount} differential pixels`)
     t.true(
-      diffCount <= PIXELS_DIFFERENCE,
-      `images are different by ${diffCount} differential pixels`
+      diffCount > PIXELS_DIFFERENCE,
+      `a blank page is only ${diffCount} differential pixels away from the snapshot`
     )
   })
 
