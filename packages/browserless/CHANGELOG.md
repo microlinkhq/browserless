@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.1.7](https://github.com/microlinkhq/browserless/compare/v14.1.6...v14.1.7) (2026-11-07)
+
+### Bug Fixes
+
+* **browserless:** handle the rejection of an unused browser context ([#1028](https://github.com/microlinkhq/browserless/issues/1028)) ([dd5a04a](https://github.com/microlinkhq/browserless/commit/dd5a04a6641b80343b06f3fad02451f1000acc02)), closes [#1019](https://github.com/microlinkhq/browserless/issues/1019)
+
 ## [14.1.6](https://github.com/microlinkhq/browserless/compare/v14.1.5...v14.1.6) (2026-11-07)
 
 **Note:** Version bump only for package browserless
