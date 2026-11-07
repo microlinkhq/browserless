@@ -119,8 +119,13 @@ module.exports = ({ timeout: globalTimeout = 30000, ...launchOpts } = {}) => {
       forwarders.add(forwardedContextOpts)
       return forwardedContextOpts
     }
-    const newBrowserContext = () =>
-      (forwardedContextOpts ?? forwardContextOpts()).then(createBrowserContext)
+    const newBrowserContext = () => {
+      const browserContextPromise = (forwardedContextOpts ?? forwardContextOpts()).then(
+        createBrowserContext
+      )
+      browserContextPromise.catch(() => {})
+      return browserContextPromise
+    }
     let _contextPromise = newBrowserContext()
     let isDestroyed = false
     const pageMetadata = new WeakMap()
