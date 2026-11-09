@@ -51,7 +51,11 @@
     "src"
   ],
   "scripts": {
-    "test": "exit 0"
+    "test": "ava"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "ava": {
+    "serial": true,
+    "workerThreads": false
+  }
 }

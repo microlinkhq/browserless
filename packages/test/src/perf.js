@@ -1,20 +1,37 @@
 'use strict'
 
 const { execFileSync } = require('node:child_process')
+const { readFileSync } = require('node:fs')
+const path = require('node:path')
 const vm = require('node:vm')
 
 // Same page, interleaved, so a slow runner slows the base and the pull request together.
 // The 10% band is timer noise, matching the agent snapshot gate.
 const slowerThanBase = (head, base) => head > base * 1.1 && head > base + 1
 
-const baseSource = repoPath => {
+const git = (...args) => execFileSync('git', args, { encoding: 'utf8' })
+
+const readHeadSource = repoPath => {
+  try {
+    return readFileSync(path.join(git('rev-parse', '--show-toplevel').trim(), repoPath), 'utf8')
+  } catch {
+    return null
+  }
+}
+
+const readBaseSource = repoPath => {
   const rev = process.env.PERF_BASE || 'origin/master'
   try {
-    return execFileSync('git', ['show', `${rev}:${repoPath}`], { encoding: 'utf8' })
+    return git('show', `${rev}:${repoPath}`)
   } catch (error) {
     if (process.env.PERF_BASE) throw error
     return null
   }
+}
+
+const baseSource = repoPath => {
+  const base = readBaseSource(repoPath)
+  return base === readHeadSource(repoPath) ? null : base
 }
 
 const between = (source, start, end) => {
