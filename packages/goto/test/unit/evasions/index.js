@@ -128,7 +128,7 @@ test('`window.navigator.mimeTypes` are correct', async t => {
 test('`navigator.languages` is defined', async t => {
   const page = await getPage(t)
   const languages = () => page.evaluate('window.navigator.languages')
-  t.deepEqual(await languages(), ['en-US'])
+  t.deepEqual(await languages(), ['en-US', 'en'])
 })
 
 test('media codecs are present', async t => {
