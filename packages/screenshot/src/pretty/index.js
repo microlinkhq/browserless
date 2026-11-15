@@ -3,7 +3,7 @@
 const debug = require('debug-logfmt')('browserless:screenshot')
 const isHtmlContent = require('is-html-content')
 const { readFile } = require('fs/promises')
-const { getExtension } = require('mime')
+const mime = require('mime').default
 const path = require('path')
 
 const getPrism = readFile(path.resolve(__dirname, 'prism.js'))
@@ -16,7 +16,7 @@ const PRETTY_CONTENT_TYPES = ['json', 'text', 'html']
 const { inject } = require('@browserless/goto')
 
 const getContentType = headers => {
-  const contentType = getExtension(require('@kikobeats/content-type')(headers['content-type']))
+  const contentType = mime.getExtension(require('@kikobeats/content-type')(headers['content-type']))
   return contentType === 'txt' ? 'text' : contentType
 }
 
