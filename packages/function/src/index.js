@@ -20,8 +20,14 @@ const path = require('path')
 // own dependencies and nothing else, so every snippet paid a fresh install.
 // `module.paths` is the resolution chain Node itself would use from here, so it
 // reaches the consumer under either layout.
-const cloudflareDir = path.dirname(require.resolve('@cloudflare/puppeteer/package.json'))
-const nodePaths = [...new Set([path.resolve(cloudflareDir, '..', '..'), ...module.paths])]
+const nodeModulesOf = file => {
+  const marker = `${path.sep}node_modules${path.sep}`
+  return file.slice(0, file.lastIndexOf(marker) + marker.length - 1)
+}
+
+const nodePaths = [
+  ...new Set([nodeModulesOf(require.resolve('@cloudflare/puppeteer')), ...module.paths])
+]
 
 const stringify = fn => fn.toString().trim().replace(/;$/, '')
 
