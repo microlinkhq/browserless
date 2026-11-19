@@ -884,6 +884,36 @@ test('a frame that finished on another url does not hold the capture', async t =
   t.true(result.waited < 1000, `waited ${result.waited}ms`)
 })
 
+test('a canvas probe drops the session it already opened', async t => {
+  let detached = false
+  let opened
+  const started = new Promise(resolve => {
+    opened = resolve
+  })
+  let release
+  const sent = new Promise(resolve => {
+    release = resolve
+  })
+  const canvas = createCanvasTracker({
+    createCDPSession: async () => ({
+      send () {
+        opened()
+        return sent
+      },
+      detach () {
+        detached = true
+        return Promise.resolve()
+      }
+    })
+  })
+  const pending = canvas.unsettled({ x: 0, y: 0, width: 400, height: 300 })
+  await started
+  await canvas.drop()
+  t.true(detached)
+  release({ data: '' })
+  await pending.catch(() => {})
+})
+
 test('a canvas probe that opens after it was dropped detaches', async t => {
   let detached = false
   let release
