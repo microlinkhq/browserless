@@ -15,6 +15,7 @@ const YOUNG_REQUEST_MS = 2000
 const BLOCKING_REQUEST_TYPES = new Set(['document', 'stylesheet', 'font', 'script', 'xhr', 'fetch'])
 const CANVAS_PROBE_SCALE = 1 / 16
 const BLANK_CANVAS_STDEV = 2
+const BLANK_CANVAS_MEAN = 8
 const CANVAS_DRIFT = 2.5
 const CANVAS_STABLE_MS = 300
 const STOP_TIMEOUT_MS = 250
@@ -31,6 +32,7 @@ const withDeadline = async (promise, ms) => {
 }
 
 const siteOf = hostname => {
+  if (hostname.includes(':') || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname)) return hostname
   const labels = hostname.split('.')
   const secondLevel = labels[labels.length - 2] || ''
   const isCountrySecondLevel =
@@ -70,7 +72,8 @@ const readViewport = async () => {
   const DEFAULT_CANVAS_WIDTH = 300
   const DEFAULT_CANVAS_HEIGHT = 150
   const SKELETON_CLASS = /(^|[\s_-])(skeleton|shimmer)/i
-  const INLINE_HIDDEN = /(^|;)\s*(opacity\s*:\s*0(\.0+)?\s*(;|$)|visibility\s*:\s*hidden)/
+  const INLINE_HIDDEN =
+    /(^|;)\s*(?:opacity\s*:\s*0(?:\.0+)?|visibility\s*:\s*hidden)\s*(?:!important\s*)?(?=;|$)/i
   const NON_CONTENT_TAGS = /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/
 
   const install = () => {
@@ -101,7 +104,9 @@ const readViewport = async () => {
     })
     const shifts = new window.PerformanceObserver(list => {
       for (const entry of list.getEntries()) {
-        if (entry.value >= MIN_SHIFT && !entry.hadRecentInput) { tracker.lastShift = entry.startTime + entry.duration }
+        if (entry.value >= MIN_SHIFT && !entry.hadRecentInput) {
+          tracker.lastShift = entry.startTime + entry.duration
+        }
       }
     })
     try {
@@ -180,13 +185,17 @@ const readViewport = async () => {
 
   let loadingVideos = 0
   for (const video of document.querySelectorAll('video')) {
-    if ((video.readyState >= 2 || video.poster) && isVisible(video)) { cover(video.getBoundingClientRect()) }
+    if ((video.readyState >= 2 || video.poster) && isVisible(video)) {
+      cover(video.getBoundingClientRect())
+    }
     if (
       video.readyState < 2 &&
       !video.error &&
       video.networkState === 2 &&
       isMediaInViewport(video)
-    ) { loadingVideos++ }
+    ) {
+      loadingVideos++
+    }
   }
 
   let canvasClip = null
@@ -194,12 +203,53 @@ const readViewport = async () => {
   for (const el of document.querySelectorAll('canvas, svg, iframe, object, embed')) {
     if (!isVisible(el)) continue
     const r = el.getBoundingClientRect()
+    if (el.tagName === 'IFRAME') {
+      try {
+        const doc = el.contentDocument
+        if (doc) {
+          const pending =
+            doc.readyState !== 'complete' ||
+            (el.src &&
+              el.src !== 'about:blank' &&
+              new URL(doc.URL).href !== new URL(el.src, document.baseURI).href)
+          if (pending) continue
+        }
+      } catch {}
+    }
     cover(r)
     if (el.tagName !== 'CANVAS' || !intersects(r)) continue
     if (el.width === DEFAULT_CANVAS_WIDTH && el.height === DEFAULT_CANVAS_HEIGHT) unsizedCanvases++
     const clip = clipToViewport(r)
     if (clip.width * clip.height < vw * vh * MIN_CANVAS_SHARE) continue
-    if (!canvasClip || clip.width * clip.height > canvasClip.width * canvasClip.height) { canvasClip = clip }
+    if (!canvasClip || clip.width * clip.height > canvasClip.width * canvasClip.height) {
+      canvasClip = clip
+    }
+  }
+
+  const backgroundUrls = value =>
+    [...value.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map(match => match[1])
+  const paintBackground = (el, style, rect) => {
+    if (!isVisible(el) || style.backgroundImage === 'none') return
+    const urls = backgroundUrls(style.backgroundImage)
+    if (urls.length === 0) {
+      cover(rect)
+      return
+    }
+    let pending = false
+    let loaded = true
+    for (const url of urls) {
+      const probe = new window.Image()
+      probe.src = url
+      if (!probe.complete) {
+        pending = true
+        loaded = false
+      } else if (!(probe.naturalWidth > 0)) loaded = false
+    }
+    if (pending && isMediaInViewport(el)) pendingImages++
+    else if (loaded) cover(rect)
+  }
+  for (const el of [document.documentElement, document.body]) {
+    if (el) paintBackground(el, window.getComputedStyle(el), el.getBoundingClientRect())
   }
 
   const isNeutral = color => {
@@ -219,14 +269,16 @@ const readViewport = async () => {
     const r = el.getBoundingClientRect()
     if (!intersects(r) || r.width * r.height === 0) continue
     const style = window.getComputedStyle(el)
-    if (style.backgroundImage !== 'none' && isVisible(el)) cover(r)
+    paintBackground(el, style, r)
     const className = typeof el.className === 'string' ? el.className : ''
     const isInteractive = el.closest(INTERACTIVE) !== null
     if (
       (el.getAttribute('aria-busy') === 'true' || SKELETON_CLASS.test(className)) &&
       !isInteractive &&
       isVisible(el)
-    ) { skeletons++ }
+    ) {
+      skeletons++
+    }
     if (
       isInteractive ||
       r.width * r.height < MIN_PLACEHOLDER_AREA ||
@@ -262,7 +314,9 @@ const readViewport = async () => {
     const r = range.getBoundingClientRect()
     if (!intersects(r) || r.width === 0) continue
     const opacity = effectiveOpacity(parent)
-    if (opacity > MIN_PARTIAL_OPACITY && opacity < MAX_PARTIAL_OPACITY) { fadingText.push(opacity.toFixed(2)) }
+    if (opacity > MIN_PARTIAL_OPACITY && opacity < MAX_PARTIAL_OPACITY) {
+      fadingText.push(opacity.toFixed(2))
+    }
     if (opacity >= MIN_VISIBLE_OPACITY) for (const line of range.getClientRects()) cover(line)
   }
 
@@ -293,7 +347,14 @@ const readViewport = async () => {
     if (!target || !isMediaInViewport(target)) continue
     const isEndless = !Number.isFinite(timing.endTime)
     if (!isEndless && timing.endTime <= MAX_ENTRANCE_ANIMATION_MS) finiteAnimations++
-    if (isEndless && !target.textContent.trim() && !target.querySelector('img, video, svg, canvas')) { shimmerAnimations++ }
+    if (
+      isEndless &&
+      !target.closest?.(INTERACTIVE) &&
+      !target.textContent.trim() &&
+      !target.querySelector('img, video, svg, canvas')
+    ) {
+      shimmerAnimations++
+    }
   }
 
   return {
@@ -358,7 +419,9 @@ const createCanvasTracker = page => {
       if (!clip) return false
       cdp = cdp || (await page.createCDPSession())
       const current = await readCanvas(cdp, clip)
-      const isBlank = current.every(channel => channel.stdev < BLANK_CANVAS_STDEV)
+      const isBlank = current.every(
+        channel => channel.stdev < BLANK_CANVAS_STDEV && channel.mean < BLANK_CANVAS_MEAN
+      )
       const isStable = previous !== undefined && canvasDrift(previous, current) < CANVAS_DRIFT
       stableSince = isStable ? stableSince ?? Date.now() : null
       previous = current
@@ -372,7 +435,6 @@ const createRequestTracker = page => {
   const inflight = new Map()
   const onRequest = request => {
     if (!BLOCKING_REQUEST_TYPES.has(request.resourceType())) return
-    if (!isSameSite(request.url(), page.url())) return
     inflight.set(request, Date.now())
   }
   const onDone = request => inflight.delete(request)
@@ -382,8 +444,13 @@ const createRequestTracker = page => {
   return {
     young: () => {
       const now = Date.now()
+      const pageUrl = page.url()
       let count = 0
-      for (const startedAt of inflight.values()) if (now - startedAt < YOUNG_REQUEST_MS) count++
+      for (const [request, startedAt] of inflight) {
+        if (now - startedAt >= YOUNG_REQUEST_MS) continue
+        if (!isSameSite(request.url(), pageUrl)) continue
+        count++
+      }
       return count
     },
     close: () => {
@@ -467,4 +534,6 @@ const createSettle = page => {
 module.exports = createSettle
 module.exports.symptomsOf = symptomsOf
 module.exports.isSettled = isSettled
+module.exports.isSameSite = isSameSite
+module.exports.createRequestTracker = createRequestTracker
 module.exports.SETTLE_CAP_MS = SETTLE_CAP_MS
