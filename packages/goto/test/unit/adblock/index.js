@@ -481,8 +481,8 @@ test('initResp includes rules', async t => {
             resolve({
               msgKeys: Object.keys(msg).sort().join(','),
               hasRules: !!msg.rules,
-              hasR: !!(msg.rules && msg.rules.r),
-              hasIndex: !!(msg.rules && msg.rules.index),
+              hasR: !!(msg.rules && msg.rules.compact && msg.rules.compact.r),
+              hasIndex: !!(msg.rules && msg.rules.compact && msg.rules.compact.index),
               configKeys: msg.config ? Object.keys(msg.config).sort().join(',') : 'NO_CONFIG',
               messages: messages.join(';')
             })
@@ -507,6 +507,84 @@ test('initResp includes rules', async t => {
   )
   t.true(received.hasR, 'compact rules must contain r (rules) field')
   t.true(received.hasIndex, 'compact rules must contain index field')
+})
+
+const CONSENT_CLOSE_MS = 800
+
+const siteRuleBanner = closeAfterMs => `<!doctype html><html><body style="margin:0">
+<h1>hello</h1>
+<ytd-consent-bump-v2-lightbox style="position:fixed;inset:0;display:block;background:rgba(0,0,0,.6)">
+  <tp-yt-paper-dialog style="display:block;width:600px;margin:80px auto;padding:24px;background:#fff">
+    <p>Before you continue</p>
+    <a href="https://consent.youtube.com/d">More options</a>
+    <div class="eom-buttons">
+      <div class="eom-button-row">
+        <ytd-button-renderer><button id="decline">Nope</button></ytd-button-renderer>
+        <ytd-button-renderer><button id="accept">Accept all</button></ytd-button-renderer>
+      </div>
+    </div>
+  </tp-yt-paper-dialog>
+</ytd-consent-bump-v2-lightbox>
+<script>
+  const banner = document.querySelector('ytd-consent-bump-v2-lightbox')
+  for (const button of document.querySelectorAll('button')) {
+    button.addEventListener('click', () => {
+      window.consentChoice = button.id
+      document.cookie = 'SOCS=CAE' + button.id
+      setTimeout(() => banner.remove(), ${closeAfterMs})
+    })
+  }
+</script>
+</body></html>`
+
+const PAGE_LOAD_MS = 600
+
+const getSiteRuleBannerUrl = (t, closeAfterMs = 0) =>
+  runServer(t, async ({ req, res }) => {
+    if (req.url === '/slow.gif') {
+      await new Promise(resolve => setTimeout(resolve, PAGE_LOAD_MS))
+      res.setHeader('content-type', 'image/gif')
+      return res.end(
+        Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64')
+      )
+    }
+    res.setHeader('content-type', 'text/html')
+    res.end(siteRuleBanner(closeAfterMs).replace('</body>', '<img src="/slow.gif"></body>'))
+  })
+
+test('autoconsent applies the site rule that matches a banner', async t => {
+  const url = await getSiteRuleBannerUrl(t)
+  const browserless = await getBrowserContext(t)
+  const choice = await browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load' })
+    return page.evaluate(() => window.consentChoice)
+  })()
+  t.is(choice, 'decline')
+})
+
+test('goto returns once the banner a site rule handled has closed', async t => {
+  const url = await getSiteRuleBannerUrl(t, CONSENT_CLOSE_MS)
+  const browserless = await getBrowserContext(t)
+  const { choice, bannerShown } = await browserless.withPage((page, goto) => async () => {
+    await goto(page, { url, waitUntil: 'load' })
+    return page.evaluate(() => ({
+      choice: window.consentChoice,
+      bannerShown: !!document.querySelector('ytd-consent-bump-v2-lightbox')
+    }))
+  })()
+  t.is(choice, 'decline')
+  t.false(bannerShown)
+})
+
+test('goto does not wait for a banner on a page without one', async t => {
+  const url = await getUrl(t)
+  const browserless = await getBrowserContext(t)
+  const elapsed = await browserless.withPage((page, goto) => async () => {
+    const start = Date.now()
+    await goto(page, { url, waitUntil: 'load' })
+    return Date.now() - start
+  })()
+  t.true(elapsed < CONSENT_CLOSE_MS, `goto took ${elapsed}ms`)
 })
 
 test('initResp includes config with expected shape', async t => {

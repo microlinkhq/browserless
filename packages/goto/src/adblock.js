@@ -142,8 +142,94 @@ const toContentScript = autoconsentScript => `{
 const getContentScript = lazy(() => getAutoconsentPlaywrightScript().then(toContentScript))
 
 const getInitResp = lazy(() =>
-  getAutoconsentRules().then(rules => ({ type: 'initResp', config: autoconsentConfig, rules }))
+  getAutoconsentRules().then(rules => ({
+    type: 'initResp',
+    config: autoconsentConfig,
+    rules: { compact: rules }
+  }))
 )
+
+const getPopupSelectors = lazy(() =>
+  getAutoconsentRules().then(compactRules => {
+    const { decodeRules } = require('@duckduckgo/autoconsent')
+    return new Map(
+      decodeRules(compactRules).map(rule => [
+        rule.name,
+        (rule.detectPopup || [])
+          .map(step => step.visible)
+          .filter(selector => typeof selector === 'string')
+      ])
+    )
+  })
+)
+
+const POPUP_DETECTION_GRACE_MS = 250
+
+const POPUP_CLOSE_POLL_MS = 50
+
+const IS_POPUP_VISIBLE = `function (selectors) {
+  return selectors.some(selector => {
+    try {
+      return Array.from(document.querySelectorAll(selector)).some(
+        el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden'
+      )
+    } catch {
+      return false
+    }
+  })
+}`
+
+const createDeferred = () => {
+  let resolve
+  const promise = new Promise(_resolve => {
+    resolve = _resolve
+  })
+  return { promise, resolve }
+}
+
+const createConsent = () => ({ detecting: undefined, popup: undefined })
+
+const resetConsent = page => {
+  const consent = page._autoconsentConsent
+  if (!consent) return
+  consent.detecting?.resolve()
+  consent.popup?.resolve()
+  page._autoconsentConsent = undefined
+}
+
+const waitForPopupHidden = async (client, executionContextId, selectors, timeout) => {
+  const deadline = Date.now() + timeout
+  while (Date.now() < deadline) {
+    const visible = await client
+      .send('Runtime.callFunctionOn', {
+        functionDeclaration: IS_POPUP_VISIBLE,
+        executionContextId,
+        arguments: [{ value: selectors }],
+        returnByValue: true
+      })
+      .then(
+        ({ result }) => result.value === true,
+        () => false
+      )
+    if (!visible) return
+    await new Promise(resolve => setTimeout(resolve, POPUP_CLOSE_POLL_MS))
+  }
+}
+
+const closePopup = async ({ page, client, executionContextId, cmp, timeout }) => {
+  const consent = page._autoconsentConsent
+  if (!consent?.popup) return
+  const selectors = (await getPopupSelectors().catch(() => new Map())).get(cmp) || []
+  if (selectors.length > 0) await waitForPopupHidden(client, executionContextId, selectors, timeout)
+  consent.popup.resolve()
+}
+
+const waitForConsent = async page => {
+  const consent = page._autoconsentConsent
+  if (!consent) return
+  await consent.detecting?.promise
+  await consent.popup?.promise
+}
 
 const AUTOCONSENT_PREHIDE_ID = 'autoconsent-prehide'
 const AUTOCONSENT_GLOBAL_PREHIDE =
@@ -238,13 +324,9 @@ const onMessage = async ({ page, client, executionContextId, message, timeout })
   switch (message.type) {
     case 'init': {
       page._autoconsentInitDone = true
+      page._autoconsentConsent ??= createConsent()
       if (message.preinitialized) return
-      const rules = await getAutoconsentRules()
-      return sendMessage(client, executionContextId, {
-        type: 'initResp',
-        config: autoconsentConfig,
-        rules
-      })
+      return sendMessage(client, executionContextId, await getInitResp())
     }
 
     case 'eval': {
@@ -255,14 +337,31 @@ const onMessage = async ({ page, client, executionContextId, message, timeout })
       return sendMessage(client, executionContextId, { type: 'evalResp', id: message.id, result })
     }
 
-    case 'cmpDetected':
-    case 'popupFound':
+    case 'cmpDetected': {
+      debug(message.type, { cmp: message.cmp })
+      const consent = page._autoconsentConsent
+      if (!consent || consent.detecting) break
+      consent.detecting = createDeferred()
+      setTimeout(consent.detecting.resolve, POPUP_DETECTION_GRACE_MS)
+      break
+    }
+
+    case 'popupFound': {
+      debug(message.type, { cmp: message.cmp })
+      const consent = page._autoconsentConsent
+      if (!consent) break
+      consent.popup ??= createDeferred()
+      consent.detecting?.resolve()
+      break
+    }
+
     case 'autoconsentDone':
       debug(message.type, { cmp: message.cmp })
-      break
+      return closePopup({ page, client, executionContextId, cmp: message.cmp, timeout })
 
     case 'optOutResult':
       debug(message.type, { result: message.result })
+      if (!message.result) page._autoconsentConsent?.popup?.resolve()
       break
 
     case 'autoconsentError':
@@ -313,6 +412,7 @@ const createAutoConsent = async (page, client, timeout) => {
       'Runtime.executionContextsCleared',
       () => {
         topFrameContexts.clear()
+        resetConsent(page)
         page._autoconsentInitDone = false
         page._autoconsentInjection = undefined
       }
@@ -412,4 +512,10 @@ const enableBlockingInPage = (page, run, timeout) => {
   ]
 }
 
-module.exports = { enableBlockingInPage, runAutoConsent, AUTOCONSENT_WORLD, AUTOCONSENT_BINDING }
+module.exports = {
+  enableBlockingInPage,
+  runAutoConsent,
+  waitForConsent,
+  AUTOCONSENT_WORLD,
+  AUTOCONSENT_BINDING
+}
