@@ -328,8 +328,17 @@ test('an empty viewport waits until the page mounts its hero', async t => {
   t.true(result.symptoms.includes('sparse'), result.symptoms.join(','))
 })
 
-const PARTIAL_FADE = `<!doctype html><body style="margin:0;background:#fff">
-<h1 id="title" style="opacity:0.2;margin:0;height:800px;background:rgb(20,20,200);color:#fff;font-size:120px">Headline</h1>
+const keepMutating = `const box = document.getElementById('box')
+  const tick = () => {
+    box.style.color = box.style.color === 'red' ? 'blue' : 'red'
+    setTimeout(tick, 50)
+  }
+  tick()`
+
+const PARTIAL_FADE = `<!doctype html><body style="margin:0;background:#fff;font:32px sans-serif">
+<h1 id="title" style="opacity:0.2;margin:0;background:rgb(20,20,200);color:#fff;font-size:120px">Headline</h1>
+${'<p>Paragraph of supporting copy for the viewport.</p>'.repeat(16)}
+<div id="box" style="position:absolute;top:0;left:0;width:80px;height:40px"></div>
 <script>
   const title = document.getElementById('title')
   const startedAt = performance.now()
@@ -339,6 +348,7 @@ const PARTIAL_FADE = `<!doctype html><body style="margin:0;background:#fff">
     if (progress < 1) requestAnimationFrame(step)
   }
   requestAnimationFrame(step)
+  ${keepMutating}
 </script></body>`
 
 test('a partial fade waits until the text is opaque', async t => {
@@ -346,6 +356,7 @@ test('a partial fade waits until the text is opaque', async t => {
   t.true(result.settled)
   t.true(result.symptoms.includes('fading'), result.symptoms.join(','))
   t.true(result.waited >= 700, `waited ${result.waited}ms`)
+  t.true(result.waited < 1600, `waited ${result.waited}ms`)
 })
 
 test('a scripted fade-in waits until the text is opaque', async t => {
@@ -379,6 +390,27 @@ test('a screenshot captures the hero a frame-gated page mounts after load', asyn
 test('a screenshot captures a scripted fade-in at full opacity', async t => {
   const [red, green, blue] = await centerPixel(await shoot(t, SCRIPTED_FADE))
   t.true(red < 60 && green < 60 && blue > 160, `rgb(${red},${green},${blue})`)
+})
+
+test('a watched attribute change restarts the quiet wait', async t => {
+  for (const name of ['class', 'style', 'src', 'srcset', 'hidden', 'poster', 'aria-busy']) {
+    const hidden = name === 'hidden' ? ' hidden' : ''
+    const html = `<!doctype html><body style="margin:0"><div id="box"${hidden} style="width:100px;height:100px"></div></body>`
+    const result = await settleOn(t, html, {
+      beforeWait: page =>
+        page.evaluate(attribute => {
+          setTimeout(() => {
+            const box = document.getElementById('box')
+            if (attribute === 'hidden') box.removeAttribute('hidden')
+            else if (attribute === 'style') {
+              box.setAttribute('style', 'width:100px;height:100px;color:red')
+            } else box.setAttribute(attribute, 'ready')
+          }, 400)
+        }, name)
+    })
+    t.true(result.settled, name)
+    t.true(result.waited >= 1000, `${name} waited ${result.waited}ms`)
+  }
 })
 
 test('a short timeout stops before the cap', async t => {
@@ -479,10 +511,12 @@ const HIDDEN_IMPORTANT = `<!doctype html><body style="margin:0">
 
 const flatCanvas = color => `<!doctype html><body style="margin:0">
 <canvas id="art" width="1280" height="800" style="display:block"></canvas>
+<div id="box" style="position:absolute;top:0;left:0;width:80px;height:40px"></div>
 <script>
   const context = document.getElementById('art').getContext('2d')
   context.fillStyle = '${color}'
   context.fillRect(0, 0, 1280, 800)
+  ${keepMutating}
 </script></body>`
 
 const SPARSE_PAGE = '<!doctype html><body style="margin:0;background:#fff"></body>'
