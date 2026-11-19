@@ -770,6 +770,68 @@ test('a frame that has not left about:blank keeps the viewport waiting', async t
   t.true(result.waited >= 2500, `waited ${result.waited}ms`)
 })
 
+test('a frame that changes src after loading keeps the viewport waiting', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: async page => {
+      await page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.id = 'next'
+        frame.src = '/hop'
+        frame.style.cssText = 'width:480px;height:320px;border:0'
+        document.body.prepend(frame)
+      })
+      await page.waitForFunction(() => {
+        const frame = document.getElementById('next')
+        try {
+          return (
+            frame.contentDocument &&
+            frame.contentDocument.readyState === 'complete' &&
+            frame.contentDocument.URL.includes('/landed')
+          )
+        } catch {
+          return false
+        }
+      })
+      await page.evaluate(() => {
+        document.getElementById('next').src = '/slow-mid'
+      })
+    }
+  })
+  t.true(result.settled)
+  t.true(result.symptoms.includes('frame'), result.symptoms.join(','))
+  t.true(result.waited >= 1000, `waited ${result.waited}ms`)
+})
+
+test('a main document request is not a child frame', t => {
+  const handlers = {}
+  const main = {}
+  const tracker = createRequestTracker({
+    mainFrame: () => main,
+    on: (event, handler) => {
+      handlers[event] = handler
+    },
+    off () {}
+  })
+  handlers.request({
+    resourceType: () => 'document',
+    frame: () => main,
+    url: () => 'http://example.test/landed'
+  })
+  t.deepEqual(tracker.childDocuments(), [])
+  handlers.request({
+    resourceType: () => 'document',
+    frame: () => ({}),
+    url: () => 'http://example.test/slow-mid'
+  })
+  handlers.request({
+    resourceType: () => 'stylesheet',
+    frame: () => ({}),
+    url: () => 'http://example.test/app.css'
+  })
+  t.deepEqual(tracker.childDocuments(), ['http://example.test/slow-mid'])
+})
+
 test('a frame that finished on another url does not hold the capture', async t => {
   const result = await settleOn(t, STATIC_PAGE, {
     timeout: 5000,

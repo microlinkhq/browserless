@@ -48,7 +48,8 @@ const isSameSite = (a, b) => {
   }
 }
 
-const readViewport = async () => {
+const readViewport = async (navigatingUrls = []) => {
+  const navigating = new Set(navigatingUrls)
   const MIN_SHIFT = 0.005
   const RECENT_SHIFT_MS = 200
   const COLUMNS = 32
@@ -208,9 +209,11 @@ const readViewport = async () => {
       try {
         const doc = el.contentDocument
         if (doc && isMediaInViewport(el)) {
+          const src = el.src ? new URL(el.src, document.baseURI).href : ''
           const pending =
+            (src && navigating.has(src)) ||
             doc.readyState !== 'complete' ||
-            (el.src && el.src !== 'about:blank' && new URL(doc.URL).href === 'about:blank')
+            (src && src !== 'about:blank' && new URL(doc.URL).href === 'about:blank')
           if (pending) {
             pendingFrames++
             continue
@@ -463,6 +466,16 @@ const createRequestTracker = page => {
   page.on('requestfinished', onDone)
   page.on('requestfailed', onDone)
   return {
+    childDocuments: () => {
+      const urls = []
+      for (const request of inflight.keys()) {
+        if (request.resourceType() !== 'document') continue
+        const frame = request.frame()
+        if (!frame || frame === page.mainFrame()) continue
+        urls.push(request.url())
+      }
+      return urls
+    },
     young: () => {
       const now = Date.now()
       const pageUrl = page.url()
@@ -495,7 +508,7 @@ const createSettle = page => {
   let previousFading = ''
 
   const inspect = async () => {
-    const state = await evaluateIsolated(page, readViewport)
+    const state = await evaluateIsolated(page, readViewport, requests.childDocuments())
     state.canvasUnsettled = await canvas.unsettled(state.canvasClip).catch(() => false)
     state.fadingChanged = state.fadingSignature !== '' && state.fadingSignature !== previousFading
     previousFading = state.fadingSignature
