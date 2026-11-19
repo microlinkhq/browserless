@@ -473,6 +473,7 @@ const createRequestTracker = page => {
         const frame = request.frame()
         if (!frame || frame === page.mainFrame()) continue
         urls.push(request.url())
+        for (const previous of request.redirectChain?.() ?? []) urls.push(previous.url())
       }
       return urls
     },

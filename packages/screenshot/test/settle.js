@@ -37,8 +37,8 @@ const PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBR
 const serve = (t, html) =>
   runServer(t, async ({ req, res }) => {
     const path = req.url.split('?')[0]
-    if (path === '/hop') {
-      res.writeHead(302, { location: '/landed' })
+    if (path === '/hop' || path === '/hop-slow') {
+      res.writeHead(302, { location: path === '/hop-slow' ? '/slow-mid' : '/landed' })
       return res.end()
     }
     if (
@@ -822,14 +822,51 @@ test('a main document request is not a child frame', t => {
   handlers.request({
     resourceType: () => 'document',
     frame: () => ({}),
-    url: () => 'http://example.test/slow-mid'
+    url: () => 'http://example.test/slow-mid',
+    redirectChain: () => [{ url: () => 'http://example.test/hop-slow' }]
   })
   handlers.request({
     resourceType: () => 'stylesheet',
     frame: () => ({}),
     url: () => 'http://example.test/app.css'
   })
-  t.deepEqual(tracker.childDocuments(), ['http://example.test/slow-mid'])
+  t.deepEqual(tracker.childDocuments(), [
+    'http://example.test/slow-mid',
+    'http://example.test/hop-slow'
+  ])
+})
+
+test('a frame that changes src to a redirect keeps the viewport waiting', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: async page => {
+      await page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.id = 'next'
+        frame.src = '/landed'
+        frame.style.cssText = 'width:480px;height:320px;border:0'
+        document.body.prepend(frame)
+      })
+      await page.waitForFunction(() => {
+        const frame = document.getElementById('next')
+        try {
+          return (
+            frame.contentDocument &&
+            frame.contentDocument.readyState === 'complete' &&
+            frame.contentDocument.URL.includes('/landed')
+          )
+        } catch {
+          return false
+        }
+      })
+      await page.evaluate(() => {
+        document.getElementById('next').src = '/hop-slow'
+      })
+    }
+  })
+  t.true(result.settled)
+  t.true(result.symptoms.includes('frame'), result.symptoms.join(','))
+  t.true(result.waited >= 1000, `waited ${result.waited}ms`)
 })
 
 test('a frame that finished on another url does not hold the capture', async t => {
