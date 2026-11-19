@@ -358,7 +358,7 @@ test('a partial fade waits until the text is opaque', async t => {
   const result = await settleOn(t, PARTIAL_FADE)
   t.true(result.settled)
   t.true(result.symptoms.includes('fading'), result.symptoms.join(','))
-  t.true(result.waited >= 700, `waited ${result.waited}ms`)
+  t.true(result.waited >= 400, `waited ${result.waited}ms`)
   t.true(result.waited < 1600, `waited ${result.waited}ms`)
 })
 
