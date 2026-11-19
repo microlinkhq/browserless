@@ -188,9 +188,16 @@ const DECORATED_PAGE = STATIC_PAGE.replace(
   `<body style="margin:0;font:32px sans-serif">
 <style>
   @keyframes glow { from { opacity: 0.4 } to { opacity: 1 } }
-  .shimmerLayer { display:inline-block; width:112px; height:48px; animation: glow 7500ms linear }
+  .shimmerLayer { display:inline-block; width:80px; height:20px }
+  .glow { display:inline-block; width:112px; height:48px; animation: glow 750ms linear infinite }
 </style>
-<button><span class="shimmerLayer"></span>Ask AI</button>
+<a class="shimmerLayer"></a>
+<button><span class="shimmerLayer"></span><span class="glow"></span>Ask AI</button>
+<span role="button" class="shimmerLayer"></span>
+<label class="shimmerLayer">Name</label>
+<input class="shimmerLayer">
+<select class="shimmerLayer"></select>
+<textarea class="shimmerLayer"></textarea>
 <div style="position:absolute;top:0;left:0;opacity:0;pointer-events:none;width:480px;height:110px">A tooltip that only shows on hover</div>
 ${'<a style="display:block;width:48px;height:48px;border-radius:100%;background:#fff"></a>'.repeat(
   3
@@ -321,6 +328,26 @@ test('an empty viewport waits until the page mounts its hero', async t => {
   t.true(result.symptoms.includes('sparse'), result.symptoms.join(','))
 })
 
+const PARTIAL_FADE = `<!doctype html><body style="margin:0;background:#fff">
+<h1 id="title" style="opacity:0.2;margin:0;height:800px;background:rgb(20,20,200);color:#fff;font-size:120px">Headline</h1>
+<script>
+  const title = document.getElementById('title')
+  const startedAt = performance.now()
+  const step = () => {
+    const progress = Math.min(1, 0.2 + (0.8 * (performance.now() - startedAt)) / 800)
+    title.style.opacity = String(progress)
+    if (progress < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+</script></body>`
+
+test('a partial fade waits until the text is opaque', async t => {
+  const result = await settleOn(t, PARTIAL_FADE)
+  t.true(result.settled)
+  t.true(result.symptoms.includes('fading'), result.symptoms.join(','))
+  t.true(result.waited >= 700, `waited ${result.waited}ms`)
+})
+
 test('a scripted fade-in waits until the text is opaque', async t => {
   const result = await settleOn(t, SCRIPTED_FADE)
   t.true(result.settled)
@@ -430,6 +457,16 @@ const ENDLESS_GHOST = `<!doctype html><body style="margin:0;font:32px sans-serif
 ${PARAGRAPHS}
 </body>`
 
+const hiddenHero = (position, reveal) => `<!doctype html><body style="margin:0">
+<canvas id="art" width="1280" height="800" style="display:block"></canvas>
+<h1 id="title" style="opacity:0;${position}height:800px;background:rgb(20,20,200);color:#fff;font-size:120px">Headline</h1>
+<script>
+  const context = document.getElementById('art').getContext('2d')
+  context.fillStyle = 'rgb(30,60,200)'
+  context.fillRect(0, 0, 1280, 800)
+  ${reveal ? "setTimeout(() => { document.getElementById('title').style.opacity = '1' }, 500)" : ''}
+</script></body>`
+
 const HIDDEN_IMPORTANT = `<!doctype html><body style="margin:0">
 <canvas id="art" width="1280" height="800" style="display:block"></canvas>
 <h1 id="title" style="Opacity: 0 !important;position:relative;margin:-800px 0 0;height:800px;background:rgb(20,20,200);color:#fff;font-size:120px">Headline</h1>
@@ -522,6 +559,34 @@ test('hidden text declared with important and mixed case is waited out', async t
   t.true(result.settled)
   t.true(result.symptoms.includes('reveal'), result.symptoms.join(','))
   t.true(result.waited >= 400, `waited ${result.waited}ms`)
+})
+
+test('hidden text in normal flow is waited out', async t => {
+  const result = await settleOn(t, hiddenHero('margin:-800px 0 0;', true))
+  t.true(result.settled)
+  t.true(result.symptoms.includes('reveal'), result.symptoms.join(','))
+  t.true(result.waited >= 400, `waited ${result.waited}ms`)
+})
+
+test('hidden text out of flow is not a reveal', async t => {
+  const pages = {
+    absolute: hiddenHero('position:absolute;top:0;left:0;width:1280px;', false),
+    fixed: hiddenHero('position:fixed;top:0;left:0;width:1280px;', false),
+    sticky: `<!doctype html><body style="margin:0">
+<h1 style="opacity:0;position:sticky;top:0;margin:0;width:1280px;height:800px;background:rgb(20,20,200);color:#fff;font-size:120px">Headline</h1>
+<canvas id="art" width="1280" height="800" style="position:absolute;top:0;left:0"></canvas>
+<script>
+  const context = document.getElementById('art').getContext('2d')
+  context.fillStyle = 'rgb(30,60,200)'
+  context.fillRect(0, 0, 1280, 800)
+</script></body>`
+  }
+  for (const [position, html] of Object.entries(pages)) {
+    const result = await settleOn(t, html)
+    t.true(result.settled, position)
+    t.false(result.symptoms.includes('reveal'), `${position} ${result.symptoms.join(',')}`)
+    t.true(result.waited < 1000, `${position} waited ${result.waited}ms`)
+  }
 })
 
 test('a flat painted canvas settles and a black one does not', async t => {
