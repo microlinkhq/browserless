@@ -798,6 +798,21 @@ test('a cross-origin frame that already loaded does not hold the capture', async
   t.true(result.waited < 800, `waited ${result.waited}ms`)
 })
 
+test('a blank frame is not held for a request it never makes', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: page =>
+      page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.src = 'about:blank'
+        frame.style.cssText = 'width:480px;height:320px;border:0'
+        document.body.prepend(frame)
+      })
+  })
+  t.true(result.settled)
+  t.true(result.waited < 800, `waited ${result.waited}ms`)
+})
+
 test('a frame below the viewport does not hold the capture', async t => {
   const result = await settleOn(t, STATIC_PAGE, {
     timeout: 5000,
