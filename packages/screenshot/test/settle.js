@@ -12,6 +12,7 @@ const {
   isSettled,
   isSameSite,
   createRequestTracker,
+  createCanvasTracker,
   SETTLE_CAP_MS
 } = require('../src/settle')
 
@@ -36,6 +37,10 @@ const PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBR
 const serve = (t, html) =>
   runServer(t, async ({ req, res }) => {
     const path = req.url.split('?')[0]
+    if (path === '/hop') {
+      res.writeHead(302, { location: '/landed' })
+      return res.end()
+    }
     if (
       path === '/slow.gif' ||
       path === '/slow-mid' ||
@@ -708,6 +713,98 @@ test('a loading frame on a finished page keeps the viewport waiting', async t =>
   t.true(result.settled)
   t.true(result.symptoms.includes('frame'), result.symptoms.join(','))
   t.true(result.waited >= 1000, `waited ${result.waited}ms`)
+})
+
+test('a frame below the viewport does not hold the capture', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: page =>
+      page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.src = '/slow-mid'
+        frame.style.cssText =
+          'position:absolute;top:2400px;left:0;width:480px;height:320px;border:0'
+        document.body.appendChild(frame)
+      })
+  })
+  t.true(result.settled)
+  t.false(result.symptoms.includes('frame'), result.symptoms.join(','))
+  t.true(result.waited < 500, `waited ${result.waited}ms`)
+})
+
+test('a tiny frame does not hold the capture', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: page =>
+      page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.src = '/slow-mid'
+        frame.style.cssText = 'width:16px;height:16px;border:0'
+        document.body.prepend(frame)
+      })
+  })
+  t.true(result.settled)
+  t.false(result.symptoms.includes('frame'), result.symptoms.join(','))
+  t.true(result.waited < 500, `waited ${result.waited}ms`)
+})
+
+test('a frame that has not left about:blank keeps the viewport waiting', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 4000,
+    beforeWait: async page => {
+      await page.setRequestInterception(true)
+      page.on('request', request => {
+        if (request.url().includes('/stall')) return
+        request.continue()
+      })
+      await page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.src = '/stall'
+        frame.style.cssText = 'width:480px;height:320px;border:0'
+        document.body.prepend(frame)
+      })
+    }
+  })
+  t.false(result.settled)
+  t.true(result.symptoms.includes('frame'), result.symptoms.join(','))
+  t.true(result.waited >= 2500, `waited ${result.waited}ms`)
+})
+
+test('a frame that finished on another url does not hold the capture', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: page =>
+      page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.src = '/hop'
+        frame.style.cssText = 'width:480px;height:320px;border:0'
+        document.body.prepend(frame)
+      })
+  })
+  t.true(result.settled)
+  t.true(result.waited < 1000, `waited ${result.waited}ms`)
+})
+
+test('a canvas probe that opens after it was dropped detaches', async t => {
+  let detached = false
+  let release
+  const opened = new Promise(resolve => {
+    release = resolve
+  })
+  const canvas = createCanvasTracker({
+    createCDPSession: () =>
+      opened.then(() => ({
+        detach () {
+          detached = true
+          return Promise.resolve()
+        }
+      }))
+  })
+  const pending = canvas.unsettled({ x: 0, y: 0, width: 400, height: 300 })
+  await canvas.drop()
+  release()
+  await pending
+  t.true(detached)
 })
 
 test('a same-origin frame that is still loading keeps the viewport waiting', async t => {

@@ -207,12 +207,10 @@ const readViewport = async () => {
     if (el.tagName === 'IFRAME') {
       try {
         const doc = el.contentDocument
-        if (doc) {
+        if (doc && isMediaInViewport(el)) {
           const pending =
             doc.readyState !== 'complete' ||
-            (el.src &&
-              el.src !== 'about:blank' &&
-              new URL(doc.URL).href !== new URL(el.src, document.baseURI).href)
+            (el.src && el.src !== 'about:blank' && new URL(doc.URL).href === 'about:blank')
           if (pending) {
             pendingFrames++
             continue
@@ -424,8 +422,14 @@ const createCanvasTracker = page => {
   return {
     unsettled: async clip => {
       if (!clip || dropped) return false
-      cdp = cdp || (await page.createCDPSession())
-      if (dropped) return false
+      if (!cdp) {
+        const session = await page.createCDPSession()
+        if (dropped) {
+          session.detach().catch(() => {})
+          return false
+        }
+        cdp = session
+      }
       const current = await readCanvas(cdp, clip)
       if (dropped) return false
       const isBlank = current.every(
@@ -556,4 +560,5 @@ module.exports.symptomsOf = symptomsOf
 module.exports.isSettled = isSettled
 module.exports.isSameSite = isSameSite
 module.exports.createRequestTracker = createRequestTracker
+module.exports.createCanvasTracker = createCanvasTracker
 module.exports.SETTLE_CAP_MS = SETTLE_CAP_MS
