@@ -375,6 +375,62 @@ test('a grid of grey placeholders waits for the real cards', async t => {
   t.true(result.symptoms.includes('skeleton'), result.symptoms.join(','))
 })
 
+test('a shift caused by input does not hold the viewport', async t => {
+  const html = `<!doctype html><body style="margin:0;font:32px sans-serif">
+<button id="go" style="position:fixed;top:0;right:0">Move</button>
+<div id="hero">A headline that is already long enough to read.</div>
+${'<p>Paragraph of supporting copy for the viewport.</p>'.repeat(16)}
+</body>`
+  const result = await settleOn(t, html, {
+    beforeWait: async page => {
+      await page.click('#go')
+      await page.evaluate(() => {
+        document.getElementById('hero').style.marginTop = '120px'
+      })
+    }
+  })
+  t.true(result.settled)
+  t.false(result.symptoms.includes('shifting'), `${result.symptoms.join(',')} ${result.waited}`)
+  t.true(result.waited < 200, `waited ${result.waited}ms`)
+})
+
+test('a shift that happened before the check still counts', async t => {
+  const html = `<!doctype html><body style="margin:0;font:32px sans-serif">
+<div id="hero">A headline that is already long enough to read.</div>
+${'<p>Paragraph of supporting copy for the viewport.</p>'.repeat(16)}
+</body>`
+  const result = await settleOn(t, html, {
+    beforeWait: page =>
+      page.evaluate(
+        () =>
+          new Promise(resolve => {
+            document.getElementById('hero').style.marginTop = '120px'
+            window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()))
+          })
+      )
+  })
+  t.true(result.symptoms.includes('shifting'), `${result.symptoms.join(',')} ${result.waited}`)
+})
+
+test('a tiny shift does not hold the viewport', async t => {
+  const html = `<!doctype html><body style="margin:0;font:32px sans-serif">
+<div id="hero">A headline that is already long enough to read.</div>
+${'<p>Paragraph of supporting copy for the viewport.</p>'.repeat(16)}
+</body>`
+  const result = await settleOn(t, html, {
+    beforeWait: page =>
+      page.evaluate(
+        () =>
+          new Promise(resolve => {
+            document.getElementById('hero').style.marginTop = '4px'
+            window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()))
+          })
+      )
+  })
+  t.true(result.settled)
+  t.false(result.symptoms.includes('shifting'), `${result.symptoms.join(',')} ${result.waited}`)
+})
+
 test('a page that never settles is released at the cap', async t => {
   const result = await settleOn(t, ENDLESS_SHIFT)
   t.false(result.settled)
