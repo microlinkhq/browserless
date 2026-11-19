@@ -491,7 +491,7 @@ test('a static canvas settles after scroll', async t => {
 test('text that stays semi transparent costs one extra read', async t => {
   const result = await settleOn(t, MUTED_TEXT)
   t.true(result.settled)
-  t.true(result.waited < 300, `waited ${result.waited}ms`)
+  t.true(result.waited < 120, `waited ${result.waited}ms`)
 })
 
 test('decorative ui is not mistaken for unfinished work', async t => {

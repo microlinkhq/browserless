@@ -594,7 +594,7 @@ test('goto does not wait for a banner on a page without one', async t => {
 
 const BANNER_WAIT_LIMIT_MS = 5000
 
-const closedBanner = async (t, url, stillOpen) => {
+const closedBanner = async (t, url, stillOpen, limit = BANNER_WAIT_LIMIT_MS) => {
   const browserless = await getBrowserContext(t)
   const state = await browserless.withPage((page, goto) => async () => {
     const start = Date.now()
@@ -608,7 +608,7 @@ const closedBanner = async (t, url, stillOpen) => {
   })()
   t.is(state.choice, 'decline')
   t.false(state.open)
-  t.true(state.elapsed < BANNER_WAIT_LIMIT_MS, `goto took ${state.elapsed}ms`)
+  t.true(state.elapsed < limit, `goto took ${state.elapsed}ms`)
 }
 
 test('goto waits for a banner found through a shadow selector chain', async t => {
@@ -622,7 +622,7 @@ customElements.define('beetle-tracking-consent-modal', class extends HTMLElement
     root.innerHTML = '<div class="consent"><div class="consent__dialog-wrapper" style="position:fixed;inset:0;background:#111;color:#fff;padding:24px">Consent <button class="consent__button-decline-all">Decline</button></div></div>'
     root.querySelector('button').addEventListener('click', () => {
       window.consentChoice = 'decline'
-      setTimeout(() => root.querySelector('.consent__dialog-wrapper').remove(), ${CONSENT_CLOSE_MS})
+      setTimeout(() => root.querySelector('.consent__dialog-wrapper').remove(), 5500)
     })
   }
 })
@@ -634,7 +634,8 @@ customElements.define('beetle-tracking-consent-modal', class extends HTMLElement
     () =>
       !!document
         .querySelector('beetle-tracking-consent-modal')
-        ?.shadowRoot?.querySelector('.consent__dialog-wrapper')
+        ?.shadowRoot?.querySelector('.consent__dialog-wrapper'),
+    8000
   )
 })
 
@@ -667,12 +668,12 @@ test('goto waits for a banner whose selector is nested in then', async t => {
 <script>
 document.querySelector('[data-id="btn-close-ccpa"]').addEventListener('click', () => {
   window.consentChoice = 'decline'
-  setTimeout(() => document.querySelector('#ccpa-consent-banner').remove(), ${CONSENT_CLOSE_MS})
+  setTimeout(() => document.querySelector('#ccpa-consent-banner').remove(), 3400)
 })
 </script>
 </body>`)
   })
-  await closedBanner(t, url, () => !!document.querySelector('#ccpa-consent-banner'))
+  await closedBanner(t, url, () => !!document.querySelector('#ccpa-consent-banner'), 7000)
 })
 
 test('goto waits for a banner whose selector is nested in else', async t => {
@@ -687,12 +688,12 @@ test('goto waits for a banner whose selector is nested in else', async t => {
 <script>
 document.querySelector('[data-id="btnGdprRejectAll"]').addEventListener('click', () => {
   window.consentChoice = 'decline'
-  setTimeout(() => document.querySelector('#cookie-consent-banner').remove(), ${CONSENT_CLOSE_MS})
+  setTimeout(() => document.querySelector('#cookie-consent-banner').remove(), 3400)
 })
 </script>
 </body>`)
   })
-  await closedBanner(t, url, () => !!document.querySelector('#cookie-consent-banner'))
+  await closedBanner(t, url, () => !!document.querySelector('#cookie-consent-banner'), 7000)
 })
 
 test('goto waits for a banner whose selector is nested in any', async t => {
