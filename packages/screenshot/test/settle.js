@@ -775,6 +775,29 @@ test('a cross-origin frame that is still loading keeps the viewport waiting', as
   }
 })
 
+test('a cross-origin frame that already loaded does not hold the capture', async t => {
+  const foreign = await runServer(t, async ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end('<p>Loaded</p>')
+  })
+  const src = new URL('doc', foreign).href
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: async page => {
+      const loaded = page.waitForResponse(response => response.url() === src)
+      await page.evaluate(frameSrc => {
+        const frame = document.createElement('iframe')
+        frame.src = frameSrc
+        frame.style.cssText = 'width:480px;height:320px;border:0'
+        document.body.prepend(frame)
+      }, src)
+      await loaded
+    }
+  })
+  t.true(result.settled)
+  t.true(result.waited < 800, `waited ${result.waited}ms`)
+})
+
 test('a frame below the viewport does not hold the capture', async t => {
   const result = await settleOn(t, STATIC_PAGE, {
     timeout: 5000,
@@ -879,12 +902,13 @@ test('a main document request is not a child frame', t => {
     url: () => 'http://example.test/landed'
   })
   t.deepEqual(tracker.childDocuments(), [])
-  handlers.request({
+  const child = {
     resourceType: () => 'document',
     frame: () => ({}),
     url: () => 'http://example.test/slow-mid',
     redirectChain: () => [{ url: () => 'http://example.test/hop-slow' }]
-  })
+  }
+  handlers.request(child)
   handlers.request({
     resourceType: () => 'stylesheet',
     frame: () => ({}),
@@ -893,6 +917,12 @@ test('a main document request is not a child frame', t => {
   t.deepEqual(tracker.childDocuments(), [
     'http://example.test/slow-mid',
     'http://example.test/hop-slow'
+  ])
+  handlers.requestfinished(child)
+  t.deepEqual(tracker.childDocuments(), [])
+  t.deepEqual(tracker.finishedDocuments().sort(), [
+    'http://example.test/hop-slow',
+    'http://example.test/slow-mid'
   ])
 })
 

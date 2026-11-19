@@ -48,8 +48,10 @@ const isSameSite = (a, b) => {
   }
 }
 
-const readViewport = async (navigatingUrls = []) => {
+const readViewport = async (navigatingUrls = [], finishedUrls = []) => {
   const navigating = new Set(navigatingUrls)
+  const finished = new Set(finishedUrls)
+  const FRAME_START_GRACE_MS = 1000
   const MIN_SHIFT = 0.005
   const RECENT_SHIFT_MS = 200
   const COLUMNS = 32
@@ -216,15 +218,23 @@ const readViewport = async (navigatingUrls = []) => {
         src = raw ? new URL(raw, document.baseURI).href : ''
       } catch {}
       let pending = src !== '' && navigating.has(src)
+      let contentDocument = null
       if (!pending) {
         try {
-          const doc = el.contentDocument
-          if (doc) {
+          contentDocument = el.contentDocument
+          if (contentDocument) {
             pending =
-              doc.readyState !== 'complete' ||
-              (src !== '' && src !== 'about:blank' && new URL(doc.URL).href === 'about:blank')
+              contentDocument.readyState !== 'complete' ||
+              (src !== '' &&
+                src !== 'about:blank' &&
+                new URL(contentDocument.URL).href === 'about:blank')
           }
         } catch {}
+      }
+      if (!pending && src !== '' && !finished.has(src) && !contentDocument) {
+        if (!tracker.unstartedFrames) tracker.unstartedFrames = new WeakMap()
+        if (!tracker.unstartedFrames.has(el)) tracker.unstartedFrames.set(el, now)
+        pending = now - tracker.unstartedFrames.get(el) < FRAME_START_GRACE_MS
       }
       if (pending) {
         pendingFrames++
@@ -477,26 +487,31 @@ const createCanvasTracker = page => {
 
 const createRequestTracker = page => {
   const inflight = new Map()
+  const finished = new Set()
+  const childDocumentUrls = request => {
+    if (request.resourceType() !== 'document') return
+    const frame = request.frame()
+    if (!frame || frame === page.mainFrame()) return
+    return [request.url(), ...(request.redirectChain?.() ?? []).map(previous => previous.url())]
+  }
   const onRequest = request => {
     if (!BLOCKING_REQUEST_TYPES.has(request.resourceType())) return
     inflight.set(request, Date.now())
   }
-  const onDone = request => inflight.delete(request)
+  const onDone = request => {
+    inflight.delete(request)
+    for (const url of childDocumentUrls(request) ?? []) finished.add(url)
+  }
   page.on('request', onRequest)
   page.on('requestfinished', onDone)
   page.on('requestfailed', onDone)
   return {
     childDocuments: () => {
       const urls = []
-      for (const request of inflight.keys()) {
-        if (request.resourceType() !== 'document') continue
-        const frame = request.frame()
-        if (!frame || frame === page.mainFrame()) continue
-        urls.push(request.url())
-        for (const previous of request.redirectChain?.() ?? []) urls.push(previous.url())
-      }
+      for (const request of inflight.keys()) urls.push(...(childDocumentUrls(request) ?? []))
       return urls
     },
+    finishedDocuments: () => [...finished],
     young: () => {
       const now = Date.now()
       const pageUrl = page.url()
@@ -529,7 +544,12 @@ const createSettle = page => {
   let previousFading = ''
 
   const inspect = async () => {
-    const state = await evaluateIsolated(page, readViewport, requests.childDocuments())
+    const state = await evaluateIsolated(
+      page,
+      readViewport,
+      requests.childDocuments(),
+      requests.finishedDocuments()
+    )
     state.canvasUnsettled = await canvas.unsettled(state.canvasClip).catch(() => false)
     state.fadingChanged = state.fadingSignature !== '' && state.fadingSignature !== previousFading
     previousFading = state.fadingSignature
