@@ -200,6 +200,7 @@ const readViewport = async () => {
 
   let canvasClip = null
   let unsizedCanvases = 0
+  let pendingFrames = 0
   for (const el of document.querySelectorAll('canvas, svg, iframe, object, embed')) {
     if (!isVisible(el)) continue
     const r = el.getBoundingClientRect()
@@ -212,7 +213,10 @@ const readViewport = async () => {
             (el.src &&
               el.src !== 'about:blank' &&
               new URL(doc.URL).href !== new URL(el.src, document.baseURI).href)
-          if (pending) continue
+          if (pending) {
+            pendingFrames++
+            continue
+          }
         }
       } catch {}
     }
@@ -367,6 +371,7 @@ const readViewport = async () => {
     shifting: tracker.lastShift !== null && now - tracker.lastShift < RECENT_SHIFT_MS,
     fadingSignature: fadingText.join(','),
     pendingReveals,
+    pendingFrames,
     unsizedCanvases,
     canvasClip: canvasClip && {
       ...canvasClip,
@@ -381,6 +386,7 @@ const SYMPTOMS = [
   ['sparse', state => state.coverage < LOW_COVERAGE],
   ['images', state => state.pendingImages > 0],
   ['video', state => state.loadingVideos > 0],
+  ['frame', state => state.pendingFrames > 0],
   ['animation', state => state.finiteAnimations > 0],
   ['skeleton', state => state.skeletons > 0],
   ['shifting', state => state.shifting],
@@ -414,11 +420,14 @@ const createCanvasTracker = page => {
   let cdp
   let previous
   let stableSince = null
+  let dropped = false
   return {
     unsettled: async clip => {
-      if (!clip) return false
+      if (!clip || dropped) return false
       cdp = cdp || (await page.createCDPSession())
+      if (dropped) return false
       const current = await readCanvas(cdp, clip)
+      if (dropped) return false
       const isBlank = current.every(
         channel => channel.stdev < BLANK_CANVAS_STDEV && channel.mean < BLANK_CANVAS_MEAN
       )
@@ -427,7 +436,15 @@ const createCanvasTracker = page => {
       previous = current
       return isBlank || stableSince === null || Date.now() - stableSince < CANVAS_STABLE_MS
     },
-    close: () => cdp && cdp.detach().catch(() => {})
+    drop () {
+      dropped = true
+      const session = cdp
+      cdp = undefined
+      return session && session.detach().catch(() => {})
+    },
+    close () {
+      return this.drop()
+    }
   }
 }
 
@@ -492,7 +509,10 @@ const createSettle = page => {
         inspect().catch(() => undefined),
         Math.max(0, cap - elapsed())
       )
-      if (state === TIMED_OUT) break
+      if (state === TIMED_OUT) {
+        canvas.drop()
+        break
+      }
       if (state) {
         const symptoms = symptomsOf(state)
         symptoms.forEach(symptom => seen.add(symptom))

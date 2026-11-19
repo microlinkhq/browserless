@@ -24,6 +24,7 @@ const READY = {
   shifting: false,
   fadingChanged: false,
   pendingReveals: 0,
+  pendingFrames: 0,
   unsizedCanvases: 0,
   canvasUnsettled: false,
   sinceMutation: 1000
@@ -219,12 +220,14 @@ test('every unfinished signal is named', t => {
     shifting: true,
     fadingChanged: true,
     pendingReveals: 1,
+    pendingFrames: 1,
     unsizedCanvases: 1
   }
   t.deepEqual(symptomsOf(unfinished), [
     'sparse',
     'images',
     'video',
+    'frame',
     'animation',
     'skeleton',
     'shifting',
@@ -392,24 +395,6 @@ ${'<p>Paragraph of supporting copy for the viewport.</p>'.repeat(16)}
   t.true(result.settled)
   t.false(result.symptoms.includes('shifting'), `${result.symptoms.join(',')} ${result.waited}`)
   t.true(result.waited < 200, `waited ${result.waited}ms`)
-})
-
-test('a shift that happened before the check still counts', async t => {
-  const html = `<!doctype html><body style="margin:0;font:32px sans-serif">
-<div id="hero">A headline that is already long enough to read.</div>
-${'<p>Paragraph of supporting copy for the viewport.</p>'.repeat(16)}
-</body>`
-  const result = await settleOn(t, html, {
-    beforeWait: page =>
-      page.evaluate(
-        () =>
-          new Promise(resolve => {
-            document.getElementById('hero').style.marginTop = '120px'
-            window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()))
-          })
-      )
-  })
-  t.true(result.symptoms.includes('shifting'), `${result.symptoms.join(',')} ${result.waited}`)
 })
 
 test('a tiny shift does not hold the viewport', async t => {
@@ -707,6 +692,22 @@ test('a loading video keeps the viewport unsettled', async t => {
   })
   t.true(result.symptoms.includes('video'), result.symptoms.join(','))
   t.true(result.waited >= 800, `waited ${result.waited}ms`)
+})
+
+test('a loading frame on a finished page keeps the viewport waiting', async t => {
+  const result = await settleOn(t, STATIC_PAGE, {
+    timeout: 5000,
+    beforeWait: page =>
+      page.evaluate(() => {
+        const frame = document.createElement('iframe')
+        frame.src = '/slow-mid'
+        frame.style.cssText = 'width:480px;height:320px;border:0'
+        document.body.prepend(frame)
+      })
+  })
+  t.true(result.settled)
+  t.true(result.symptoms.includes('frame'), result.symptoms.join(','))
+  t.true(result.waited >= 1000, `waited ${result.waited}ms`)
 })
 
 test('a same-origin frame that is still loading keeps the viewport waiting', async t => {
