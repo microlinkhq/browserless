@@ -583,7 +583,7 @@ test('a young same-site fetch holds a sparse viewport until the request ages out
 })
 
 test('a load screenshot does not wait for a hero that mounts later', async t => {
-  const late = FRAME_GATED_HERO.replace('frames < 30', 'frames < 180')
+  const late = FRAME_GATED_HERO.replace('frames < 30', 'frames < 60')
   const [red, green, blue] = await centerPixel(await shoot(t, late, { waitUntil: 'load' }))
   t.true(red < 40 && green < 40 && blue < 40, `rgb(${red},${green},${blue})`)
 })
