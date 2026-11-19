@@ -149,16 +149,31 @@ const getInitResp = lazy(() =>
   }))
 )
 
+const isPopupSelector = selector =>
+  typeof selector === 'string' ||
+  (Array.isArray(selector) &&
+    selector.length > 0 &&
+    selector.every(part => typeof part === 'string'))
+
+const collectPopupSelectors = steps => {
+  const selectors = []
+  const visit = step => {
+    if (!step || typeof step !== 'object') return
+    if (step.check !== 'none' && isPopupSelector(step.visible)) selectors.push(step.visible)
+    if (Array.isArray(step.any)) step.any.forEach(visit)
+    if (step.if) visit(step.if)
+    if (Array.isArray(step.then)) step.then.forEach(visit)
+    if (Array.isArray(step.else)) step.else.forEach(visit)
+  }
+  for (const step of steps || []) visit(step)
+  return selectors
+}
+
 const getPopupSelectors = lazy(() =>
   getAutoconsentRules().then(compactRules => {
     const { decodeRules } = require('@duckduckgo/autoconsent')
     return new Map(
-      decodeRules(compactRules).map(rule => [
-        rule.name,
-        (rule.detectPopup || [])
-          .map(step => step.visible)
-          .filter(selector => typeof selector === 'string')
-      ])
+      decodeRules(compactRules).map(rule => [rule.name, collectPopupSelectors(rule.detectPopup)])
     )
   })
 )
@@ -168,16 +183,51 @@ const POPUP_DETECTION_GRACE_MS = 250
 const POPUP_CLOSE_POLL_MS = 50
 
 const IS_POPUP_VISIBLE = `function (selectors) {
-  return selectors.some(selector => {
-    try {
-      return Array.from(document.querySelectorAll(selector)).some(
-        el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden'
+  const matches = (selector, parent) => {
+    if (typeof selector !== 'string') return []
+    if (selector.startsWith('xpath/')) {
+      const snapshot = document.evaluate(
+        selector.slice('xpath/'.length),
+        parent,
+        null,
+        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+        null
       )
-    } catch {
-      return false
+      const nodes = []
+      for (let index = 0; index < snapshot.snapshotLength; index++) {
+        nodes.push(snapshot.snapshotItem(index))
+      }
+      return nodes
     }
-  })
+    const root = parent.shadowRoot || parent.contentDocument || parent
+    if (!root.querySelectorAll) return []
+    try {
+      return Array.from(root.querySelectorAll(selector))
+    } catch {
+      return []
+    }
+  }
+  const targeted = selector => {
+    if (!Array.isArray(selector)) return matches(selector, document)
+    let parent = document
+    let found = []
+    for (const part of selector) {
+      found = matches(part, parent)
+      if (found.length === 0) return []
+      parent = found[0]
+    }
+    return found
+  }
+  const shown = el =>
+    !!el &&
+    el.nodeType === 1 &&
+    el.getClientRects().length > 0 &&
+    getComputedStyle(el).visibility !== 'hidden'
+  return selectors.some(selector => targeted(selector).some(shown))
 }`
+
+const popupProbeShows = response =>
+  Boolean(response?.exceptionDetails) || response?.result?.value === true
 
 const createDeferred = () => {
   let resolve
@@ -207,10 +257,7 @@ const waitForPopupHidden = async (client, executionContextId, selectors, timeout
         arguments: [{ value: selectors }],
         returnByValue: true
       })
-      .then(
-        ({ result }) => result.value === true,
-        () => false
-      )
+      .then(popupProbeShows, () => true)
     if (!visible) return
     await new Promise(resolve => setTimeout(resolve, POPUP_CLOSE_POLL_MS))
   }
@@ -227,7 +274,11 @@ const closePopup = async ({ page, client, executionContextId, cmp, timeout }) =>
 const waitForConsent = async page => {
   const consent = page._autoconsentConsent
   if (!consent) return
-  await consent.detecting?.promise
+  if (!consent.detecting) {
+    consent.detecting = createDeferred()
+    setTimeout(consent.detecting.resolve, POPUP_DETECTION_GRACE_MS)
+  }
+  await consent.detecting.promise
   await consent.popup?.promise
 }
 
@@ -516,6 +567,7 @@ module.exports = {
   enableBlockingInPage,
   runAutoConsent,
   waitForConsent,
+  waitForPopupHidden,
   AUTOCONSENT_WORLD,
   AUTOCONSENT_BINDING
 }

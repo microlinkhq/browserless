@@ -206,21 +206,30 @@ const readViewport = async (navigatingUrls = []) => {
   for (const el of document.querySelectorAll('canvas, svg, iframe, object, embed')) {
     if (!isVisible(el)) continue
     const r = el.getBoundingClientRect()
-    if (el.tagName === 'IFRAME') {
+    if (
+      (el.tagName === 'IFRAME' || el.tagName === 'OBJECT' || el.tagName === 'EMBED') &&
+      isMediaInViewport(el)
+    ) {
+      let src = ''
       try {
-        const doc = el.contentDocument
-        if (doc && isMediaInViewport(el)) {
-          const src = el.src ? new URL(el.src, document.baseURI).href : ''
-          const pending =
-            (src && navigating.has(src)) ||
-            doc.readyState !== 'complete' ||
-            (src && src !== 'about:blank' && new URL(doc.URL).href === 'about:blank')
-          if (pending) {
-            pendingFrames++
-            continue
-          }
-        }
+        const raw = el.tagName === 'OBJECT' ? el.data : el.src
+        src = raw ? new URL(raw, document.baseURI).href : ''
       } catch {}
+      let pending = src !== '' && navigating.has(src)
+      if (!pending) {
+        try {
+          const doc = el.contentDocument
+          if (doc) {
+            pending =
+              doc.readyState !== 'complete' ||
+              (src !== '' && src !== 'about:blank' && new URL(doc.URL).href === 'about:blank')
+          }
+        } catch {}
+      }
+      if (pending) {
+        pendingFrames++
+        continue
+      }
     }
     cover(r)
     if (el.tagName !== 'CANVAS' || !intersects(r)) continue

@@ -6,7 +6,12 @@ const { default: test } = require('ava')
 
 const { PuppeteerBlocker } = require('@ghostery/adblocker-puppeteer')
 const { runServer, getBrowserContext } = require('@browserless/test')
-const { AUTOCONSENT_WORLD, AUTOCONSENT_BINDING, runAutoConsent } = require('../../../src/adblock')
+const {
+  AUTOCONSENT_WORLD,
+  AUTOCONSENT_BINDING,
+  runAutoConsent,
+  waitForPopupHidden
+} = require('../../../src/adblock')
 
 const TEST_RULES = [
   '###browserless-test-ad',
@@ -585,6 +590,140 @@ test('goto does not wait for a banner on a page without one', async t => {
     return Date.now() - start
   })()
   t.true(elapsed < CONSENT_CLOSE_MS, `goto took ${elapsed}ms`)
+})
+
+const BANNER_WAIT_LIMIT_MS = 5000
+
+const closedBanner = async (t, url, stillOpen) => {
+  const browserless = await getBrowserContext(t)
+  const state = await browserless.withPage((page, goto) => async () => {
+    const start = Date.now()
+    await goto(page, { url, waitUntil: 'load' })
+    const open = await page.evaluate(stillOpen)
+    return {
+      choice: await page.evaluate(() => window.consentChoice),
+      open,
+      elapsed: Date.now() - start
+    }
+  })()
+  t.is(state.choice, 'decline')
+  t.false(state.open)
+  t.true(state.elapsed < BANNER_WAIT_LIMIT_MS, `goto took ${state.elapsed}ms`)
+}
+
+test('goto waits for a banner found through a shadow selector chain', async t => {
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`<!doctype html><html><head><script>
+customElements.define('beetle-tracking-consent-modal', class extends HTMLElement {
+  connectedCallback() {
+    if (this.shadowRoot) return
+    const root = this.attachShadow({ mode: 'open' })
+    root.innerHTML = '<div class="consent"><div class="consent__dialog-wrapper" style="position:fixed;inset:0;background:#111;color:#fff;padding:24px">Consent <button class="consent__button-decline-all">Decline</button></div></div>'
+    root.querySelector('button').addEventListener('click', () => {
+      window.consentChoice = 'decline'
+      setTimeout(() => root.querySelector('.consent__dialog-wrapper').remove(), ${CONSENT_CLOSE_MS})
+    })
+  }
+})
+</script></head><body><beetle-tracking-consent-modal></beetle-tracking-consent-modal></body></html>`)
+  })
+  await closedBanner(
+    t,
+    url,
+    () =>
+      !!document
+        .querySelector('beetle-tracking-consent-modal')
+        ?.shadowRoot?.querySelector('.consent__dialog-wrapper')
+  )
+})
+
+test('goto waits for a banner found through an xpath selector', async t => {
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`<!doctype html><body>
+<div class="cookie-box__in" style="position:fixed;inset:0;background:#111;color:#fff;padding:24px">
+  <button class="cookie-box__btn">OK</button>
+</div>
+<script>
+document.querySelector('button').addEventListener('click', () => {
+  window.consentChoice = 'decline'
+  setTimeout(() => document.querySelector('.cookie-box__in').remove(), ${CONSENT_CLOSE_MS})
+})
+</script>
+</body>`)
+  })
+  await closedBanner(t, url, () => !!document.querySelector('.cookie-box__in'))
+})
+
+test('goto waits for a banner whose selector is nested in any', async t => {
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`<!doctype html><body>
+<div class="disclaimer-opened">
+  <div id="disclaimer-cookies" style="position:fixed;inset:0;background:#111;color:#fff;padding:24px">
+    Cookies <button id="disclaimer-reject_cookies">Reject</button>
+  </div>
+</div>
+<script>
+document.querySelector('#disclaimer-reject_cookies').addEventListener('click', () => {
+  window.consentChoice = 'decline'
+  setTimeout(() => document.querySelector('#disclaimer-cookies').remove(), ${CONSENT_CLOSE_MS})
+})
+</script>
+</body>`)
+  })
+  await closedBanner(t, url, () => !!document.querySelector('#disclaimer-cookies'))
+})
+
+test('goto waits for a banner found through an iframe selector chain', async t => {
+  const url = await runServer(t, ({ req, res }) => {
+    res.setHeader('content-type', 'text/html')
+    if (req.url.startsWith('/widget')) {
+      return res.end(`<!doctype html><body>
+<div id="cmp-accept-all" style="position:fixed;inset:0;background:#111;color:#fff">Banner</div>
+<button id="cmp-reject-all">Reject</button>
+<script>
+document.querySelector('#cmp-reject-all').addEventListener('click', () => {
+  parent.consentChoice = 'decline'
+  setTimeout(() => document.querySelector('#cmp-accept-all').remove(), ${CONSENT_CLOSE_MS})
+})
+</script>
+</body>`)
+    }
+    res.end(`<!doctype html><body>
+<iframe id="bigidcmp-banner-widget" src="/widget" style="position:fixed;inset:40px;width:640px;height:480px;border:0"></iframe>
+</body>`)
+  })
+  await closedBanner(
+    t,
+    url,
+    () =>
+      !!document
+        .querySelector('#bigidcmp-banner-widget')
+        ?.contentDocument?.querySelector('#cmp-accept-all')
+  )
+})
+
+test('a failed popup probe keeps waiting until the deadline', async t => {
+  const rejected = { send: () => Promise.reject(new Error('context gone')) }
+  const rejectedAt = Date.now()
+  await waitForPopupHidden(rejected, 1, ['.banner'], 160)
+  t.true(Date.now() - rejectedAt >= 140, 'rejection')
+
+  const exception = {
+    send: () => Promise.resolve({ exceptionDetails: { text: 'boom' }, result: { value: false } })
+  }
+  const exceptionAt = Date.now()
+  await waitForPopupHidden(exception, 1, ['.banner'], 160)
+  t.true(Date.now() - exceptionAt >= 140, 'exception')
+})
+
+test('a hidden popup probe returns without waiting', async t => {
+  const client = { send: () => Promise.resolve({ result: { value: false } }) }
+  const started = Date.now()
+  await waitForPopupHidden(client, 1, ['.banner'], 500)
+  t.true(Date.now() - started < 100)
 })
 
 test('initResp includes config with expected shape', async t => {

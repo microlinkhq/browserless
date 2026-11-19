@@ -740,6 +740,41 @@ test('a loading frame on a finished page keeps the viewport waiting', async t =>
   t.true(result.waited >= 1000, `waited ${result.waited}ms`)
 })
 
+test('a cross-origin frame that is still loading keeps the viewport waiting', async t => {
+  const foreign = await runServer(t, async ({ res }) => {
+    await new Promise(resolve => setTimeout(resolve, 1200))
+    res.setHeader('content-type', 'text/html')
+    res.end('<p>Loaded</p>')
+  })
+  const src = new URL('doc', foreign).href
+  for (const tag of ['iframe', 'object', 'embed']) {
+    const result = await settleOn(t, STATIC_PAGE, {
+      timeout: 5000,
+      beforeWait: page =>
+        page.evaluate(
+          (frameTag, frameSrc) => {
+            const frame = document.createElement(frameTag)
+            if (frameTag === 'object') {
+              frame.type = 'text/html'
+              frame.data = frameSrc
+            } else frame.src = frameSrc
+            frame.setAttribute('width', '480')
+            frame.setAttribute('height', '320')
+            frame.style.cssText = 'width:480px;height:320px;border:0'
+            document.body.prepend(frame)
+          },
+          tag,
+          src
+        )
+    })
+    t.true(
+      result.symptoms.includes('frame'),
+      `${tag} ${result.symptoms.join(',')} ${result.waited}`
+    )
+    t.true(result.waited >= 1000, `${tag} waited ${result.waited}ms`)
+  }
+})
+
 test('a frame below the viewport does not hold the capture', async t => {
   const result = await settleOn(t, STATIC_PAGE, {
     timeout: 5000,
