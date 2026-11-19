@@ -113,6 +113,7 @@ const readViewport = async (navigatingUrls = []) => {
     try {
       shifts.observe({ type: 'layout-shift', buffered: true })
     } catch {}
+    tracker.backgroundProbes = new Map()
     tracker.disconnect = () => {
       mutations.disconnect()
       shifts.disconnect()
@@ -232,7 +233,18 @@ const readViewport = async (navigatingUrls = []) => {
   }
 
   const backgroundUrls = value =>
-    [...value.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map(match => match[1])
+    [...value.matchAll(/url\("((?:[^"\\]|\\.)*)"\)/g)].map(match =>
+      match[1].replace(/\\(.)/g, '$1')
+    )
+  const backgroundProbe = url => {
+    let probe = tracker.backgroundProbes.get(url)
+    if (!probe) {
+      probe = new window.Image()
+      probe.src = url
+      tracker.backgroundProbes.set(url, probe)
+    }
+    return probe
+  }
   const paintBackground = (el, style, rect) => {
     if (!isVisible(el) || style.backgroundImage === 'none') return
     const urls = backgroundUrls(style.backgroundImage)
@@ -243,8 +255,7 @@ const readViewport = async (navigatingUrls = []) => {
     let pending = false
     let loaded = true
     for (const url of urls) {
-      const probe = new window.Image()
-      probe.src = url
+      const probe = backgroundProbe(url)
       if (!probe.complete) {
         pending = true
         loaded = false

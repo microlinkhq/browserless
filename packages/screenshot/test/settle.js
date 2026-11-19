@@ -36,7 +36,7 @@ const PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBR
 
 const serve = (t, html) =>
   runServer(t, async ({ req, res }) => {
-    const path = req.url.split('?')[0]
+    const path = decodeURIComponent(req.url.split('?')[0]).replace('/slow (1).gif', '/slow.gif')
     if (path === '/hop' || path === '/hop-slow') {
       res.writeHead(302, { location: path === '/hop-slow' ? '/slow-mid' : '/landed' })
       return res.end()
@@ -604,6 +604,31 @@ test('a loading background image keeps the viewport unsettled', async t => {
     t.true(result.symptoms.includes('images'), result.symptoms.join(','))
     t.true(result.waited >= SLOW_ASSET_MS - 100, `waited ${result.waited}ms`)
   }
+})
+
+test('a background image whose file name has parentheses settles once it loads', async t => {
+  const result = await settleOn(t, '<!doctype html><body style="margin:0"></body>', {
+    beforeWait: page =>
+      page.evaluate(() => {
+        document.body.style.height = '800px'
+        document.body.style.background = 'url("/slow (1).gif") center/cover no-repeat'
+      })
+  })
+  t.true(result.settled, `waited ${result.waited}ms`)
+  t.true(result.symptoms.includes('images'), result.symptoms.join(','))
+  t.true(result.waited >= SLOW_ASSET_MS - 100, `waited ${result.waited}ms`)
+})
+
+test('a background image that fails to load does not hold the viewport', async t => {
+  const result = await settleOn(t, '<!doctype html><body style="margin:0"></body>', {
+    beforeWait: page =>
+      page.evaluate(() => {
+        document.body.style.height = '800px'
+        document.body.style.background = 'url(/missing.png) center/cover no-repeat'
+      })
+  })
+  t.true(result.settled, `waited ${result.waited}ms`)
+  t.true(result.waited < 1000, `waited ${result.waited}ms`)
 })
 
 test('aria-busy keeps the viewport unsettled until it clears', async t => {
