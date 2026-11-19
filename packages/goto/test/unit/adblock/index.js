@@ -656,6 +656,45 @@ document.querySelector('button').addEventListener('click', () => {
   await closedBanner(t, url, () => !!document.querySelector('.cookie-box__in'))
 })
 
+test('goto waits for a banner whose selector is nested in then', async t => {
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`<!doctype html><body>
+<div id="cookie-consent-banner" style="display:none"><div data-id="cookie-consent-banner-modal"></div></div>
+<div id="ccpa-consent-banner" style="position:fixed;inset:0;background:#111;color:#fff;padding:24px">
+  <button data-id="btn-close-ccpa">Close</button>
+</div>
+<script>
+document.querySelector('[data-id="btn-close-ccpa"]').addEventListener('click', () => {
+  window.consentChoice = 'decline'
+  setTimeout(() => document.querySelector('#ccpa-consent-banner').remove(), ${CONSENT_CLOSE_MS})
+})
+</script>
+</body>`)
+  })
+  await closedBanner(t, url, () => !!document.querySelector('#ccpa-consent-banner'))
+})
+
+test('goto waits for a banner whose selector is nested in else', async t => {
+  const url = await runServer(t, ({ res }) => {
+    res.setHeader('content-type', 'text/html')
+    res.end(`<!doctype html><body>
+<div id="cookie-consent-banner" style="position:fixed;inset:0;background:#111;color:#fff;padding:24px">
+  <div data-id="cookie-consent-banner-modal">Cookies</div>
+  <div id="gdpr-modal">Preferences</div>
+  <button data-id="btnGdprRejectAll">Reject</button>
+</div>
+<script>
+document.querySelector('[data-id="btnGdprRejectAll"]').addEventListener('click', () => {
+  window.consentChoice = 'decline'
+  setTimeout(() => document.querySelector('#cookie-consent-banner').remove(), ${CONSENT_CLOSE_MS})
+})
+</script>
+</body>`)
+  })
+  await closedBanner(t, url, () => !!document.querySelector('#cookie-consent-banner'))
+})
+
 test('goto waits for a banner whose selector is nested in any', async t => {
   const url = await runServer(t, ({ res }) => {
     res.setHeader('content-type', 'text/html')

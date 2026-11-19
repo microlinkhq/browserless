@@ -161,7 +161,6 @@ const collectPopupSelectors = steps => {
     if (!step || typeof step !== 'object') return
     if (step.check !== 'none' && isPopupSelector(step.visible)) selectors.push(step.visible)
     if (Array.isArray(step.any)) step.any.forEach(visit)
-    if (step.if) visit(step.if)
     if (Array.isArray(step.then)) step.then.forEach(visit)
     if (Array.isArray(step.else)) step.else.forEach(visit)
   }
