@@ -809,7 +809,7 @@ If an array of event strings is provided, navigation is considered successful on
 
 Events can be either:
 
-- `'auto'`: A combination of `'load'` and `'networkidle2'` in a smart way to wait the minimum time necessary.
+- `'auto'`: A combination of `'load'` and `'networkidle2'` in a smart way to wait the minimum time necessary. For screenshots, the viewport is checked once right after the page loads for signs of unfinished work: little visible content, images or videos still loading, a short animation running, a skeleton (a `skeleton` or `shimmer` class, `aria-busy`, or a grid of identical grey boxes), a recent layout shift, text still fading in or hidden by an inline style, or a WebGL canvas that is unsized, blank or still changing. A page that shows none is captured at once. Otherwise the viewport is checked every 50ms until the signs clear and it stops changing, for at most 3 seconds.
 - `'load'`: Consider navigation to be finished when the load event is fired.
 - `'domcontentloaded'`: Consider navigation to be finished when the DOMContentLoaded event is fired.
 - `'networkidle0'`: Consider navigation to be finished when there are no more than 0 network connections for at least 500 ms.
