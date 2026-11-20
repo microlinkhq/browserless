@@ -662,6 +662,11 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
             debug: 'dismiss:run'
           })
         ])
+        await run({
+          fn: adblock.waitForConsent(page),
+          timeout: actionTimeout,
+          debug: 'autoconsent:close'
+        })
       }
 
       if (waitForSelector) {

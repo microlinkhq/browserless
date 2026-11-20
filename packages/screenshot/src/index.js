@@ -7,6 +7,7 @@ const pReflect = require('p-reflect')
 
 const isTransientContextLoss = require('./is-transient-context-loss')
 const isWhiteScreenshot = require('./is-white-screenshot')
+const createSettle = require('./settle')
 const { evaluateIsolated } = require('./evaluate-isolated')
 const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
@@ -429,8 +430,14 @@ module.exports = ({ goto, ...gotoOpts }) => {
           )
           debug('screenshot', { waitUntil, duration: timeScreenshot() })
         } else {
-          ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
+          const settler = createSettle(page)
+          try {
+            ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
+          } finally {
+            await settler.stop()
+          }
           async function waitUntilAuto (page, { response }) {
+            await settler.wait({ timeout: goto.timeouts.action(opts.timeout) })
             const screenshotOpts = await beforeScreenshot(page, response, opts)
             const { isWhite, isReady, retry } = await takeScreenshot({
               ...opts,
