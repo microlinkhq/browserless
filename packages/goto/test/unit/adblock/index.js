@@ -10,7 +10,8 @@ const {
   AUTOCONSENT_WORLD,
   AUTOCONSENT_BINDING,
   runAutoConsent,
-  waitForPopupHidden
+  waitForPopupHidden,
+  toPrehideScript
 } = require('../../../src/adblock')
 
 const TEST_RULES = [
@@ -466,6 +467,18 @@ test('autoconsent prehides consent popups before its bundle runs and cleans up a
     { opacity: '1', prehideStyle: false },
     'an unclaimed prehide must be removed'
   )
+})
+
+test('a prehide selector the browser rejects does not stop the others from hiding', async t => {
+  const browserless = await getBrowserContext(t)
+  const opacity = await browserless.withPage(page => async () => {
+    await page.setContent('<div id="didomi-popup">consent popup</div>')
+    await page.evaluate(toPrehideScript('div:has(> div:has(> a)),#didomi-popup', []))
+    return page.evaluate(
+      () => window.getComputedStyle(document.getElementById('didomi-popup')).opacity
+    )
+  })()
+  t.is(opacity, '0')
 })
 
 test('initResp includes rules', async t => {
