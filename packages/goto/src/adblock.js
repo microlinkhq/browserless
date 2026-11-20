@@ -297,7 +297,7 @@ const toPrehideScript = (selectors, patterned) => `{
           patterned
         )}.filter(([pattern]) => window.location.href.match(pattern)).map(([, patternSelectors]) => patternSelectors))
         .join(',');
-      const css = selector + ' { opacity: 0 !important; z-index: -1 !important; pointer-events: none !important; } ';
+      const css = ':is(' + selector + ') { opacity: 0 !important; z-index: -1 !important; pointer-events: none !important; } ';
       const style = document.createElement('style');
       style.id = '${AUTOCONSENT_PREHIDE_ID}';
       style.innerText = css;
@@ -567,6 +567,7 @@ module.exports = {
   runAutoConsent,
   waitForConsent,
   waitForPopupHidden,
+  toPrehideScript,
   AUTOCONSENT_WORLD,
   AUTOCONSENT_BINDING
 }
