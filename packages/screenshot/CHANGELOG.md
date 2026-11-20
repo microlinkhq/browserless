@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.2.0](https://github.com/microlinkhq/browserless/compare/v14.1.14...v14.2.0) (2026-11-20)
+
+### Features
+
+* **screenshot:** wait for unfinished viewports and closed cookie banners before capture ([#1041](https://github.com/microlinkhq/browserless/issues/1041)) ([2eff029](https://github.com/microlinkhq/browserless/commit/2eff029043047c68227135a09a5c34f898254d3b))
+
 ## [14.1.14](https://github.com/microlinkhq/browserless/compare/v14.1.13...v14.1.14) (2026-11-17)
 
 **Note:** Version bump only for package @browserless/screenshot
