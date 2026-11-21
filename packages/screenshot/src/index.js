@@ -338,7 +338,7 @@ const createPrepare = goto => {
       screenshot = await captureWithNavigationRetry(() => page.screenshot(probeOpts), {
         page,
         goto,
-        timeout: timeout - elapsed()
+        timeout
       })
       isWhite = await isWhiteScreenshot(screenshot)
       isReady = await checkPageReady(page, { isPageReady, response, screenshot, isWhite })
@@ -411,18 +411,19 @@ const createPrepare = goto => {
             { ...opts, ...captureOpts },
             { response, isPageReady, probe, timeout: remaining(), stepTimeout }
           )
-          if (opts.fullPage && ready.isReady) {
-            await prepareFullDocument(page, {
-              goto,
-              timeout: opts.timeout,
-              scrolled: ready.scrolled
-            })
-          }
           prepared = { response, captureOpts, ...ready }
         }
       })
     } finally {
       await settler.stop()
+    }
+
+    if (opts.fullPage && prepared.isReady) {
+      await prepareFullDocument(page, {
+        goto,
+        timeout: opts.timeout,
+        scrolled: prepared.scrolled
+      })
     }
 
     const { isReady, isWhite, retry } = prepared

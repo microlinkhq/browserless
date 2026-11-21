@@ -50,13 +50,16 @@ const createGoto = ({ timeout = 1000, waitUntilAutoDelay = 0, loadTimeout } = {}
   }
 
   goto.run = async ({ fn, timeout }) => {
+    let timer
     const expired = new Promise((resolve, reject) => {
-      if (timeout) setTimeout(() => reject(new Error('Promise timed out')), timeout).unref()
+      if (timeout) timer = setTimeout(() => reject(new Error('Promise timed out')), timeout)
     })
-    return Promise.race([fn, expired]).then(
-      value => ({ isRejected: false, value }),
-      reason => ({ isRejected: true, reason })
-    )
+    return Promise.race([fn, expired])
+      .then(
+        value => ({ isRejected: false, value }),
+        reason => ({ isRejected: true, reason })
+      )
+      .finally(() => clearTimeout(timer))
   }
   goto.timeouts = { action: () => timeout, goto: () => timeout }
   goto.waitUntilAuto = async (_page, opts = {}) => {

@@ -113,10 +113,13 @@ A PDF is prepared exactly like a full-page screenshot: both run `createPrepare` 
 1. Navigates to the page and closes cookie banners
 2. Waits for the viewport to settle (loaders, skeletons, fading text, pending images)
 3. Waits for fonts and on-screen images, then captures a cheap viewport probe until it is not blank and `isPageReady` accepts it
-4. Scrolls the full document so lazy content below the fold loads (`prepareFullDocument`)
+4. Once the page is ready, scrolls the full document so lazy content below the fold loads (`prepareFullDocument`). A page that is still white when the budget runs out, or that `isPageReady` rejects, is printed as it is, without the scroll
 5. Prints the PDF
 
-Settle, the readiness probe and the wait for on-screen images share one budget, the action timeout.
+The default `isPageReady` accepts any probe that is not blank. Two budgets apply:
+
+- Settling and re-waiting a page that is still white use the load timeout `goto` passes to `waitUntilAuto`, or the action timeout when there is none.
+- Fonts, image decodes and pending on-screen images use the action timeout, as they do for a screenshot.
 
 ```js
 // Use auto detection (default)

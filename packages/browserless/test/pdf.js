@@ -44,13 +44,16 @@ const createGoto = ({ action = 500, loadTimeout, onWaitUntilAuto } = {}) => {
     return { response: {} }
   }
   goto.run = async ({ fn, timeout }) => {
+    let timer
     const expired = new Promise((resolve, reject) => {
-      if (timeout) setTimeout(() => reject(new Error('Promise timed out')), timeout).unref()
+      if (timeout) timer = setTimeout(() => reject(new Error('Promise timed out')), timeout)
     })
-    return Promise.race([fn, expired]).then(
-      value => ({ isRejected: false, value }),
-      reason => ({ isRejected: true, reason })
-    )
+    return Promise.race([fn, expired])
+      .then(
+        value => ({ isRejected: false, value }),
+        reason => ({ isRejected: true, reason })
+      )
+      .finally(() => clearTimeout(timer))
   }
   goto.timeouts = {
     action: () => action,
@@ -232,6 +235,45 @@ test('an on-screen image that never decodes holds a pdf for the step budget, not
   await createPdf({ goto })(page)('https://example.com', { timeout: 300 })
 
   t.true(Date.now() - start < 2000)
+})
+
+test('a navigation on the probe after a full idle wait still prints the pdf', async t => {
+  let probes = 0
+  const page = createPage({
+    screenshot: async () => {
+      probes += 1
+      if (probes === 1) return whiteScreenshot
+      if (probes === 2) throw new Error(CONTEXT_DESTROYED)
+      return noWhiteScreenshot
+    }
+  })
+  const goto = createGoto({ action: 300 })
+  let idleWaits = 0
+  goto.waitUntilAuto = async (page, { timeout }) => {
+    if (idleWaits++ === 0) await new Promise(resolve => setTimeout(resolve, timeout))
+  }
+
+  const buffer = await createPdf({ goto })(page)('https://example.com', { timeout: 300 })
+
+  t.deepEqual(buffer, Buffer.from('pdf'))
+  t.is(probes, 3)
+})
+
+test('the full document is scrolled after goto returns, where the shadow DOM is flattened', async t => {
+  const order = []
+  const page = createPage({ onDomStability: () => order.push('scroll') })
+  const goto = createGoto()
+  const gotoWithFlatten = async (page, opts) => {
+    const result = await goto(page, opts)
+    order.push('flatten')
+    return result
+  }
+  Object.assign(gotoWithFlatten, goto)
+
+  await createPdf({ goto: gotoWithFlatten })(page)('https://example.com', { timeout: 500 })
+
+  t.is(order[0], 'flatten')
+  t.true(order.includes('scroll'))
 })
 
 test('screenshot re-exports every helper pdf imports from it', t => {
