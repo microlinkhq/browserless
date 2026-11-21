@@ -72,7 +72,10 @@ test('waitUntil auto re-waits a white page and prints the final pdf once', async
     screenshot: async () => (screenshotCalls++ === 0 ? whiteScreenshot : noWhiteScreenshot),
     pdf: async () => Buffer.from(`pdf-${++pdfCalls}`)
   })
-  const goto = createGoto({ onWaitUntilAuto: opts => waits.push(opts) })
+  const goto = createGoto({
+    onWaitUntilAuto: opts => waits.push(opts),
+    loadTimeout: 5000
+  })
 
   const buffer = await createPdf({ goto })(page)('https://example.com', { timeout: 500 })
 
