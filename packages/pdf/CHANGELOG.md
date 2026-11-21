@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.3.0](https://github.com/microlinkhq/browserless/compare/v14.2.0...v14.3.0) (2026-11-21)
+
+### Features
+
+* **pdf:** prepare pages with the screenshot pipeline ([#1044](https://github.com/microlinkhq/browserless/issues/1044)) ([af44721](https://github.com/microlinkhq/browserless/commit/af44721e571e302f88a584688367aaea73b34ace))
+
 ## [14.2.0](https://github.com/microlinkhq/browserless/compare/v14.1.14...v14.2.0) (2026-11-20)
 
 **Note:** Version bump only for package @browserless/pdf

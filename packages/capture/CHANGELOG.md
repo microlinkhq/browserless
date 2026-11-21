@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.3.0](https://github.com/microlinkhq/browserless/compare/v14.2.0...v14.3.0) (2026-11-21)
+
+### Features
+
+* **capture:** add page.record() mode ([#914](https://github.com/microlinkhq/browserless/issues/914)) ([fb1833d](https://github.com/microlinkhq/browserless/commit/fb1833d8e14da76ed308401419917f5170b1adfb))
+
 ## [14.2.0](https://github.com/microlinkhq/browserless/compare/v14.1.14...v14.2.0) (2026-11-20)
 
 **Note:** Version bump only for package @browserless/capture
