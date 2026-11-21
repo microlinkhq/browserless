@@ -331,7 +331,7 @@ This is a **core functionality package** for screenshot capture:
 | -------------------- | ---------------------------------------------- |
 | `browserless` (core) | Provides the `.screenshot()` method            |
 | `@browserless/cli`   | Powers the `browserless screenshot` command    |
-| `@browserless/pdf`   | Uses `waitForReady` and `isWhiteScreenshot` |
+| `@browserless/pdf`   | Prepares the page with `createPrepare`, then prints it |
 
 ### Dependencies
 

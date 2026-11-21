@@ -4,7 +4,6 @@ const { getBrowserContext, runServer } = require('@browserless/test')
 const { default: test } = require('ava')
 
 const createScreenshot = require('..')
-const { waitForReady } = require('..')
 
 const hooks = `
 (() => {
@@ -91,16 +90,6 @@ test('element screenshot helpers are invisible to page hooks', async t => {
 test('isPageReady page metadata is read invisibly to page hooks', async t => {
   const browserless = await getBrowserContext(t)
   const capture = screenshotWith({ isPageReady: ({ title }) => title === 'hooked' })
-  t.deepEqual(await automationCalls(browserless, await serve(t), capture), [])
-})
-
-test('waitForReady paint signals are invisible to page hooks', async t => {
-  const browserless = await getBrowserContext(t)
-  const capture = async ({ page, goto, url }) => {
-    await goto(page, { url, waitUntil: 'load', adblock: false })
-    const signals = await waitForReady(page, { timeout: 3000, quietMs: 100, poll: 50 })
-    t.true(signals.text >= 200)
-  }
   t.deepEqual(await automationCalls(browserless, await serve(t), capture), [])
 })
 

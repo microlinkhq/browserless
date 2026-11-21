@@ -13,7 +13,6 @@ const waitForPrism = require('./pretty')
 const prettyTimeSpan = require('./time-span')
 const overlay = require('./overlay')
 const { waitForDomStability } = require('./wait-for-dom')
-const { waitForReady, paintSignals } = require('./wait-for-ready')
 const {
   expandOverflow,
   scrollFullPageToLoadContent,
@@ -203,12 +202,12 @@ const readElementClip = async (page, element) => {
   }
 }
 
-const waitForElement = async (page, element, screenshotOpts) => {
+const waitForElement = async (page, element, captureOpts) => {
   for (let attempt = 0; attempt < ELEMENT_CLIP_ATTEMPTS; attempt++) {
-    screenshotOpts.clip = await readElementClip(page, element)
-    if (screenshotOpts.clip !== null) break
+    captureOpts.clip = await readElementClip(page, element)
+    if (captureOpts.clip !== null) break
   }
-  screenshotOpts.fullPage = false
+  captureOpts.fullPage = false
 }
 
 const SCREENSHOT_DEFAULT_OPTS = {
@@ -268,8 +267,184 @@ const encodeScreenshot = (image, encoding) => {
   return encoding === 'base64' ? buffer.toString('base64') : buffer
 }
 
+const viewportProbe = opts => {
+  if (!opts.fullPage) return opts
+  const { fullPage, path, quality, ...probeOpts } = opts
+  return { ...probeOpts, fullPage: false }
+}
+
+const actionTimeout = ({ stepTimeout }) => stepTimeout
+
+const createPrepare = goto => {
+  const beforeCapture = async (page, response, opts, timeout) => {
+    const { codeScheme, element, fullPage = false } = opts
+    const captureOpts = {}
+    const tasks = [
+      {
+        fn: () => evaluateIsolated(page, 'document.fonts.ready'),
+        debug: 'beforeScreenshot:fontsReady'
+      },
+      {
+        fn: () => waitForViewportImages(page),
+        debug: 'beforeScreenshot:waitForViewportImages'
+      }
+    ]
+
+    if (codeScheme && response) {
+      tasks.push({
+        fn: () => waitForPrism(page, response, opts),
+        debug: 'beforeScreenshot:waitForPrism'
+      })
+    }
+
+    if (element && !fullPage) {
+      tasks.push({
+        fn: () => waitForElement(page, element, captureOpts),
+        debug: 'beforeScreenshot:waitForElement'
+      })
+    }
+
+    await Promise.all(tasks.map(({ fn, ...task }) => goto.run({ fn: fn(), ...task, timeout })))
+
+    if (captureOpts.clip === null) {
+      throw new Error(`Element \`${element}\` detached before its clip could be read`)
+    }
+
+    return captureOpts
+  }
+
+  const waitForReadyCapture = async (
+    page,
+    opts,
+    { response, isPageReady, probe, timeout, stepTimeout }
+  ) => {
+    const elapsed = timeSpan()
+    const probeOpts = probe(opts)
+    let screenshot
+    let retry = 0
+    let isWhite = false
+    let isReady = false
+    let scrolled = false
+    let didHydrateAttempt = false
+
+    await pReflect(nudgeViewport(page))
+
+    do {
+      const waitsForImages = elapsed() < stepTimeout
+      const pending =
+        waitsForImages &&
+        (await pendingViewportImages(page, goto, Math.min(stepTimeout, timeout) - elapsed()))
+
+      screenshot = await captureWithNavigationRetry(() => page.screenshot(probeOpts), {
+        page,
+        goto,
+        timeout: stepTimeout
+      })
+      isWhite = await isWhiteScreenshot(screenshot)
+      isReady = await checkPageReady(page, { isPageReady, response, screenshot, isWhite })
+
+      if (isReady && pending) isReady = false
+
+      if (isReady || elapsed() >= timeout) break
+
+      const remaining = timeout - elapsed()
+      if (opts.fullPage && !didHydrateAttempt) {
+        didHydrateAttempt = true
+        const { hydrated, info } = await tryHydrateScroll(page, remaining)
+        scrolled = hydrated
+        debug('screenshot:hydrateScroll', { remaining, hydrated, ...info })
+      }
+
+      const idleTimeout = timeout - elapsed()
+      if (idleTimeout <= 0) break
+
+      retry += 1
+      await goto.waitUntilAuto(page, { timeout: idleTimeout, credit: false })
+    } while (!isReady)
+
+    return { screenshot, isWhite, isReady, retry, scrolled }
+  }
+
+  return async (
+    page,
+    url,
+    {
+      waitUntil,
+      isPageReady = defaultIsPageReady,
+      probe = viewportProbe,
+      readyTimeout = actionTimeout,
+      codeScheme,
+      ...opts
+    }
+  ) => {
+    const stepTimeout = goto.timeouts.action(opts.timeout)
+    const duration = prettyTimeSpan()
+
+    if (waitUntil !== 'auto') {
+      const { response } = await goto(page, { ...opts, url, waitUntil })
+      const captureOpts = await beforeCapture(page, response, { ...opts, codeScheme }, stepTimeout)
+      if (opts.fullPage) await prepareFullDocument(page, { goto, timeout: opts.timeout })
+      debug('prepare', { waitUntil, duration: duration() })
+      return { response, captureOpts, isReady: true }
+    }
+
+    let prepared = { isReady: false }
+    const settler = createSettle(page)
+    try {
+      await goto(page, {
+        ...opts,
+        url,
+        waitUntil,
+        waitUntilAuto: async (page, { response, timeout } = {}) => {
+          const budget = readyTimeout({ timeout, stepTimeout })
+          const elapsed = timeSpan()
+          const remaining = () => Math.max(stepTimeout, budget - elapsed())
+          await settler.wait({ timeout: budget })
+          const captureOpts = await beforeCapture(
+            page,
+            response,
+            { ...opts, codeScheme },
+            stepTimeout
+          )
+          const ready = await waitForReadyCapture(
+            page,
+            { ...opts, ...captureOpts },
+            { response, isPageReady, probe, timeout: remaining(), stepTimeout }
+          )
+          prepared = { response, captureOpts, ...ready }
+        }
+      })
+    } finally {
+      await settler.stop()
+    }
+
+    if (opts.fullPage && prepared.isReady) {
+      await prepareFullDocument(page, {
+        goto,
+        timeout: opts.timeout,
+        scrolled: prepared.scrolled && !opts.flattenShadowDOM
+      })
+    }
+
+    const { isReady, isWhite, retry } = prepared
+    debug('prepare', { waitUntil, isReady, isWhite, retry, duration: duration() })
+    return prepared
+  }
+}
+
+const dismissDialogs = async (page, fn) => {
+  const onDialog = dialog => pReflect(dialog.dismiss())
+  page.on('dialog', onDialog)
+  try {
+    return await fn()
+  } finally {
+    page.off('dialog', onDialog)
+  }
+}
+
 module.exports = ({ goto, ...gotoOpts }) => {
   goto = goto || createGoto(gotoOpts)
+  const prepare = createPrepare(goto)
 
   return function screenshot (page) {
     return async (
@@ -285,9 +460,6 @@ module.exports = ({ goto, ...gotoOpts }) => {
     ) => {
       if (opts.quality !== undefined && !isLossy(opts)) opts.quality = undefined
 
-      let screenshot
-      let response
-
       const captureExpanded = (expand, screenshotOpts, timeout) =>
         captureWithNavigationRetry(
           async () => {
@@ -297,162 +469,31 @@ module.exports = ({ goto, ...gotoOpts }) => {
           { page, goto, timeout }
         )
 
-      const beforeScreenshot = async (page, response, { element, fullPage = false } = {}) => {
-        const timeout = goto.timeouts.action(opts.timeout)
+      return dismissDialogs(page, async () => {
+        const {
+          captureOpts,
+          isReady,
+          screenshot: probe
+        } = await prepare(page, url, {
+          ...opts,
+          codeScheme,
+          waitUntil,
+          isPageReady
+        })
 
-        const screenshotOpts = {}
-        const tasks = [
-          {
-            fn: () => evaluateIsolated(page, 'document.fonts.ready'),
-            debug: 'beforeScreenshot:fontsReady'
-          },
-          {
-            fn: () => waitForViewportImages(page),
-            debug: 'beforeScreenshot:waitForViewportImages'
-          }
-        ]
-
-        if (codeScheme && response) {
-          tasks.push({
-            fn: () => waitForPrism(page, response, { codeScheme, ...opts }),
-            debug: 'beforeScreenshot:waitForPrism'
-          })
-        }
-
-        if (element && !fullPage) {
-          tasks.push({
-            fn: () => waitForElement(page, element, screenshotOpts),
-            debug: 'beforeScreenshot:waitForElement'
-          })
-        }
-
-        await Promise.all(
-          tasks.map(({ fn, ...opts }) =>
-            goto.run({
-              fn: fn(),
-              ...opts,
-              timeout
-            })
+        let screenshot = probe
+        if (waitUntil !== 'auto') {
+          screenshot = await captureExpanded(
+            opts.fullPage,
+            { ...opts, ...captureOpts },
+            goto.timeouts.action(opts.timeout)
           )
-        )
-
-        if (screenshotOpts.clip === null) {
-          throw new Error(`Element \`${element}\` detached before its clip could be read`)
-        }
-
-        return screenshotOpts
-      }
-
-      const takeScreenshot = async opts => {
-        const timeout = goto.timeouts.action(opts.timeout)
-        const elapsed = timeSpan()
-        let retry = 0
-        let isWhite = false
-        let isReady = false
-        let didHydrateScroll = false
-        let didHydrateAttempt = false
-
-        await pReflect(nudgeViewport(page))
-
-        do {
-          const pending = await pendingViewportImages(page, goto, timeout - elapsed())
-
-          screenshot = await captureWithNavigationRetry(
-            () => {
-              if (!opts.fullPage) return page.screenshot(opts)
-              const { fullPage, path, quality, ...probeOpts } = opts
-              return page.screenshot({ ...probeOpts, fullPage: false })
-            },
-            { page, goto, timeout }
-          )
-          isWhite = await isWhiteScreenshot(screenshot)
-          isReady = await checkPageReady(page, {
-            isPageReady: opts.isPageReady,
-            response: opts.response,
-            screenshot,
-            isWhite
-          })
-
-          if (isReady && pending) isReady = false
-
-          if (isReady || elapsed() >= timeout) break
-
-          const remaining = timeout - elapsed()
-          if (opts.fullPage && !didHydrateAttempt) {
-            didHydrateAttempt = true
-            const { hydrated, info } = await tryHydrateScroll(page, remaining)
-            didHydrateScroll = hydrated
-            debug('screenshot:hydrateScroll', { remaining, hydrated, ...info })
-          }
-
-          const idleTimeout = timeout - elapsed()
-          if (idleTimeout <= 0) break
-
-          retry += 1
-          await goto.waitUntilAuto(page, { timeout: idleTimeout, credit: false })
-        } while (!isReady)
-
-        if (opts.fullPage) {
-          if (isReady) {
-            await prepareFullDocument(page, {
-              goto,
-              timeout: opts.timeout,
-              scrolled: didHydrateScroll
-            })
-          }
+        } else if (opts.fullPage) {
           screenshot = await captureExpanded(
             isReady,
             { ...opts, fullPage: true },
             resolveScrollTimeout(goto, opts.timeout)
           )
-          isWhite = await isWhiteScreenshot(screenshot)
-        }
-
-        return { isWhite, isReady, retry }
-      }
-
-      const onDialog = dialog => pReflect(dialog.dismiss())
-      page.on('dialog', onDialog)
-
-      try {
-        const timeScreenshot = prettyTimeSpan()
-
-        if (waitUntil !== 'auto') {
-          ;({ response } = await goto(page, { ...opts, url, waitUntil }))
-          const screenshotOpts = await beforeScreenshot(page, response, opts)
-          if (opts.fullPage) {
-            await prepareFullDocument(page, { goto, timeout: opts.timeout })
-          }
-          screenshot = await captureExpanded(
-            opts.fullPage,
-            { ...opts, ...screenshotOpts },
-            goto.timeouts.action(opts.timeout)
-          )
-          debug('screenshot', { waitUntil, duration: timeScreenshot() })
-        } else {
-          const settler = createSettle(page)
-          try {
-            ;({ response } = await goto(page, { ...opts, url, waitUntil, waitUntilAuto }))
-          } finally {
-            await settler.stop()
-          }
-          async function waitUntilAuto (page, { response }) {
-            await settler.wait({ timeout: goto.timeouts.action(opts.timeout) })
-            const screenshotOpts = await beforeScreenshot(page, response, opts)
-            const { isWhite, isReady, retry } = await takeScreenshot({
-              ...opts,
-              ...screenshotOpts,
-              isPageReady,
-              response
-            })
-            debug('screenshot', {
-              waitUntil,
-              isReady,
-              isWhite,
-              retry,
-              duration: timeScreenshot()
-            })
-          }
         }
 
         const image =
@@ -460,18 +501,16 @@ module.exports = ({ goto, ...gotoOpts }) => {
             ? screenshot
             : await overlay(screenshot, { ...opts, ...overlayOpts, viewport: page.viewport() })
         return encodeScreenshot(image, encoding)
-      } finally {
-        page.off('dialog', onDialog)
-      }
+      })
     }
   }
 }
 
+module.exports.createPrepare = createPrepare
+module.exports.dismissDialogs = dismissDialogs
 module.exports.captureWithNavigationRetry = captureWithNavigationRetry
 module.exports.isWhiteScreenshot = isWhiteScreenshot
 module.exports.waitForDomStability = waitForDomStability
-module.exports.waitForReady = waitForReady
-module.exports.paintSignals = paintSignals
 module.exports.scrollFullPageToLoadContent = scrollFullPageToLoadContent
 module.exports.expandOverflow = expandOverflow
 module.exports.getPageMeta = getPageMeta

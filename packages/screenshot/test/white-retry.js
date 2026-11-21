@@ -3,6 +3,8 @@
 const { setTimeout: delay } = require('node:timers/promises')
 const { default: test } = require('ava')
 
+const { stubSettle, SETTLED } = require('./helpers/settled-stub')
+
 const screenshotModulePath = require.resolve('../src/index.js')
 const isWhiteModulePath = require.resolve('../src/is-white-screenshot.js')
 
@@ -36,16 +38,29 @@ const loadCreateScreenshot = isWhiteScreenshotMock => {
   return { createScreenshot, restore }
 }
 
-const createGoto = ({ timeout = 1000, waitUntilAutoDelay = 0 } = {}) => {
+const createGoto = ({ timeout = 1000, waitUntilAutoDelay = 0, loadTimeout } = {}) => {
   let waitUntilAutoCalls = 0
   const waitUntilAutoOpts = []
 
   const goto = async (_page, { waitUntilAuto } = {}) => {
-    if (waitUntilAuto) await waitUntilAuto(_page, { response: { headers: () => ({}) } })
+    if (waitUntilAuto) {
+      await waitUntilAuto(_page, { response: { headers: () => ({}) }, timeout: loadTimeout })
+    }
     return { response: { headers: () => ({}) } }
   }
 
-  goto.run = async ({ fn }) => ({ isRejected: false, value: await fn })
+  goto.run = async ({ fn, timeout }) => {
+    let timer
+    const expired = new Promise((resolve, reject) => {
+      if (timeout) timer = setTimeout(() => reject(new Error('Promise timed out')), timeout)
+    })
+    return Promise.race([fn, expired])
+      .then(
+        value => ({ isRejected: false, value }),
+        reason => ({ isRejected: true, reason })
+      )
+      .finally(() => clearTimeout(timer))
+  }
   goto.timeouts = { action: () => timeout, goto: () => timeout }
   goto.waitUntilAuto = async (_page, opts = {}) => {
     waitUntilAutoCalls += 1
@@ -295,3 +310,163 @@ test('fullPage readiness probe drops path-inferred quality', async t => {
   t.is(seen[1].path, '/tmp/out.jpg')
   t.is(seen[1].quality, 80)
 })
+
+test('a viewport screenshot is the readiness probe and keeps its path and quality', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const goto = createGoto()
+  const page = createPage([])
+  const seen = []
+  page.screenshot = async opts => {
+    seen.push(opts)
+    return Buffer.from('shot')
+  }
+
+  const screenshot = createScreenshot({ goto })(page)
+  const result = await screenshot('https://example.com', {
+    waitUntil: 'auto',
+    codeScheme: false,
+    path: '/tmp/out.jpg',
+    quality: 80
+  })
+
+  t.deepEqual(result, Buffer.from('shot'))
+  t.is(seen.length, 1)
+  t.is(seen[0].path, '/tmp/out.jpg')
+  t.is(seen[0].quality, 80)
+})
+
+const withSettle = async (wait, fn) => {
+  const original = stubSettle.wait
+  stubSettle.wait = wait
+  try {
+    return await fn()
+  } finally {
+    stubSettle.wait = original
+  }
+}
+
+test.serial(
+  'settle that spends the whole budget still leaves the probe a full step budget',
+  async t => {
+    const responses = [true, true, false]
+    const { createScreenshot, restore } = loadCreateScreenshot(
+      async () => responses.shift() ?? false
+    )
+    t.teardown(restore)
+
+    const goto = createGoto({ timeout: 300 })
+    const screenshots = [Buffer.from('shot1'), Buffer.from('shot2'), Buffer.from('shot3')]
+    const page = createPage(screenshots)
+
+    const result = await withSettle(
+      async ({ timeout }) => {
+        await delay(timeout)
+        return { ...SETTLED, settled: false, waited: timeout }
+      },
+      () =>
+        createScreenshot({ goto })(page)('https://example.com', {
+          waitUntil: 'auto',
+          codeScheme: false
+        })
+    )
+
+    t.deepEqual(result, screenshots[2])
+  }
+)
+
+test('codeScheme reads the navigation response', async t => {
+  const { createScreenshot, restore } = loadCreateScreenshot(async () => false)
+  t.teardown(restore)
+
+  const html = '<!DOCTYPE html><html><body>hi</body></html>'
+  const run = async ({ waitUntil, codeScheme, response }) => {
+    let textReads = 0
+    let failures = 0
+    const body =
+      response === undefined
+        ? undefined
+        : {
+            headers: () => ({ 'content-type': 'text/html' }),
+            text: async () => {
+              textReads += 1
+              return html
+            }
+          }
+    const goto = createGoto()
+    const innerRun = goto.run
+    goto.run = async opts => {
+      const result = await innerRun(opts)
+      if (result.isRejected) failures += 1
+      return result
+    }
+    const call = goto
+    const wrapped = async (page, opts) => {
+      if (opts.waitUntilAuto) {
+        const hook = opts.waitUntilAuto
+        opts = {
+          ...opts,
+          waitUntilAuto: (page, hookOpts) => hook(page, { ...hookOpts, response: body })
+        }
+      }
+      const result = await call(page, opts)
+      return { ...result, response: body }
+    }
+    Object.assign(wrapped, goto)
+    await createScreenshot({ goto: wrapped })(createPage([Buffer.from('shot')]))(
+      'https://example.com',
+      { waitUntil, codeScheme }
+    )
+    return { textReads, failures }
+  }
+
+  const highlighted = await run({
+    waitUntil: 'auto',
+    codeScheme: 'ghcolors',
+    response: true
+  })
+  t.is(highlighted.textReads, 1)
+  t.is(highlighted.failures, 0)
+
+  const plain = await run({ waitUntil: 'auto', codeScheme: false, response: true })
+  t.is(plain.textReads, 0)
+  t.is(plain.failures, 0)
+
+  const loaded = await run({ waitUntil: 'load', codeScheme: 'ghcolors', response: true })
+  t.is(loaded.textReads, 1)
+  t.is(loaded.failures, 0)
+
+  const withoutResponse = await run({
+    waitUntil: 'auto',
+    codeScheme: 'ghcolors',
+    response: undefined
+  })
+  t.is(withoutResponse.textReads, 0)
+  t.is(withoutResponse.failures, 0)
+})
+
+test.serial(
+  'screenshot readiness is budgeted by the step timeout, not the load timeout',
+  async t => {
+    const { createScreenshot, restore } = loadCreateScreenshot(async () => false)
+    t.teardown(restore)
+
+    const settleTimeouts = []
+    const goto = createGoto({ timeout: 300, loadTimeout: 20000 })
+    await withSettle(
+      async ({ timeout }) => {
+        settleTimeouts.push(timeout)
+        return SETTLED
+      },
+      () =>
+        createScreenshot({ goto })(createPage([Buffer.from('shot')]))('https://example.com', {
+          waitUntil: 'auto',
+          codeScheme: false
+        })
+    )
+
+    t.deepEqual(settleTimeouts, [300])
+  }
+)

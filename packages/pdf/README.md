@@ -108,14 +108,18 @@ Supported units: `px`, `in`, `cm`, `mm`
 
 ### Smart content detection
 
-When `waitUntil: 'auto'` (the default), the package:
+A PDF is prepared exactly like a full-page screenshot: both run `createPrepare` from `@browserless/screenshot`, and only the output differs. When `waitUntil: 'auto'` (the default), the package:
 
-1. Navigates to the page
-2. Waits for paint/readiness signals (`waitForReady` + `isPageReady`)
-3. Hydrates overflow content when ready (`prepareFullDocument`)
-4. Generates the PDF
+1. Navigates to the page and closes cookie banners
+2. Waits for the viewport to settle (loaders, skeletons, fading text, pending images)
+3. Waits for fonts and on-screen images, then captures a cheap viewport probe until `isPageReady` accepts it
+4. Once the page is ready, scrolls the full document so lazy content below the fold loads (`prepareFullDocument`). A page that `isPageReady` still rejects when the budget runs out is printed as it is, without the scroll
+5. Prints the PDF
 
-This ensures dynamic content (JavaScript-rendered pages) is fully loaded before PDF generation.
+The default `isPageReady` accepts any probe that is not blank. A custom predicate can accept a blank probe, and that page is scrolled. Two budgets apply:
+
+- Settling and re-waiting a page that is not ready yet use the load timeout `goto` passes to `waitUntilAuto`, or the action timeout when there is none.
+- Fonts, image decodes and pending on-screen images use the action timeout, as they do for a screenshot.
 
 ```js
 // Use auto detection (default)
