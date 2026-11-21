@@ -422,7 +422,7 @@ const createPrepare = goto => {
       await prepareFullDocument(page, {
         goto,
         timeout: opts.timeout,
-        scrolled: prepared.scrolled
+        scrolled: prepared.scrolled && !opts.flattenShadowDOM
       })
     }
 

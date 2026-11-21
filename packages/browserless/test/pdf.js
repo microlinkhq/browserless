@@ -276,6 +276,125 @@ test('the full document is scrolled after goto returns, where the shadow DOM is 
   t.true(order.includes('scroll'))
 })
 
+const COMPLETE_SCROLL = { hasOverflow: true, pageHeight: 5000, viewport: 800, scrolledPx: 4200 }
+
+const pageWithCompletedScroll = ({ screenshot, onScroll } = {}) => {
+  const page = createPage({ screenshot, onDomStability: onScroll })
+  const evaluate = page.evaluate
+  page.evaluate = async (fn, ...args) => {
+    if (typeof fn === 'function' && String(fn).includes('scrolledPx')) return COMPLETE_SCROLL
+    return evaluate(fn, ...args)
+  }
+  return page
+}
+
+test('a completed hydrate scroll is not repeated once the document is already loaded', async t => {
+  const order = []
+  let probes = 0
+  const page = pageWithCompletedScroll({
+    screenshot: async () => {
+      probes += 1
+      return probes === 1 ? whiteScreenshot : noWhiteScreenshot
+    },
+    onScroll: () => order.push('scroll')
+  })
+  const goto = createGoto({ loadTimeout: 5000 })
+  const wrapped = async (page, opts) => {
+    const result = await goto(page, opts)
+    order.push('goto')
+    return result
+  }
+  Object.assign(wrapped, goto)
+
+  await createPdf({ goto: wrapped })(page)('https://example.com', { timeout: 5000 })
+
+  const gotoAt = order.indexOf('goto')
+  t.is(order.slice(0, gotoAt).filter(event => event === 'scroll').length, 2)
+  t.false(order.slice(gotoAt + 1).includes('scroll'))
+})
+
+test('waitUntil load scrolls the full document before printing', async t => {
+  const order = []
+  const page = createPage({
+    onDomStability: () => order.push('scroll'),
+    pdf: async () => {
+      order.push('pdf')
+      return Buffer.from('pdf')
+    }
+  })
+
+  await createPdf({ goto: createGoto() })(page)('https://example.com', {
+    timeout: 500,
+    waitUntil: 'load'
+  })
+
+  t.true(order.includes('scroll'))
+  t.is(order.at(-1), 'pdf')
+})
+
+test('element and codeScheme are not part of preparing a pdf', async t => {
+  let textReads = 0
+  const seen = []
+  const goto = createGoto()
+  const recording = async (page, opts) => {
+    seen.push(opts)
+    if (!opts.waitUntilAuto) return goto(page, opts)
+    const waitUntilAuto = opts.waitUntilAuto
+    return goto(page, {
+      ...opts,
+      waitUntilAuto: (page, hookOpts) =>
+        waitUntilAuto(page, {
+          ...hookOpts,
+          response: {
+            text: async () => {
+              textReads += 1
+              return ''
+            }
+          }
+        })
+    })
+  }
+  Object.assign(recording, goto)
+
+  const buffer = await createPdf({ goto: recording })(createPage())('https://example.com', {
+    timeout: 500,
+    element: '#main',
+    codeScheme: 'atom-dark'
+  })
+
+  t.deepEqual(buffer, Buffer.from('pdf'))
+  t.is(textReads, 0)
+  t.false(seen.some(opts => Object.hasOwn(opts, 'element')))
+})
+
+test('flattening after a completed hydrate scroll still scrolls the flattened document', async t => {
+  const order = []
+  let probes = 0
+  const page = pageWithCompletedScroll({
+    screenshot: async () => {
+      probes += 1
+      return probes === 1 ? whiteScreenshot : noWhiteScreenshot
+    },
+    onScroll: () => order.push('scroll')
+  })
+  const goto = createGoto({ loadTimeout: 5000 })
+  const gotoWithFlatten = async (page, opts) => {
+    const result = await goto(page, opts)
+    order.push('flatten')
+    return result
+  }
+  Object.assign(gotoWithFlatten, goto)
+
+  await createPdf({ goto: gotoWithFlatten })(page)('https://example.com', {
+    timeout: 5000,
+    flattenShadowDOM: true
+  })
+
+  const flattenAt = order.indexOf('flatten')
+  t.true(flattenAt > 0)
+  t.true(order.slice(flattenAt + 1).includes('scroll'))
+})
+
 test('screenshot re-exports every helper pdf imports from it', t => {
   const screenshot = require('@browserless/screenshot')
   const source = fs.readFileSync(require.resolve('@browserless/pdf'), 'utf8')
