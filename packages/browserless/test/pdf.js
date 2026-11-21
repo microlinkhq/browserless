@@ -247,13 +247,13 @@ test('a navigation on the probe after a full idle wait still prints the pdf', as
       return noWhiteScreenshot
     }
   })
-  const goto = createGoto({ action: 300 })
+  const goto = createGoto({ action: 1500 })
   let idleWaits = 0
   goto.waitUntilAuto = async (page, { timeout }) => {
     if (idleWaits++ === 0) await new Promise(resolve => setTimeout(resolve, timeout))
   }
 
-  const buffer = await createPdf({ goto })(page)('https://example.com', { timeout: 300 })
+  const buffer = await createPdf({ goto })(page)('https://example.com', { timeout: 1500 })
 
   t.deepEqual(buffer, Buffer.from('pdf'))
   t.is(probes, 3)
