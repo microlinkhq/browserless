@@ -9,6 +9,7 @@
     "./extension": "./src/extension/index.js",
     "./screencast": "./src/screencast/index.js",
     "./screenshot": "./src/screenshot/index.js",
+    "./record": "./src/record/index.js",
     "./package.json": "./package.json"
   },
   "author": {
