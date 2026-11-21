@@ -3,8 +3,6 @@
 const pReflect = require('p-reflect')
 const { default: test } = require('ava')
 
-require('./helpers/settled-stub')
-
 const createScreenshot = require('..')
 
 const BOX = { x: 10, y: 20, width: 320, height: 120 }
