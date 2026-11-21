@@ -315,8 +315,13 @@ test('a completed hydrate scroll is not repeated once the document is already lo
 
 test('waitUntil load scrolls the full document before printing', async t => {
   const order = []
+  let probes = 0
   const page = createPage({
     onDomStability: () => order.push('scroll'),
+    screenshot: async () => {
+      probes += 1
+      return noWhiteScreenshot
+    },
     pdf: async () => {
       order.push('pdf')
       return Buffer.from('pdf')
@@ -328,8 +333,32 @@ test('waitUntil load scrolls the full document before printing', async t => {
     waitUntil: 'load'
   })
 
+  t.is(probes, 0)
   t.true(order.includes('scroll'))
   t.is(order.at(-1), 'pdf')
+})
+
+test('a pending on-screen image keeps the pdf probe from counting as ready', async t => {
+  let probes = 0
+  let imageReads = 0
+  const page = createPage({
+    screenshot: async () => {
+      probes += 1
+      return noWhiteScreenshot
+    }
+  })
+  const evaluate = page.evaluate
+  page.evaluate = async (fn, ...args) => {
+    if (typeof fn === 'function' && String(fn).includes('let pending = false')) {
+      imageReads += 1
+      return imageReads === 2
+    }
+    return evaluate(fn, ...args)
+  }
+
+  await createPdf({ goto: createGoto() })(page)('https://example.com', { timeout: 500 })
+
+  t.is(probes, 2)
 })
 
 test('element and codeScheme are not part of preparing a pdf', async t => {

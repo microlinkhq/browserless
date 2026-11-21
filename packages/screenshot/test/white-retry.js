@@ -377,6 +377,76 @@ test.serial(
   }
 )
 
+test('codeScheme reads the navigation response', async t => {
+  const { createScreenshot, restore } = loadCreateScreenshot(async () => false)
+  t.teardown(restore)
+
+  const html = '<!DOCTYPE html><html><body>hi</body></html>'
+  const run = async ({ waitUntil, codeScheme, response }) => {
+    let textReads = 0
+    let failures = 0
+    const body =
+      response === undefined
+        ? undefined
+        : {
+            headers: () => ({ 'content-type': 'text/html' }),
+            text: async () => {
+              textReads += 1
+              return html
+            }
+          }
+    const goto = createGoto()
+    const innerRun = goto.run
+    goto.run = async opts => {
+      const result = await innerRun(opts)
+      if (result.isRejected) failures += 1
+      return result
+    }
+    const call = goto
+    const wrapped = async (page, opts) => {
+      if (opts.waitUntilAuto) {
+        const hook = opts.waitUntilAuto
+        opts = {
+          ...opts,
+          waitUntilAuto: (page, hookOpts) => hook(page, { ...hookOpts, response: body })
+        }
+      }
+      const result = await call(page, opts)
+      return { ...result, response: body }
+    }
+    Object.assign(wrapped, goto)
+    await createScreenshot({ goto: wrapped })(createPage([Buffer.from('shot')]))(
+      'https://example.com',
+      { waitUntil, codeScheme }
+    )
+    return { textReads, failures }
+  }
+
+  const highlighted = await run({
+    waitUntil: 'auto',
+    codeScheme: 'ghcolors',
+    response: true
+  })
+  t.is(highlighted.textReads, 1)
+  t.is(highlighted.failures, 0)
+
+  const plain = await run({ waitUntil: 'auto', codeScheme: false, response: true })
+  t.is(plain.textReads, 0)
+  t.is(plain.failures, 0)
+
+  const loaded = await run({ waitUntil: 'load', codeScheme: 'ghcolors', response: true })
+  t.is(loaded.textReads, 1)
+  t.is(loaded.failures, 0)
+
+  const withoutResponse = await run({
+    waitUntil: 'auto',
+    codeScheme: 'ghcolors',
+    response: undefined
+  })
+  t.is(withoutResponse.textReads, 0)
+  t.is(withoutResponse.failures, 0)
+})
+
 test.serial(
   'screenshot readiness is budgeted by the step timeout, not the load timeout',
   async t => {
