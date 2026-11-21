@@ -338,7 +338,7 @@ const createPrepare = goto => {
       screenshot = await captureWithNavigationRetry(() => page.screenshot(probeOpts), {
         page,
         goto,
-        timeout
+        timeout: stepTimeout
       })
       isWhite = await isWhiteScreenshot(screenshot)
       isReady = await checkPageReady(page, { isPageReady, response, screenshot, isWhite })

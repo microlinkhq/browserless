@@ -136,7 +136,7 @@ test('a probe that keeps racing a navigation gives up within the action budget',
       throw new Error(CONTEXT_DESTROYED)
     }
   })
-  const goto = createGoto({ action: 1000 })
+  const goto = createGoto({ action: 1000, loadTimeout: 20000 })
 
   const start = Date.now()
   await t.throwsAsync(createPdf({ goto })(page)('https://example.com', { timeout: 1000 }), {
