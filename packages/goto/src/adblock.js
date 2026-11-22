@@ -229,11 +229,21 @@ const popupProbeShows = response =>
   Boolean(response?.exceptionDetails) || response?.result?.value === true
 
 const createDeferred = () => {
-  let resolve
-  const promise = new Promise(_resolve => {
-    resolve = _resolve
+  const deferred = { settled: false }
+  deferred.promise = new Promise(resolve => {
+    deferred.resolve = () => {
+      deferred.settled = true
+      resolve()
+    }
   })
-  return { promise, resolve }
+  return deferred
+}
+
+const isPending = deferred => deferred !== undefined && !deferred.settled
+
+const startDetecting = consent => {
+  consent.detecting = createDeferred()
+  setTimeout(consent.detecting.resolve, POPUP_DETECTION_GRACE_MS)
 }
 
 const createConsent = () => ({ detecting: undefined, popup: undefined })
@@ -263,20 +273,17 @@ const waitForPopupHidden = async (client, executionContextId, selectors, timeout
 }
 
 const closePopup = async ({ page, client, executionContextId, cmp, timeout }) => {
-  const consent = page._autoconsentConsent
-  if (!consent?.popup) return
+  const popup = page._autoconsentConsent?.popup
+  if (!popup) return
   const selectors = (await getPopupSelectors().catch(() => new Map())).get(cmp) || []
   if (selectors.length > 0) await waitForPopupHidden(client, executionContextId, selectors, timeout)
-  consent.popup.resolve()
+  popup.resolve()
 }
 
 const waitForConsent = async page => {
   const consent = page._autoconsentConsent
   if (!consent) return
-  if (!consent.detecting) {
-    consent.detecting = createDeferred()
-    setTimeout(consent.detecting.resolve, POPUP_DETECTION_GRACE_MS)
-  }
+  if (!consent.detecting) startDetecting(consent)
   await consent.detecting.promise
   await consent.popup?.promise
 }
@@ -390,9 +397,8 @@ const onMessage = async ({ page, client, executionContextId, message, timeout })
     case 'cmpDetected': {
       debug(message.type, { cmp: message.cmp })
       const consent = page._autoconsentConsent
-      if (!consent || consent.detecting) break
-      consent.detecting = createDeferred()
-      setTimeout(consent.detecting.resolve, POPUP_DETECTION_GRACE_MS)
+      if (!consent || isPending(consent.detecting)) break
+      startDetecting(consent)
       break
     }
 
@@ -400,7 +406,7 @@ const onMessage = async ({ page, client, executionContextId, message, timeout })
       debug(message.type, { cmp: message.cmp })
       const consent = page._autoconsentConsent
       if (!consent) break
-      consent.popup ??= createDeferred()
+      if (!isPending(consent.popup)) consent.popup = createDeferred()
       consent.detecting?.resolve()
       break
     }
@@ -563,6 +569,7 @@ const enableBlockingInPage = (page, run, timeout) => {
 }
 
 module.exports = {
+  closePopup,
   enableBlockingInPage,
   runAutoConsent,
   waitForConsent,

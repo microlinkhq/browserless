@@ -1,5 +1,6 @@
 'use strict'
 
+const vm = require('vm')
 const { default: test } = require('ava')
 
 const { prepareFullDocument, isCompleteScroll } = require('../src/prepare-full-document')
@@ -94,4 +95,45 @@ test('prepareFullDocument skips scroll only after a complete hydrate', async t =
   })
   t.is(complete.scrolled, true)
   t.is(evaluateCalls, 1)
+})
+
+test('prepareFullDocument returns to the top after consent', async t => {
+  const order = []
+  const sandbox = {
+    window: {
+      scrollY: 2500,
+      scrollTo (x, y) {
+        this.scrollY = y
+      }
+    }
+  }
+  const evaluate = async fn => {
+    const source = Function.prototype.toString.call(fn)
+    if (source.includes('scrollTo(0, 0)') && !source.includes('scrollBy')) {
+      order.push('scroll')
+      vm.runInNewContext(`(${source})()`, sandbox)
+    }
+    return false
+  }
+  const page = {
+    evaluate,
+    waitForNetworkIdle: async () => {},
+    mainFrame: () => ({ isolatedRealm: () => ({ evaluate }) })
+  }
+  const goto = {
+    timeouts: {
+      action: () => 222,
+      goto: () => 1000
+    },
+    waitForConsent: async (waited, opts) => {
+      order.push('consent')
+      t.is(waited, page)
+      t.is(opts.timeout, 222)
+    }
+  }
+
+  await prepareFullDocument(page, { goto, timeout: 1000, scrolled: true })
+
+  t.deepEqual(order, ['consent', 'scroll'])
+  t.is(sandbox.window.scrollY, 0)
 })
