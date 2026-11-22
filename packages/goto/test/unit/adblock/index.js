@@ -810,6 +810,23 @@ test('closing a popup settles that popup, not one found while it was closing', a
   t.false(second.settled)
 })
 
+test('closing when no popup is open does not probe', async t => {
+  let probes = 0
+  await closePopup({
+    page: {},
+    client: {
+      send: async () => {
+        probes += 1
+        return {}
+      }
+    },
+    executionContextId: 1,
+    cmp: 'youtube-desktop',
+    timeout: 50
+  })
+  t.is(probes, 0)
+})
+
 test('initResp includes config with expected shape', async t => {
   const url = await getUrl(t)
   const browserless = await getBrowserContext(t)
