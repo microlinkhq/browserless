@@ -6,9 +6,9 @@ const { default: test } = require('ava')
 
 const createScreenshot = require('..')
 
-const DOCUMENT_HEIGHT = 5000
+const DOCUMENT_HEIGHT = 7000
 const BANNER_CLOSE_MS = 800
-const BANNER_TRIGGER_PX = 2000
+const BANNER_TRIGGER_PX = 900
 const MESSAGE_RESPONSE_MS = 50
 
 const html = `<!doctype html>
