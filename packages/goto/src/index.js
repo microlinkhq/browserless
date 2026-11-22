@@ -250,8 +250,11 @@ const injectStyle = (page, style) =>
     [getInjectKey('css', style)]: style
   })
 
+const isolatedRealm = page =>
+  typeof page.mainFrame === 'function' ? page.mainFrame().isolatedRealm() : page
+
 const insertInlineStyle = (page, css) =>
-  page.evaluate(content => {
+  isolatedRealm(page).evaluate(content => {
     const style = document.createElement('style')
     style.textContent = content
     ;(document.head || document.documentElement).appendChild(style)

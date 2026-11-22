@@ -12,7 +12,20 @@ const html = `<!doctype html>
   </body>
 </html>`
 
-const serve = t =>
+const wrapsCreateElement = html.replace(
+  '<body>',
+  `<body>
+    <script>
+      document.createElement = new Proxy(document.createElement, {
+        apply: (create, self, [tag, ...rest]) => {
+          if (String(tag).toLowerCase() === 'style') throw new Error('blocked')
+          return Reflect.apply(create, self, [tag, ...rest])
+        }
+      })
+    </script>`
+)
+
+const serve = (t, page = html) =>
   runServer(t, ({ req, res }) => {
     if (req.url === '/slow.css') {
       setTimeout(() => {
@@ -22,11 +35,11 @@ const serve = t =>
       return
     }
     res.setHeader('content-type', 'text/html')
-    res.end(html)
+    res.end(page)
   })
 
-const gotoAndRead = async (t, opts) => {
-  const url = await serve(t)
+const gotoAndRead = async (t, opts, page) => {
+  const url = await serve(t, page)
   const browserless = await getBrowserContext(t)
   return browserless.withPage((page, goto) => async () => {
     await goto(page, { url, adblock: false, waitUntil: 'load', ...opts })
@@ -47,6 +60,11 @@ test('animations are disabled by the time goto returns', async t => {
   t.is(style.transitionDuration, '0s')
   t.is(style.transitionDelay, '0s')
   t.is(style.animationDuration, '0s')
+})
+
+test('animations are disabled even when the page wraps createElement', async t => {
+  const style = await gotoAndRead(t, { animations: false }, wrapsCreateElement)
+  t.is(style.transitionDuration, '0s')
 })
 
 test('an inline style that imports a slow sheet is applied by the time goto returns', async t => {
