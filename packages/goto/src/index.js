@@ -255,9 +255,12 @@ const isolatedRealm = page =>
 
 const insertInlineStyle = (page, css) =>
   isolatedRealm(page).evaluate(content => {
-    const style = document.createElement('style')
+    const parent = document.head || document.documentElement
+    const style = document.head
+      ? document.createElement('style')
+      : document.createElementNS('http://www.w3.org/1999/xhtml', 'style')
     style.textContent = content
-    ;(document.head || document.documentElement).appendChild(style)
+    parent.appendChild(style)
   }, css)
 
 const getInjectKey = (ext, value) =>

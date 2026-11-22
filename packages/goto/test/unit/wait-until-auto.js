@@ -179,7 +179,7 @@ test('waitUntilAuto is overridable via goto options', async t => {
     setUserAgent: noop,
     emulateMediaFeatures: noop,
     addStyleTag: noop,
-    evaluate: noop,
+    mainFrame: () => ({ isolatedRealm: () => ({ evaluate: noop }) }),
     goto: () => Promise.resolve(null),
     waitForNetworkIdle: noop,
     browser: () => ({ version: () => Promise.resolve('Chrome/152.0.7977.83') }),

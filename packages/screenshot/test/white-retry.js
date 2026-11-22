@@ -332,6 +332,73 @@ test('a fullPage probe keeps a transparent background, which a jpeg cannot hold'
   t.is(seen[1].omitBackground, true)
 })
 
+test('a transparent fullPage probe keeps the capture options a jpeg would drop', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const clip = { x: 1, y: 2, width: 3, height: 4, scale: 2 }
+  const kept = {
+    captureBeyondViewport: false,
+    clip,
+    fromSurface: false,
+    optimizeForSpeed: false
+  }
+
+  for (const type of ['png', 'webp']) {
+    const seen = []
+    const page = createPage([])
+    page.screenshot = async opts => {
+      seen.push(opts)
+      return Buffer.from(`shot-${seen.length}`)
+    }
+
+    await createScreenshot({ goto: createGoto() })(page)('https://example.com', {
+      waitUntil: 'auto',
+      codeScheme: false,
+      fullPage: true,
+      omitBackground: true,
+      path: '/tmp/out.png',
+      quality: 80,
+      type,
+      ...kept
+    })
+
+    t.deepEqual(seen[0], { omitBackground: true, fullPage: false, type, ...kept })
+    t.is(seen[1].quality, type === 'png' ? undefined : 80)
+    t.is(seen[1].path, '/tmp/out.png')
+  }
+})
+
+test('a transparent fullPage probe drops a jpeg type, which cannot hold the background', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const seen = []
+  const page = createPage([])
+  page.screenshot = async opts => {
+    seen.push(opts)
+    return Buffer.from(`shot-${seen.length}`)
+  }
+
+  await createScreenshot({ goto: createGoto() })(page)('https://example.com', {
+    waitUntil: 'auto',
+    codeScheme: false,
+    fullPage: true,
+    omitBackground: true,
+    path: '/tmp/out.jpg',
+    quality: 80,
+    type: 'jpeg'
+  })
+
+  t.deepEqual(seen[0], { omitBackground: true, fullPage: false })
+  t.is(seen[1].type, 'jpeg')
+  t.is(seen[1].omitBackground, true)
+  t.is(seen[1].path, '/tmp/out.jpg')
+  t.is(seen[1].quality, 80)
+})
+
 test('a viewport screenshot is the readiness probe and keeps its path and quality', async t => {
   const isWhiteScreenshotMock = async () => false
   const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)

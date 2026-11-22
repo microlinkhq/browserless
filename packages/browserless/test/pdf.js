@@ -99,6 +99,29 @@ test('the readiness probe is a cheap viewport capture, not the full document', a
   t.deepEqual(probes, [{ optimizeForSpeed: true, type: 'jpeg', quality: 30 }])
 })
 
+test('a transparent pdf keeps the cheap probe and still prints without a background', async t => {
+  const probes = []
+  const printed = []
+  const page = createPage({
+    screenshot: async opts => {
+      probes.push(opts)
+      return noWhiteScreenshot
+    },
+    pdf: async opts => {
+      printed.push(opts)
+      return Buffer.from('pdf')
+    }
+  })
+
+  await createPdf({ goto: createGoto() })(page)('https://example.com', {
+    timeout: 500,
+    omitBackground: true
+  })
+
+  t.deepEqual(probes, [{ optimizeForSpeed: true, type: 'jpeg', quality: 30 }])
+  t.is(printed[0].omitBackground, true)
+})
+
 test('a ready page is scrolled as a full document before printing', async t => {
   const order = []
   const page = createPage({

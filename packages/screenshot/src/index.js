@@ -274,7 +274,24 @@ const encodeScreenshot = (image, encoding) => {
 
 const PROBE_OPTS = { optimizeForSpeed: true, type: 'jpeg', quality: 30 }
 
-const viewportCapture = ({ fullPage, path, quality, ...opts }) => ({ ...opts, fullPage: false })
+const ALPHA_TYPES = new Set(['png', 'webp'])
+
+const viewportCapture = ({
+  captureBeyondViewport,
+  clip,
+  fromSurface,
+  omitBackground,
+  optimizeForSpeed,
+  type
+}) => ({
+  omitBackground,
+  fullPage: false,
+  ...(ALPHA_TYPES.has(type) ? { type } : {}),
+  ...(clip !== undefined ? { clip } : {}),
+  ...(fromSurface !== undefined ? { fromSurface } : {}),
+  ...(captureBeyondViewport !== undefined ? { captureBeyondViewport } : {}),
+  ...(optimizeForSpeed !== undefined ? { optimizeForSpeed } : {})
+})
 
 const viewportProbe = opts => {
   if (!opts.fullPage) return opts

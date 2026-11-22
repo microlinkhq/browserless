@@ -65,6 +65,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       isPageReady = PDF_DEFAULT_OPTS.isPageReady,
       element,
       codeScheme,
+      omitBackground,
       ...rest
     } = opts
 
