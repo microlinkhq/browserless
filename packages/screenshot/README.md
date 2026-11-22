@@ -263,7 +263,7 @@ When `waitUntil: 'auto'` (the default), the package:
 
 1. Navigates to the page
 2. Waits for fonts to load
-3. Waits for images in viewport to decode
+3. Waits for rendered images in the viewport to decode
 4. Takes a screenshot
 5. If the screenshot is blank/white, retries with additional waiting
 

@@ -66,8 +66,9 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
   return !pageReadyResult.isRejected && !!pageReadyResult.value
 }
 
-// One pass over on-screen images. A bitmap that is already fully inside the
-// viewport is decoded so the shot does not land mid-decode. A visible image
+// One pass over on-screen images. A rendered bitmap fully inside the viewport
+// is decoded so the shot does not land mid-decode; one with an empty box draws
+// nothing, and Chrome never settles its decode while its load is unfinished. A visible image
 // that intersects the viewport and has not loaded is pending: the auto retry
 // treats that as not ready. `visibility: hidden` slides and a finished broken
 // image are not pending — waiting will not load them. Opacity is ignored so a
@@ -88,6 +89,8 @@ const waitForViewportImages = (page, { decode = true } = {}) =>
         if (
           shouldDecode &&
           hasPixels &&
+          width > 0 &&
+          height > 0 &&
           top >= 0 &&
           left >= 0 &&
           bottom <= viewH &&
