@@ -70,7 +70,39 @@ const fadedEdge = page(
   'add(document.body, \'style="display:block;opacity:0;position:fixed;left:0;bottom:-100px;width:400px;height:200px"\')'
 )
 
-const capture = async (t, html) => {
+const noVisibilityApi = page(
+  '<div id="shown"></div>',
+  'add(document.getElementById(\'shown\'), \'width="24" height="24" style="display:block"\')'
+)
+
+const noVisibilityApiHidden = page(
+  '',
+  'add(document.body, \'width="200" height="80" style="display:block;content-visibility:hidden"\')'
+)
+
+const dropCheckVisibility = async page => {
+  const client = page.mainFrame().client
+  const names = []
+  const onContext = event => {
+    if (event.context.name) names.push(event.context.name)
+  }
+  client.on('Runtime.executionContextCreated', onContext)
+  await client.send('Runtime.enable')
+  await page.goto('about:blank')
+  await page
+    .mainFrame()
+    .isolatedRealm()
+    .evaluate(() => 1)
+  client.off('Runtime.executionContextCreated', onContext)
+  const worldName = names.find(name => name.startsWith('__puppeteer_utility_world__'))
+  if (!worldName) throw new Error('missing puppeteer isolated world')
+  await client.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: 'delete Element.prototype.checkVisibility',
+    worldName
+  })
+}
+
+const capture = async (t, html, { hideCheckVisibility = false } = {}) => {
   const stalled = await noisePng()
   const url = await runServer(t, ({ req, res }) => {
     if (req.url === '/stalled.png' || req.url === '/quiet.png') {
@@ -85,10 +117,10 @@ const capture = async (t, html) => {
   })
   const browserless = await getBrowserContext(t)
   const started = Date.now()
-  const png = await browserless.withPage(
-    (browserPage, goto) => async () =>
-      createScreenshot({ goto })(browserPage)(url, { adblock: false, timeout: TIMEOUT })
-  )()
+  const png = await browserless.withPage((browserPage, goto) => async () => {
+    if (hideCheckVisibility) await dropCheckVisibility(browserPage)
+    return createScreenshot({ goto })(browserPage)(url, { adblock: false, timeout: TIMEOUT })
+  })()
   return { png, duration: Date.now() - started }
 }
 
@@ -114,6 +146,21 @@ test('an opacity-zero image that never finishes loading is still decoded', async
     duration >= STEP_BUDGET,
     `took ${duration}ms, a fade-in should spend the step budget of ${STEP_BUDGET}ms`
   )
+})
+
+test('a page without checkVisibility still waits on a rendered image', async t => {
+  const { png, duration } = await capture(t, noVisibilityApi, { hideCheckVisibility: true })
+  t.true(png.length > 0)
+  t.true(
+    duration >= STEP_BUDGET,
+    `took ${duration}ms, a rendered image should spend the step budget of ${STEP_BUDGET}ms`
+  )
+})
+
+test('a page without checkVisibility still skips an image that draws nothing', async t => {
+  const { png, duration } = await capture(t, noVisibilityApiHidden, { hideCheckVisibility: true })
+  t.true(png.length > 0)
+  t.true(duration < STEP_BUDGET, `took ${duration}ms, the step budget is ${STEP_BUDGET}ms`)
 })
 
 test('an opacity-zero image across the viewport edge keeps the settle scan waiting', async t => {
