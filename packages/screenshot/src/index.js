@@ -66,12 +66,15 @@ const checkPageReady = async (page, { isPageReady, response, screenshot, isWhite
   return !pageReadyResult.isRejected && !!pageReadyResult.value
 }
 
-// One pass over on-screen images. A bitmap that is already fully inside the
-// viewport is decoded so the shot does not land mid-decode. A visible image
-// that intersects the viewport and has not loaded is pending: the auto retry
-// treats that as not ready. `visibility: hidden` slides and a finished broken
-// image are not pending — waiting will not load them. Opacity is ignored so a
-// fade-in hero still counts. Callers that only need the decode ignore the flag.
+// One pass over on-screen images. A rendered bitmap fully inside the viewport
+// is decoded so the shot does not land mid-decode. Chrome never settles that
+// decode while the load is unfinished, so an image that draws nothing is left
+// alone: an empty box, a `visibility: hidden` slide (including one hidden by an
+// ancestor), or `content-visibility: hidden` on the image or an ancestor. A
+// visible image that intersects the viewport and has not loaded is pending:
+// the auto retry treats that as not ready. A finished broken image is not
+// pending — waiting will not load it. Opacity is ignored so a fade-in hero
+// still counts. Callers that only need the decode ignore the flag.
 const waitForViewportImages = (page, { decode = true } = {}) =>
   evaluateIsolated(
     page,
@@ -80,6 +83,10 @@ const waitForViewportImages = (page, { decode = true } = {}) =>
       const viewW = window.innerWidth || document.documentElement.clientWidth
       const decodes = []
       let pending = false
+      const rendered = el =>
+        (typeof el.checkVisibility !== 'function' ||
+          el.checkVisibility({ visibilityProperty: true })) &&
+        window.getComputedStyle(el).contentVisibility !== 'hidden'
 
       for (const el of document.querySelectorAll('img:not([aria-hidden="true"])')) {
         const { top, left, bottom, right, width, height } = el.getBoundingClientRect()
@@ -88,22 +95,20 @@ const waitForViewportImages = (page, { decode = true } = {}) =>
         if (
           shouldDecode &&
           hasPixels &&
+          width > 0 &&
+          height > 0 &&
           top >= 0 &&
           left >= 0 &&
           bottom <= viewH &&
-          right <= viewW
+          right <= viewW &&
+          rendered(el)
         ) {
           decodes.push(el.decode())
         }
 
         if (pending || width < 32 || height < 32) continue
         if (bottom <= 0 || right <= 0 || top >= viewH || left >= viewW) continue
-        if (
-          typeof el.checkVisibility === 'function' &&
-          !el.checkVisibility({ visibilityProperty: true })
-        ) {
-          continue
-        }
+        if (!rendered(el)) continue
 
         const src = el.currentSrc || el.getAttribute('src') || ''
         const lazy =
