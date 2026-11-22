@@ -181,10 +181,14 @@ const readViewport = async (navigatingUrls = [], finishedUrls = []) => {
     }
   }
 
+  const rendered = el =>
+    (typeof el.checkVisibility !== 'function' ||
+      el.checkVisibility({ visibilityProperty: true })) &&
+    window.getComputedStyle(el).contentVisibility !== 'hidden'
   let pendingImages = 0
   for (const img of document.images) {
     if (img.naturalWidth > 0 && img.complete && isVisible(img)) cover(img.getBoundingClientRect())
-    else if (!img.complete && isMediaInViewport(img)) pendingImages++
+    else if (!img.complete && isMediaInViewport(img) && rendered(img)) pendingImages++
   }
 
   let loadingVideos = 0
