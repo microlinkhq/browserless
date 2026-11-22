@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.3.2](https://github.com/microlinkhq/browserless/compare/v14.3.1...v14.3.2) (2026-11-22)
+
+### Bug Fixes
+
+* **screenshot:** close consent banners that open while the page is scrolled ([#1047](https://github.com/microlinkhq/browserless/issues/1047)) ([9f4c3db](https://github.com/microlinkhq/browserless/commit/9f4c3db8f9aa0da12e56b5a2e1927062c87d9666))
+* **screenshot:** give a scroll-locked page autoconsent's poll to find its banner ([#1048](https://github.com/microlinkhq/browserless/issues/1048)) ([7aae797](https://github.com/microlinkhq/browserless/commit/7aae7972fc2a9263086ad11bcc5e8b56b5e5a486))
+
+### Performance Improvements
+
+* drop two waits that cannot change the capture ([#1046](https://github.com/microlinkhq/browserless/issues/1046)) ([c433a4b](https://github.com/microlinkhq/browserless/commit/c433a4b598253ef59bd61fc9f96e61a91e9740ed))
+
 ## [14.2.0](https://github.com/microlinkhq/browserless/compare/v14.1.14...v14.2.0) (2026-11-20)
 
 ### Features

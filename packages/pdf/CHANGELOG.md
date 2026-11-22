@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.3.2](https://github.com/microlinkhq/browserless/compare/v14.3.1...v14.3.2) (2026-11-22)
+
+### Performance Improvements
+
+* drop two waits that cannot change the capture ([#1046](https://github.com/microlinkhq/browserless/issues/1046)) ([c433a4b](https://github.com/microlinkhq/browserless/commit/c433a4b598253ef59bd61fc9f96e61a91e9740ed))
+
 ## [14.3.1](https://github.com/microlinkhq/browserless/compare/v14.3.0...v14.3.1) (2026-11-22)
 
 **Note:** Version bump only for package @browserless/pdf
