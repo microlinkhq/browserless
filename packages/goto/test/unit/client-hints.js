@@ -161,6 +161,7 @@ const createMockPage = ({ browser, userAgentOverrides }) => {
     },
     emulateMediaFeatures: noop,
     addStyleTag: noop,
+    evaluate: noop,
     goto: () => Promise.resolve(null),
     waitForNetworkIdle: noop,
     browser: () => browser,

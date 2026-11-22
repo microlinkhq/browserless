@@ -250,6 +250,13 @@ const injectStyle = (page, style) =>
     [getInjectKey('css', style)]: style
   })
 
+const insertInlineStyle = (page, css) =>
+  page.evaluate(content => {
+    const style = document.createElement('style')
+    style.textContent = content
+    ;(document.head || document.documentElement).appendChild(style)
+  }, css)
+
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
 
@@ -281,7 +288,7 @@ const inject = async (page, { timeout, mediaType, animations, modules, scripts, 
   if (animations === false) {
     postPromises.push(
       run({
-        fn: injectStyle(page, disableAnimations),
+        fn: insertInlineStyle(page, disableAnimations),
         timeout,
         debug: 'disableAnimations'
       })

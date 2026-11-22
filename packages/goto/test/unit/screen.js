@@ -72,6 +72,7 @@ const createPage = (connection, sessionId, viewport = DEFAULT_VIEWPORT) => {
     setUserAgent: noop,
     emulateMediaFeatures: noop,
     addStyleTag: noop,
+    evaluate: noop,
     goto: () => Promise.resolve(null),
     waitForNetworkIdle: noop,
     browser: () => browser,
