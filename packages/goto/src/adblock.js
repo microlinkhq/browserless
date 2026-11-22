@@ -273,11 +273,11 @@ const waitForPopupHidden = async (client, executionContextId, selectors, timeout
 }
 
 const closePopup = async ({ page, client, executionContextId, cmp, timeout }) => {
-  const consent = page._autoconsentConsent
-  if (!consent?.popup) return
+  const popup = page._autoconsentConsent?.popup
+  if (!popup) return
   const selectors = (await getPopupSelectors().catch(() => new Map())).get(cmp) || []
   if (selectors.length > 0) await waitForPopupHidden(client, executionContextId, selectors, timeout)
-  consent.popup.resolve()
+  popup.resolve()
 }
 
 const waitForConsent = async page => {
@@ -569,6 +569,7 @@ const enableBlockingInPage = (page, run, timeout) => {
 }
 
 module.exports = {
+  closePopup,
   enableBlockingInPage,
   runAutoConsent,
   waitForConsent,

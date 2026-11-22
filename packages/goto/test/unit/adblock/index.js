@@ -9,6 +9,7 @@ const { runServer, getBrowserContext } = require('@browserless/test')
 const {
   AUTOCONSENT_WORLD,
   AUTOCONSENT_BINDING,
+  closePopup,
   runAutoConsent,
   waitForPopupHidden,
   toPrehideScript
@@ -777,6 +778,36 @@ test('a hidden popup probe returns without waiting', async t => {
   const started = Date.now()
   await waitForPopupHidden(client, 1, ['.banner'], 500)
   t.true(Date.now() - started < 100)
+})
+
+test('closing a popup settles that popup, not one found while it was closing', async t => {
+  const pending = () => {
+    const deferred = { settled: false }
+    deferred.promise = new Promise(resolve => {
+      deferred.resolve = () => {
+        deferred.settled = true
+        resolve()
+      }
+    })
+    return deferred
+  }
+  const first = pending()
+  const second = pending()
+  const page = { _autoconsentConsent: { popup: first } }
+  let probes = 0
+  const client = {
+    send: async () => {
+      probes += 1
+      if (probes === 1) page._autoconsentConsent.popup = second
+      return { result: { value: probes < 3 } }
+    }
+  }
+
+  await closePopup({ page, client, executionContextId: 1, cmp: 'youtube-desktop', timeout: 2000 })
+
+  t.true(probes >= 3)
+  t.true(first.settled)
+  t.false(second.settled)
 })
 
 test('initResp includes config with expected shape', async t => {
