@@ -60,6 +60,16 @@ const shown = page(
   'add(document.getElementById(\'shown\'), \'width="24" height="24" style="display:block"\')'
 )
 
+const faded = page(
+  '<div id="shown"></div>',
+  'add(document.getElementById(\'shown\'), \'width="24" height="24" style="display:block;opacity:0"\')'
+)
+
+const fadedEdge = page(
+  '',
+  'add(document.body, \'style="display:block;opacity:0;position:fixed;left:0;bottom:-100px;width:400px;height:200px"\')'
+)
+
 const capture = async (t, html) => {
   const stalled = await noisePng()
   const url = await runServer(t, ({ req, res }) => {
@@ -94,5 +104,23 @@ test('a rendered image that never finishes loading is still decoded', async t =>
   t.true(
     duration >= STEP_BUDGET,
     `took ${duration}ms, decode should spend the step budget of ${STEP_BUDGET}ms`
+  )
+})
+
+test('an opacity-zero image that never finishes loading is still decoded', async t => {
+  const { png, duration } = await capture(t, faded)
+  t.true(png.length > 0)
+  t.true(
+    duration >= STEP_BUDGET,
+    `took ${duration}ms, a fade-in should spend the step budget of ${STEP_BUDGET}ms`
+  )
+})
+
+test('an opacity-zero image across the viewport edge keeps the settle scan waiting', async t => {
+  const { png, duration } = await capture(t, fadedEdge)
+  t.true(png.length > 0)
+  t.true(
+    duration >= STEP_BUDGET,
+    `took ${duration}ms, settle should spend the step budget of ${STEP_BUDGET}ms`
   )
 })
