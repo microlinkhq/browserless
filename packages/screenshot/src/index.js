@@ -272,10 +272,13 @@ const encodeScreenshot = (image, encoding) => {
   return encoding === 'base64' ? buffer.toString('base64') : buffer
 }
 
+const PROBE_OPTS = { optimizeForSpeed: true, type: 'jpeg', quality: 30 }
+
+const viewportCapture = ({ fullPage, path, quality, ...opts }) => ({ ...opts, fullPage: false })
+
 const viewportProbe = opts => {
   if (!opts.fullPage) return opts
-  const { fullPage, path, quality, ...probeOpts } = opts
-  return { ...probeOpts, fullPage: false }
+  return opts.omitBackground ? viewportCapture(opts) : PROBE_OPTS
 }
 
 const actionTimeout = ({ stepTimeout }) => stepTimeout

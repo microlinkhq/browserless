@@ -276,10 +276,7 @@ test('waits for verification interstitial to resolve before screenshot', async t
   t.true(goto.getWaitUntilAutoOpts().every(opts => opts.credit === false))
 })
 
-// #852's fullPage readiness probe clears `path` so it does not write during the
-// white check. #858 keeps `quality` when that path looked lossy. Together the
-// probe becomes `{ quality }` with puppeteer's png default and throws.
-test('fullPage readiness probe drops path-inferred quality', async t => {
+test('a fullPage readiness probe is a cheap viewport capture, the output keeps its options', async t => {
   const isWhiteScreenshotMock = async () => false
   const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
   t.teardown(restore)
@@ -301,14 +298,38 @@ test('fullPage readiness probe drops path-inferred quality', async t => {
     quality: 80
   })
 
-  t.true(Buffer.isBuffer(result))
+  t.deepEqual(result, Buffer.from('shot-2'))
   t.is(seen.length, 2)
-  t.is(seen[0].fullPage, false)
-  t.is(seen[0].path, undefined)
-  t.is(seen[0].quality, undefined)
+  t.deepEqual(seen[0], { optimizeForSpeed: true, type: 'jpeg', quality: 30 })
   t.is(seen[1].fullPage, true)
   t.is(seen[1].path, '/tmp/out.jpg')
   t.is(seen[1].quality, 80)
+})
+
+test('a fullPage probe keeps a transparent background, which a jpeg cannot hold', async t => {
+  const isWhiteScreenshotMock = async () => false
+  const { createScreenshot, restore } = loadCreateScreenshot(isWhiteScreenshotMock)
+  t.teardown(restore)
+
+  const goto = createGoto()
+  const page = createPage([])
+  const seen = []
+  page.screenshot = async opts => {
+    seen.push(opts)
+    return Buffer.from(`shot-${seen.length}`)
+  }
+
+  await createScreenshot({ goto })(page)('https://example.com', {
+    waitUntil: 'auto',
+    codeScheme: false,
+    fullPage: true,
+    omitBackground: true,
+    path: '/tmp/out.png'
+  })
+
+  t.deepEqual(seen[0], { omitBackground: true, fullPage: false })
+  t.is(seen[1].fullPage, true)
+  t.is(seen[1].omitBackground, true)
 })
 
 test('a viewport screenshot is the readiness probe and keeps its path and quality', async t => {
