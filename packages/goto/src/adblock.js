@@ -283,7 +283,7 @@ const closePopup = async ({ page, client, executionContextId, cmp, timeout }) =>
 const waitForConsent = async (page, { detectFor = 0 } = {}) => {
   const consent = page._autoconsentConsent
   if (!consent) return
-  if (!consent.detecting) startDetecting(consent)
+  if (!consent.detecting) startDetecting(consent, Math.max(POPUP_DETECTION_GRACE_MS, detectFor))
   else if (detectFor > 0 && !isPending(consent.detecting) && !isPending(consent.popup)) {
     startDetecting(consent, detectFor)
   }

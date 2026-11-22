@@ -11,6 +11,7 @@ const {
   AUTOCONSENT_BINDING,
   closePopup,
   runAutoConsent,
+  waitForConsent,
   waitForPopupHidden,
   toPrehideScript
 } = require('../../../src/adblock')
@@ -825,6 +826,14 @@ test('closing when no popup is open does not probe', async t => {
     timeout: 50
   })
   t.is(probes, 0)
+})
+
+test('a detection window asked for is kept when no detection started yet', async t => {
+  const DETECT_FOR_MS = 750
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const started = Date.now()
+  await waitForConsent(page, { detectFor: DETECT_FOR_MS })
+  t.true(Date.now() - started >= DETECT_FOR_MS - 20)
 })
 
 test('initResp includes config with expected shape', async t => {
