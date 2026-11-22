@@ -140,7 +140,9 @@ test('a detection with no popup settles on its own', async t => {
   send({ type: 'init' })
   send({ type: 'cmpDetected', cmp: 'load' })
   const detecting = page._autoconsentConsent.detecting
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  t.false(detecting.settled)
+  t.true(detecting.until - Date.now() >= 200)
+  await new Promise(resolve => setTimeout(resolve, 400))
   t.true(detecting.settled)
   t.is(page._autoconsentConsent.popup, undefined)
   await waitForConsent(page)

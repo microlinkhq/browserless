@@ -12,6 +12,7 @@ const OVERFLOW_WAIT_MS = 1500
 const PRE_QUIET_MS = 50
 const POST_QUIET_MS = 200
 const SETTLE_MS = 400
+const LOCKED_CONSENT_DETECTION_MS = 750
 
 // The single overflow scanner: the tallest whole-document element that scrolls
 // its own overflow past minPx. Runs in the page.
@@ -65,6 +66,16 @@ const waitForOverflowHeight = (page, timeout = OVERFLOW_WAIT_MS) =>
     timeout,
     OVERFLOW_MIN_PX
   )
+
+function isScrollLocked (minPx) {
+  const root = document.scrollingElement || document.documentElement
+  const body = document.body
+  return (
+    !!body &&
+    root.scrollHeight <= window.innerHeight + 1 &&
+    body.scrollHeight > window.innerHeight + minPx
+  )
+}
 
 const expandOverflow = (page, minPx = OVERFLOW_MIN_PX) =>
   evaluateInPage(
@@ -240,7 +251,11 @@ const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {
   }
 
   if (typeof goto.waitForConsent === 'function') {
-    await goto.waitForConsent(page, { timeout: goto.timeouts.action(timeout) })
+    const locked = await pReflect(evaluateIsolated(page, isScrollLocked, OVERFLOW_MIN_PX))
+    await goto.waitForConsent(page, {
+      timeout: goto.timeouts.action(timeout),
+      detectFor: locked.value === true ? LOCKED_CONSENT_DETECTION_MS : 0
+    })
     await pReflect(evaluateIsolated(page, () => window.scrollTo(0, 0)))
     debug('prepareFullDocument:consent', { duration: elapsed() })
   }

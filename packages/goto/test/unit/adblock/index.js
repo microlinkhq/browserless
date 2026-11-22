@@ -11,6 +11,7 @@ const {
   AUTOCONSENT_BINDING,
   closePopup,
   runAutoConsent,
+  waitForConsent,
   waitForPopupHidden,
   toPrehideScript
 } = require('../../../src/adblock')
@@ -825,6 +826,94 @@ test('closing when no popup is open does not probe', async t => {
     timeout: 50
   })
   t.is(probes, 0)
+})
+
+test('a detection window asked for is kept when no detection started yet', async t => {
+  const DETECT_FOR_MS = 750
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const started = Date.now()
+  await waitForConsent(page, { detectFor: DETECT_FOR_MS })
+  t.true(Date.now() - started >= DETECT_FOR_MS - 20)
+})
+
+test('a detection window asked for outlasts a shorter one already running', async t => {
+  const DETECT_FOR_MS = 750
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  waitForConsent(page)
+  await new Promise(resolve => setTimeout(resolve, 200))
+  const started = Date.now()
+  await waitForConsent(page, { detectFor: DETECT_FOR_MS })
+  t.true(Date.now() - started >= DETECT_FOR_MS - 20)
+})
+
+test('a detection window shorter than the grace is raised to the grace', async t => {
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const pending = waitForConsent(page, { detectFor: 40 })
+  t.true(page._autoconsentConsent.detecting.until - Date.now() >= 200)
+  await pending
+})
+
+test('a finished detection opens the same grace for a shorter request', async t => {
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const first = waitForConsent(page)
+  page._autoconsentConsent.detecting.resolve()
+  await first
+  const pending = waitForConsent(page, { detectFor: 40 })
+  t.true(page._autoconsentConsent.detecting.until - Date.now() >= 200)
+  await pending
+})
+
+test('a finished detection stays put when no longer window is asked for', async t => {
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const first = waitForConsent(page)
+  const detecting = page._autoconsentConsent.detecting
+  detecting.resolve()
+  await first
+  await waitForConsent(page)
+  t.is(page._autoconsentConsent.detecting, detecting)
+})
+
+test('a longer detection window is kept when a shorter one is asked for', async t => {
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const first = waitForConsent(page, { detectFor: 750 })
+  const detecting = page._autoconsentConsent.detecting
+  const pending = waitForConsent(page, { detectFor: 100 })
+  t.is(page._autoconsentConsent.detecting, detecting)
+  await Promise.all([first, pending])
+})
+
+test('a detection that already finished opens the window that was asked for', async t => {
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const first = waitForConsent(page, { detectFor: 2000 })
+  const detecting = page._autoconsentConsent.detecting
+  detecting.resolve()
+  const pending = waitForConsent(page, { detectFor: 400 })
+  t.not(page._autoconsentConsent.detecting, detecting)
+  const left = page._autoconsentConsent.detecting.until - Date.now()
+  t.true(left >= 300)
+  t.true(left <= 450)
+  await Promise.all([first, pending])
+})
+
+test('an open popup is not pushed back by a longer detection window', async t => {
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  const first = waitForConsent(page)
+  const detecting = page._autoconsentConsent.detecting
+  detecting.resolve()
+  let resolvePopup
+  page._autoconsentConsent.popup = {
+    settled: false,
+    promise: new Promise(resolve => {
+      resolvePopup = () => {
+        page._autoconsentConsent.popup.settled = true
+        resolve()
+      }
+    })
+  }
+  const pending = waitForConsent(page, { detectFor: 750 })
+  t.is(page._autoconsentConsent.detecting, detecting)
+  resolvePopup()
+  await Promise.all([first, pending])
 })
 
 test('initResp includes config with expected shape', async t => {

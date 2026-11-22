@@ -129,6 +129,7 @@ test('prepareFullDocument returns to the top after consent', async t => {
       order.push('consent')
       t.is(waited, page)
       t.is(opts.timeout, 222)
+      t.is(opts.detectFor, 0)
     }
   }
 
@@ -136,4 +137,88 @@ test('prepareFullDocument returns to the top after consent', async t => {
 
   t.deepEqual(order, ['consent', 'scroll'])
   t.is(sandbox.window.scrollY, 0)
+})
+
+const INNER_HEIGHT = 800
+
+const consentWindow = async scenario => {
+  const sandbox = {
+    window: { innerHeight: INNER_HEIGHT, scrollY: 0, scrollTo () {} },
+    document: {}
+  }
+  let value
+  let thrown = false
+  let detectFor
+  const evaluate = async (fn, minPx) => {
+    if (scenario === 'throws') throw new Error('context destroyed')
+    const source = Function.prototype.toString.call(fn)
+    if (!source.startsWith('function isScrollLocked')) return false
+    const inner = sandbox.window.innerHeight
+    const documentElement = { scrollHeight: scenario === 'tall-root' ? inner + 2 : inner + 1 }
+    const body = {
+      scrollHeight: scenario === 'short-body' ? inner + minPx : inner + minPx + 1
+    }
+    sandbox.document.documentElement = documentElement
+    sandbox.document.body = scenario === 'no-body' ? null : body
+    sandbox.document.scrollingElement = scenario === 'no-scrolling-element' ? null : documentElement
+    try {
+      value = vm.runInNewContext(`(${source})(${minPx})`, sandbox)
+      return value
+    } catch (error) {
+      thrown = true
+      throw error
+    }
+  }
+  const page = {
+    waitForNetworkIdle: async () => {},
+    mainFrame: () => ({ isolatedRealm: () => ({ evaluate }) })
+  }
+  const goto = {
+    timeouts: { action: () => 1000, goto: () => 1000 },
+    waitForConsent: async (_page, opts) => {
+      detectFor = opts.detectFor
+    }
+  }
+  await prepareFullDocument(page, { goto, timeout: 1000, scrolled: true })
+  return { value, thrown, detectFor }
+}
+
+test('a viewport-sized root with a taller body asks for the longer detection window', async t => {
+  const result = await consentWindow('locked')
+  t.false(result.thrown)
+  t.true(result.value)
+  t.is(result.detectFor, 750)
+})
+
+test('a root one pixel past the slack is not scroll-locked', async t => {
+  const result = await consentWindow('tall-root')
+  t.false(result.thrown)
+  t.false(result.value)
+  t.is(result.detectFor, 0)
+})
+
+test('a body only as tall as the overflow minimum is not scroll-locked', async t => {
+  const result = await consentWindow('short-body')
+  t.false(result.thrown)
+  t.false(result.value)
+  t.is(result.detectFor, 0)
+})
+
+test('a document with no body is not scroll-locked', async t => {
+  const result = await consentWindow('no-body')
+  t.false(result.thrown)
+  t.false(result.value)
+  t.is(result.detectFor, 0)
+})
+
+test('a document without a scrolling element uses the document element', async t => {
+  const result = await consentWindow('no-scrolling-element')
+  t.false(result.thrown)
+  t.true(result.value)
+  t.is(result.detectFor, 750)
+})
+
+test('a scroll-lock check that throws keeps the normal detection window', async t => {
+  const result = await consentWindow('throws')
+  t.is(result.detectFor, 0)
 })

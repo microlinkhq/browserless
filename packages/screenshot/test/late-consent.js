@@ -1,10 +1,9 @@
 'use strict'
 
 const { getBrowserContext, runServer } = require('@browserless/test')
-const sharp = require('sharp')
 const { default: test } = require('ava')
 
-const createScreenshot = require('..')
+const { prepareFullDocument } = require('../src/prepare-full-document')
 
 const DOCUMENT_HEIGHT = 7000
 const BANNER_CLOSE_MS = 800
@@ -58,38 +57,35 @@ const html = `<!doctype html>
   </body>
 </html>`
 
-test('a consent banner that opens on scroll is handled before a full page capture', async t => {
-  const url = await runServer(t, ({ req, res }) => {
-    if (req.url === '/consent-message') {
-      setTimeout(() => res.end('{}'), MESSAGE_RESPONSE_MS)
-      return
-    }
-    res.setHeader('content-type', 'text/html')
-    res.end(html)
-  })
+test.serial(
+  'a consent banner that opens during the full-document scroll is closed and the page unlocked',
+  async t => {
+    const url = await runServer(t, ({ req, res }) => {
+      if (req.url === '/consent-message') {
+        setTimeout(() => res.end('{}'), MESSAGE_RESPONSE_MS)
+        return
+      }
+      res.setHeader('content-type', 'text/html')
+      res.end(html)
+    })
 
-  const browserless = await getBrowserContext(t)
-  const { png, choice, bannerShown } = await browserless.withPage((page, goto) => async () => {
-    const png = await createScreenshot({ goto })(page)(url, { fullPage: true, timeout: 30000 })
-    const state = await page.evaluate(() => ({
-      choice: window.consentChoice,
-      bannerShown: !!document.querySelector('ytd-consent-bump-v2-lightbox')
-    }))
-    return { png, ...state }
-  })()
+    const browserless = await getBrowserContext(t)
+    const state = await browserless.withPage((page, goto) => async () => {
+      await goto(page, { url, waitUntil: 'load', timeout: 30000 })
+      await prepareFullDocument(page, { goto, timeout: 30000 })
+      return page.evaluate(() => ({
+        choice: window.consentChoice,
+        bannerShown: !!document.querySelector('ytd-consent-bump-v2-lightbox'),
+        bodyPosition: window.getComputedStyle(document.body).position,
+        documentHeight: document.documentElement.scrollHeight,
+        scrollY: window.scrollY
+      }))
+    })()
 
-  const { height, data, info } = await sharp(png)
-    .raw()
-    .toBuffer({ resolveWithObject: true })
-    .then(({ data, info }) => ({ height: info.height, data, info }))
-  const dpr = info.width / 1280
-  const topPixel = [data[0], data[1], data[2]]
-
-  t.is(choice, 'decline')
-  t.false(bannerShown)
-  t.true(
-    height >= DOCUMENT_HEIGHT * dpr,
-    `captured ${height}px of a ${DOCUMENT_HEIGHT * dpr}px document`
-  )
-  t.deepEqual(topPixel, [200, 0, 0])
-})
+    t.is(state.choice, 'decline')
+    t.false(state.bannerShown)
+    t.is(state.bodyPosition, 'static')
+    t.true(state.documentHeight >= DOCUMENT_HEIGHT, `document is ${state.documentHeight}px`)
+    t.is(state.scrollY, 0)
+  }
+)

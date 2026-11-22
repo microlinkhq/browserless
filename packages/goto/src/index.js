@@ -807,8 +807,8 @@ module.exports = ({ defaultDevice = 'Macbook Pro 13', timeout: globalTimeout, ..
   goto.deviceDescriptors = getDevice.deviceDescriptors
   goto.defaultViewport = defaultViewport
   goto.waitUntilAuto = _waitUntilAuto
-  goto.waitForConsent = (page, { timeout } = {}) =>
-    run({ fn: adblock.waitForConsent(page), timeout, debug: 'autoconsent:close' })
+  goto.waitForConsent = (page, { timeout, detectFor } = {}) =>
+    run({ fn: adblock.waitForConsent(page, { detectFor }), timeout, debug: 'autoconsent:close' })
   goto.timeouts = timeouts
   goto.run = run
 
