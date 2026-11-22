@@ -19,8 +19,6 @@ const PDF_DEFAULT_OPTS = {
   isPageReady: SCREENSHOT_DEFAULT_OPTS.isPageReady
 }
 
-const PROBE_OPTS = { optimizeForSpeed: true, type: 'jpeg', quality: 30 }
-
 const loadTimeout = ({ timeout, stepTimeout }) => timeout ?? stepTimeout
 
 const getMargin = unit => {
@@ -67,6 +65,7 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
       isPageReady = PDF_DEFAULT_OPTS.isPageReady,
       element,
       codeScheme,
+      omitBackground,
       ...rest
     } = opts
 
@@ -76,7 +75,6 @@ module.exports = ({ goto, ...gotoOpts } = {}) => {
         waitUntil,
         isPageReady,
         fullPage: true,
-        probe: () => PROBE_OPTS,
         readyTimeout: loadTimeout
       })
     )

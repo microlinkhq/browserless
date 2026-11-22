@@ -250,6 +250,17 @@ const injectStyle = (page, style) =>
     [getInjectKey('css', style)]: style
   })
 
+const isolatedRealm = page =>
+  typeof page.mainFrame === 'function' ? page.mainFrame().isolatedRealm() : page
+
+const insertInlineStyle = (page, css) =>
+  isolatedRealm(page).evaluate(content => {
+    const parent = document.head || document.documentElement
+    const style = document.createElementNS('http://www.w3.org/1999/xhtml', 'style')
+    style.textContent = content
+    parent.appendChild(style)
+  }, css)
+
 const getInjectKey = (ext, value) =>
   isUrl(value) ? 'url' : value.endsWith(`.${ext}`) ? 'path' : 'content'
 
@@ -281,7 +292,7 @@ const inject = async (page, { timeout, mediaType, animations, modules, scripts, 
   if (animations === false) {
     postPromises.push(
       run({
-        fn: injectStyle(page, disableAnimations),
+        fn: insertInlineStyle(page, disableAnimations),
         timeout,
         debug: 'disableAnimations'
       })

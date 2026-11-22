@@ -272,10 +272,30 @@ const encodeScreenshot = (image, encoding) => {
   return encoding === 'base64' ? buffer.toString('base64') : buffer
 }
 
+const PROBE_OPTS = { optimizeForSpeed: true, type: 'jpeg', quality: 30 }
+
+const ALPHA_TYPES = new Set(['png', 'webp'])
+
+const viewportCapture = ({
+  captureBeyondViewport,
+  clip,
+  fromSurface,
+  omitBackground,
+  optimizeForSpeed,
+  type
+}) => ({
+  omitBackground,
+  fullPage: false,
+  ...(ALPHA_TYPES.has(type) ? { type } : {}),
+  ...(clip !== undefined ? { clip } : {}),
+  ...(fromSurface !== undefined ? { fromSurface } : {}),
+  ...(captureBeyondViewport !== undefined ? { captureBeyondViewport } : {}),
+  ...(optimizeForSpeed !== undefined ? { optimizeForSpeed } : {})
+})
+
 const viewportProbe = opts => {
   if (!opts.fullPage) return opts
-  const { fullPage, path, quality, ...probeOpts } = opts
-  return { ...probeOpts, fullPage: false }
+  return opts.omitBackground ? viewportCapture(opts) : PROBE_OPTS
 }
 
 const actionTimeout = ({ stepTimeout }) => stepTimeout
