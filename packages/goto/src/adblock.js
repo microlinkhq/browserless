@@ -243,8 +243,11 @@ const isPending = deferred => deferred !== undefined && !deferred.settled
 
 const startDetecting = (consent, graceMs = POPUP_DETECTION_GRACE_MS) => {
   consent.detecting = createDeferred()
+  consent.detecting.until = Date.now() + graceMs
   setTimeout(consent.detecting.resolve, graceMs)
 }
+
+const endsBefore = (deferred, ms) => !isPending(deferred) || deferred.until < Date.now() + ms
 
 const createConsent = () => ({ detecting: undefined, popup: undefined })
 
@@ -284,7 +287,7 @@ const waitForConsent = async (page, { detectFor = 0 } = {}) => {
   const consent = page._autoconsentConsent
   if (!consent) return
   if (!consent.detecting) startDetecting(consent, Math.max(POPUP_DETECTION_GRACE_MS, detectFor))
-  else if (detectFor > 0 && !isPending(consent.detecting) && !isPending(consent.popup)) {
+  else if (detectFor > 0 && !isPending(consent.popup) && endsBefore(consent.detecting, detectFor)) {
     startDetecting(consent, detectFor)
   }
   await consent.detecting.promise

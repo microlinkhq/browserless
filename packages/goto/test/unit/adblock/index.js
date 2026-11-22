@@ -836,6 +836,16 @@ test('a detection window asked for is kept when no detection started yet', async
   t.true(Date.now() - started >= DETECT_FOR_MS - 20)
 })
 
+test('a detection window asked for outlasts a shorter one already running', async t => {
+  const DETECT_FOR_MS = 750
+  const page = { _autoconsentConsent: { detecting: undefined, popup: undefined } }
+  waitForConsent(page)
+  await new Promise(resolve => setTimeout(resolve, 200))
+  const started = Date.now()
+  await waitForConsent(page, { detectFor: DETECT_FOR_MS })
+  t.true(Date.now() - started >= DETECT_FOR_MS - 20)
+})
+
 test('initResp includes config with expected shape', async t => {
   const url = await getUrl(t)
   const browserless = await getBrowserContext(t)
