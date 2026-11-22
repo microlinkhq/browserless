@@ -204,3 +204,34 @@ test('waitUntilAuto is overridable via goto options', async t => {
 
   t.true(customCalled)
 })
+
+test('a page without a main frame still gets the animation style', async t => {
+  const seen = []
+  const goto = createGoto({ timeout: 10000 })
+  const noop = () => Promise.resolve()
+  const page = {
+    setViewport: noop,
+    viewport: () => null,
+    setExtraHTTPHeaders: noop,
+    setUserAgent: noop,
+    emulateMediaFeatures: noop,
+    addStyleTag: noop,
+    evaluate: (_fn, css) => {
+      seen.push(css)
+      return Promise.resolve()
+    },
+    goto: () => Promise.resolve(null),
+    waitForNetworkIdle: noop,
+    browser: () => ({ version: () => Promise.resolve('Chrome/152.0.7977.83') }),
+    _client: () => ({ send: () => Promise.resolve({}) })
+  }
+
+  await goto(page, {
+    url: 'about:blank',
+    waitUntil: 'load',
+    adblock: false,
+    animations: false
+  })
+
+  t.true(seen.some(css => String(css).includes('animation-duration')))
+})
