@@ -239,6 +239,12 @@ const prepareFullDocument = async (page, { goto, timeout, scrolled = false } = {
     await pReflect(page.waitForNetworkIdle({ idleTime: 200, concurrency: 2, timeout: settleMs }))
   }
 
+  if (typeof goto.waitForConsent === 'function') {
+    await goto.waitForConsent(page, { timeout: goto.timeouts.action(timeout) })
+    await pReflect(evaluateIsolated(page, () => window.scrollTo(0, 0)))
+    debug('prepareFullDocument:consent', { duration: elapsed() })
+  }
+
   const expandResult = await pReflect(expandOverflow(page))
   const expanded = !expandResult.isRejected && expandResult.value
   debug('prepareFullDocument:expandOverflow', { expanded, duration: elapsed() })
