@@ -543,6 +543,54 @@ test('record starts before goto', async t => {
   t.deepEqual(events, ['record', 'goto', 'stop'])
 })
 
+const recordNavigationOrder = async opts => {
+  const createRecordCapture = require('../src/record')
+  const { page } = createFixture()
+  const events = []
+  attachFakeRecord(page)
+  const start = page.record
+  page.record = async options => {
+    const recorder = await start(options)
+    const { stop } = recorder
+    recorder.stop = async () => {
+      events.push('stop')
+      return stop()
+    }
+    return recorder
+  }
+  const capture = createRecordCapture({
+    goto: createGoto(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100))
+      events.push('loaded')
+    })
+  })
+  await capture(page)('https://example.com', { duration: 20, ...opts })
+  return events
+}
+
+test('record stops at `duration` even when the page is still loading', async t => {
+  t.deepEqual(await recordNavigationOrder(), ['stop', 'loaded'])
+})
+
+test('record with `untilLoaded` keeps recording until the page loaded', async t => {
+  t.deepEqual(await recordNavigationOrder({ untilLoaded: true }), ['loaded', 'stop'])
+})
+
+test('record with `untilLoaded` still fails when navigation fails', async t => {
+  const createRecordCapture = require('../src/record')
+  const { page } = createFixture()
+  attachFakeRecord(page)
+  const capture = createRecordCapture({
+    goto: createGoto(async () => {
+      throw new Error('navigation failed')
+    })
+  })
+  await t.throwsAsync(
+    () => capture(page)('https://example.com', { duration: 20, untilLoaded: true }),
+    { message: 'navigation failed' }
+  )
+})
+
 test('sizes constraints from the resolved device viewport', async t => {
   const createCapture = loadCapture()
   let startRecordingPayload
