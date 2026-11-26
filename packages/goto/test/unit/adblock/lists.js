@@ -92,7 +92,7 @@ test('fetch supplies every response method the adblocker declares', t => {
     }
   )
   t.is(result.status, 0, result.stderr)
-  t.is(result.stdout.trim(), 'text,arrayBuffer,json')
+  t.is(result.stdout.trim(), 'text:string,arrayBuffer:object,json:object')
 })
 
 test('running postinstall writes that engine', t => {
