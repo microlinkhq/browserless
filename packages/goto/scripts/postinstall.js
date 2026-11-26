@@ -28,15 +28,23 @@ const fetch = url =>
     json: () => download(url).json()
   })
 
-const main = async () => {
+const buildEngine = async fetchImpl => {
   const [lists, hageziList, resources] = await Promise.all([
-    fetchLists(fetch, fullLists),
-    download(HAGEZI_MULTI_PRO_URL).text(),
-    fetchResources(fetch)
+    fetchLists(fetchImpl, fullLists),
+    fetchImpl(HAGEZI_MULTI_PRO_URL).then(response => response.text()),
+    fetchResources(fetchImpl)
   ])
   const engine = PuppeteerBlocker.parse([...lists, ...toThirdPartyRules(hageziList)].join('\n'))
   engine.updateResources(resources, String(resources.length))
-  await writeFile(OUTPUT_FILENAME, engine.serialize())
+  return engine
 }
 
-main().catch(error => console.error(error) || process.exit(1))
+const main = async () => {
+  await writeFile(OUTPUT_FILENAME, (await buildEngine(fetch)).serialize())
+}
+
+module.exports = { buildEngine }
+
+if (require.main === module) {
+  main().catch(error => console.error(error) || process.exit(1))
+}
