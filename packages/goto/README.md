@@ -30,7 +30,7 @@ This package provides **advanced page navigation** with built-in ad blocking, sm
 The `@browserless/goto` package allows you to:
 
 - **Navigate to pages** with optimized loading and smart waiting strategies
-- **Block ads and trackers** using a precompiled Ghostery ad-blocker engine
+- **Block ads and trackers** using a [Ghostery ad-blocker](https://github.com/ghostery/adblocker) engine built at install time
 - **Inject scripts, modules, and styles** into pages
 - **Emulate devices** with viewport, user agent, and media features
 - **Intercept and abort requests** by resource type
@@ -102,7 +102,7 @@ await goto(page, { url: 'https://example.com', waitUntil: ['load', 'domcontentlo
 
 ### Built-in Ad Blocker
 
-The package includes a precompiled [Ghostery ad-blocker](https://github.com/ghostery/adblocker) engine that blocks ads and trackers automatically:
+The package builds a [Ghostery ad-blocker](https://github.com/ghostery/adblocker) engine at install time that blocks ads and trackers automatically. It combines Ghostery's full filter set (EasyList, EasyPrivacy, uBlock Origin filters, privacy and annoyance lists) with [HaGeZi Multi PRO](https://github.com/hagezi/dns-blocklists). HaGeZi rules apply to third-party requests only, so a listed company's own site keeps loading its resources:
 
 ```js
 // Enabled by default

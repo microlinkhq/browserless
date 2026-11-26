@@ -613,7 +613,7 @@ Sets the ability to abort requests based on the [ResourceType](https://github.co
 type: `boolean`<br/>
 default: `true`
 
-Enables the built-in [adblocker by](https://www.npmjs.com/package/@cliqz/adblocker) [Cliqz](https://www.npmjs.com/package/@cliqz/adblocker) that aborts unnecessary third-party requests associated with ads services.
+Enables the built-in [Ghostery adblocker](https://github.com/ghostery/adblocker), loaded with Ghostery's full filter set and [HaGeZi Multi PRO](https://github.com/hagezi/dns-blocklists), that aborts unnecessary third-party requests associated with ads and tracking services.
 
 ##### animations
 
