@@ -22,7 +22,13 @@ const runRecord = async (page, opts, viewport, { onStarted } = {}) => {
     throw new Error('page.record() requires puppeteer >= 25.10 and Chrome M153+.')
   }
 
-  const { path: outputPath, duration = DEFAULT.duration, fps = DEFAULT.fps, audio = false } = opts
+  const {
+    path: outputPath,
+    duration = DEFAULT.duration,
+    fps = DEFAULT.fps,
+    audio = false,
+    untilLoaded = false
+  } = opts
   const recorder = await page.record({
     audio: Boolean(audio),
     frameRate: fps,
@@ -51,6 +57,7 @@ const runRecord = async (page, opts, viewport, { onStarted } = {}) => {
       recordingWindow.abort()
     })
     await delay(duration, undefined, { signal: recordingWindow.signal }).catch(NOOP)
+    if (untilLoaded) await navigation
   } catch (error) {
     captureError = captureError || error
   } finally {

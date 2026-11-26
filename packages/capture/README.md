@@ -91,6 +91,7 @@ The capture mode is selected by [entry point](#modes), not by an option.
 | `codec` | `string` | Depends on `type` | MediaRecorder codec override. Defaults: `webm -> vp9`, `mp4 -> avc1.4D401F`. |
 | `path` | `string` | `undefined` | Write the captured media to disk. |
 | `duration` | `number` | `5000` | Capture duration in milliseconds. |
+| `untilLoaded` | `boolean` | `false` | `record` mode only. Keep recording past `duration` until `goto` settles, so a page that loads slower than `duration` still ends on its loaded state. The recording is then longer than `duration`. |
 | `audio` | `boolean \| object` | `false` | Capture audio. When object, it is used as audio track constraints. |
 | `video` | `boolean \| object` | `true` | Capture video. When object, it is used as video track constraints. |
 
