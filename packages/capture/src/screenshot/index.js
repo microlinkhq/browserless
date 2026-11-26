@@ -10,14 +10,9 @@
 // frame). Also captures at device pixels (retina), not the screencast's CSS-px.
 
 const { setTimeout: delay } = require('timers/promises')
-const { even, record } = require('../recorder')
+const { getDeviceSize, record } = require('../recorder')
 const createCapture = require('../create-capture')
 const { NOOP } = require('../constants')
-
-const getDeviceSize = viewport => {
-  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
-  return { width: even(viewport.width * dpr), height: even(viewport.height * dpr) }
-}
 
 // Pull source: poll screenshots for the recording window. Each frame is
 // timestamped with its real capture time; the muxer maps it onto the fps grid.

@@ -417,7 +417,7 @@ test('exports capture format defaults', t => {
 
   t.deepEqual(createCapture.TYPES, ['webm', 'mp4'])
   t.is(createCapture.DEFAULT.type, 'mp4')
-  t.deepEqual(createCapture.MODES, ['extension', 'screencast', 'screenshot', 'record'])
+  t.deepEqual(createCapture.MODES, ['extension', 'screencast', 'screenshot', 'record', 'frames'])
 })
 
 test('the default entry point ignores an unknown `mode` option', async t => {

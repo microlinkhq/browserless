@@ -1,0 +1,211 @@
+'use strict'
+
+const { EventEmitter } = require('events')
+const fs = require('fs/promises')
+const path = require('path')
+const os = require('os')
+const { default: test } = require('ava')
+
+const createFramesCapture = require('../src/frames')
+const { createFrameMuxer } = require('../src/recorder')
+const { writeHeader, writeClusterHeader } = require('../src/recorder/ebml')
+const { MODES } = require('..')
+
+const VIEWPORT = { width: 640, height: 400, deviceScaleFactor: 1 }
+
+const createGoto = onCall => {
+  const goto = async (page, opts) => {
+    await onCall?.(page, opts)
+    return { device: { viewport: VIEWPORT } }
+  }
+  goto.getDevice = () => ({ viewport: VIEWPORT })
+  return goto
+}
+
+const createPage = ({ hasTimeweb = true, onFrame } = {}) => {
+  const events = []
+  const virtualTimes = []
+  let screenshots = 0
+  const page = {
+    events,
+    virtualTimes,
+    setViewport: async viewport => events.push(['setViewport', viewport]),
+    viewport: () => VIEWPORT,
+    evaluateOnNewDocument: async source => {
+      events.push(['inject', source.includes('timeweb')])
+      return { identifier: 'timeweb-script' }
+    },
+    removeScriptToEvaluateOnNewDocument: async identifier => events.push(['remove', identifier]),
+    evaluate: async (fn, ms) => {
+      virtualTimes.push(ms)
+      await onFrame?.(virtualTimes.length - 1)
+      return hasTimeweb
+    },
+    screenshot: async options => {
+      events.push(['screenshot', options])
+      return Buffer.from(`frame-${screenshots++}`)
+    }
+  }
+  return page
+}
+
+const expectedStream = ({ frames, fps }) =>
+  Buffer.concat([
+    writeHeader(VIEWPORT.width, VIEWPORT.height),
+    ...Array.from({ length: frames }, (_, frame) => {
+      const payload = Buffer.from(`frame-${frame}`)
+      return Buffer.concat([
+        writeClusterHeader(Math.round((frame * 1000) / fps), payload.length),
+        payload
+      ])
+    })
+  ])
+
+test.before(async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'capture-frames-'))
+  const ffmpegPath = path.join(dir, 'ffmpeg')
+  await fs.writeFile(ffmpegPath, '#!/bin/sh\nexec cat\n', { mode: 0o755 })
+  test.ffmpegPath = ffmpegPath
+})
+
+test('frames is listed as a mode', t => {
+  t.true(MODES.includes('frames'))
+})
+
+test('steps virtual time one frame at a time and muxes every frame on its slot', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', {
+    duration: 100,
+    fps: 30,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(page.virtualTimes, [0, 1000 / 30, 2000 / 30])
+  t.deepEqual(result, expectedStream({ frames: 3, fps: 30 }))
+})
+
+test('injects timeweb before navigation and removes it after the capture', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({
+    goto: createGoto(page => page.events.push(['goto']))
+  })
+  await capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath })
+  const names = page.events.map(([name]) => name)
+  t.deepEqual(names.slice(0, 3), ['setViewport', 'inject', 'goto'])
+  t.is(names.at(-1), 'remove')
+  t.deepEqual(page.events[1], ['inject', true])
+})
+
+test('takes each frame as a fast jpeg at the given quality', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto() })
+  await capture(page)('https://example.com', {
+    duration: 20,
+    fps: 50,
+    quality: 70,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(
+    page.events.find(([name]) => name === 'screenshot'),
+    ['screenshot', { type: 'jpeg', quality: 70, optimizeForSpeed: true }]
+  )
+})
+
+test('a frame rate that does not divide a second keeps every frame on its own slot', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', {
+    duration: 1000,
+    fps: 49,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.is(page.virtualTimes.length, 49)
+  t.deepEqual(result, expectedStream({ frames: 49, fps: 49 }))
+})
+
+test('frame count rounds `duration * fps`, with at least one frame', t => {
+  const { frameCount } = createFramesCapture
+  t.is(frameCount({ duration: 5000, fps: 30 }), 150)
+  t.is(frameCount({ duration: 5000, fps: 60 }), 300)
+  t.is(frameCount({ duration: 1, fps: 30 }), 1)
+})
+
+test('rejects when the page has no timeweb, and still removes the script', async t => {
+  const page = createPage({ hasTimeweb: false })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { duration: 100, fps: 30, ffmpegPath: test.ffmpegPath }),
+    { message: /needs the page loaded by `goto`/ }
+  )
+  t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('an aborted signal stops stepping and rejects with its reason', async t => {
+  const controller = new AbortController()
+  const reason = new Error('over budget')
+  const page = createPage({ onFrame: frame => frame === 2 && controller.abort(reason) })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const error = await t.throwsAsync(() =>
+    capture(page)('https://example.com', {
+      duration: 1000,
+      fps: 30,
+      signal: controller.signal,
+      ffmpegPath: test.ffmpegPath
+    })
+  )
+  t.is(error, reason)
+  t.is(page.virtualTimes.length, 3)
+  t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('a navigation failure rejects before any frame', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({
+    goto: createGoto(() => {
+      throw new Error('navigation failed')
+    })
+  })
+  await t.throwsAsync(
+    () => capture(page)('https://example.com', { duration: 100, ffmpegPath: test.ffmpegPath }),
+    { message: 'navigation failed' }
+  )
+  t.deepEqual(page.virtualTimes, [])
+  t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('rejects when `video` is disabled', async t => {
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(() => capture(createPage())('https://example.com', { video: false }), {
+    instanceOf: TypeError,
+    message: /video.*cannot be disabled/
+  })
+})
+
+test('writes `path` and returns the same buffer', async t => {
+  const output = path.join(os.tmpdir(), `capture-frames-${process.pid}.mkv`)
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(createPage())('https://example.com', {
+    duration: 40,
+    fps: 50,
+    path: output,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(await fs.readFile(output), result)
+  await fs.rm(output)
+})
+
+test('frame muxer `writeFrame` emits a frame on the slot it is given', t => {
+  const stdin = new EventEmitter()
+  const writes = []
+  stdin.write = chunk => writes.push(chunk)
+  const muxer = createFrameMuxer({ stdin, fps: 49, durationMs: 1000 })
+  muxer.writeFrame(Buffer.from('a'), 0)
+  muxer.writeFrame(Buffer.from('b'), 1)
+  t.deepEqual(writes, [
+    writeClusterHeader(0, 1),
+    Buffer.from('a'),
+    writeClusterHeader(Math.round(1000 / 49), 1),
+    Buffer.from('b')
+  ])
+})
