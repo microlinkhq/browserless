@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.4.0](https://github.com/microlinkhq/browserless/compare/v14.3.3...v14.4.0) (2026-11-26)
+
+### Features
+
+* **capture:** add `untilLoaded` to the record mode ([#1051](https://github.com/microlinkhq/browserless/issues/1051)) ([e41d8b7](https://github.com/microlinkhq/browserless/commit/e41d8b7a06ab6c69012cea450af14e4a263df93a))
+
 ## [14.3.3](https://github.com/microlinkhq/browserless/compare/v14.3.2...v14.3.3) (2026-11-26)
 
 **Note:** Version bump only for package browserless
