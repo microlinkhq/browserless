@@ -43,7 +43,7 @@ const main = async () => {
   await writeFile(OUTPUT_FILENAME, (await buildEngine(fetch)).serialize())
 }
 
-module.exports = { buildEngine }
+module.exports = { buildEngine, fetch }
 
 if (require.main === module) {
   main().catch(error => console.error(error) || process.exit(1))

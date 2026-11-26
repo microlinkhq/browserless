@@ -1,7 +1,11 @@
 'use strict'
 
+const { spawnSync } = require('child_process')
 const { default: test } = require('ava')
 const { PuppeteerBlocker, Request, fullLists } = require('@ghostery/adblocker-puppeteer')
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
 
 const { HAGEZI_MULTI_PRO_URL, toThirdPartyRules } = require('../../../scripts/hagezi')
 const { buildEngine } = require('../../../scripts/postinstall')
@@ -71,4 +75,68 @@ test('builds the engine from every ghostery list, its resources, and third-party
     engine.resources.resources.map(resource => resource.body),
     ['void 0']
   )
+})
+
+test('fetch supplies every response method the adblocker declares', t => {
+  const checker = [
+    "const fs = require('fs')",
+    "const path = require('path')",
+    "const { createRequire } = require('module')",
+    "const { fetch } = require('./scripts/postinstall')",
+    "const req = createRequire(require.resolve('@ghostery/adblocker-puppeteer'))",
+    "const dts = path.join(path.dirname(req.resolve('@ghostery/adblocker')), 'fetch.d.ts')",
+    "const src = fs.readFileSync(dts, 'utf8')",
+    "const start = src.indexOf('interface FetchResponse')",
+    "const body = src.slice(start, src.indexOf('}', start))",
+    'const names = [...body.matchAll(/^\\s*(\\w+)\\s*:/gm)].map(match => match[1])',
+    "if (!names.length) throw new Error('FetchResponse declares no methods')",
+    "fetch('https://example.invalid/list.txt').then(async response => {",
+    '  for (const name of names) {',
+    "    if (typeof response[name] !== 'function') throw new Error('missing ' + name)",
+    '    await response[name]()',
+    '  }',
+    "  console.log(names.join(','))",
+    '}).catch(error => { console.error(error); process.exit(1) })'
+  ].join('\n')
+  const result = spawnSync(
+    process.execPath,
+    ['-r', path.join(__dirname, '../../fixtures/postinstall-hook.js'), '-e', checker],
+    {
+      cwd: path.join(__dirname, '../../..'),
+      env: process.env,
+      encoding: 'utf8'
+    }
+  )
+  t.is(result.status, 0, result.stderr)
+  t.is(result.stdout.trim(), 'text,arrayBuffer,json')
+})
+
+test('running postinstall writes that engine', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'adblock-engine-'))
+  const out = path.join(dir, 'engine.bin')
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        '-r',
+        path.join(__dirname, '../../fixtures/postinstall-hook.js'),
+        path.join(__dirname, '../../../scripts/postinstall.js')
+      ],
+      {
+        cwd: path.join(__dirname, '../../..'),
+        env: { ...process.env, ENGINE_OUT: out },
+        encoding: 'utf8'
+      }
+    )
+    t.is(result.status, 0, result.stderr)
+    const built = PuppeteerBlocker.deserialize(new Uint8Array(fs.readFileSync(out)))
+    const match = (url, sourceUrl, type) =>
+      built.match(Request.fromRawDetails({ url, sourceUrl, type })).match
+    t.true(match('https://tracker.example/t.js', 'https://news.example.org/', 'script'))
+    t.false(match('https://tracker.example/app.js', 'https://tracker.example/', 'script'))
+    t.true(match('https://ads.example/a.js', 'https://news.example.org/', 'script'))
+    t.false(match('https://ads.example/a.png', 'https://news.example.org/', 'image'))
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
 })
