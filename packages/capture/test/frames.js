@@ -22,10 +22,30 @@ const createGoto = onCall => {
   return goto
 }
 
-const createPage = ({ hasTimeweb = true, onFrame } = {}) => {
+const createPage = ({
+  hasTimeweb = true,
+  onFrame,
+  childFrames = [],
+  renders = () => true
+} = {}) => {
   const events = []
   const virtualTimes = []
   let screenshots = 0
+  const mainFrame = {
+    evaluate: async (fn, ms) => {
+      virtualTimes.push(ms)
+      await onFrame?.(virtualTimes.length - 1)
+      return hasTimeweb
+    }
+  }
+  const client = {
+    send: async (method, params) => {
+      events.push([method, params])
+      if (!renders(screenshots)) return new Promise(() => {})
+      return { data: Buffer.from(`frame-${screenshots++}`).toString('base64') }
+    },
+    detach: async () => events.push(['detach'])
+  }
   const page = {
     events,
     virtualTimes,
@@ -36,17 +56,23 @@ const createPage = ({ hasTimeweb = true, onFrame } = {}) => {
       return { identifier: 'timeweb-script' }
     },
     removeScriptToEvaluateOnNewDocument: async identifier => events.push(['remove', identifier]),
-    evaluate: async (fn, ms) => {
-      virtualTimes.push(ms)
-      await onFrame?.(virtualTimes.length - 1)
-      return hasTimeweb
-    },
-    screenshot: async options => {
-      events.push(['screenshot', options])
-      return Buffer.from(`frame-${screenshots++}`)
-    }
+    mainFrame: () => mainFrame,
+    frames: () => [mainFrame, ...childFrames],
+    createCDPSession: async () => client
   }
   return page
+}
+
+const createChildFrame = ({ fails = false } = {}) => {
+  const virtualTimes = []
+  return {
+    virtualTimes,
+    evaluate: async (fn, ms) => {
+      if (fails) throw new Error('Execution context was destroyed')
+      virtualTimes.push(ms)
+      return true
+    }
+  }
 }
 
 const expectedStream = ({ frames, fps }) =>
@@ -106,8 +132,8 @@ test('takes each frame as a fast jpeg at the given quality', async t => {
     ffmpegPath: test.ffmpegPath
   })
   t.deepEqual(
-    page.events.find(([name]) => name === 'screenshot'),
-    ['screenshot', { type: 'jpeg', quality: 70, optimizeForSpeed: true }]
+    page.events.find(([name]) => name === 'Page.captureScreenshot'),
+    ['Page.captureScreenshot', { format: 'jpeg', quality: 70, optimizeForSpeed: true }]
   )
 })
 
@@ -172,6 +198,45 @@ test('a navigation failure rejects before any frame', async t => {
   )
   t.deepEqual(page.virtualTimes, [])
   t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('advances every frame of the page to the same virtual time', async t => {
+  const child = createChildFrame()
+  const page = createPage({ childFrames: [child] })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await capture(page)('https://example.com', {
+    duration: 100,
+    fps: 30,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(child.virtualTimes, [0, 1000 / 30, 2000 / 30])
+})
+
+test('a child frame that goes away does not fail the capture', async t => {
+  const page = createPage({ childFrames: [createChildFrame({ fails: true })] })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', {
+    duration: 100,
+    fps: 30,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(result, expectedStream({ frames: 3, fps: 30 }))
+})
+
+test('a frame that never renders rejects after `frameTimeout`', async t => {
+  const page = createPage({ renders: frame => frame < 1 })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', {
+        duration: 100,
+        fps: 30,
+        frameTimeout: 50,
+        ffmpegPath: test.ffmpegPath
+      }),
+    { message: 'Frame 1 did not render within 50ms.' }
+  )
+  t.deepEqual(page.events.slice(-2), [['detach'], ['remove', 'timeweb-script']])
 })
 
 test('rejects when `video` is disabled', async t => {
