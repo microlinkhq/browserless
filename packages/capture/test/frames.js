@@ -612,6 +612,84 @@ test('a child error from the step still in flight fails the capture', async t =>
   )
 })
 
+test('an abort during the in-flight step rejects the capture', async t => {
+  const controller = new AbortController()
+  const reason = new Error('over budget')
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
+  const page = createPage({
+    childFrames: [
+      {
+        evaluate: async () => {
+          release()
+          controller.abort(reason)
+          await new Promise(() => {})
+        }
+      }
+    ]
+  })
+  const capture = createFramesCapture({ goto: createGoto(() => gate) })
+  try {
+    const error = await t.throwsAsync(() =>
+      Promise.race([
+        capture(page)('https://example.com', {
+          duration: 40,
+          fps: 50,
+          signal: controller.signal,
+          frameTimeout: 5000,
+          ffmpegPath: test.ffmpegPath
+        }),
+        new Promise((_resolve, reject) => setTimeout(() => reject(new Error('still running')), 500))
+      ])
+    )
+    t.is(error, reason)
+  } finally {
+    controller.abort()
+  }
+})
+
+test('a clock step that never finishes rejects after the frame timeout', async t => {
+  const controller = new AbortController()
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
+  const page = createPage({
+    childFrames: [
+      {
+        evaluate: async () => {
+          release()
+          await new Promise(() => {})
+        }
+      }
+    ]
+  })
+  const capture = createFramesCapture({ goto: createGoto(() => gate) })
+  const started = Date.now()
+  try {
+    const error = await t.throwsAsync(() =>
+      Promise.race([
+        capture(page)('https://example.com', {
+          duration: 40,
+          fps: 50,
+          frameTimeout: 200,
+          signal: controller.signal,
+          ffmpegPath: test.ffmpegPath
+        }),
+        new Promise((_resolve, reject) =>
+          setTimeout(() => reject(new Error('still running')), 1000)
+        )
+      ])
+    )
+    t.true(Date.now() - started >= 150)
+    t.is(error.message, 'The clock did not advance within 200ms.')
+  } finally {
+    controller.abort()
+  }
+})
+
 test('an abort while goto is waiting rejects the capture', async t => {
   const controller = new AbortController()
   const reason = new Error('over budget')

@@ -58,7 +58,25 @@ const clockNotReady = error =>
 // virtual time as the clip's origin. A goto that finishes before the first
 // step still starts the clip at 0. While the document is navigating, the main
 // frame has no timeweb yet, so a failed step is retried instead of failing.
-const pumpVirtualTime = async (page, navigation, step, signal) => {
+const whenAborted = signal => {
+  if (!signal) return new Promise(() => {})
+  if (signal.aborted) return Promise.reject(signal.reason)
+  return new Promise((_resolve, reject) => {
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+  })
+}
+
+const settleStep = (stepDone, signal, frameTimeout) => {
+  const aborted = whenAborted(signal)
+  const expired = delay(frameTimeout).then(() => {
+    throw new Error(`The clock did not advance within ${frameTimeout}ms.`)
+  })
+  aborted.catch(NOOP)
+  expired.catch(NOOP)
+  return Promise.race([stepDone, aborted, expired])
+}
+
+const pumpVirtualTime = async (page, navigation, step, signal, frameTimeout) => {
   const ready = navigation.then(() => 'ready')
   if ((await Promise.race([ready, delay(0).then(() => 'tick')])) === 'ready') return 0
 
@@ -75,7 +93,7 @@ const pumpVirtualTime = async (page, navigation, step, signal) => {
     stepDone.catch(NOOP)
     const winner = await Promise.race([ready, stepDone])
     if (winner === 'ready') {
-      await stepDone
+      await settleStep(stepDone, signal, frameTimeout)
       return virtual
     }
     if (winner === 'step') virtual += step
@@ -186,7 +204,7 @@ const runFrames = async (page, opts, viewport, { onStarted } = {}) => {
   const { identifier } = await page.evaluateOnNewDocument(TIMEWEB)
   try {
     const navigation = Promise.resolve(onStarted?.())
-    const origin = await pumpVirtualTime(page, navigation, 1000 / fps, signal)
+    const origin = await pumpVirtualTime(page, navigation, 1000 / fps, signal, frameTimeout)
     const mark = await markDocument(page.mainFrame())
     const assertSameDocument = async () => {
       if (await sameDocument(page.mainFrame(), mark)) return
