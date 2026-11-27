@@ -566,25 +566,56 @@ test('the clock waits until timeweb is on the document', async t => {
   const page = createPage({ timewebAt: 2 })
   const capture = createFramesCapture({
     goto: createGoto(async () => {
-      while (page.virtualTimes.length < 2) await new Promise(resolve => setImmediate(resolve))
+      while (!page.released && page.virtualTimes.length < 2) {
+        await new Promise(resolve => setImmediate(resolve))
+      }
     })
   })
-  await capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath })
-  t.deepEqual(page.virtualTimes.slice(0, 2), [0, 0])
+  try {
+    await capture(page)('https://example.com', {
+      duration: 40,
+      fps: 50,
+      ffmpegPath: test.ffmpegPath
+    })
+    t.deepEqual(page.virtualTimes.slice(0, 2), [0, 0])
+  } finally {
+    page.released = true
+  }
 })
 
 test('a child timer error while goto is waiting fails the capture', async t => {
+  let fail = true
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
   const page = createPage({
-    childFrames: [createChildFrame({ fails: true, error: new Error('timer failed') })]
+    childFrames: [
+      {
+        evaluate: async () => {
+          if (fail) throw new Error('timer failed')
+          return true
+        }
+      }
+    ]
   })
-  const capture = createFramesCapture({
-    goto: createGoto(() => new Promise(() => {}))
-  })
-  await t.throwsAsync(
-    () =>
-      capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath }),
-    { message: 'timer failed' }
-  )
+  const capture = createFramesCapture({ goto: createGoto(() => gate) })
+  try {
+    const error = await t.throwsAsync(() =>
+      Promise.race([
+        capture(page)('https://example.com', {
+          duration: 40,
+          fps: 50,
+          ffmpegPath: test.ffmpegPath
+        }),
+        new Promise((_resolve, reject) => setTimeout(() => reject(new Error('still running')), 500))
+      ])
+    )
+    t.is(error.message, 'timer failed')
+  } finally {
+    fail = false
+    release()
+  }
 })
 
 test('virtual time advances while goto is still waiting', async t => {
