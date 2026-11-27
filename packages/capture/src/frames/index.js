@@ -2,6 +2,7 @@
 
 const { readFileSync } = require('fs')
 const fs = require('fs/promises')
+const { performance } = require('perf_hooks')
 const debug = require('debug-logfmt')('browserless:capture')
 
 const createCapture = require('../create-capture')
@@ -57,22 +58,36 @@ const captureScreenshot = async (client, quality) => {
   return Buffer.from(data, 'base64')
 }
 
-const renderFrame = async ({ page, client, quality }, ms) => {
+const renderFrame = async ({ page, client, quality, timing }, ms) => {
+  const startedAt = performance.now()
   await advanceTime(page, ms)
-  return captureScreenshot(client, quality)
+  const advancedAt = performance.now()
+  const screenshot = await captureScreenshot(client, quality)
+  timing.advanceMs += advancedAt - startedAt
+  timing.captureMs += performance.now() - advancedAt
+  timing.bytes += screenshot.length
+  return screenshot
 }
+
+const averagePerFrame = (timing, frames) => ({
+  advanceMs: Math.round(timing.advanceMs / frames),
+  captureMs: Math.round(timing.captureMs / frames),
+  frameKb: Math.round(timing.bytes / frames / 1024)
+})
 
 const stepFrames = async ({ page, muxer, frames, fps, quality, frameTimeout, signal }) => {
   const client = await page.createCDPSession()
+  const timing = { advanceMs: 0, captureMs: 0, bytes: 0 }
   try {
     for (let frame = 0; frame < frames; frame++) {
       signal?.throwIfAborted()
       const screenshot = await withFrameTimeout(
-        renderFrame({ page, client, quality }, frameTime(frame, fps)),
+        renderFrame({ page, client, quality, timing }, frameTime(frame, fps)),
         { frame, frameTimeout }
       )
       await muxer.writeFrame(screenshot, frame)
     }
+    return averagePerFrame(timing, frames)
   } finally {
     await client.detach().catch(NOOP)
   }
@@ -111,8 +126,9 @@ const runFrames = async (page, opts, viewport, { onStarted } = {}) => {
 
     const frames = frameCount({ duration, fps })
     const startedAt = Date.now()
+    let perFrame
     try {
-      await stepFrames({ page, muxer, frames, fps, quality, frameTimeout, signal })
+      perFrame = await stepFrames({ page, muxer, frames, fps, quality, frameTimeout, signal })
     } catch (error) {
       stdin.end()
       await output.catch(NOOP)
@@ -120,7 +136,7 @@ const runFrames = async (page, opts, viewport, { onStarted } = {}) => {
     }
     stdin.end()
     const buffer = await output
-    debug('frames', { frames, frameMs: Math.round((Date.now() - startedAt) / frames) })
+    debug('frames', { frames, frameMs: Math.round((Date.now() - startedAt) / frames), ...perFrame })
 
     if (outputPath) {
       await fs.writeFile(outputPath, buffer)
