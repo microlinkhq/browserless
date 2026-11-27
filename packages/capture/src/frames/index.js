@@ -58,22 +58,27 @@ const clockNotReady = error =>
 // virtual time as the clip's origin. A goto that finishes before the first
 // step still starts the clip at 0. While the document is navigating, the main
 // frame has no timeweb yet, so a failed step is retried instead of failing.
-const whenAborted = signal => {
-  if (!signal) return new Promise(() => {})
-  if (signal.aborted) return Promise.reject(signal.reason)
-  return new Promise((_resolve, reject) => {
-    signal.addEventListener('abort', () => reject(signal.reason), { once: true })
-  })
-}
-
 const settleStep = (stepDone, signal, frameTimeout) => {
-  const aborted = whenAborted(signal)
-  const expired = delay(frameTimeout).then(() => {
+  const timer = new AbortController()
+  const expired = delay(frameTimeout, undefined, { signal: timer.signal }).then(() => {
     throw new Error(`The clock did not advance within ${frameTimeout}ms.`)
+  })
+  let onAbort
+  const aborted = new Promise((_resolve, reject) => {
+    if (!signal) return
+    if (signal.aborted) {
+      reject(signal.reason)
+      return
+    }
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
   })
   aborted.catch(NOOP)
   expired.catch(NOOP)
-  return Promise.race([stepDone, aborted, expired])
+  return Promise.race([stepDone, aborted, expired]).finally(() => {
+    timer.abort()
+    if (onAbort) signal.removeEventListener('abort', onAbort)
+  })
 }
 
 const pumpVirtualTime = async (page, navigation, step, signal, frameTimeout) => {

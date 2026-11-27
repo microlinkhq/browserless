@@ -1,6 +1,6 @@
 'use strict'
 
-const { EventEmitter } = require('events')
+const { EventEmitter, getEventListeners } = require('events')
 const fs = require('fs/promises')
 const path = require('path')
 const os = require('os')
@@ -610,6 +610,36 @@ test('a child error from the step still in flight fails the capture', async t =>
       capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath }),
     { message: 'timer failed' }
   )
+})
+
+test('a finished clock step clears its timeout and abort listener', async t => {
+  const controller = new AbortController()
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
+  const page = createPage({
+    childFrames: [
+      {
+        evaluate: async () => {
+          release()
+          await new Promise(resolve => setImmediate(resolve))
+          return true
+        }
+      }
+    ]
+  })
+  const capture = createFramesCapture({ goto: createGoto(() => gate) })
+  const timers = pendingTimeouts()
+  const listeners = getEventListeners(controller.signal, 'abort').length
+  await capture(page)('https://example.com', {
+    duration: 40,
+    fps: 50,
+    signal: controller.signal,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.is(pendingTimeouts(), timers)
+  t.is(getEventListeners(controller.signal, 'abort').length, listeners)
 })
 
 test('an abort during the in-flight step rejects the capture', async t => {
