@@ -28,6 +28,7 @@ const createGoto = (onCall, fallback = VIEWPORT) => {
 const createPage = ({
   hasTimeweb = true,
   onFrame,
+  onDocumentCheck,
   childFrames = [],
   renders = () => true,
   detachFails = false,
@@ -41,10 +42,28 @@ const createPage = ({
   const mainFrame = {
     evaluate: async (fn, arg) => {
       if (typeof arg === 'string') {
-        mark = arg
-        return arg
+        const previous = global.window
+        global.window = {}
+        try {
+          await fn(arg)
+          mark = global.window.__browserlessFrames
+          return mark
+        } finally {
+          if (previous === undefined) delete global.window
+          else global.window = previous
+        }
       }
-      if (arg && typeof arg === 'object') return mark === arg.mark
+      if (arg && typeof arg === 'object') {
+        const previous = global.window
+        global.window = { __browserlessFrames: mark }
+        try {
+          await onDocumentCheck?.(arg)
+          return await fn(arg)
+        } finally {
+          if (previous === undefined) delete global.window
+          else global.window = previous
+        }
+      }
       const ms = arg
       virtualTimes.push(ms)
       await onFrame?.(virtualTimes.length - 1)
@@ -133,11 +152,15 @@ test.before(async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'capture-frames-'))
   const ffmpegPath = path.join(dir, 'ffmpeg')
   const argsFile = path.join(dir, 'args')
-  await fs.writeFile(ffmpegPath, `#!/bin/sh\nprintf '%s\\n' "$@" > '${argsFile}'\nexec cat\n`, {
-    mode: 0o755
-  })
+  const stdinFile = path.join(dir, 'stdin')
+  await fs.writeFile(
+    ffmpegPath,
+    `#!/bin/sh\nprintf '%s\\n' "$@" > '${argsFile}'\nexec tee '${stdinFile}'\n`,
+    { mode: 0o755 }
+  )
   test.ffmpegPath = ffmpegPath
   test.argsFile = argsFile
+  test.stdinFile = stdinFile
 })
 
 test('frames is listed as a mode', t => {
@@ -508,10 +531,34 @@ test('virtual time advances while goto is still waiting', async t => {
   t.true(page.virtualTimes.at(-1) > page.virtualTimes[2])
 })
 
-test('an abort during the only frame rejects', async t => {
+test('an abort during the only frame rejects before the frame is written', async t => {
   const controller = new AbortController()
   const reason = new Error('over budget')
   const page = createPage({ onFrame: () => controller.abort(reason) })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const error = await t.throwsAsync(() =>
+    capture(page)('https://example.com', {
+      duration: 1,
+      fps: 30,
+      signal: controller.signal,
+      ffmpegPath: test.ffmpegPath
+    })
+  )
+  t.is(error, reason)
+  const written = await fs.readFile(test.stdinFile)
+  t.is(written.length, writeHeader(VIEWPORT.width, VIEWPORT.height).length)
+})
+
+test('an abort during the last write rejects', async t => {
+  const controller = new AbortController()
+  const reason = new Error('over budget')
+  let checks = 0
+  const page = createPage({
+    onDocumentCheck: () => {
+      checks += 1
+      if (checks === 1) controller.abort(reason)
+    }
+  })
   const capture = createFramesCapture({ goto: createGoto() })
   const error = await t.throwsAsync(() =>
     capture(page)('https://example.com', {

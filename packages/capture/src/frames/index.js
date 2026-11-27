@@ -132,7 +132,6 @@ const stepFrames = async ({
   try {
     for (let frame = 0; frame < frames; frame++) {
       signal?.throwIfAborted()
-      await assertSameDocument()
       const screenshot = await Promise.race([
         withFrameTimeout(
           renderFrame({ page, client, quality, timing }, origin + frameTime(frame, fps)),
