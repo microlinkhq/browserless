@@ -681,18 +681,22 @@ test('virtual time advances while goto is still waiting', async t => {
   const page = createPage()
   const capture = createFramesCapture({
     goto: createGoto(async () => {
-      while (page.virtualTimes.length < 3) {
+      while (!page.released && page.virtualTimes.length < 3) {
         await new Promise(resolve => setImmediate(resolve))
       }
     })
   })
-  await capture(page)('https://example.com', {
-    duration: 40,
-    fps: 50,
-    ffmpegPath: test.ffmpegPath
-  })
-  t.true(page.virtualTimes.length > 3)
-  t.true(page.virtualTimes.at(-1) > page.virtualTimes[2])
+  try {
+    await capture(page)('https://example.com', {
+      duration: 40,
+      fps: 50,
+      ffmpegPath: test.ffmpegPath
+    })
+    t.true(page.virtualTimes.length > 3)
+    t.true(page.virtualTimes.at(-1) > page.virtualTimes[2])
+  } finally {
+    page.released = true
+  }
 })
 
 test('an abort during the only frame rejects before the frame is written', async t => {
