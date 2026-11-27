@@ -37,8 +37,15 @@ const createPage = ({
   const events = []
   const virtualTimes = []
   let screenshots = 0
+  let mark
   const mainFrame = {
-    evaluate: async (fn, ms) => {
+    evaluate: async (fn, arg) => {
+      if (typeof arg === 'string') {
+        mark = arg
+        return arg
+      }
+      if (arg && typeof arg === 'object') return mark === arg.mark
+      const ms = arg
       virtualTimes.push(ms)
       await onFrame?.(virtualTimes.length - 1)
       const previous = global.window
@@ -85,17 +92,20 @@ const createPage = ({
     },
     mainFrame: () => mainFrame,
     frames: () => [mainFrame, ...childFrames],
-    createCDPSession: async () => client
+    createCDPSession: async () => client,
+    dropDocument: () => {
+      mark = undefined
+    }
   }
   return page
 }
 
-const createChildFrame = ({ fails = false } = {}) => {
+const createChildFrame = ({ fails = false, error } = {}) => {
   const virtualTimes = []
   return {
     virtualTimes,
     evaluate: async (fn, ms) => {
-      if (fails) throw new Error('Execution context was destroyed')
+      if (fails) throw error || new Error('Execution context was destroyed')
       virtualTimes.push(ms)
       return true
     }
@@ -478,6 +488,98 @@ test('sizes the video at device pixels', async t => {
     viewport: { width: 640, height: 400, deviceScaleFactor: 0.5 }
   })
   t.true(startsWithHeader(fractional, 640, 400))
+})
+
+test('virtual time advances while goto is still waiting', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({
+    goto: createGoto(async () => {
+      while (page.virtualTimes.length < 3) {
+        await new Promise(resolve => setImmediate(resolve))
+      }
+    })
+  })
+  await capture(page)('https://example.com', {
+    duration: 40,
+    fps: 50,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.true(page.virtualTimes.length > 3)
+  t.true(page.virtualTimes.at(-1) > page.virtualTimes[2])
+})
+
+test('an abort during the only frame rejects', async t => {
+  const controller = new AbortController()
+  const reason = new Error('over budget')
+  const page = createPage({ onFrame: () => controller.abort(reason) })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const error = await t.throwsAsync(() =>
+    capture(page)('https://example.com', {
+      duration: 1,
+      fps: 30,
+      signal: controller.signal,
+      ffmpegPath: test.ffmpegPath
+    })
+  )
+  t.is(error, reason)
+})
+
+test('a navigation mid-capture rejects', async t => {
+  const page = createPage({
+    onFrame: frame => {
+      if (frame === 1) page.dropDocument()
+    }
+  })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { duration: 100, fps: 30, ffmpegPath: test.ffmpegPath }),
+    { message: 'The page navigated away mid-capture.' }
+  )
+  t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('a detached child frame does not fail the capture', async t => {
+  const page = createPage({
+    childFrames: [createChildFrame({ fails: true, error: new Error('Frame was detached') })]
+  })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', {
+    duration: 100,
+    fps: 30,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(result, expectedStream({ frames: 3, fps: 30 }))
+})
+
+test('an error in a child frame fails the capture', async t => {
+  const page = createPage({
+    childFrames: [createChildFrame({ fails: true, error: new Error('timer failed') })]
+  })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { duration: 100, fps: 30, ffmpegPath: test.ffmpegPath }),
+    { message: 'timer failed' }
+  )
+})
+
+test('ffmpeg dying mid-capture rejects with the encoder error', async t => {
+  const hang = path.join(path.dirname(test.ffmpegPath), 'hang-mid')
+  await fs.writeFile(hang, '#!/bin/sh\nsleep 30\n', { mode: 0o755 })
+  const page = createPage({ renders: () => false })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', {
+        duration: 100,
+        fps: 30,
+        timeout: 50,
+        frameTimeout: 400,
+        ffmpegPath: hang
+      }),
+    { message: /did not finish within 50ms/ }
+  )
 })
 
 test('frame muxer `writeFrame` emits a frame on the slot it is given', t => {
