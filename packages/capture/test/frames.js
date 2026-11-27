@@ -583,6 +583,65 @@ test('the clock waits until timeweb is on the document', async t => {
   }
 })
 
+test('a child error from the step still in flight fails the capture', async t => {
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
+  let failed = false
+  const page = createPage({
+    childFrames: [
+      {
+        evaluate: async () => {
+          release()
+          await new Promise(resolve => setImmediate(resolve))
+          if (!failed) {
+            failed = true
+            throw new Error('timer failed')
+          }
+          return true
+        }
+      }
+    ]
+  })
+  const capture = createFramesCapture({ goto: createGoto(() => gate) })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath }),
+    { message: 'timer failed' }
+  )
+})
+
+test('an abort while goto is waiting rejects the capture', async t => {
+  const controller = new AbortController()
+  const reason = new Error('over budget')
+  let release
+  const gate = new Promise(resolve => {
+    release = resolve
+  })
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto(() => gate) })
+  try {
+    const pending = capture(page)('https://example.com', {
+      duration: 40,
+      fps: 50,
+      signal: controller.signal,
+      ffmpegPath: test.ffmpegPath
+    })
+    await new Promise(resolve => setImmediate(resolve))
+    controller.abort(reason)
+    const error = await t.throwsAsync(() =>
+      Promise.race([
+        pending,
+        new Promise((_resolve, reject) => setTimeout(() => reject(new Error('still running')), 500))
+      ])
+    )
+    t.is(error, reason)
+  } finally {
+    release()
+  }
+})
+
 test('a child timer error while goto is waiting fails the capture', async t => {
   let fail = true
   let release

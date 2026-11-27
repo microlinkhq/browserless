@@ -58,12 +58,13 @@ const clockNotReady = error =>
 // virtual time as the clip's origin. A goto that finishes before the first
 // step still starts the clip at 0. While the document is navigating, the main
 // frame has no timeweb yet, so a failed step is retried instead of failing.
-const pumpVirtualTime = async (page, navigation, step) => {
+const pumpVirtualTime = async (page, navigation, step, signal) => {
   const ready = navigation.then(() => 'ready')
   if ((await Promise.race([ready, delay(0).then(() => 'tick')])) === 'ready') return 0
 
   let virtual = 0
   for (;;) {
+    signal?.throwIfAborted()
     const stepDone = advanceTime(page, virtual).then(
       () => 'step',
       error => {
@@ -73,7 +74,10 @@ const pumpVirtualTime = async (page, navigation, step) => {
     )
     stepDone.catch(NOOP)
     const winner = await Promise.race([ready, stepDone])
-    if (winner === 'ready') return virtual
+    if (winner === 'ready') {
+      await stepDone
+      return virtual
+    }
     if (winner === 'step') virtual += step
     await delay(0)
   }
@@ -182,7 +186,7 @@ const runFrames = async (page, opts, viewport, { onStarted } = {}) => {
   const { identifier } = await page.evaluateOnNewDocument(TIMEWEB)
   try {
     const navigation = Promise.resolve(onStarted?.())
-    const origin = await pumpVirtualTime(page, navigation, 1000 / fps)
+    const origin = await pumpVirtualTime(page, navigation, 1000 / fps, signal)
     const mark = await markDocument(page.mainFrame())
     const assertSameDocument = async () => {
       if (await sameDocument(page.mainFrame(), mark)) return
