@@ -16,6 +16,12 @@ const { DEFAULT, NOOP } = require('../constants')
 // vp8/h264 require even dimensions.
 const even = value => Math.round(value) & ~1
 
+// Device-pixel output size: what `page.screenshot` returns for this viewport.
+const getDeviceSize = viewport => {
+  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
+  return { width: even(viewport.width * dpr), height: even(viewport.height * dpr) }
+}
+
 const waitForWritable = stdin =>
   new Promise(resolve => {
     const done = () => {
@@ -104,6 +110,11 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
   }
 
   return {
+    // Emit a frame straight into its slot on the fps grid, for sources whose
+    // frames are already on it (the frames mode steps virtual time 1/fps at a
+    // time). Computing the slot back from `frame / fps` seconds would floor
+    // some frames into the previous slot (`1 / 49 * 49 < 1`).
+    writeFrame: (buffer, frameNumber) => enqueueEmit(buffer, frameNumber),
     write: (buffer, tsSeconds) => {
       if (firstTs === undefined) firstTs = tsSeconds
       // Hard-bound the clip to `duration`; async screencast stop can deliver a
@@ -114,7 +125,9 @@ const createFrameMuxer = ({ stdin, fps, durationMs }) => {
       // is preserved instead of being collapsed.
       const prev = last
       last = { buffer, frameNumber }
-      if (prev && frameNumber !== prev.frameNumber) { return enqueueEmit(prev.buffer, prev.frameNumber) }
+      if (prev && frameNumber !== prev.frameNumber) {
+        return enqueueEmit(prev.buffer, prev.frameNumber)
+      }
     },
     flush: async () => {
       if (!last) return
@@ -218,4 +231,4 @@ const record = async (page, opts, viewport, { onStarted, getSize, startSource, l
   return buffer
 }
 
-module.exports = { even, createFrameMuxer, record }
+module.exports = { even, getDeviceSize, createFrameMuxer, record }

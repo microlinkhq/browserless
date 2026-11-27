@@ -10,6 +10,7 @@
     "./screencast": "./src/screencast/index.js",
     "./screenshot": "./src/screenshot/index.js",
     "./record": "./src/record/index.js",
+    "./frames": "./src/frames/index.js",
     "./package.json": "./package.json"
   },
   "author": {
@@ -35,12 +36,14 @@
     "recording",
     "tabcapture",
     "video",
+    "virtual-time",
     "webm"
   ],
   "dependencies": {
     "@browserless/goto": "workspace:*",
     "@browserless/screencast": "workspace:*",
     "debug-logfmt": "~1.4.15",
+    "timeweb": "0.3.2",
     "ws": "~8.23.0"
   },
   "devDependencies": {

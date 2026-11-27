@@ -91,6 +91,10 @@ The capture mode is selected by [entry point](#modes), not by an option.
 | `codec` | `string` | Depends on `type` | MediaRecorder codec override. Defaults: `webm -> vp9`, `mp4 -> avc1.4D401F`. |
 | `path` | `string` | `undefined` | Write the captured media to disk. |
 | `duration` | `number` | `5000` | Capture duration in milliseconds. |
+| `fps` | `number` | `60` | Frames per second of the output. |
+| `timeout` | `number` | `undefined` | `frames` mode only. Kill ffmpeg after this many milliseconds. |
+| `frameTimeout` | `number` | `5000` | `frames` mode only. Reject when one frame takes longer than this to advance and capture, for example a `<video>` that never finishes seeking. |
+| `signal` | `AbortSignal` | `undefined` | `frames` mode only. Stop stepping and reject with the signal's reason. |
 | `untilLoaded` | `boolean` | `false` | `record` mode only. Keep recording past `duration` until `goto` settles, so a page that loads slower than `duration` still ends on its loaded state. The recording is then longer than `duration`. |
 | `audio` | `boolean \| object` | `false` | Capture audio. When object, it is used as audio track constraints. |
 | `video` | `boolean \| object` | `true` | Capture video. When object, it is used as video track constraints. |
@@ -105,16 +109,18 @@ const createCapture = require('@browserless/capture') // extension (default)
 const createCapture = require('@browserless/capture/screencast')
 const createCapture = require('@browserless/capture/screenshot')
 const createCapture = require('@browserless/capture/record')
+const createCapture = require('@browserless/capture/frames')
 ```
 
-All four share the same factory signature — `createCapture({ goto })(page)(url, opts)`.
+All five share the same factory signature — `createCapture({ goto })(page)(url, opts)`.
 
 | Entry point | How | Notes |
 | --- | --- | --- |
 | `@browserless/capture` (`/extension`) | In-browser MediaRecorder via the bundled extension (`tabCapture`). | Default. Device-pixel (retina) output. Captures `audio`. |
 | `@browserless/capture/screencast` | CDP `Page.startScreencast` frames muxed into ffmpeg. | Video-only (`video: false` throws). CSS-pixel output. Requires `ffmpeg`. |
-| `@browserless/capture/screenshot` | Polled `page.screenshot` frames muxed into ffmpeg. | Video-only. The only mode that captures accelerated layers (WebGL/canvas/video). Device-pixel output, bounded by screenshot latency. Requires `ffmpeg`. |
+| `@browserless/capture/screenshot` | Polled `page.screenshot` frames muxed into ffmpeg. | Video-only. Captures accelerated layers (WebGL/canvas/video). Device-pixel output, bounded by screenshot latency. Requires `ffmpeg`. |
 | `@browserless/capture/record` | Puppeteer `page.record()` (`Page.startScreenRecording`). | Video-only. MP4 only (`type: 'webm'` throws). CSS-pixel output. Requires Chrome M153+; no ffmpeg. |
+| `@browserless/capture/frames` | [timeweb](https://github.com/tungs/timeweb) puts the page on a virtual clock; each frame advances it `1000 / fps` ms and takes a JPEG with `Page.captureScreenshot`, muxed into ffmpeg. | Video-only. Captures accelerated layers (WebGL/canvas/video). Every frame is a distinct frame however slow the page renders, so the capture takes as long as the frames do, not `duration`. Deterministic for the same page. Starts on the loaded page (navigation is not in the clip). Virtual time advances while `goto` is still waiting, so a timer-driven `waitForSelector` can appear, and the clip starts at that virtual time. Time advances in the main frame and in every iframe that can be scripted. A page that navigates away mid-capture, or a frame that does not render within `frameTimeout`, rejects. Device-pixel output. Requires `ffmpeg`. |
 
 ## Exports
 

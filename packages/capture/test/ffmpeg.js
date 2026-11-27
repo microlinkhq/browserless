@@ -56,3 +56,11 @@ test('spawnFfmpeg kills the process and rejects when it exceeds the timeout', as
   const { output } = spawnFfmpeg({ ffmpegPath: 'sleep', args: ['10'], timeout: 100 })
   await t.throwsAsync(() => output, { message: /did not finish within 100ms/ })
 })
+
+test('a missing ffmpeg names every mode that needs it', async t => {
+  const { output } = spawnFfmpeg({ ffmpegPath: '/no/such/ffmpeg', args: [] })
+  const error = await t.throwsAsync(() => output)
+  t.true(error.message.includes('screencast'))
+  t.true(error.message.includes('screenshot'))
+  t.true(error.message.includes('frames'))
+})

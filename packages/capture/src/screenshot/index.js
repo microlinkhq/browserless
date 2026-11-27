@@ -3,21 +3,17 @@
 // Animated capture via polled `Page.captureScreenshot` (through puppeteer's
 // `page.screenshot`). Unlike the screencast/extension modes — which capture
 // live compositor frames and render accelerated layers (WebGL/canvas/video)
-// black in headless — `captureScreenshot` forces a full composite, so it is the
-// only mode that captures WebGL content. Cost: a per-frame round-trip, so the
-// effective frame rate is bounded by screenshot latency (frames are mapped onto
-// the constant-fps grid by their real capture time; missed slots hold the last
-// frame). Also captures at device pixels (retina), not the screencast's CSS-px.
+// black in headless — `captureScreenshot` forces a full composite, so WebGL
+// content is in the frame. The frames mode uses the same CDP command. Cost: a
+// per-frame round-trip, so the effective frame rate is bounded by screenshot
+// latency (frames are mapped onto the constant-fps grid by their real capture
+// time; missed slots hold the last frame). Also captures at device pixels
+// (retina), not the screencast's CSS-px.
 
 const { setTimeout: delay } = require('timers/promises')
-const { even, record } = require('../recorder')
+const { getDeviceSize, record } = require('../recorder')
 const createCapture = require('../create-capture')
 const { NOOP } = require('../constants')
-
-const getDeviceSize = viewport => {
-  const dpr = Math.max(Number(viewport.deviceScaleFactor) || 1, 1)
-  return { width: even(viewport.width * dpr), height: even(viewport.height * dpr) }
-}
 
 // Pull source: poll screenshots for the recording window. Each frame is
 // timestamped with its real capture time; the muxer maps it onto the fps grid.
