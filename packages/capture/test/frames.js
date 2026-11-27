@@ -27,6 +27,7 @@ const createGoto = (onCall, fallback = VIEWPORT) => {
 
 const createPage = ({
   hasTimeweb = true,
+  timewebAt,
   onFrame,
   onDocumentCheck,
   childFrames = [],
@@ -68,13 +69,15 @@ const createPage = ({
       virtualTimes.push(ms)
       await onFrame?.(virtualTimes.length - 1)
       const previous = global.window
-      global.window = hasTimeweb
-        ? {
-            timeweb: {
-              goTo: () => (goToError ? Promise.reject(goToError) : Promise.resolve())
+      const armed = timewebAt === undefined || virtualTimes.length >= timewebAt
+      global.window =
+        hasTimeweb && armed
+          ? {
+              timeweb: {
+                goTo: () => (goToError ? Promise.reject(goToError) : Promise.resolve())
+              }
             }
-          }
-        : {}
+          : {}
       try {
         return await fn(ms)
       } finally {
@@ -341,6 +344,34 @@ test('`video: true` captures the same way as leaving video on', async t => {
   t.deepEqual(result, expectedStream({ frames: 3, fps: 30 }))
 })
 
+test('an already aborted signal does not leave an encoder failure unhandled', async t => {
+  const fail = path.join(path.dirname(test.ffmpegPath), 'fail-now')
+  await fs.writeFile(fail, '#!/bin/sh\nexit 1\n', { mode: 0o755 })
+  const controller = new AbortController()
+  const reason = new Error('over budget')
+  controller.abort(reason)
+  const unhandled = []
+  const onUnhandled = error => unhandled.push(error)
+  process.on('unhandledRejection', onUnhandled)
+  try {
+    const page = createPage()
+    const capture = createFramesCapture({ goto: createGoto() })
+    const error = await t.throwsAsync(() =>
+      capture(page)('https://example.com', {
+        duration: 100,
+        fps: 30,
+        signal: controller.signal,
+        ffmpegPath: fail
+      })
+    )
+    await new Promise(resolve => setImmediate(resolve))
+    t.is(error, reason)
+    t.deepEqual(unhandled, [])
+  } finally {
+    process.off('unhandledRejection', onUnhandled)
+  }
+})
+
 test('an already aborted signal rejects before any frame', async t => {
   const controller = new AbortController()
   const reason = new Error('over budget')
@@ -511,6 +542,49 @@ test('sizes the video at device pixels', async t => {
     viewport: { width: 640, height: 400, deviceScaleFactor: 0.5 }
   })
   t.true(startsWithHeader(fractional, 640, 400))
+})
+
+test('a document that is still navigating does not fail the clock pump', async t => {
+  let attempts = 0
+  let navigated
+  const navigation = new Promise(resolve => {
+    navigated = resolve
+  })
+  const page = createPage({
+    onFrame: () => {
+      attempts += 1
+      if (attempts < 3) throw new Error('Execution context was destroyed')
+      navigated()
+    }
+  })
+  const capture = createFramesCapture({ goto: createGoto(() => navigation) })
+  await capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath })
+  t.true(attempts >= 3)
+})
+
+test('the clock waits until timeweb is on the document', async t => {
+  const page = createPage({ timewebAt: 2 })
+  const capture = createFramesCapture({
+    goto: createGoto(async () => {
+      while (page.virtualTimes.length < 2) await new Promise(resolve => setImmediate(resolve))
+    })
+  })
+  await capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath })
+  t.deepEqual(page.virtualTimes.slice(0, 2), [0, 0])
+})
+
+test('a child timer error while goto is waiting fails the capture', async t => {
+  const page = createPage({
+    childFrames: [createChildFrame({ fails: true, error: new Error('timer failed') })]
+  })
+  const capture = createFramesCapture({
+    goto: createGoto(() => new Promise(() => {}))
+  })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { duration: 40, fps: 50, ffmpegPath: test.ffmpegPath }),
+    { message: 'timer failed' }
+  )
 })
 
 test('virtual time advances while goto is still waiting', async t => {

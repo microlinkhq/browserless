@@ -50,20 +50,31 @@ const advanceTime = async (page, ms) => {
   }
 }
 
+const clockNotReady = error =>
+  frameIsGone(error) || String(error && error.message).includes('timeweb runs first')
+
 // Goto can wait on a selector the page reveals from a timer. Timeweb freezes
 // that timer, so step the clock until navigation settles, then keep that
 // virtual time as the clip's origin. A goto that finishes before the first
-// step still starts the clip at 0.
+// step still starts the clip at 0. While the document is navigating, the main
+// frame has no timeweb yet, so a failed step is retried instead of failing.
 const pumpVirtualTime = async (page, navigation, step) => {
   const ready = navigation.then(() => 'ready')
   if ((await Promise.race([ready, delay(0).then(() => 'tick')])) === 'ready') return 0
 
   let virtual = 0
   for (;;) {
-    const stepDone = advanceTime(page, virtual).then(() => 'step')
+    const stepDone = advanceTime(page, virtual).then(
+      () => 'step',
+      error => {
+        if (!clockNotReady(error)) throw error
+        return 'pending'
+      }
+    )
     stepDone.catch(NOOP)
-    if ((await Promise.race([ready, stepDone])) === 'ready') return virtual
-    virtual += step
+    const winner = await Promise.race([ready, stepDone])
+    if (winner === 'ready') return virtual
+    if (winner === 'step') virtual += step
     await delay(0)
   }
 }
@@ -187,6 +198,7 @@ const runFrames = async (page, opts, viewport, { onStarted } = {}) => {
     const encoderFailed = new Promise((_resolve, reject) => {
       output.catch(reject)
     })
+    encoderFailed.catch(NOOP)
     const muxer = createFrameMuxer({ stdin, fps, durationMs: duration })
     stdin.write(writeHeader(width, height))
 
