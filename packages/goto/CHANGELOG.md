@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.5.0](https://github.com/microlinkhq/browserless/compare/v14.4.0...v14.5.0) (2026-11-27)
+
+### Features
+
+* **goto:** add HaGeZi Multi PRO to the adblock engine ([#1053](https://github.com/microlinkhq/browserless/issues/1053)) ([a2d3204](https://github.com/microlinkhq/browserless/commit/a2d320497585c959954ad4a4bf0471ef6e154cd2))
+
 ## [14.3.3](https://github.com/microlinkhq/browserless/compare/v14.3.2...v14.3.3) (2026-11-26)
 
 **Note:** Version bump only for package @browserless/goto
