@@ -127,7 +127,7 @@ const spawnFfmpeg = ({ ffmpegPath = FFMPEG_PATH, args, timeout }) => {
       clearTimeout(timer)
       reject(
         new Error(
-          `ffmpeg failed to start (${ffmpegPath}): ${err.message}. Install ffmpeg to use the screencast or screenshot mode.`
+          `ffmpeg failed to start (${ffmpegPath}): ${err.message}. Install ffmpeg to use the screencast, screenshot, or frames mode.`
         )
       )
     })

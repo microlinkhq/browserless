@@ -38,7 +38,6 @@ const advanceTime = async (page, ms) => {
 }
 
 const withFrameTimeout = (work, { frame, frameTimeout }) => {
-  work.catch(NOOP)
   let timer
   const expired = new Promise((resolve, reject) => {
     timer = setTimeout(

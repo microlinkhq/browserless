@@ -13,12 +13,15 @@ const { MODES } = require('..')
 
 const VIEWPORT = { width: 640, height: 400, deviceScaleFactor: 1 }
 
-const createGoto = onCall => {
+const pendingTimeouts = () =>
+  process.getActiveResourcesInfo().filter(name => name === 'Timeout').length
+
+const createGoto = (onCall, fallback = VIEWPORT) => {
   const goto = async (page, opts) => {
     await onCall?.(page, opts)
-    return { device: { viewport: VIEWPORT } }
+    return { device: { viewport: opts.viewport || fallback } }
   }
-  goto.getDevice = () => ({ viewport: VIEWPORT })
+  goto.getDevice = ({ viewport } = {}) => ({ viewport: viewport || fallback })
   return goto
 }
 
@@ -26,7 +29,10 @@ const createPage = ({
   hasTimeweb = true,
   onFrame,
   childFrames = [],
-  renders = () => true
+  renders = () => true,
+  detachFails = false,
+  removeFails = false,
+  goToError = null
 } = {}) => {
   const events = []
   const virtualTimes = []
@@ -35,16 +41,34 @@ const createPage = ({
     evaluate: async (fn, ms) => {
       virtualTimes.push(ms)
       await onFrame?.(virtualTimes.length - 1)
-      return hasTimeweb
+      const previous = global.window
+      global.window = hasTimeweb
+        ? {
+            timeweb: {
+              goTo: () => (goToError ? Promise.reject(goToError) : Promise.resolve())
+            }
+          }
+        : {}
+      try {
+        return await fn(ms)
+      } finally {
+        if (previous === undefined) delete global.window
+        else global.window = previous
+      }
     }
   }
   const client = {
     send: async (method, params) => {
       events.push([method, params])
-      if (!renders(screenshots)) return new Promise(() => {})
+      const verdict = renders(screenshots)
+      if (verdict && typeof verdict.then === 'function') return verdict
+      if (!verdict) return new Promise(() => {})
       return { data: Buffer.from(`frame-${screenshots++}`).toString('base64') }
     },
-    detach: async () => events.push(['detach'])
+    detach: async () => {
+      events.push(['detach'])
+      if (detachFails) throw new Error('detach failed')
+    }
   }
   const page = {
     events,
@@ -55,7 +79,10 @@ const createPage = ({
       events.push(['inject', source.includes('timeweb')])
       return { identifier: 'timeweb-script' }
     },
-    removeScriptToEvaluateOnNewDocument: async identifier => events.push(['remove', identifier]),
+    removeScriptToEvaluateOnNewDocument: async identifier => {
+      events.push(['remove', identifier])
+      if (removeFails) throw new Error('remove failed')
+    },
     mainFrame: () => mainFrame,
     frames: () => [mainFrame, ...childFrames],
     createCDPSession: async () => client
@@ -87,11 +114,20 @@ const expectedStream = ({ frames, fps }) =>
     })
   ])
 
+const startsWithHeader = (buffer, width, height) => {
+  const header = writeHeader(width, height)
+  return buffer.subarray(0, header.length).equals(header)
+}
+
 test.before(async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'capture-frames-'))
   const ffmpegPath = path.join(dir, 'ffmpeg')
-  await fs.writeFile(ffmpegPath, '#!/bin/sh\nexec cat\n', { mode: 0o755 })
+  const argsFile = path.join(dir, 'args')
+  await fs.writeFile(ffmpegPath, `#!/bin/sh\nprintf '%s\\n' "$@" > '${argsFile}'\nexec cat\n`, {
+    mode: 0o755
+  })
   test.ffmpegPath = ffmpegPath
+  test.argsFile = argsFile
 })
 
 test('frames is listed as a mode', t => {
@@ -258,6 +294,190 @@ test('writes `path` and returns the same buffer', async t => {
   })
   t.deepEqual(await fs.readFile(output), result)
   await fs.rm(output)
+})
+
+test('`video: true` captures the same way as leaving video on', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', {
+    video: true,
+    duration: 100,
+    fps: 30,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(result, expectedStream({ frames: 3, fps: 30 }))
+})
+
+test('an already aborted signal rejects before any frame', async t => {
+  const controller = new AbortController()
+  const reason = new Error('over budget')
+  controller.abort(reason)
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto() })
+  const error = await t.throwsAsync(() =>
+    capture(page)('https://example.com', {
+      duration: 1000,
+      fps: 30,
+      signal: controller.signal,
+      ffmpegPath: test.ffmpegPath
+    })
+  )
+  t.is(error, reason)
+  t.deepEqual(page.virtualTimes, [])
+  t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('uses the default duration, frame rate, jpeg quality, and mp4 encoder', async t => {
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto() })
+  const timers = pendingTimeouts()
+  await capture(page)('https://example.com', { ffmpegPath: test.ffmpegPath })
+  t.is(page.virtualTimes.length, 300)
+  t.is(page.virtualTimes[1], 1000 / 60)
+  t.deepEqual(
+    page.events.find(([name]) => name === 'Page.captureScreenshot'),
+    ['Page.captureScreenshot', { format: 'jpeg', quality: 90, optimizeForSpeed: true }]
+  )
+  t.true((await fs.readFile(test.argsFile, 'utf8')).includes('libx264'))
+  t.is(pendingTimeouts(), timers)
+})
+
+test('a frame that never renders rejects after the default frame timeout', async t => {
+  const page = createPage({ renders: () => false })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', {
+        duration: 100,
+        fps: 30,
+        ffmpegPath: test.ffmpegPath
+      }),
+    { message: 'Frame 0 did not render within 5000ms.' }
+  )
+})
+
+test('a virtual-time seek that fails rejects the capture', async t => {
+  const reason = new Error('seek failed')
+  const page = createPage({ goToError: reason })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const error = await t.throwsAsync(() =>
+    capture(page)('https://example.com', { duration: 100, fps: 30, ffmpegPath: test.ffmpegPath })
+  )
+  t.is(error, reason)
+  t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('a main frame that goes away rejects and still removes the script', async t => {
+  const page = createPage()
+  const gone = {
+    evaluate: async () => {
+      throw new Error('Execution context was destroyed')
+    }
+  }
+  page.mainFrame = () => gone
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', { duration: 100, fps: 30, ffmpegPath: test.ffmpegPath }),
+    { message: 'Execution context was destroyed' }
+  )
+  t.deepEqual(page.events.at(-1), ['remove', 'timeweb-script'])
+})
+
+test('detaching the CDP session can fail without losing the video', async t => {
+  const page = createPage({ detachFails: true })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', {
+    duration: 40,
+    fps: 50,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(result, expectedStream({ frames: 2, fps: 50 }))
+})
+
+test('removing the injected script can fail without losing the video', async t => {
+  const page = createPage({ removeFails: true })
+  const capture = createFramesCapture({ goto: createGoto() })
+  const result = await capture(page)('https://example.com', {
+    duration: 40,
+    fps: 50,
+    ffmpegPath: test.ffmpegPath
+  })
+  t.deepEqual(result, expectedStream({ frames: 2, fps: 50 }))
+})
+
+test('a capture failure is not replaced when ffmpeg exits with an error', async t => {
+  const fail = path.join(path.dirname(test.ffmpegPath), 'fail')
+  await fs.writeFile(fail, '#!/bin/sh\ncat >/dev/null\nexit 1\n', { mode: 0o755 })
+  const page = createPage({ hasTimeweb: false })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () => capture(page)('https://example.com', { duration: 100, fps: 30, ffmpegPath: fail }),
+    { message: /needs the page loaded by `goto`/ }
+  )
+})
+
+test('a screenshot that fails after the frame timeout does not reject twice', async t => {
+  const page = createPage({
+    renders: () =>
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error('late')), 80))
+  })
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', {
+        duration: 100,
+        fps: 30,
+        frameTimeout: 20,
+        ffmpegPath: test.ffmpegPath
+      }),
+    { message: 'Frame 0 did not render within 20ms.' }
+  )
+  await new Promise(resolve => setTimeout(resolve, 120))
+})
+
+test('`timeout` kills ffmpeg when the encoder does not exit', async t => {
+  const hang = path.join(path.dirname(test.ffmpegPath), 'hang')
+  await fs.writeFile(hang, '#!/bin/sh\nsleep 30\n', { mode: 0o755 })
+  const page = createPage()
+  const capture = createFramesCapture({ goto: createGoto() })
+  await t.throwsAsync(
+    () =>
+      capture(page)('https://example.com', {
+        duration: 40,
+        fps: 50,
+        timeout: 50,
+        ffmpegPath: hang
+      }),
+    { message: /did not finish within 50ms/ }
+  )
+})
+
+test('sizes the video at device pixels', async t => {
+  const capture = createFramesCapture({ goto: createGoto() })
+  const retina = await capture(createPage())('https://example.com', {
+    duration: 40,
+    fps: 50,
+    ffmpegPath: test.ffmpegPath,
+    viewport: { width: 640, height: 400, deviceScaleFactor: 2 }
+  })
+  t.true(startsWithHeader(retina, 1280, 800))
+
+  const missing = await capture(createPage())('https://example.com', {
+    duration: 40,
+    fps: 50,
+    ffmpegPath: test.ffmpegPath,
+    viewport: { width: 640, height: 400 }
+  })
+  t.true(startsWithHeader(missing, 640, 400))
+
+  const fractional = await capture(createPage())('https://example.com', {
+    duration: 40,
+    fps: 50,
+    ffmpegPath: test.ffmpegPath,
+    viewport: { width: 640, height: 400, deviceScaleFactor: 0.5 }
+  })
+  t.true(startsWithHeader(fractional, 640, 400))
 })
 
 test('frame muxer `writeFrame` emits a frame on the slot it is given', t => {
